@@ -110,6 +110,7 @@ class AssetDto:
         fixed_thermal_losses_relative: ValueTypeDto = None,
         fixed_thermal_losses_absolute: ValueTypeDto = None,
         beta: ValueTypeDto = None,
+        investment_bus: str = None,
     ):
         self.asset_type = asset_type
         self.label = label
@@ -145,6 +146,7 @@ class AssetDto:
         self.fixed_thermal_losses_relative = fixed_thermal_losses_relative
         self.fixed_thermal_losses_absolute = fixed_thermal_losses_absolute
         self.beta = beta
+        self.investment_bus = investment_bus
 
 
 class EssDto:
@@ -471,6 +473,9 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
 
                     efficiencies.append(efficiency)
 
+            # investment in oemof should be on output electrical bus
+            optional_parameters["investment_bus"] = outflow_direction[0]
+
             if len(efficiencies) != 2:
                 print(
                     "ERROR, a chp should have 1 electrical input and one heat output, thus 2 efficiencies!"
@@ -517,6 +522,9 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
                             )
 
                         efficiencies.append(efficiency)
+
+            # investment in oemof should be on input electrical bus
+            optional_parameters["investment_bus"] = inflow_direction[0]
 
             if len(efficiencies) == 0:
                 print("ERROR, a heat pump should at least have one electrical input!")

@@ -15,6 +15,7 @@ import json
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from projects.forms import AssetCreateForm, BusForm, StorageForm
 from django.template.loader import get_template
+from django.utils.translation import ugettext_lazy as _
 
 # region sent db nodes to js
 from django.http import JsonResponse
@@ -31,6 +32,16 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
         form = BusForm(request.POST, asset_type=asset_type_name)
 
     scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    # make sure the name is not already used by another bus
+    form.full_clean()
+    qs = Bus.objects.filter(scenario=scenario, name=form.cleaned_data["name"]).exclude(
+        pk=asset_uuid
+    )
+    if qs.exists():
+        form.add_error(
+            "name", _("There is already a bus with this name in the scenario")
+        )
     if form.is_valid():
         bus = form.save(commit=False)
         bus.scenario = scenario
@@ -69,6 +80,16 @@ def handle_storage_unit_form_post(
         input_output_mapping=input_output_mapping,
     )
     scenario = get_object_or_404(Scenario, id=scen_id)
+
+    # make sure the name is not already used by another asset
+    form.full_clean()
+    qs = Asset.objects.filter(
+        scenario=scenario, name=form.cleaned_data["name"]
+    ).exclude(unique_id=asset_uuid)
+    if qs.exists():
+        form.add_error(
+            "name", _("There is already a storage with this name in the scenario")
+        )
 
     if form.is_valid():
         try:
@@ -183,6 +204,17 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
 
     asset_type = get_object_or_404(AssetType, asset_type=asset_type_name)
     scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    # make sure the name is not already used by another asset
+    form.full_clean()
+    qs = Asset.objects.filter(
+        scenario=scenario, name=form.cleaned_data["name"]
+    ).exclude(unique_id=asset_uuid)
+    if qs.exists():
+        form.add_error(
+            "name", _("There is already an asset with this name in the scenario")
+        )
+
     if form.is_valid():
         asset = form.save(commit=False)
         asset.scenario = scenario
