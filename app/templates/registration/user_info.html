@@ -5,6 +5,48 @@
 
 {% block content %}
 
+		<!-- Modal -->
+		<div
+						class="modal"
+						id="userDeletionModal"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="userDeletionModalLabel"
+						aria-hidden="true"
+						data-backdrop="false"
+		>
+				<div class="modal-dialog" role="document">
+						<div class="modal-content">
+								<div class="modal-header">
+										<h5 class="modal-title"
+												id="userDeletionModalLabel">{% trans "Delete Account" %}</h5>
+										<button type="button" class="close"
+														data-dismiss="modal"
+														aria-label="Close">
+												<span aria-hidden="true">×</span>
+										</button>
+								</div>
+								<div class="modal-body">
+										{% trans "Do you really want to delete your account?" %}
+								</div>
+								<div class="modal-footer">
+										<button type="button"
+														class="btn-secondary btn--medium"
+														data-dismiss="modal">Cancel
+										</button>
+										<form method="post"
+													action="{% url 'user_deletion' %}">
+												{% csrf_token %}
+												<button class="btn-danger btn--medium"
+																type="submit">{% trans "Delete Account" %}</button>
+										</form>
+								</div>
+						</div>
+				</div>
+		</div>
+
+
+
     <main>
         <section class="header">
             <div>
@@ -45,13 +87,7 @@
                                     type="submit">{% trans "Reset Password" %}</button>
                         </a>
                     </div>
-                </div>
-            </div>
-        </section>
-        <section class="standard-layout">
-            <div>
-                <div class="account">
-                    <div>
+										<div>
                         <!-- Button trigger modal -->
                         <button
                                 type="button"
@@ -61,46 +97,6 @@
                         >
                             {% trans "Delete Account" %}
                         </button>
-
-                        <!-- Modal -->
-                        <div
-                                class="modal"
-                                id="userDeletionModal"
-                                tabindex="-1"
-                                role="dialog"
-                                aria-labelledby="userDeletionModalLabel"
-                                aria-hidden="true"
-                                data-backdrop="false"
-                        >
-                            <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title"
-                                            id="userDeletionModalLabel">{% trans "Delete Account" %}</h5>
-                                        <button type="button" class="close"
-                                                data-dismiss="modal"
-                                                aria-label="Close">
-                                            <span aria-hidden="true">×</span>
-                                        </button>
-                                    </div>
-                                    <div class="modal-body">
-                                        {% trans "Do you really want to delete your account?" %}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button"
-                                                class="btn-secondary btn--medium"
-                                                data-dismiss="modal">Cancel
-                                        </button>
-                                        <form method="post"
-                                              action="{% url 'user_deletion' %}">
-                                            {% csrf_token %}
-                                            <button class="btn-danger btn--medium"
-                                                    type="submit">{% trans "Delete Account" %}</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
