@@ -163,7 +163,7 @@ LOGOUT_REDIRECT_URL = "home"
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 USE_SMTP_EMAIL_BACKEND = ast.literal_eval(
-    os.getenv("USE_SMTP_EMAIL_BACKEND", "False")
+    os.getenv("USE_SMTP_EMAIL_BACKEND", "True")
 )
 if USE_SMTP_EMAIL_BACKEND is True:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
