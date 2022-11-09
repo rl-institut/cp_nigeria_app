@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash, get_user_model
+from django.contrib.auth import logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.models import User
@@ -142,3 +142,14 @@ def password_reset_request(request):
         template_name="registration/password_reset_form.html",
         context={"password_reset_form": password_reset_form},
     )
+
+
+@login_required
+@require_http_methods(["POST"])
+def user_deletion_request(request):
+    user_pk = request.user.pk
+    logout(request)
+    user_model = get_user_model()
+    user_model.objects.filter(pk=user_pk).delete()
+    messages.info(request, "Your user account has been deleted.")
+    return redirect("home")
