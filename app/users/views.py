@@ -32,6 +32,7 @@ def signup(request):
             user.save()
             current_site = get_current_site(request)
             subject = _("Activate your account.")
+            protocol = "https" if settings.DEBUG is False else request.scheme
             message = render_to_string(
                 "registration/acc_active_email.html",
                 {
@@ -39,6 +40,7 @@ def signup(request):
                     "domain": current_site.domain,
                     "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                     "token": default_token_generator.make_token(user),
+                    "protocol": protocol,
                 },
             )
             to_email = form.cleaned_data.get("email")
@@ -123,6 +125,9 @@ class ExchangePasswordResetForm(PasswordResetForm):
         subject = render_to_string(subject_template_name, context)
         # Email subject *must not* contain newlines
         subject = "".join(subject.splitlines())
+        # Force the https for the production
+        if settings.DEBUG is False:
+            context["protocol"] = "https"
         message = render_to_string(email_template_name, context)
         send_email_exchange(to_email=to_email, subject=subject, message=message)
 
