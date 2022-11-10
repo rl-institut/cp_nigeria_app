@@ -162,10 +162,13 @@ LOGOUT_REDIRECT_URL = "home"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-if DEBUG is True:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-else:
+USE_SMTP_EMAIL_BACKEND = ast.literal_eval(
+    os.getenv("USE_SMTP_EMAIL_BACKEND", "True")
+)
+if USE_SMTP_EMAIL_BACKEND is True:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 MAILER_EMAIL_BACKEND = EMAIL_BACKEND
 
 DEFAULT_FROM_EMAIL = "noreply@elandh2020.eu"
