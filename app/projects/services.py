@@ -17,7 +17,6 @@ from exchangelib import (
     EWSTimeZone,
     Configuration,
 )
-from exchangelib.errors import AutoDiscoverFailed  # pylint: disable=import-error
 from requests.exceptions import ConnectionError  # pylint: disable=import-error
 
 from epa.settings import (
@@ -28,6 +27,7 @@ from epa.settings import (
     EXCHANGE_PW,
     EMAIL_SUBJECT_PREFIX,
     TIME_ZONE,
+    USE_EXCHANGE_EMAIL_BACKEND,
 )
 from projects.constants import PENDING
 from projects.models import Simulation
@@ -143,46 +143,70 @@ def send_email(*, to_email, subject, message):
     :obj:`bool`
         Success status (True: successful)
     """
+    prefixed_subject = EMAIL_SUBJECT_PREFIX + subject
 
-    tz = EWSTimeZone(TIME_ZONE)
-    credentials = Credentials(EXCHANGE_ACCOUNT, EXCHANGE_PW)
-    config = Configuration(server=EXCHANGE_SERVER, credentials=credentials)
+    if USE_EXCHANGE_EMAIL_BACKEND is True:
 
-    try:
-        account = Account(
-            EXCHANGE_EMAIL,
-            credentials=credentials,
-            autodiscover=False,
-            default_timezone=tz,
-            config=config,
+        tz = EWSTimeZone(TIME_ZONE)
+        credentials = Credentials(EXCHANGE_ACCOUNT, EXCHANGE_PW)
+        config = Configuration(server=EXCHANGE_SERVER, credentials=credentials)
+
+        try:
+            account = Account(
+                EXCHANGE_EMAIL,
+                credentials=credentials,
+                autodiscover=False,
+                default_timezone=tz,
+                config=config,
+            )
+        except ConnectionError as err:
+            err_msg = _("Form - connection error:") + f" {err}"
+            logger.error(err_msg)
+            return False
+        except Exception as err:  # pylint: disable=broad-except
+            err_msg = _("Form - other error:") + f" {err}"
+            logger.error(err_msg)
+            return False
+
+        recipients = [Mailbox(email_address=to_email)]
+
+        msg = Message(
+            account=account,
+            folder=account.sent,
+            subject=prefixed_subject,
+            body=message,
+            to_recipients=recipients,
         )
-    except ConnectionError as err:
-        err_msg = _("Form - connection error:") + f" {err}"
-        logger.error(err_msg)
+
+        try:
+            msg.send_and_save()
+            return True
+        except Exception as err:  # pylint: disable=broad-except
+            err_msg = _("Form - mail sending error:") + f" {err}"
+            logger.error(err_msg)
+            return False
+    elif USE_EXCHANGE_EMAIL_BACKEND is False:
+        print(
+            "\n",
+            "--- No email is send ---",
+            "\n\n",
+            "To:",
+            to_email,
+            "\n\n",
+            "Subject:",
+            prefixed_subject,
+            "\n\n",
+            "Message:",
+            message,
+            "\n",
+        )
+        return True
+    else:
+        raise ValueError(
+            "Email backend not configured.",
+            "USE_EXCHANGE_EMAIL_BACKEND must be boolean of either True or False.",
+        )
         return False
-    except Exception as err:  # pylint: disable=broad-except
-        err_msg = _("Form - other error:") + f" {err}"
-        logger.error(err_msg)
-        return False
-
-    recipients = [Mailbox(email_address=to_email)]
-
-    msg = Message(
-        account=account,
-        folder=account.sent,
-        subject=EMAIL_SUBJECT_PREFIX + subject,
-        body=message,
-        to_recipients=recipients,
-    )
-
-    try:
-        msg.send_and_save()
-    except Exception as err:  # pylint: disable=broad-except
-        err_msg = _("Form - mail sending error:") + f" {err}"
-        logger.error(err_msg)
-        return False
-
-    return True
 
 
 def excuses_design_under_development(request, link=False):
