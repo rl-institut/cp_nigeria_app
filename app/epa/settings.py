@@ -167,7 +167,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 USE_EXCHANGE_EMAIL_BACKEND = ast.literal_eval(
     os.getenv("USE_EXCHANGE_EMAIL_BACKEND", "True")
 )
-# Email account which will sends emails
+# The Exchange account which sends emails
 EXCHANGE_ACCOUNT = os.getenv("EXCHANGE_ACCOUNT", "dummy@dummy.com")
 EXCHANGE_PW = os.getenv("EXCHANGE_PW", "dummypw")
 EXCHANGE_EMAIL = os.getenv("EXCHANGE_EMAIL", "dummy@dummy.com")
