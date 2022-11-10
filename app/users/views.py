@@ -15,7 +15,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_http_methods
 
-from projects.services import send_email
+from projects.services import send_email as send_email_exchange
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 
 DEFAULT_FROM_EMAIL = settings.DEFAULT_FROM_EMAIL
@@ -42,7 +42,7 @@ def signup(request):
                 },
             )
             to_email = form.cleaned_data.get("email")
-            send_email(to_email=to_email, subject=subject, message=message)
+            send_email_exchange(to_email=to_email, subject=subject, message=message)
             messages.info(
                 request,
                 _("Please confirm your email address to complete the registration"),
@@ -122,7 +122,7 @@ class ExchangePasswordResetForm(PasswordResetForm):
         # Email subject *must not* contain newlines
         subject = "".join(subject.splitlines())
         message = render_to_string(email_template_name, context)
-        send_email(to_email=to_email, subject=subject, message=message)
+        send_email_exchange(to_email=to_email, subject=subject, message=message)
 
 
 class ExchangePasswordResetView(PasswordResetView):

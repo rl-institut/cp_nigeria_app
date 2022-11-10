@@ -13,10 +13,7 @@ from exchangelib import (
     Message,
     Mailbox,
 )  # pylint: disable=import-error
-from exchangelib import (
-    EWSTimeZone,
-    Configuration,
-)
+from exchangelib import EWSTimeZone, Configuration
 from requests.exceptions import ConnectionError  # pylint: disable=import-error
 
 from epa.settings import (
