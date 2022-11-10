@@ -64,7 +64,9 @@ def activate(request, uidb64, token):
         user.save()
         messages.success(
             request,
-            "Thank you for your email confirmation. Now you can log in your account.",
+            _(
+                "Thank you for your email confirmation. Now you can log in your account."
+            ),
         )
         return redirect("login")
     else:
@@ -79,10 +81,10 @@ def user_info(request):
         form = CustomUserChangeForm(request.POST, instance=request.user)
         if form.is_valid():
             user = form.save()
-            messages.success(request, "User info successfully updated!")
+            messages.success(request, _("User info successfully updated!"))
             return redirect("user_info")
         else:
-            messages.error(request, "Please check errors and resubmit!")
+            messages.error(request, _("Please check errors and resubmit!"))
     else:
         form = CustomUserChangeForm(instance=request.user)
     return render(request, "registration/user_info.html", {"form": form})
@@ -96,10 +98,10 @@ def change_password(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)  # Important!
-            messages.success(request, "Your password was successfully updated!")
+            messages.success(request, _("Your password was successfully updated!"))
             return redirect("change_password")
         else:
-            messages.error(request, "Please check errors and resubmit!")
+            messages.error(request, _("Please check errors and resubmit!"))
     else:
         form = PasswordChangeForm(request.user)
     return render(request, "registration/change_password.html", {"form": form})
