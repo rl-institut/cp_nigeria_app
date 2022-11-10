@@ -144,7 +144,7 @@ LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 
 LANGUAGES = [("de", "German"), ("en", "English")]
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Copenhagen"
 
 USE_I18N = True
 
@@ -162,19 +162,19 @@ LOGOUT_REDIRECT_URL = "home"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-USE_SMTP_EMAIL_BACKEND = ast.literal_eval(
-    os.getenv("USE_SMTP_EMAIL_BACKEND", "True")
+# Please note, we don't use Django's internal email system,
+# we implement our own, using exchangelib
+USE_EXCHANGE_EMAIL_BACKEND = ast.literal_eval(
+    os.getenv("USE_EXCHANGE_EMAIL_BACKEND", "True")
 )
-if USE_SMTP_EMAIL_BACKEND is True:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-else:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-MAILER_EMAIL_BACKEND = EMAIL_BACKEND
-
-DEFAULT_FROM_EMAIL = "noreply@elandh2020.eu"
-EMAIL_HOST = os.getenv("EMAIL_HOST_IP", "127.0.0.1")
-EMAIL_PORT = 25
-EMAIL_USE_TLS = False
+# Email account which will sends emails
+EXCHANGE_ACCOUNT = os.getenv("EXCHANGE_ACCOUNT", "dummy@dummy.com")
+EXCHANGE_PW = os.getenv("EXCHANGE_PW", "dummypw")
+EXCHANGE_EMAIL = os.getenv("EXCHANGE_EMAIL", "dummy@dummy.com")
+EXCHANGE_SERVER = os.getenv("EXCHANGE_SERVER", "dummy.com")
+# Email addresses to which feedback emails will be sent
+RECIPIENTS = os.getenv("RECIPIENTS", "dummy@dummy.com,dummy2@dummy.com").split(",")
+EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[open_plan] ")
 
 MESSAGE_TAGS = {
     messages.DEBUG: "alert-info",
