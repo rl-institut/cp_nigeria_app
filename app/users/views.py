@@ -5,17 +5,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetView
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage, send_mail, BadHeaderError
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_http_methods
+
+from projects.services import send_email as send_email_exchange
 from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser
 
 DEFAULT_FROM_EMAIL = settings.DEFAULT_FROM_EMAIL
 EMAIL_HOST = settings.EMAIL_HOST
@@ -30,7 +31,8 @@ def signup(request):
             user.is_active = False
             user.save()
             current_site = get_current_site(request)
-            mail_subject = "Activate your account."
+            subject = _("Activate your account.")
+            protocol = "https" if settings.DEBUG is False else request.scheme
             message = render_to_string(
                 "registration/acc_active_email.html",
                 {
@@ -38,14 +40,14 @@ def signup(request):
                     "domain": current_site.domain,
                     "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                     "token": default_token_generator.make_token(user),
+                    "protocol": protocol,
                 },
             )
             to_email = form.cleaned_data.get("email")
-            email = EmailMessage(mail_subject, message, to=[to_email])
-            email.send()
+            send_email_exchange(to_email=to_email, subject=subject, message=message)
             messages.info(
                 request,
-                "Please confirm your email address to complete the registration",
+                _("Please confirm your email address to complete the registration"),
             )
             return redirect("home")
     else:
@@ -64,7 +66,9 @@ def activate(request, uidb64, token):
         user.save()
         messages.success(
             request,
-            "Thank you for your email confirmation. Now you can login your account.",
+            _(
+                "Thank you for your email confirmation. Now you can log in your account."
+            ),
         )
         return redirect("login")
     else:
@@ -79,10 +83,10 @@ def user_info(request):
         form = CustomUserChangeForm(request.POST, instance=request.user)
         if form.is_valid():
             user = form.save()
-            messages.success(request, "User info successfully updated!")
+            messages.success(request, _("User info successfully updated!"))
             return redirect("user_info")
         else:
-            messages.error(request, "Please check errors and resubmit!")
+            messages.error(request, _("Please check errors and resubmit!"))
     else:
         form = CustomUserChangeForm(instance=request.user)
     return render(request, "registration/user_info.html", {"form": form})
@@ -96,52 +100,40 @@ def change_password(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)  # Important!
-            messages.success(request, "Your password was successfully updated!")
+            messages.success(request, _("Your password was successfully updated!"))
             return redirect("change_password")
         else:
-            messages.error(request, "Please check errors and resubmit!")
+            messages.error(request, _("Please check errors and resubmit!"))
     else:
         form = PasswordChangeForm(request.user)
     return render(request, "registration/change_password.html", {"form": form})
 
 
-def password_reset_request(request):
-    if request.method == "POST":
-        password_reset_form = PasswordResetForm(request.POST)
-        if password_reset_form.is_valid():
-            data = password_reset_form.cleaned_data["email"]
-            associated_users = CustomUser.objects.filter(Q(email=data))
-            if associated_users.exists():
-                for user in associated_users:
-                    subject = "Password Reset Requested"
-                    email_template_name = "registration/password_reset_email.txt"
-                    c = {
-                        "email": user.email,
-                        "domain": EMAIL_HOST,
-                        "site_name": "open_plan",
-                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                        "user": user,
-                        "token": default_token_generator.make_token(user),
-                        "protocol": "http",
-                    }
-                    email = render_to_string(email_template_name, c)
-                    try:
-                        send_mail(
-                            subject,
-                            email,
-                            DEFAULT_FROM_EMAIL,
-                            [user.email],
-                            fail_silently=False,
-                        )
-                    except BadHeaderError:
-                        return HttpResponse("Invalid header found.")
-                    return redirect("/password_reset/done/")
-    password_reset_form = PasswordResetForm()
-    return render(
-        request=request,
-        template_name="registration/password_reset_form.html",
-        context={"password_reset_form": password_reset_form},
-    )
+class ExchangePasswordResetForm(PasswordResetForm):
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        """
+        Send a django.core.mail.EmailMultiAlternatives to `to_email`.
+        """
+        subject = render_to_string(subject_template_name, context)
+        # Email subject *must not* contain newlines
+        subject = "".join(subject.splitlines())
+        # Force the https for the production
+        if settings.DEBUG is False:
+            context["protocol"] = "https"
+        message = render_to_string(email_template_name, context)
+        send_email_exchange(to_email=to_email, subject=subject, message=message)
+
+
+class ExchangePasswordResetView(PasswordResetView):
+    form_class = ExchangePasswordResetForm
 
 
 @login_required
@@ -151,5 +143,5 @@ def user_deletion_request(request):
     logout(request)
     user_model = get_user_model()
     user_model.objects.filter(pk=user_pk).delete()
-    messages.info(request, "Your user account has been deleted.")
+    messages.info(request, _("Your user account has been deleted."))
     return redirect("home")

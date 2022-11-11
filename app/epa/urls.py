@@ -24,8 +24,8 @@ from .views import imprint, privacy, about, license
 urlpatterns = (
     i18n_patterns(
         path("admin/", admin.site.urls),
-        path("users/", include("users.urls")),
         path("users/", include("django.contrib.auth.urls")),
+        path("users/", include("users.urls")),
         path("", include("projects.urls")),
         path("dashboard/", include("dashboard.urls")),
         path("imprint/", imprint, name="imprint"),
