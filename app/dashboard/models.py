@@ -5,6 +5,7 @@ import traceback
 import logging
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 
 
 from django.utils.translation import ugettext_lazy as _
@@ -149,6 +150,172 @@ class KPIScalarResults(models.Model):
 class KPICostsMatrixResults(models.Model):
     cost_values = models.TextField()  # to store the scalars dict
     simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE)
+
+
+class OemofBusResults(pd.DataFrame):  # real results
+    def __init__(self, results, busses=None):
+
+        js = json.loads(results)
+        mindex = pd.MultiIndex.from_tuples(
+            js["columns"],
+            names=[
+                "bus",
+                "energy_vector",
+                "direction",
+                "asset",
+                "asset_type",
+                "oemof_type",
+            ],
+        )
+        df = pd.DataFrame(data=js["data"], index=js["index"])
+        df.index = pd.to_datetime(df.index, unit="ms")
+        # print(df.to_dict())
+        super().__init__(
+            data=df.T.to_dict(orient="split")["data"], index=mindex, columns=df.index
+        )
+        self.sort_index(inplace=True)
+
+    def to_json(self, **kwargs):
+        kwargs["orient"] = "split"
+        return self.T.to_json(**kwargs)
+
+    def bus_flows(self, bus_name):
+        return self.loc[bus_name].T
+
+
+class FlowResults(models.Model):
+    flow_data = models.TextField()  # to store the assets list
+    simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE)
+    __df_flows = None
+
+    @property
+    def df_flows(self):
+        if self.__df_flows is None:
+            self.__df_flows = OemofBusResults(self.flow_data)
+
+        return self.__df_flows
+
+    @property
+    def busses(self):
+        """returns a mapping of the bus to their energy_vectors"""
+        return {
+            k: v
+            for k, v in zip(
+                self.df_flows.index.get_level_values("bus"),
+                self.df_flows.index.get_level_values("energy_vector"),
+            )
+        }
+
+    def single_bus_flows(self, bus_name):
+        df_bus = self.df_flows.loc[bus_name]
+        energy_vector = df_bus.index.get_level_values("energy_vector").unique()[0]
+        df_bus.index = df_bus.index.droplevel(
+            ["asset_type", "energy_vector", "oemof_type"]
+        )
+        df = pd.concat(
+            [
+                df_bus.loc[df_bus.index.get_level_values("direction") == "in"].T,
+                df_bus.loc[df_bus.index.get_level_values("direction") == "out"].T * -1,
+            ],
+            axis=1,
+        )
+        df.name = bus_name
+
+        df.energy_vector = energy_vector
+
+        return df
+
+    def single_bus_flows_figure(self, bus_name):
+        df = self.single_bus_flows(bus_name)
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=df.index.tolist(),
+                    y=df.loc[:, col].values.tolist(),
+                    name=col[1],
+                    stackgroup=col[0],
+                )
+                for col in df.columns
+            ],
+            layout=dict(
+                title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"
+            ),
+        )
+
+        return fig.to_dict()
+
+    # def all_bus_flows_figure(self, exclude=None):
+    #     if exclude is None:
+    #         exclude = []
+    #     df = self.single_bus_flows(bus_name)
+    #     fig = go.Figure(
+    #         data=[
+    #             go.Scatter(
+    #                 x=df.index, y=df.loc[:, col].values, name=col[1], stackgroup=col[0]
+    #             )
+    #             for col in df.columns
+    #         ],
+    #         layout=dict(
+    #             title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"
+    #         ),
+    #     )
+    #
+    #     return fig.to_dict()
+
+    def load_duration_figure(self, energy_vector):
+        df_consumption = (
+            self.df_flows.loc[
+                (self.df_flows.index.get_level_values("direction") == "out")
+                & (
+                    self.df_flows.index.get_level_values("energy_vector")
+                    == energy_vector
+                )
+            ]
+            .groupby(level="asset_type")
+            .sum()
+            .T
+        )
+
+        # df_consumption["excess"] *= 0
+        df_consumption = df_consumption.sum(axis=1)
+        df_production = (
+            self.df_flows.loc[
+                (self.df_flows.index.get_level_values("direction") == "in")
+                & (
+                    self.df_flows.index.get_level_values("energy_vector")
+                    == energy_vector
+                )
+            ]
+            .groupby(level="asset_type")
+            .sum()
+            .T
+        )
+        percentage = np.linspace(0, 100, df_production.index.size)
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=percentage.tolist(),
+                    y=df_production.loc[:, col]
+                    .sort_values(ascending=False)
+                    .values.tolist(),
+                    name=col,
+                    stackgroup="production",
+                )
+                for col in df_production.columns
+            ]
+            + [
+                go.Scatter(
+                    x=percentage.tolist(),
+                    y=df_consumption.sort_values(ascending=False).values.tolist(),
+                    name="demand",
+                )
+            ],
+            layout=dict(
+                title=f"Load duration curve for {energy_vector}", hovermode="x unified"
+            ),
+        )
+
+        return fig.to_dict()
 
 
 class AssetsResults(models.Model):
