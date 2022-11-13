@@ -145,11 +145,12 @@ parameters specific to this graph type only, other parameters are available in t
 		<!-- ES design stop -->
 		<!-- Graphs area start -->
 		<div class="row">
-			<div class="col" id="report_items">
-				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
-				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries by sector" %}
+			<div class="col" id="report_items" style="display:flex;flex-direction:column-reverse;">
 				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
+				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries by sector" %}
+				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
+
 			</div>
 		</div>
 		<!-- Graphs area  stop -->
