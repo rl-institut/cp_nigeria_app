@@ -176,6 +176,7 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
                 },
             )
         else:
+            # There are scenarios with simulation results in the project
             if scen_id is None:
                 if len(selected_scenarios) == 0:
                     scen_id = user_scenarios.first().id
@@ -183,6 +184,7 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
                     # TODO here allow more than one scenario to be selected
                     scen_id = selected_scenarios[0]
 
+            # collect the report items of the project
             report_items_data = [
                 ri.render_json for ri in get_project_reportitems(project)
             ]

@@ -967,6 +967,27 @@ class ReportItem(models.Model):
                 simulation=self.simulations.get(), energy_vector=energy_vector
             )
 
+        if self.report_type == GRAPH_LOAD_DURATION:
+            energy_vector = parameters.get("energy_vector", None)
+
+            simulation = self.simulations.get()
+            # if isinstance(energy_vector, list) is False:
+            #     energy_vector = [energy_vector]
+            if energy_vector is not None:
+
+                sim = simulation
+                qs = FlowResults.objects.filter(simulation=sim)
+                if qs.exists():
+                    flow_results = qs.get()
+                    fig_dict = flow_results.load_duration_figure(energy_vector)
+                else:
+                    raise ValueError(
+                        "There is no results ready for this graph. "
+                        "Rerun the simulation could fiy the issue as the simulator was updated recently"
+                    )
+
+                return fig_dict
+
 
 def get_project_reportitems(project):
     """Given a project, return the ReportItem instances linked to that project"""
