@@ -342,9 +342,25 @@ def project_upload(request):
 
 
 @login_required
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def project_from_usecase(request):
+
     usecase_id = request.POST.get("usecase", None)
+    if usecase_id is not None:
+        usecase_id = int(usecase_id)
+    else:
+        usecase_id = 0
+    usecase = get_object_or_404(UseCase, id=usecase_id)
+    proj_id = usecase.assign(request.user)
+
+    return HttpResponseRedirect(reverse("project_search", args=[proj_id]))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def project_from_usecase(request, usecase_id=None):
+    if request.method == "POST":
+        usecase_id = request.POST.get("usecase", None)
     if usecase_id is not None:
         usecase_id = int(usecase_id)
     else:
