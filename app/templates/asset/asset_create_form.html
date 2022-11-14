@@ -10,7 +10,7 @@
 <div class="container">
     {% if display_results %}
       <div class="row">
-          <h3>Results</h3>
+          <h3>{% translate "Results" %}</h3>
               {% if optimized_add_cap %}
               <div class="form-group{% if field.errors %} invalid{% endif %}">
                 <label for="id_optimized_add_cap">
@@ -33,7 +33,7 @@
     <div class="row align-items-start">
       {% if form|has_economical_parameters %}
         <div class="col">
-          <h3>Economical parameters</h3>
+          <h3>{% translate "Economical parameters" %}</h3>
           {% for field in form %}
             {% if field.name|is_economical_parameter %}
               <div class="form-group{% if field.errors %} invalid{% endif %}">
@@ -45,7 +45,7 @@
       {% endif %}
       {% if form|has_technical_parameters %}
         <div class="col">
-          <h3>Technical parameters</h3>
+          <h3>{% translate "Technical parameters" %}</h3>
           {% for field in form %}
             {% if field.name|is_technical_parameter %}
               {% if field.name != "input_timeseries" %}

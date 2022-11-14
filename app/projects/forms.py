@@ -698,13 +698,14 @@ class AssetCreateForm(OpenPlanModelForm):
             self.fields["efficiency_multiple"].label = _("Efficiency gaz to heat")
 
         if "dso" in self.asset_type_name:
-
-            self.fields["energy_price"] = DualNumberField(
-                default=0.1, param_name="energy_price"
-            )
-            self.fields["feedin_tariff"] = DualNumberField(
-                default=0.1, param_name="feedin_tariff"
-            )
+            for field_name in ("energy_price", "feedin_tariff"):
+                help_text = self.fields[field_name].help_text
+                label = self.fields[field_name].label
+                self.fields[field_name] = DualNumberField(
+                    default=0.1, param_name=field_name
+                )
+                self.fields[field_name].help_text = help_text
+                self.fields[field_name].label = label
 
         """ DrawFlow specific configuration, add a special attribute to 
             every field in order for the framework to be able to export
@@ -719,6 +720,23 @@ class AssetCreateForm(OpenPlanModelForm):
                 self.fields[field].required = self.is_input_timeseries_empty()
             if view_only is True:
                 self.fields[field].disabled = True
+            if self.fields[field].help_text is not None:
+                help_text = self.fields[field].help_text
+                self.fields[field].help_text = None
+            else:
+                help_text = ""
+            if self.fields[field].label is not None:
+                RTD_url = "https://open-plan.readthedocs.io/en/feature-new_documentation/model/input_parameters.html#"
+                if field in PARAMETERS:
+                    param_ref = PARAMETERS[field]["ref"]
+                else:
+                    param_ref = ""
+                if field != "name":
+                    question_icon = f'<a href="{RTD_url}{param_ref}"><span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span></a>'
+                else:
+                    question_icon = ""
+                self.fields[field].label = self.fields[field].label + question_icon
+
         """ ----------------------------------------------------- """
 
     def is_input_timeseries_empty(self):
@@ -838,90 +856,29 @@ class AssetCreateForm(OpenPlanModelForm):
         model = Asset
         exclude = ["scenario"]
         widgets = {
-            "optimize_cap": forms.Select(
-                choices=BOOL_CHOICES,
-                attrs={
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "True if the user wants to perform capacity optimization for various components as part of the simulation."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                },
-            ),
+            "optimize_cap": forms.Select(choices=BOOL_CHOICES),
             "dispatchable": forms.Select(choices=TRUE_FALSE_CHOICES),
-            "renewable_asset": forms.Select(
-                choices=TRUE_FALSE_CHOICES,
-                attrs={
-                    "data-bs-toggle": "tooltip",
-                    "title": _("Indicate if the asset is renewable or not."),
-                    "style": "font-weight:400; font-size:13px;",
-                },
-            ),
+            "renewable_asset": forms.Select(choices=TRUE_FALSE_CHOICES),
             "name": forms.TextInput(
                 attrs={
                     "placeholder": "Asset Name",
-                    "style": "font-weight:400; font-size:13px;",
+                    # "style": "font-weight:400; font-size:13px;",
                 }
             ),
             "capex_fix": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 10000",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        " A fixed cost to implement the asset, eg. planning costs which do not depend on the (optimized) asset capacity."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 10000", "min": "0.0", "step": ".01"}
             ),
             "capex_var": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 4000",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        " Actual CAPEX of the asset, i.e., specific investment costs."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 4000", "min": "0.0", "step": ".01"}
             ),
             "opex_fix": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 0",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "Actual OPEX of the asset, i.e., specific operational and maintenance costs."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 0", "min": "0.0", "step": ".01"}
             ),
             "opex_var": forms.NumberInput(
-                attrs={
-                    "placeholder": "Currency",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "Variable cost associated with a flow through/from the asset."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "Currency", "min": "0.0", "step": ".01"}
             ),
             "lifetime": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 10 years",
-                    "min": "0",
-                    "step": "1",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "Number of operational years of the asset until it has to be replaced."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 10 years", "min": "0", "step": "1"}
             ),
             # TODO: Try changing this to FileInput
             "input_timeseries": forms.FileInput(
@@ -937,19 +894,11 @@ class AssetCreateForm(OpenPlanModelForm):
                     "min": "0.0",
                     "max": "1.0",
                     "step": ".0001",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "C-rate is the rate at which the storage can charge or discharge relative to the nominal capacity of the storage. A c-rate of 1 implies that the battery can discharge or charge completely in a single timestep."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
                 }
             ),
             "efficiency": forms.NumberInput(
                 attrs={
                     "placeholder": "e.g. 0.99",
-                    "data-bs-toggle": "tooltip",
-                    "title": _("Ratio of energy output/energy input."),
-                    "style": "font-weight:400; font-size:13px;",
                     "min": "0.0",
                     "max": "1.0",
                     "step": ".01",
@@ -961,11 +910,6 @@ class AssetCreateForm(OpenPlanModelForm):
                     "min": "0.0",
                     "max": "1.0",
                     "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "The maximum permissible level of charge in the battery (generally, it is when the battery is filled to its nominal capacity), represented by the value 1.0. Users can  also specify a certain value as a factor of the actual capacity."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
                 }
             ),
             "soc_min": forms.NumberInput(
@@ -974,72 +918,26 @@ class AssetCreateForm(OpenPlanModelForm):
                     "min": "0.0",
                     "max": "1.0",
                     "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "The minimum permissible level of charge in the battery as a factor of the nominal capacity of the battery."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
                 }
             ),
             "maximum_capacity": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 1000",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _("The maximum installable capacity."),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 1000", "min": "0.0", "step": ".01"}
             ),
             "energy_price": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 0.1",
-                    "min": "0.0",
-                    "step": ".0001",
-                    "data-bs-toggle": "tooltip",
-                    "title": _("Price of electricity sourced from the utility grid."),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 0.1", "min": "0.0", "step": ".0001"}
             ),
             "feedin_tariff": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 0.0",
-                    "min": "0.0",
-                    "step": ".0001",
-                    "data-bs-toggle": "tooltip",
-                    "title": _("Price received for feeding electricity into the grid."),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 0.0", "min": "0.0", "step": ".0001"}
             ),
             "feedin_cap": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 0.0",
-                    "min": "0.0",
-                    "data-bs-toggle": "tooltip",
-                    "title": _("Capping the feedin capacity of a DSO."),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 0.0", "min": "0.0"}
             ),
             "peak_demand_pricing": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 60",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "Price to be paid additionally for energy-consumption based on the peak demand of a period."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 60", "min": "0.0", "step": ".01"}
             ),
             "peak_demand_pricing_period": forms.NumberInput(
                 attrs={
                     "placeholder": "times per year, e.g. 2",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "Number of reference periods in one year for the peak demand pricing. Only one of the following are acceptable values: 1 (yearly), 2, 3 ,4, 6, 12 (monthly)."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
                     "min": "1",
                     "max": "12",
                     "step": "1",
@@ -1051,34 +949,13 @@ class AssetCreateForm(OpenPlanModelForm):
                     "min": "0.0",
                     "max": "1.0",
                     "step": ".0001",
-                    "data-bs-toggle": "tooltip",
-                    "title": "The share of renewables in the generation mix of the energy supplied by the DSO (utility).",
-                    "style": "font-weight:400; font-size:13px;",
                 }
             ),
             "installed_capacity": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 50",
-                    "min": "0.0",
-                    "step": ".01",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "The already existing installed capacity in-place, which will also be replaced after its lifetime."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 50", "min": "0.0", "step": ".01"}
             ),
             "age_installed": forms.NumberInput(
-                attrs={
-                    "placeholder": "e.g. 10",
-                    "min": "0.0",
-                    "step": "1",
-                    "data-bs-toggle": "tooltip",
-                    "title": _(
-                        "The number of years the asset has already been in operation."
-                    ),
-                    "style": "font-weight:400; font-size:13px;",
-                }
+                attrs={"placeholder": "e.g. 10", "min": "0.0", "step": "1"}
             ),
         }
         labels = {"input_timeseries": _("Timeseries vector")}

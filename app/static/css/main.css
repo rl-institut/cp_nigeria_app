@@ -1057,11 +1057,31 @@ form .form-control:focus {
   border-color: #1F567D;
   box-shadow: 0 0 0 0.25rem rgba(31, 86, 125, 0.1); }
 
+form .asteriskField {
+  display: none; }
+
 form .form-check-input:focus {
   box-shadow: 0 0 0 0.25rem rgba(31, 86, 125, 0.1); }
 
 form .form-check-input:checked {
   background-color: #1F567D; }
+
+form .form-group {
+  margin-bottom: 1rem;
+  color: #343434; }
+  form .form-group label {
+    margin-bottom: 0.5rem; }
+  form .form-group.input-updated {
+    position: relative;
+    background-color: #FFF9EB;
+    border-color: #FDC534;
+    border-width: 2px;
+    background-image: url("/static/assets/icons/i_edit_yellow.svg");
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-size: auto 1rem; }
+    form .form-group.input-updated:focus {
+      box-shadow: 0 0 0.5rem rgba(253, 197, 52, 0.8); }
 
 form .form-control {
   color: #343434; }
