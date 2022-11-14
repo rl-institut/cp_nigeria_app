@@ -415,6 +415,7 @@ scenario_widgets = {
 scenario_labels = {
     "project": _("Project"),
     "name": _("Scenario name"),
+    "description": _("Scenario description"),
     "evaluated_period": _("Evaluated Period"),
     "time_step": _("Time Step"),
     "start_date": _("Start Date"),
@@ -424,6 +425,7 @@ scenario_labels = {
 scenario_field_order = [
     "project",
     "name",
+    "description",
     "evaluated_period",
     "time_step",
     "start_date",
