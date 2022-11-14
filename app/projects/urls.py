@@ -26,6 +26,7 @@ urlpatterns = [
         project_from_usecase,
         name="project_from_usecase",
     ),
+    path("usecase/export/<int:usecase_id>", usecase_export, name="usecase_export"),
     path("project/delete/<int:proj_id>", project_delete, name="project_delete"),
     path(
         "project/project_members_list/<int:proj_id>",
