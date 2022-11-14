@@ -33,11 +33,11 @@ msgstr "Schritt des Szenarios"
 
 #: dashboard/forms.py:49
 msgid "Type of report item"
-msgstr ""
+msgstr "Typ des Berichtselements"
 
 #: dashboard/forms.py:49
 msgid "Title"
-msgstr ""
+msgstr "Titel"
 
 #: dashboard/forms.py:56 dashboard/forms.py:82 dashboard/forms.py:108
 #: dashboard/forms.py:137 dashboard/forms.py:147
@@ -67,11 +67,11 @@ msgstr "Sensitivitätsanalyse"
 
 #: dashboard/forms.py:171
 msgid "Graph title"
-msgstr ""
+msgstr "Grafiktitel"
 
 #: dashboard/forms.py:172
 msgid "Parameter of interest"
-msgstr ""
+msgstr "Parameter von Interesse"
 
 #: dashboard/helpers.py:374
 #, fuzzy
@@ -91,15 +91,15 @@ msgstr "Installierte und optimierte Leistungen"
 
 #: dashboard/helpers.py:377
 msgid "Bar chart"
-msgstr ""
+msgstr "Balkendiagramm"
 
 #: dashboard/helpers.py:378
 msgid "Pie chart"
-msgstr ""
+msgstr "Kreisdiagramm"
 
 #: dashboard/helpers.py:379
 msgid "Load duration curve"
-msgstr ""
+msgstr "Lastdauer-Kurve"
 
 #: dashboard/helpers.py:380
 msgid "Sankey diagram"
@@ -152,16 +152,16 @@ msgstr ""
 #: dashboard/views.py:559
 #, python-brace-format
 msgid "Scenario {scen_id} was deselected"
-msgstr ""
+msgstr "Szenario {scen_id} wurde abgewählt"
 
 #: dashboard/views.py:561
 msgid "At least one scenario need to be selected"
-msgstr ""
+msgstr "Es muss mindestens ein Szenario ausgewählt werden"
 
 #: dashboard/views.py:565
 #, python-brace-format
 msgid "Scenario {scen_id} was selected"
-msgstr ""
+msgstr "Szenario {scen_id} wurde ausgewählt"
 
 #: dashboard/views.py:596
 #, fuzzy
@@ -174,6 +174,8 @@ msgid ""
 "No scenario was available in the cache, try refreshing the page and make "
 "sure one scenario is selected."
 msgstr ""
+"No scenario was available in the cache, try refreshing the page and make "
+"sicherzustellen, dass ein Szenario ausgewählt ist."
 
 #: projects/forms.py:150 projects/forms.py:692
 msgid "eg. 0.1"
@@ -285,23 +287,23 @@ msgstr "E-Mail Adresse"
 
 #: projects/forms.py:320
 msgid "Select the user(s) for which you want to revoke access rights "
-msgstr ""
+msgstr "Wählen Sie den/die Benutzer aus, für den/die Sie die Zugriffsrechte entziehen möchten."
 
 #: projects/forms.py:323
 msgid "Users currently having access to the project"
-msgstr ""
+msgstr "Benutzer, die derzeit Zugriff auf das Projekt haben"
 
 #: projects/forms.py:328
 msgid "No users have access to this project"
-msgstr ""
+msgstr "Keine Benutzer haben Zugriff auf dieses Projekt"
 
 #: projects/forms.py:358
 msgid "Select a use case (or"
-msgstr ""
+msgstr "Wählen Sie einen Anwendungsfall (oder"
 
 #: projects/forms.py:360
 msgid " visit use cases page link"
-msgstr ""
+msgstr " visit use cases page link"
 
 #: projects/forms.py:390
 msgid "Length of the time-steps."
@@ -363,19 +365,19 @@ msgstr "Energieträger"
 
 #: projects/forms.py:665
 msgid "Electrical efficiency with no heat extraction"
-msgstr ""
+msgstr "Elektrischer Wirkungsgrad ohne Wärmeauskopplung"
 
 #: projects/forms.py:676
 msgid "Thermal efficiency with maximal heat extraction"
-msgstr ""
+msgstr "Thermischer Wirkungsgrad mit maximalem Wärmeentzug"
 
 #: projects/forms.py:679
 msgid "Stromverlustkenzahl"
-msgstr ""
+msgstr "Stromverlustkenzahl"
 
 #: projects/forms.py:683
 msgid "Efficiency gaz to electricity"
-msgstr ""
+msgstr "Wirkungsgrad gaz auf Strom"
 
 #: projects/forms.py:698
 #, fuzzy
@@ -401,11 +403,11 @@ msgstr "Konnte keine Datei einlesen. Haben Sie eine hochgeladen?"
 
 #: projects/forms.py:781
 msgid "If you have no installed capacity, age installed should also be 0"
-msgstr ""
+msgstr "Wenn Sie keine installierte Leistung haben, sollte auch das installierte Alter 0 sein"
 
 #: projects/forms.py:795
 msgid "The sum of the efficiencies should not exceed 1"
-msgstr ""
+msgstr "Die Summe der Wirkungsgrade sollte 1 nicht überschreiten"
 
 #: projects/forms.py:806
 msgid ""
@@ -413,20 +415,24 @@ msgid ""
 "cause an unbound solution and terminate the optimization. Please reconsider "
 "your feed-in tariff and energy price."
 msgstr ""
+"Einspeisetarif > Energiepreis für einige Zeitschritte der Simulation. Dies würde "
+"eine ungebundene Lösung verursachen und die Optimierung beenden. Bitte überdenken Sie "
+"Ihre Einspeisevergütung und Ihren Energiepreis."
 
 #: projects/forms.py:823
 msgid "The number of values of the parameter "
-msgstr ""
+msgstr "Die Anzahl der Werte des Parameters ist in der Tabelle angegeben.
 
 #: projects/forms.py:826
 msgid " are not equal to the number of simulation timesteps"
-msgstr ""
+msgstr " ist nicht gleich der Anzahl der Simulationszeitschritte"
 
 #: projects/forms.py:829
 msgid ""
 ". You can change the number of timesteps in the first step of scenario "
 "creation."
 msgstr ""
+". Sie können die Anzahl der Zeitschritte im ersten Schritt der Szenarienerstellung ändern."
 
 #: projects/forms.py:843
 msgid ""
@@ -517,7 +523,7 @@ msgstr "Preis für die Einspeisung von Strom in das Stromnetz."
 
 #: projects/forms.py:1016
 msgid "Capping the feedin capacity of a DSO."
-msgstr ""
+msgstr "Begrenzung der Einspeisekapazität eines DSO."
 
 #: projects/forms.py:1027
 msgid ""
@@ -563,6 +569,13 @@ msgid ""
 "in csv format is expected to be in comma separated values with dot as "
 "decimal separator."
 msgstr ""
+"Sie können Ihre Zeitreihen als xls(x), csv oder json Format hochladen. Entweder gibt es "
+"eine Spalte mit den Werten der Zeitreihe, die dem Szenario "
+"Zeitschritte, oder es gibt zwei Spalten, die erste mit den Zeitstempeln und die zweite mit den Werten der Zeitreihen. "
+"die zweite die Werte der Zeitreihen. Wenn Sie ein Arbeitsblatt mit mehr als einer Registerkarte hochladen, werden nur die Werte der Zeitreihen angezeigt. "
+" mit mehr als einer Registerkarte hochladen, wird nur die erste Registerkarte berücksichtigt. Die Zeitreihe "
+im csv-Format wird in kommagetrennten Werten mit Punkt als "
+"Dezimaltrennzeichen."
 
 #: projects/forms.py:1095
 #, fuzzy
@@ -576,6 +589,8 @@ msgid ""
 "Please provide either a number within %(boundaries) s or upload a timeseries "
 "from a file"
 msgstr ""
+"Please provide either a number within %(boundaries) s or upload a timeseries from a file. "
+"aus einer Datei"
 
 #: projects/helpers.py:261
 #, python-format
@@ -583,11 +598,12 @@ msgid ""
 "Some values in the timeseries do not lie within %(boundaries) s, please "
 "check your input again."
 msgstr ""
+"Einige Werte in der Zeitreihe liegen nicht innerhalb von %(boundaries) s, bitte überprüfen Sie Ihre Eingabe erneut."
 
 #: projects/helpers.py:272 projects/helpers.py:281
 #, python-format
 msgid "Please enter a value within %(boundaries) s"
-msgstr ""
+msgstr "Bitte geben Sie einen Wert innerhalb von %(boundaries) s ein"
 
 #: projects/helpers.py:359
 #, python-brace-format
@@ -595,11 +611,13 @@ msgid ""
 "Input timeseries file type of \"{timeseries_file.name}\" is not supported. "
 "The supported formats are \"json\", \"csv\", \"txt\", \"xls\" and \"xlsx\""
 msgstr ""
+"Der Dateityp der Zeitserie \"{timeseries_file.name}\" wird nicht unterstützt. "
+"Die unterstützten Formate sind \"json\", \"csv\", \"txt\", \"xls\" und \"xlsx\"."
 
 #: projects/helpers.py:364
 #, python-format
 msgid "Input timeseries file \"%(fname)s\" is empty"
-msgstr ""
+msgstr "Eingabezeitreihen-Datei \"%(fname)s\" ist leer"
 
 #: projects/models/base_models.py:50 templates/project/project_search.html:90
 msgid "Edit"
@@ -607,7 +625,7 @@ msgstr "Bearbeiten"
 
 #: projects/models/base_models.py:50
 msgid "Read"
-msgstr ""
+msgstr "Lesen"
 
 #: projects/models/base_models.py:111
 #, python-brace-format
@@ -615,10 +633,12 @@ msgid ""
 "No email address provided to find the user to share the project '{self."
 "name}' with"
 msgstr ""
+"Keine E-Mail-Adresse angegeben, um den Benutzer zu finden, der das Projekt '{self."
+"name}'' mit"
 
 #: projects/models/base_models.py:121
 msgid "You cannot share a project with yourself"
-msgstr ""
+msgstr "Sie können ein Projekt nicht mit sich selbst teilen"
 
 #: projects/models/base_models.py:129
 #, python-brace-format
@@ -626,6 +646,8 @@ msgid ""
 "'{email}' belongs to a valid user, they will be able to {share_rights} the "
 "project '{self.name}'"
 msgstr ""
+"'{email}' gehört zu einem gültigen Benutzer, dieser kann {share_rights} das "
+"Projekt '{self.name}'"
 
 #: projects/models/base_models.py:136
 #, python-brace-format
@@ -633,6 +655,8 @@ msgid ""
 "The share rights of the user registered under {email} for the project '{self."
 "name}' have been changed from '{viewer.share_rights}' to '{share_rights}'"
 msgstr ""
+"Die Share-Rechte des unter {email} registrierten Benutzers für das Projekt '{self."
+"name}' wurden von '{viewer.share_rights}' auf '{share_rights}' geändert."
 
 #: projects/models/base_models.py:142
 #, python-brace-format
@@ -640,28 +664,36 @@ msgid ""
 "The user registered under {email} for the project '{self.name}' already have "
 "'{share_rights}' access"
 msgstr ""
+"Der unter {email} registrierte Benutzer für das Projekt '{self.name}' hat bereits "
+"'{share_rights}' access"
 
 #: projects/models/base_models.py:148
 msgid ""
 "We could not find a user registered under the email address you provided: "
 msgstr ""
+"Wir konnten keinen Benutzer finden, der unter der von Ihnen angegebenen E-Mail Adresse registriert ist: "
 
 #: projects/models/base_models.py:170
 msgid ""
 "The user(s) {','.join(existing_viewers.values_list('user__email', "
 "flat=True))} rights to the project '{self.name}' have been revoked"
 msgstr ""
+"Der/die Benutzer {','.join(existing_viewers.values_list('user__email', ""
+"flat=True))} wurden die Rechte für das Projekt '{self.name}' entzogen."
 
 #: projects/models/base_models.py:174
 msgid ""
 "The user(s) {','.join(viewers.values_list('user__email', flat=True))} does "
 "not belong to the viewers of the project '{self.name}'"
 msgstr ""
+"Der/die Benutzer {','.join(viewers.values_list('user__email', flat=True))} gehören nicht "
+"gehört nicht zu den Betrachtern des Projekts '{self.name}'"
 
 #: projects/models/base_models.py:178
 msgid ""
 "The user(s) you selected seems to not be registered in the open_plan tool"
 msgstr ""
+"Der/die von Ihnen ausgewählte(n) Benutzer scheint/scheinen nicht im open_plan-Tool registriert zu sein."
 
 #: projects/models/simulation_models.py:49
 msgid ""
@@ -672,30 +704,35 @@ msgid ""
 "duplicata with chosen reference value or keep current scenario but change "
 "parameter value to chosen one"
 msgstr ""
+"Der Wert des variablen Parameters für das Referenzszenario der "Sensitivitätsanalyse, wenn er sich vom Wert des aktuellen "
+"Szenario abweicht, muss der Benutzer entscheiden, ob er das aktuelle Szenario als Referenz "
+"mit seinem aktuellen Wert für diesen Parameter zu nehmen, das Szenario zu duplizieren und die "
+"Duplikat mit dem gewählten Referenzwert verwenden oder das aktuelle Szenario beibehalten, aber den "
+"Parameterwert auf den gewählten Wert ändern"
 
 #: projects/scenario_topology_helpers.py:43
 msgid "There is already a bus with this name in the scenario"
-msgstr ""
+msgstr "There is already a bus with this name in the scenario"
 
 #: projects/scenario_topology_helpers.py:91
 msgid "There is already a storage with this name in the scenario"
-msgstr ""
+msgstr "Es gibt bereits einen Speicher mit diesem Namen im Szenario"
 
 #: projects/scenario_topology_helpers.py:215
 msgid "There is already an asset with this name in the scenario"
-msgstr ""
+msgstr "Es gibt bereits eine Anlage mit diesem Namen im Szenario" Msgid "Es gibt bereits eine Anlage mit diesem Namen im Szenario"
 
 #: projects/services.py:160
 msgid "Form - connection error:"
-msgstr ""
+msgstr "Formular - Verbindungsfehler:"
 
 #: projects/services.py:164
 msgid "Form - other error:"
-msgstr ""
+msgstr "Formular - sonstiger Fehler:"
 
 #: projects/services.py:182
 msgid "Form - mail sending error:"
-msgstr ""
+msgstr "Formular - Fehler beim Mailversand:"
 
 #: projects/special_form.py:28
 #, fuzzy
@@ -761,7 +798,7 @@ msgstr "Projektbeschreibung"
 
 #: projects/views.py:594
 msgid "You have currently no projects, please create one first"
-msgstr ""
+msgstr "Sie haben derzeit keine Projekte, bitte erstellen Sie zuerst eines"
 
 #: projects/views.py:697
 msgid "Electricity DSO"
@@ -841,11 +878,11 @@ msgstr "Wärmepumpe"
 
 #: projects/views.py:720
 msgid "Combined Heat and Power"
-msgstr ""
+msgstr "Kraft-Wärme-Kopplung"
 
 #: projects/views.py:721
 msgid "CHP fixed ratio"
-msgstr ""
+msgstr "Kraft-Wärme-Kopplung festes Verhältnis"
 
 #: projects/views.py:724
 msgid "Electricity Storage"
@@ -892,11 +929,11 @@ msgstr "Optimierte Leistung"
 #: templates/asset/asset_create_form.html:25
 #: templates/asset/storage_asset_create_form.html:26
 msgid "See traces data"
-msgstr ""
+msgstr "Siehe Trace-Daten"
 
 #: templates/asset/asset_create_form.html:56
 msgid "Calculate COP from temperature"
-msgstr ""
+msgstr "COP aus Temperatur berechnen"
 
 #: templates/asset/asset_create_form.html:82
 msgid "uploaded data"
@@ -978,19 +1015,19 @@ msgstr "Ausprobieren"
 
 #: templates/legal/about.html:5
 msgid "About - open_plan"
-msgstr ""
+msgstr "Über - open_plan"
 
 #: templates/legal/about.html:20
 msgid "open_plan project consortium"
-msgstr ""
+msgstr "open_plan Projektkonsortium"
 
 #: templates/legal/about.html:24
 msgid "open_plan project website"
-msgstr ""
+msgstr "open_plan Projekt Webseite"
 
 #: templates/legal/about.html:28
 msgid "Feedback or question?"
-msgstr ""
+msgstr "Feedback oder Frage?"
 
 #: templates/legal/about.html:36
 #, fuzzy
@@ -1003,6 +1040,8 @@ msgid ""
 "Our simulations run on a server hosted at RLI, the code to setup the "
 "simulation server is licenced under MIT License and publicly available on"
 msgstr ""
+"Unsere Simulationen laufen auf einem Server, der bei RLI gehostet wird, der Code zur Einrichtung des "
+"Simulationsserver ist unter MIT-Lizenz lizensiert und öffentlich zugänglich auf"
 
 #: templates/legal/about.html:43
 #, fuzzy
@@ -1145,18 +1184,18 @@ msgstr ""
 
 #: templates/legal/license.html:5
 msgid "License - open_plan"
-msgstr ""
+msgstr "Lizenz - open_plan"
 
 #: templates/legal/privacy.html:5
 msgid "Privacy - open_plan"
-msgstr ""
+msgstr "Datenschutz - open_plan"
 
 #: templates/modal_template.html:41
 #: templates/scenario/scenario_results_page.html:48
 #: templates/scenario/scenario_results_page.html:112
 #: templates/scenario/scenario_step2.html:72
 msgid "Close"
-msgstr ""
+msgstr "Schließen"
 
 #: templates/navbar.html:29 templates/scenario/scenario_results_page.html:124
 msgid "Simulation results"
@@ -1307,11 +1346,11 @@ msgstr "Projekt exportieren"
 
 #: templates/project/project_search.html:164
 msgid "Pending..."
-msgstr ""
+msgstr "Pending..."
 
 #: templates/project/project_search.html:168
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 #: templates/project/project_search.html:177
 #: templates/project/project_search.html:182
@@ -1344,15 +1383,15 @@ msgstr "Projekt aktualisieren"
 
 #: templates/registration/acc_active_email.html:3
 msgid "Hi"
-msgstr ""
+msgstr "Hallo"
 
 #: templates/registration/acc_active_email.html:5
 msgid "Please click on the link to confirm your registration"
-msgstr ""
+msgstr "Bitte klicken Sie auf den Link, um Ihre Registrierung zu bestätigen"
 
 #: templates/registration/acc_active_email.html:9
 msgid "If you think, it's not you, then just ignore this email."
-msgstr ""
+msgstr "Wenn Sie denken, dass Sie es nicht sind, dann ignorieren Sie diese E-Mail."
 
 #: templates/registration/login.html:7
 msgid "Log In"
@@ -1364,7 +1403,7 @@ msgstr "Willkommen im open_plan-Tool"
 
 #: templates/registration/login.html:26
 msgid "Forgot your password?"
-msgstr ""
+msgstr "Haben Sie Ihr Passwort vergessen?"
 
 #: templates/registration/login.html:27
 #: templates/registration/password_reset_form.html:9
@@ -1380,19 +1419,19 @@ msgstr "Anmeldung"
 
 #: templates/registration/password_reset_complete.html:7
 msgid "Password reset complete"
-msgstr ""
+msgstr "Passwort zurücksetzen abgeschlossen"
 
 #: templates/registration/password_reset_complete.html:9
 msgid "Your password has been set. You may go ahead and log in now."
-msgstr ""
+msgstr "Ihr Kennwort wurde zurückgesetzt. Sie können sich jetzt anmelden."
 
 #: templates/registration/password_reset_confirm.html:9
 msgid "Password Reset Confirm"
-msgstr ""
+msgstr "Passwort zurücksetzen bestätigen"
 
 #: templates/registration/password_reset_confirm.html:11
 msgid "Please enter your new password."
-msgstr ""
+msgstr "Bitte geben Sie Ihr neues Kennwort ein."
 
 #: templates/registration/password_reset_confirm.html:15
 #, fuzzy
@@ -1402,29 +1441,35 @@ msgstr "Passwort"
 
 #: templates/registration/password_reset_done.html:7
 msgid "Password reset sent"
-msgstr ""
+msgstr "Passwort zurücksetzen gesendet"
 
 #: templates/registration/password_reset_done.html:9
 msgid ""
 "We've emailed you instructions for setting your password, if an account "
 "exists with the email you entered. You should receive them shortly."
 msgstr ""
+"Wir haben dir per E-Mail Anweisungen zum Festlegen deines Passworts geschickt, wenn ein Konto "
+"mit der von Ihnen eingegebenen E-Mail existiert. Du solltest sie in Kürze erhalten."
 
 #: templates/registration/password_reset_done.html:10
 msgid ""
 "If you don't receive an email, please make sure you've entered the address "
 "you registered with, and check your spam folder."
 msgstr ""
+"Wenn du keine E-Mail erhältst, vergewissere dich bitte, dass du die Adresse eingegeben hast, mit der du dich registriert hast, "
+"und überprüfe deinen Spam-Ordner."
 
 #: templates/registration/password_reset_form.html:11
 msgid ""
 "Forgotten your password? Enter your email address below, and we'll email "
 "instructions for setting a new one."
 msgstr ""
+"Haben Sie Ihr Passwort vergessen? Geben Sie Ihre E-Mail-Adresse ein und wir schicken Ihnen "
+"Anweisungen zum Einrichten eines neuen Passworts."
 
 #: templates/registration/password_reset_form.html:15
 msgid "Send email"
-msgstr ""
+msgstr "E-Mail senden"
 
 #: templates/registration/signup.html:25
 msgid "Do you already have an account?"
@@ -1466,11 +1511,13 @@ msgid ""
 "You have no scenario with completed simulation, please run simulations to "
 "display results"
 msgstr ""
+"Sie haben kein Szenario mit abgeschlossener Simulation, bitte führen Sie Simulationen durch, "
+"um Ergebnisse darzustellen"
 
 #: templates/report/compare_scenario.html:30
 #: templates/report/single_scenario.html:72
 msgid "Add chart"
-msgstr ""
+msgstr "Diagramm hinzufügen"
 
 #: templates/report/graph_template.html:27
 #: templates/report/single_scenario.html:105
@@ -1487,6 +1534,8 @@ msgid ""
 "You have no sensitivity analysis with completed simulation, please run "
 "simulations to display results"
 msgstr ""
+"Sie haben keine Sensitivitätsanalyse mit abgeschlossener Simulation, bitte führen Sie Simulationen durch, "
+"um Ergebnisse darzustellen "
 
 #: templates/report/sensitivity_analysis.html:41
 msgid "Create graph"
@@ -1524,7 +1573,7 @@ msgstr "KPIs Zeigen"
 
 #: templates/report/single_scenario.html:115
 msgid "Add KPI"
-msgstr ""
+msgstr "KPI hinzufügen"
 
 #: templates/report/single_scenario.html:127
 #, fuzzy
@@ -1534,11 +1583,11 @@ msgstr "Auslegung des Energiesystems"
 
 #: templates/report/single_scenario.html:134
 msgid "some option A"
-msgstr ""
+msgstr "some option A"
 
 #: templates/report/single_scenario.html:135
 msgid "some option B"
-msgstr ""
+msgstr "irgendeine Option B"
 
 #: templates/scenario/scenario_progression.html:8
 #: templates/scenario/scenario_step0.html:8
@@ -1563,11 +1612,11 @@ msgstr "Weiter"
 
 #: templates/scenario/scenario_results_page.html:58
 msgid "KPI Overview"
-msgstr ""
+msgstr "KPI Übersicht"
 
 #: templates/scenario/scenario_results_page.html:66
 msgid "Unit"
-msgstr ""
+msgstr "Einheit"
 
 #: templates/scenario/scenario_results_page.html:67
 #, fuzzy
@@ -1611,15 +1660,15 @@ msgstr "Sensitivitätsanalyse"
 
 #: templates/scenario/scenario_results_page.html:248
 msgid "` + hdr + `"
-msgstr ""
+msgstr "` + hdr + `"
 
 #: templates/scenario/scenario_results_page.html:275
 msgid "` + param.name +`"
-msgstr ""
+msgstr "` + param.name +`"
 
 #: templates/scenario/scenario_step0.html:22
 msgid "Please select a project first"
-msgstr ""
+msgstr "Bitte wählen Sie zuerst ein Projekt aus"
 
 #: templates/scenario/scenario_step1.html:76
 #: templates/scenario/scenario_step2.html:281
@@ -1629,7 +1678,7 @@ msgstr "Zum Simulation"
 
 #: templates/scenario/scenario_step2.html:57
 msgid "compute COP"
-msgstr ""
+msgstr "COP berechnen"
 
 #: templates/scenario/scenario_step2.html:74
 #: templates/scenario/scenario_step2.html:274
@@ -1659,7 +1708,7 @@ msgstr "Zum Ergebnisse Dashboard"
 
 #: templates/scenario/sensitivity_analysis.html:41
 msgid "There is no simulation_status"
-msgstr ""
+msgstr "Es gibt keinen simulation_status"
 
 #: templates/scenario/sensitivity_analysis.html:46
 #, fuzzy
@@ -1686,7 +1735,7 @@ msgstr "Prüfe Parameter JSON Datei "
 
 #: templates/scenario/simulation/error.html:37
 msgid "Link to send bug report automatically"
-msgstr ""
+msgstr "Link zum automatischen Senden eines Fehlerberichts"
 
 #: templates/scenario/simulation/no-status.html:11
 msgid "No simulation conducted"
@@ -1742,11 +1791,11 @@ msgstr "Zeitreihen speichern"
 
 #: templates/usecase/usecase_search.html:13
 msgid "Usecases - open_plan"
-msgstr ""
+msgstr "Anwendungsfälle - open_plan"
 
 #: templates/usecase/usecase_search.html:38
 msgid "Show"
-msgstr ""
+msgstr "Anzeigen"
 
 #: templates/usecase/usecase_search.html:65
 #, fuzzy
@@ -1768,31 +1817,31 @@ msgstr "Es sind noch keine Projekte vorhanden"
 
 #: users/views.py:34
 msgid "Activate your account."
-msgstr ""
+msgstr "Aktivieren Sie Ihr Konto."
 
 #: users/views.py:50
 msgid "Please confirm your email address to complete the registration"
-msgstr ""
+msgstr "Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Registrierung abzuschließen"
 
 #: users/views.py:70
 msgid "Thank you for your email confirmation. Now you can log in your account."
-msgstr ""
+msgstr "Vielen Dank für Ihre E-Mail-Bestätigung. Sie können sich jetzt in Ihrem Konto anmelden."
 
 #: users/views.py:86
 msgid "User info successfully updated!"
-msgstr ""
+msgstr "Benutzerdaten erfolgreich aktualisiert!"
 
 #: users/views.py:89 users/views.py:106
 msgid "Please check errors and resubmit!"
-msgstr ""
+msgstr "Bitte Fehler prüfen und erneut senden!"
 
 #: users/views.py:103
 msgid "Your password was successfully updated!"
-msgstr ""
+msgstr "Ihr Passwort wurde erfolgreich aktualisiert!"
 
 #: users/views.py:146
 msgid "Your user account has been deleted."
-msgstr ""
+msgstr "Ihr Benutzerkonto wurde gelöscht."
 
 msgid "Charging Power"
 msgstr "Ladeleistung"
@@ -1831,7 +1880,7 @@ msgid "Specific OM costs"
 msgstr "Spezifische OM-Kosten"
 
 msgid "Dispatch price"
-msgstr "Dispatch-Preis"
+msgstr "Versandpreis"
 
 msgid ""
 "The share of renewables in the generation mix of the energy supplied by "
@@ -1938,7 +1987,7 @@ msgid "Emissions per unit dispatch of an asset."
 msgstr "Emissionen pro Versandeinheit einer Anlage."
 
 msgid "kgCO2eq/asset unit"
-msgstr "kgCO2eq/Anlageneinheit"
+msgstr "kgCO2eq/Vermögenseinheit"
 
 msgid "Price of energy carrier sourced from the utility grid."
 msgstr "Preis des aus dem Versorgungsnetz bezogenen Energieträgers."
@@ -1976,7 +2025,7 @@ msgstr ""
 "aufeinanderfolgenden Zeitschritten."
 
 msgid "factor"
-msgstr "Faktor MOISOSISSHSHIS"
+msgstr "Faktor"
 
 msgid ""
 "Thermal losses of storage independent of state of charge between two "
@@ -2090,7 +2139,7 @@ msgstr ""
 "Anzahl der Bezugszeiträume in einem Jahr für den Spitzenbedarfspreis."
 
 msgid "times per year (1,2,3,4,6,12)"
-msgstr "mal pro Jahr (1,2,3,4,6,12)"
+msgstr "Mal jährlich (1,2,3,4,6,12)"
 
 msgid "Years"
 msgstr "Jahre"
@@ -2121,7 +2170,7 @@ msgstr ""
 "nullten Zeitschritt."
 
 msgid "None or factor"
-msgstr "Keine oder Faktor"
+msgstr "Keiner oder Faktor"
 
 msgid "Actual CAPEX of an asset, i.e., specific investment costs"
 msgstr ""
@@ -2205,3 +2254,289 @@ msgstr "Szenariowert"
 
 msgid "All timeseries"
 msgstr "Alle Zeitreihen"
+
+msgid "Previous years of operations"
+msgstr "Frühere Jahre der Tätigkeit"
+
+msgid "The number of years the asset has already been in operation"
+msgstr "Die Anzahl der Jahre, die die Anlage bereits in Betrieb ist"
+
+msgid "The rate at which the storage can be charged or discharged relative to the nominal capacity of the storage"
+msgstr "Die Rate, mit der der Speicher geladen oder entladen werden kann, bezogen auf die Nominalkapazität des Speichers"
+
+msgid "The name of the country where the project is being deployed"
+msgstr "Der Name des Landes, in dem das Projekt entwickelt wird"
+
+msgid "The currency of the country where the project is implemented"
+msgstr "Die Währung des Landes, in dem das Projekt umgesetzt wird"
+
+msgid "€"
+msgstr "€"
+
+msgid "Fixed project costs"
+msgstr "Feste Projektkosten"
+
+msgid "Discount factor"
+msgstr "Ermäßigungsfaktor"
+
+msgid "The factor which accounts for the depreciation in the value of money in the future, compared to the current value of the same money. The common method is to calculate the weighted average cost of capital (WACC) and use it as the discount rate."
+msgstr "Der Faktor, der die Wertminderung des Geldes in der Zukunft im Vergleich zum aktuellen Wert des gleichen Geldes berücksichtigt. Die übliche Methode ist die Berechnung der gewichteten durchschnittlichen Kapitalkosten (WACC) und deren Verwendung als Abzinsungssatz."
+
+msgid "Costs associated with a flow through/from the asset"
+msgstr "Kosten im Zusammenhang mit dem Fluss durch/von der Anlage"
+
+msgid "Stands for Demand Side Management. Currently, not implemented."
+msgstr "Steht für Demand Side Management. Derzeit nicht implementiert."
+
+msgid "Ratio of energy output/energy input"
+msgstr "Verhältnis von Energieabgabe/Energieinput"
+
+msgid "Emissions per unit dispatch of an asset"
+msgstr "Emissionen pro Versandeinheit einer Anlage"
+
+msgid "Price of the energy carrier sourced from the utility grid."
+msgstr "Preis des Energieträgers, der aus dem Versorgungsnetz bezogen wird."
+
+msgid "Energy vector/commodity. Convention: For an energy conversion asset define energyVector of the output. For a sink define based on inflow. For a source define based on output flow. For a storage, define based on stored energy carrier."
+msgstr "Energievektor/Rohstoff. Konvention: Für eine Energieumwandlungsanlage definieren Sie den Energievektor des Ausgabe. Für eine Senke definieren Sie basierend auf dem Zufluss. Für eine Quelle definieren Sie basierend auf dem Ausgangsfluss. Für einen Speicher, definieren Sie basierend auf dem gespeicherten Energieträger."
+
+msgid "The number of days for which the simulation is to be run"
+msgstr "Die Anzahl der Tage, für die die Simulation durchgeführt werden soll"
+
+msgid "Feedin maximum cap"
+msgstr "Einspeisungshöchstgrenze"
+
+msgid "kW"
+msgstr "kW"
+
+msgid "Maximum capacity for feeding electricity into the grid"
+msgstr "Maximale Kapazität zur Einspeisung von Strom ins Netz"
+
+msgid "Price received for feeding electricity into the grid"
+msgstr "Erhaltener Preis für die Einspeisung von Strom ins Netz"
+
+msgid "Name of a csv file containing the input generation or demand timeseries."
+msgstr "Name einer csv-Datei, die die Inputgeneration der Einspeisung enthält."
+
+msgid "Thermal losses of storage independent of state of charge and independent of nominal storage capacity between two consecutive timesteps."
+msgstr "Thermische Verluste des Speichers unabhängig vom Ladezustand und unabhängig von der nominalen Speicherkapazität zwischen zwei aufeinanderfolgenden Zeitschritten."
+
+msgid "Thermal losses of storage independent of state of charge between two consecutive timesteps relative to nominal storage capacity."
+msgstr "Thermische Verluste des Speichers unabhängig vom Ladezustand zwischen zwei aufeinanderfolgenden Zeitschritten relativ zur nominalen Speicherkapazität."
+
+msgid "The label of the bus/component from which the energyVector is arriving into the asset."
+msgstr "Die Bezeichnung des Busses/der Komponente, von dem/der der Energievektor in die Anlage gelangt."
+
+msgid "Installed capacity"
+msgstr "Installierte Kapazität"
+
+msgid "The already existing installed capacity in-place"
+msgstr "Die bereits vorhandene installierte Kapazität vor Ort"
+
+msgid "Location's latitude"
+msgstr "Breitengrad des Standorts"
+
+msgid "Latitude coordinate of the project's geographical location"
+msgstr "Breitengrad-Koordinate des geografischen Standorts des Projekts"
+
+msgid "Asset lifetime"
+msgstr "Lebensdauer der Anlage"
+
+msgid "Number of operational years of the asset until it has to be replaced"
+msgstr "Anzahl der Betriebsjahre der Anlage, bis sie ersetzt werden muss"
+
+msgid "Location's longitude"
+msgstr "Längengrad des Standortes"
+
+msgid "Longitude coordinate of the project's geographical location"
+msgstr "Längengradkoordinate des geografischen Standorts des Projekts"
+
+msgid "The maximum amount of total emissions which are allowed in the optimized energy system"
+msgstr "Die maximale Menge der Gesamtemissionen, die im optimierten Energiesystem erlaubt sind"
+
+msgid "The maximum total capacity of an asset that can be installed at the project site"
+msgstr "Die maximale Gesamtkapazität einer Anlage, die am Projektstandort installiert werden kann"
+
+msgid "Degree of autonomy"
+msgstr "Grad der Autonomie"
+
+msgid "The minimum degree of autonomy that needs to be met by the optimization"
+msgstr "Das Mindestmaß an Autonomie, das durch die Optimierung erreicht werden muss"
+
+msgid "The minimum share of energy supplied by renewable generation that needs to be met by the optimization"
+msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
+
+msgid "Specifies whether optimization needs to result into a net zero energy system (True) or not (False)"
+msgstr "Gibt an, ob die Optimierung zu einem Net-Zero-Energiesystem führen muss (True) oder nicht (False)"
+
+msgid "Optimize capacity"
+msgstr "Kapazität optimieren"
+
+msgid "Choose if capacity optimization should be performed for this asset."
+msgstr "Wählen Sie, ob für diese Anlage eine Kapazitätsoptimierung durchgeführt werden soll."
+
+msgid "The label of bus/component towards which the energyVector is leaving from the asset."
+msgstr "Die Bezeichnung des Busses/der Komponente, zu dem/der der Energievektor von der Anlage abgeht."
+
+msgid "Enable the generation of a file with the linear equation system describing the simulation, ie., with the objective function and all the constraints. This lp file enables the user look at the underlying equations of the optimization."
+msgstr "Erlaube die Erzeugung einer Datei mit dem linearen Gleichungssystem, das die Simulation beschreibt, d.h. mit der Zielfunktion und allen Nebenbedingungen. Diese lp-Datei ermöglicht es dem Benutzer, die zugrundeliegenden Gleichungen der Optimierung zu betrachten."
+
+msgid "Price to be paid additionally for energy consumption based on the peak demand of a given period"
+msgstr "Zusätzlich zu zahlender Preis für den Energieverbrauch auf der Grundlage des Spitzenbedarfs eines bestimmten Zeitraums"
+
+msgid "Number of reference periods in one year for the peak demand pricing"
+msgstr "Anzahl der Referenzperioden in einem Jahr für den Spitzenbelastungspreis"
+
+msgid "Project duration"
+msgstr "Projektdauer"
+
+msgid "The number of years the project is intended to be operational"
+msgstr "Die Anzahl der Jahre, die das Projekt in Betrieb sein soll"
+
+msgid "Assign a project ID as per your preference."
+msgstr "Weisen Sie eine Projekt-ID Ihres Wunsches zu."
+
+msgid "Assign a project name as per your preference."
+msgstr "Weisen Sie einen Projektnamen Ihres Wunsches zu."
+
+msgid "The share of renewables in the generation mix of the energy supplied by the DSO utility"
+msgstr "Der Anteil der erneuerbaren Energien am Erzeugungsmix der vom DSO-Versorger gelieferten Energie"
+
+msgid "Choose if this asset should be tagged as renewable."
+msgstr "Wählen Sie, ob diese Anlage als erneuerbar gekennzeichnet werden soll."
+
+msgid "Brief description of the scenario being simulated"
+msgstr "Kurze Beschreibung des zu simulierenden Szenarios"
+
+msgid "Assign a scenario id as per your preference."
+msgstr "Weisen Sie eine Szenario-ID Ihres Wunsches zu."
+
+msgid "Assign a scenario name as per your preference."
+msgstr "Weisen Sie einen Szenariennamen Ihres Wunsches zu."
+
+msgid "The level of charge (as a factor of the actual capacity) in the storage in the zeroth time-step."
+msgstr "Der Ladezustand (als Faktor der tatsächlichen Kapazität) des Speichers im nullten Zeitschritt."
+
+msgid "The maximum permissible level of charge in the battery (generally, it is when the battery is filled to its nominal capacity), represented by the value 1.0. Users can  also specify a certain value as a factor of the actual capacity."
+msgstr "Der maximal zulässige Ladezustand des Akkus (in der Regel, wenn der Akku bis zu seiner Nominalkapazität gefüllt ist), dargestellt durch den Wert 1.0. Benutzer können auch einen bestimmten Wert als Faktor der tatsächlichen Kapazität angeben."
+
+msgid "The minimum permissible level of charge in the battery as a factor of the nominal capacity of the battery."
+msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nominalkapazität des Akkus."
+
+msgid "Actual CAPEX of an asset, i.e., specific investment costs"
+msgstr "Tatsächliche CAPEX einer Anlage, d.h. spezifische Investitionskosten"
+
+msgid "Operation and management costs"
+msgstr "Betriebs- und Verwaltungskosten"
+
+msgid "Actual OPEX of an asset, i.e., specific operational and maintenance costs."
+msgstr "Tatsächliche OPEX einer Anlage, d.h. spezifische Betriebs- und Wartungskosten."
+
+msgid "The date and time on which the simulation starts at the first step."
+msgstr "Das Datum und die Uhrzeit, zu der die Simulation mit dem ersten Schritt beginnt."
+
+msgid "Name of a csv file containing the properties of a storage component"
+msgstr "Name einer csv-Datei, die die Eigenschaften einer Speicherkomponente enthält"
+
+msgid "Tax factor."
+msgstr "Steuerfaktor."
+
+msgid "The type of the component."
+msgstr "Der Typ der Komponente."
+
+msgid "Input the type of OEMOF component. For example, a PV plant would be a source, a solar inverter would be a transformer, etc.  The `type_oemof` will later on be determined through the EPA."
+msgstr "Geben Sie den Typ der OEMOF-Komponente ein. Zum Beispiel wäre eine PV-Anlage eine Quelle, ein Solar-Wechselrichter ein Transformator usw.  Der `Typ_oemof` wird später durch die EPA bestimmt."
+
+msgid "Unit associated with the capacity of the component"
+msgstr "Mit der Kapazität der Komponente verbundene Einheit"
+
+msgid "Power loss index"
+msgstr "Leistungsverlust-Index"
+
+msgid "beta"
+msgstr "beta"
+
+msgid "Power loss index for CHPs, usually known as beta coefficient"
+msgstr "Leistungsverlust-Index für BHKWs, meist bekannt als Beta-Koeffizient"
+
+msgid "Industriestandort Max Bögl"
+msgstr "Industriestandort Max Bögl"
+
+msgid "Szenario 2 - S01 + PV"
+msgstr "Szenario 2 - S01 + PV"
+
+msgid "Szenario 3 - S01 + PV + Wind"
+msgstr "Szenario 3 - S01 + PV + Wind"
+
+msgid "Szenario 1 - aktueller Stand"
+msgstr "Szenario 1 - aktueller Stand"
+
+msgid "Szenario 4 - S01 + PV + Wind + Batterie"
+msgstr "Szenario 4 - S01 + PV + Wind + Batterie"
+
+msgid "Electricity supply to community"
+msgstr "Elektrizitätsversorgung der Gemeinde"
+
+msgid "A community of 3,000 residents wants to determine how they can increase the self-sufficiency of their electricity supply. PV and wind as renewable sources are considered, and battery storage."
+msgstr "Eine Gemeinde mit 3.000 Einwohnern möchte herausfinden, wie sie die Autakie ihrer Stroversorgung erhöhen kann. In Frage kommen PV und Wind als erneuerbare Quellen sowie Batteriespeicher."
+
+msgid "1. DSO supply to community"
+msgstr "1. DSO-Versorgung der Gemeinde"
+
+msgid "The current electricity supply of the community is analyzed as a reference case. The import electricity price is 0.16 €/kWh."
+msgstr "Die aktuelle Stromversorgung der Gemeinde wird als Referenzfall analysiert. Der Importstrompreis beträgt 0,16 €/kWh."
+
+msgid "5. DSO + PV + wind + battery supply to community"
+msgstr "5. DSO + PV + Wind + Batterieversorgung der Gemeinde"
+
+msgid "The goal is for the community to reach a 98 % minimum renewable share for their energy system. For this reason, a battery storage is included."
+msgstr "Ziel ist es, dass die Gemeinde einen Mindestanteil von 98 % an erneuerbaren Energien in ihrem Energiesystem erreicht. Aus diesem Grund ist ein Batteriespeicher vorgesehen."
+
+msgid "2. DSO + PV supply to community"
+msgstr "2. DSO + PV-Versorgung der Gemeinde"
+
+msgid "The community investigates if investing in PV is a feasible option. The optimal capacity is determined."
+msgstr "Die Gemeinde untersucht, ob eine Investition in PV-Anlagen eine machbare Option ist. Die optimale Leistung wird ermittelt."
+
+msgid "4. DSO + PV + wind supply to community"
+msgstr "4. DSO + PV + Windversorgung der Gemeinde"
+
+msgid "The community investigates the option of both PV and wind as renewable sources. The optimal capacities of each are determined."
+msgstr "Die Gemeinde untersucht die Option, sowohl PV als auch Wind als erneuerbare Quellen zu nutzen. Es werden jeweils die optimalen Kapazitäten ermittelt."
+
+msgid "3. DSO + wind supply to community"
+msgstr "3. DSO + Windversorgung der Gemeinde"
+
+msgid "The community investigates if investing in wind is a feasible option. The optimal capacity is determined."
+msgstr "Die Gemeinde prüft, ob eine Investition in Windkraft eine sinnvolle Option ist. Die optimale Kapazität wird ermittelt."
+
+msgid "Heat supply to community"
+msgstr "Wärmeversorgung der Gemeinde"
+
+msgid "A community of 3,000 residents wants to determine how they can increase the self-sufficiency and renewable share of their heat supply."
+msgstr "Eine Gemeinde mit 3.000 Einwohnern möchte ermitteln, wie sie die Eigenversorgung und den Anteil erneuerbarer Energien an ihrer Wärmeversorgung erhöhen kann."
+
+msgid "2. Biomass supply to community"
+msgstr "2. die Versorgung der Gemeinde mit Biomasse"
+
+msgid "The full replacement of natural gas and boilers with biomass and biomass boilers is considered. The import price of biomass is 0.062 €/kWh."
+msgstr "Der vollständige Ersatz von Erdgas und Heizkesseln durch Biomasse und Biomassekessel wird berücksichtigt. Der Importpreis für Biomasse beträgt 0,062 €/kWh."
+
+msgid "3. Heat supply + PV/heat pumps to community"
+msgstr "3. Wärmeversorgung + PV/Wärmepumpen an Gemeinde"
+
+msgid "The community aims to have 70 % minimum of their heat supply from renewable sources. The optimal capacities for PV and air-source heat pumps are determined."
+msgstr "Die Gemeinde strebt an, mindestens 70 % ihrer Wärmeversorgung aus erneuerbaren Quellen zu beziehen. Es werden die optimalen Kapazitäten für PV und Luftwärmepumpen ermittelt."
+
+msgid "1. Heat supply to community"
+msgstr "1. Wärmeversorgung der Gemeinde"
+
+msgid "The current heat supply of the community is analyzed as a reference case. The import price for heat is 0.1 €/kWh."
+msgstr "Als Referenzfall wird die aktuelle Wärmeversorgung der Gemeinde analysiert. Der Importpreis für Wärme beträgt 0,1 €/kWh."
+
+msgid "4. Heat supply + PV/heat pumps + storage to community"
+msgstr "4. Wärmeversorgung + PV/Wärmepumpen + Speicher an Gemeinde"
+
+msgid "The community aims to have 70 % minimum of their heat supply from renewable sources. The optimal capacities for PV and air-source heat pumps are determined. The option for thermal storage is also included to see what effects, if any, this has on the system results."
+msgstr "Die Gemeinde strebt an, mindestens 70 % ihrer Wärmeversorgung aus erneuerbaren Quellen zu beziehen. Es werden die optimalen Kapazitäten für PV und Luftwärmepumpen ermittelt. Außerdem wird die Option eines Wärmespeichers einbezogen, um zu sehen, ob und welche Auswirkungen dieser auf die Systemergebnisse hat."
+

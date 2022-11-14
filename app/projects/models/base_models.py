@@ -143,8 +143,11 @@ class Project(models.Model):
                         )
 
         else:
-            message = _(
-                f"We could not find a user registered under the email address you provided: {email}"
+            message = (
+                _(
+                    "We could not find a user registered under the email address you provided: "
+                )
+                + email
             )
         return (success, message)
 
