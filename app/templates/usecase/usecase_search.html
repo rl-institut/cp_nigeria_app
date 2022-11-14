@@ -35,13 +35,13 @@
 				<img src="/static/assets/illustrations/use-cases-bg-{{ usecase.id }}.png" alt="Illustration">
 				<span data-bs-toggle="modal" data-bs-target="#es-modal-{{ usecase.id }}">
               <span class="icon icon-eye"></span>
-              Show
+              {% translate "Show" %}
             </span>
 			</div>
 			<div class="project__content">
 				<div class="project__top">
 					<h2 class="name">
-						{{ usecase.name }}
+						{% translate usecase.name %}
 					</h2>
 					<a href="{% url 'not_implemented' %}?url={{ request.get_full_path }}" class="location">
 						<span class="icon-pin" aria-hidden="true"></span>
@@ -62,15 +62,15 @@
 					<div class="actions">
 						<a class="btn btn--filled" type="button">
 							<span class="icon icon-export" aria-hidden="true"></span>
-							Export
+							{% translate "Export" %}
 						</a>
 						<a class="btn btn--action action" type="button">
-							Use as a project template
+							{% translate "Use as a project template" %}
 						</a>
 					</div>
 				</div>
 				<div class="project__description">
-					{{ usecase.description }}
+					{% translate usecase.description %}
 				</div>
 				<!--div class="project__scenarios">
 				<div class="toggle" class="js-toggle-scenario">
@@ -121,10 +121,10 @@
 								{% csrf_token %}
 								<li class="list-group-item list-group-item--uc">
 									<div class="list-group-item__name">
-										{{ scenario }}
+										{% translate scenario %}
 									</div>
 									<div class="list-group-item__description">
-										{{ scenario.description}}
+										{% translate scenario.description %}
 									</div>
 								</li>
 							</form>
