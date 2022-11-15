@@ -191,7 +191,7 @@ msgstr "Gas"
 
 #: projects/constants.py:272
 msgid "H2"
-msgstr ""
+msgstr "H2"
 
 #: projects/forms.py:150 projects/forms.py:699
 msgid "eg. 0.1"
@@ -849,11 +849,11 @@ msgstr "Siehe Trace-Daten"
 
 #: templates/asset/asset_create_form.html:36
 msgid "Economical parameters"
-msgstr ""
+msgstr "Wirtschaftliche Parameter"
 
 #: templates/asset/asset_create_form.html:48
 msgid "Technical parameters"
-msgstr ""
+msgstr "Technische Parameter"
 
 #: templates/asset/asset_create_form.html:56
 msgid "Calculate COP from temperature"
