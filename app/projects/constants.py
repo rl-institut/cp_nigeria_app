@@ -1,3 +1,5 @@
+from django.utils.translation import ugettext_lazy as _
+
 COUNTRY = (
     ("", "Choose..."),
     ("AFGHANISTAN", "AFGHANISTAN"),
@@ -264,10 +266,10 @@ FLOW_DIRECTION = (("B2A", "Bus_to_Asset"), ("A2B", "Asset_to_Bus"))
 
 ENERGY_VECTOR = (
     ("", "Choose..."),
-    ("Electricity", "Electricity"),
-    ("Heat", "Heat"),
-    ("Gas", "Gas"),
-    ("H2", "H2"),
+    ("Electricity", _("Electricity")),
+    ("Heat", _("Heat")),
+    ("Gas", _("Gas")),
+    ("H2", _("H2")),
     # ('Diesel', 'Diesel'),
 )
 

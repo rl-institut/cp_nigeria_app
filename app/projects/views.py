@@ -342,9 +342,10 @@ def project_upload(request):
 
 
 @login_required
-@require_http_methods(["POST"])
-def project_from_usecase(request):
-    usecase_id = request.POST.get("usecase", None)
+@require_http_methods(["GET", "POST"])
+def project_from_usecase(request, usecase_id=None):
+    if request.method == "POST":
+        usecase_id = request.POST.get("usecase", None)
     if usecase_id is not None:
         usecase_id = int(usecase_id)
     else:
@@ -353,6 +354,20 @@ def project_from_usecase(request):
     proj_id = usecase.assign(request.user)
 
     return HttpResponseRedirect(reverse("project_search", args=[proj_id]))
+
+
+@login_required
+@require_http_methods(["GET"])
+def usecase_export(request, usecase_id):
+
+    usecase = get_object_or_404(UseCase, id=usecase_id)
+
+    response = HttpResponse(
+        json.dumps(usecase.export(bind_scenario_data=True)),
+        content_type="application/json",
+    )
+    response["Content-Disposition"] = f"attachment; filename=usecase_{usecase.id}.json"
+    return response
 
 
 @login_required
@@ -375,9 +390,12 @@ def project_delete(request, proj_id):
 def project_search(request, proj_id=None, scen_id=None):
     # project_list = Project.objects.filter(user=request.user)
     # shared_project_list = Project.objects.filter(viewers=request.user)
-    combined_projects_list = Project.objects.filter(
-        Q(user=request.user) | Q(viewers__user=request.user)
-    ).distinct()
+    combined_projects_list = (
+        Project.objects.filter(Q(user=request.user) | Q(viewers__user=request.user))
+        .distinct()
+        .order_by("date_created")
+        .reverse()
+    )
 
     scenario_upload_form = UploadFileForm(
         labels=dict(name=_("New scenario name"), file=_("Scenario file"))

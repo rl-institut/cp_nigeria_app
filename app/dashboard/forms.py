@@ -142,6 +142,16 @@ class SankeyGraphForm(forms.Form):
         super().__init__(*args, **kwargs)
 
 
+class LoadDurationGraphForm(forms.Form):
+    energy_vector = forms.ChoiceField(
+        label=_("Energy vector"), choices=ENERGY_VECTOR, initial=ENERGY_VECTOR[1][0]
+    )
+
+    def __init__(self, *args, **kwargs):
+        scen_ids = kwargs.pop("scenario_ids", None)
+        super().__init__(*args, **kwargs)
+
+
 class SensitivityAnalysisGraphForm(ModelForm):
     def __init__(self, *args, **kwargs):
         proj_id = kwargs.pop("proj_id", None)
@@ -173,6 +183,8 @@ def graph_parameters_form_factory(report_type, *args, **kwargs):
         answer = StackedTimeseriesGraphForm(*args, **kwargs)
     if report_type == GRAPH_CAPACITIES:
         answer = StackedCapacitiesGraphForm(*args, **kwargs)
+    if report_type == GRAPH_LOAD_DURATION:
+        answer = LoadDurationGraphForm(*args, **kwargs)
     # GRAPH_BAR,
     # GRAPH_PIE,
     # GRAPH_LOAD_DURATION,

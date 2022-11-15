@@ -209,6 +209,8 @@ class Scenario(models.Model):
     evaluated_period = models.IntegerField(validators=[MinValueValidator(0)])
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
 
+    description = models.TextField(default="", blank=True)
+
     def __str__(self):
         return self.name
 

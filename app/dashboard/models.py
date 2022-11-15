@@ -5,6 +5,7 @@ import traceback
 import logging
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 
 
 from django.utils.translation import ugettext_lazy as _
@@ -149,6 +150,195 @@ class KPIScalarResults(models.Model):
 class KPICostsMatrixResults(models.Model):
     cost_values = models.TextField()  # to store the scalars dict
     simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE)
+
+
+class OemofBusResults(pd.DataFrame):  # real results
+    def __init__(self, results):
+
+        js = json.loads(results)
+        mindex = pd.MultiIndex.from_tuples(
+            js["columns"],
+            names=[
+                "bus",
+                "energy_vector",
+                "direction",
+                "asset",
+                "asset_type",
+                "oemof_type",
+            ],
+        )
+        df = pd.DataFrame(data=js["data"], columns=mindex)
+
+        ts_df = df.iloc[:-1]
+        ts_index = pd.to_datetime(js["index"][:-1], unit="ms")
+        investments = df.iloc[-1]
+        ts_df.index = ts_index
+
+        super().__init__(
+            data=ts_df.T.to_dict(orient="split")["data"],
+            index=mindex,
+            columns=ts_df.index,
+        )
+
+        self["investments"] = investments
+        self.sort_index(inplace=True)
+
+    def to_json(self, **kwargs):
+        kwargs["orient"] = "split"
+        return self.T.to_json(**kwargs)
+
+    def bus_flows(self):
+        return self.loc[:, self.columns != "investments"]
+
+    def asset_optimized_capacities(self):
+        return self.loc[:, "investments"]
+
+    def asset_optimized_capacity(self, asset_name):
+        optimized_capacity = self.loc[
+            self.index.get_level_values("asset") == asset_name, "investments"
+        ].dropna()
+        if len(optimized_capacity) == 1:
+            optimized_capacity = optimized_capacity[0]
+        return optimized_capacity
+
+
+class FlowResults(models.Model):
+    flow_data = models.TextField()  # to store the assets list
+    simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE)
+    __df_flows = None
+    __df_capacities = None
+
+    @property
+    def df_flows(self):
+        if self.__df_flows is None:
+            self.__df_flows = OemofBusResults(self.flow_data).bus_flows()
+
+        return self.__df_flows
+
+    def asset_optimized_capacity(self, asset_name):
+        return OemofBusResults(self.flow_data).asset_optimized_capacity(asset_name)
+
+    @property
+    def busses(self):
+        """returns a mapping of the bus to their energy_vectors"""
+        return {
+            k: v
+            for k, v in zip(
+                self.df_flows.index.get_level_values("bus"),
+                self.df_flows.index.get_level_values("energy_vector"),
+            )
+        }
+
+    def single_bus_flows(self, bus_name):
+        df_bus = self.df_flows.loc[bus_name]
+        energy_vector = df_bus.index.get_level_values("energy_vector").unique()[0]
+        df_bus.index = df_bus.index.droplevel(
+            ["asset_type", "energy_vector", "oemof_type"]
+        )
+        df = pd.concat(
+            [
+                df_bus.loc[df_bus.index.get_level_values("direction") == "in"].T,
+                df_bus.loc[df_bus.index.get_level_values("direction") == "out"].T * -1,
+            ],
+            axis=1,
+        )
+        df.name = bus_name
+
+        df.energy_vector = energy_vector
+
+        return df
+
+    def single_bus_flows_figure(self, bus_name):
+        df = self.single_bus_flows(bus_name)
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=df.index.tolist(),
+                    y=df.loc[:, col].values.tolist(),
+                    name=col[1],
+                    stackgroup=col[0],
+                )
+                for col in df.columns
+            ],
+            layout=dict(
+                title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"
+            ),
+        )
+
+        return fig.to_dict()
+
+    # def all_bus_flows_figure(self, exclude=None):
+    #     if exclude is None:
+    #         exclude = []
+    #     df = self.single_bus_flows(bus_name)
+    #     fig = go.Figure(
+    #         data=[
+    #             go.Scatter(
+    #                 x=df.index, y=df.loc[:, col].values, name=col[1], stackgroup=col[0]
+    #             )
+    #             for col in df.columns
+    #         ],
+    #         layout=dict(
+    #             title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"
+    #         ),
+    #     )
+    #
+    #     return fig.to_dict()
+
+    def load_duration_figure(self, energy_vector):
+        df_consumption = (
+            self.df_flows.loc[
+                (self.df_flows.index.get_level_values("direction") == "out")
+                & (
+                    self.df_flows.index.get_level_values("energy_vector")
+                    == energy_vector
+                )
+            ]
+            .groupby(level="asset_type")
+            .sum()
+            .T
+        )
+
+        # df_consumption["excess"] *= 0
+        df_consumption = df_consumption.sum(axis=1)
+        df_production = (
+            self.df_flows.loc[
+                (self.df_flows.index.get_level_values("direction") == "in")
+                & (
+                    self.df_flows.index.get_level_values("energy_vector")
+                    == energy_vector
+                )
+            ]
+            .groupby(level="asset_type")
+            .sum()
+            .T
+        )
+        percentage = np.linspace(0, 100, df_production.index.size)
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=percentage.tolist(),
+                    y=df_production.loc[:, col]
+                    .sort_values(ascending=False)
+                    .values.tolist(),
+                    name=col,
+                    stackgroup="production",
+                )
+                for col in df_production.columns
+            ]
+            + [
+                go.Scatter(
+                    x=percentage.tolist(),
+                    y=df_consumption.sort_values(ascending=False).values.tolist(),
+                    name="demand",
+                )
+            ],
+            layout=dict(
+                title=f"Load duration curve for {energy_vector}", hovermode="x unified"
+            ),
+        )
+
+        return fig.to_dict()
 
 
 class AssetsResults(models.Model):
@@ -466,6 +656,8 @@ def graph_capacities(simulations, y_variables):
 
         assets_results_obj = AssetsResults.objects.get(simulation=simulation)
 
+        # qs = FlowResults.objects.filter(simulation=simulation)
+
         results_dict = json.loads(simulation.results)
 
         kpi_scalar_matrix = results_dict["kpi"]["scalar_matrix"]
@@ -484,25 +676,45 @@ def graph_capacities(simulations, y_variables):
             else _("Opt. Cap.") + f"{simulation.scenario.name} (kW)",
         }
         for y_var in y_variables:
-
+            do_not_add = False
             if "@" not in y_var:
                 asset = assets_results_obj.single_asset_results(asset_name=y_var)
-                x_values.append(y_var)
+
                 if asset is not None:
                     installed_cap = asset["installed_capacity"]["value"]
+                    print(asset["asset_type"])
+                    if "dso" in asset["asset_type"] or "demand" in asset["asset_type"]:
+                        do_not_add = True
                 else:
                     installed_cap = 0
-                installed_capacity_dict["capacity"].append(installed_cap)
+                if do_not_add is False:
+                    x_values.append(y_var)
+                    installed_capacity_dict["capacity"].append(installed_cap)
+                # TODO have all graphs made via this way
+                # if qs.exists():
+                #     flow_results = qs.get()
+                #
+                #     optimized_cap = flow_results.asset_optimized_capacity(y_var)
+                #
+                #     if isinstance(optimized_cap, pd.Series):
+                #         if optimized_cap.empty is False:
+                #             optimized_cap = optimized_cap[
+                #                 optimized_cap.index.get_level_values("direction")
+                #                 == "out"
+                #             ].values[0]
+                #         else:
+                #             optimized_cap = None
+                # else:
                 if y_var in kpi_scalar_matrix:
-                    optimized_capacity_dict["capacity"].append(
-                        kpi_scalar_matrix[y_var]["optimized_add_cap"]
-                    )
+                    optimized_cap = kpi_scalar_matrix[y_var]["optimized_add_cap"]
                 else:
                     optimized_cap = 0
                     if asset is not None:
                         if "optimized_add_cap" in asset:
                             optimized_cap = asset["optimized_add_cap"]["value"]
+                if optimized_cap is not None and do_not_add is False:
                     optimized_capacity_dict["capacity"].append(optimized_cap)
+
         y_values.append(installed_capacity_dict)
         y_values.append(optimized_capacity_dict)
 
@@ -799,6 +1011,26 @@ class ReportItem(models.Model):
             return graph_sankey(
                 simulation=self.simulations.get(), energy_vector=energy_vector
             )
+
+        if self.report_type == GRAPH_LOAD_DURATION:
+            energy_vector = parameters.get("energy_vector", None)
+
+            simulation = self.simulations.get()
+            # if isinstance(energy_vector, list) is False:
+            #     energy_vector = [energy_vector]
+            if energy_vector is not None:
+
+                sim = simulation
+                qs = FlowResults.objects.filter(simulation=sim)
+                if qs.exists():
+                    flow_results = qs.get()
+                    fig_dict = flow_results.load_duration_figure(energy_vector)
+                else:
+                    fig_dict = {
+                        "layout": {"title": "There is an error with this graph."}
+                    }
+
+                return fig_dict
 
 
 def get_project_reportitems(project):

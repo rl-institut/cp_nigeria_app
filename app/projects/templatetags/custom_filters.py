@@ -22,7 +22,7 @@ def convert_seconds_to_intuitive_string(value):
 
 @register.filter(name="scenario_list")
 def get_scenario_list_from_project(project):
-    return project.scenario_set.all()
+    return project.scenario_set.all().order_by("name")
 
 
 @register.filter

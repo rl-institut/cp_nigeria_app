@@ -4,6 +4,41 @@
 {% load custom_template_tags %}
 {% load i18n %}
 
+{% comment %}
+- dropdown to select scenario triggering js function `update_selected_single_scenario`
+- button "Add chart" to create a new graph on the page triggering
+	`showCreateReportItemModal`, defined in scenario/scenario_results_page.html
+- this modal triggers the js function `createReportItem` when submitted, the function
+	make an ajax call to `report_create_item` view in dashboards/views.py. The success of the
+	ajax call expect that a new ReportItem was created and then pass the output of ReportItem.render_json()
+	to the js function `addReportItemGraphToDOM`. Ajax call was needed to avoid reloading the page to see
+  the graph appearing
+- div with id "drawflow" will be used to display the energy system
+- div with id "report_items" will be used to display graphs
+{% endcomment %}
+
+
+{% comment %}
+Procedure to add a new graph type:
+Create a new global variable for the name of the graph type in dashboards/helpers.py, ie GRAPH_MYGRAPHTYPE
+Add a Verbose name to REPORT_TYPES for GRAPH_MYGRAPHTYPE
+expand the GRAPH_PARAMETERS_SCHEMAS with the jsonschema for GRAPH_MYGRAPHTYPE parameters (
+parameters specific to this graph type only, other parameters are available in the model `ReportItem`
+)
+- Add a case `if self.report_type == GRAPH_MYGRAPHTYPE` in the `ReportItem.fetch_parameters_values` method in
+	dashboards/models.py. A json with the keys "report_item_id", "data", "title" and "report_item_type" will be
+	returned and the output of `ReportItem.fetch_parameters_values` will be assigned as the value of the "data" field
+- Add a form MYGRAPHTYPEGraphForm in dashboards/forms.py
+- Add it in the dashboards/forms.py::graph_parameters_form_factory
+- edit the `graph_type_mapping` in report_items.js to match a function which will update the plotly graph
+- all existing report items are listed for a given scenario
+  from the dashboards/views.py::scenario_visualize_results or project_compare_results --> report_items_data is passed to the html template
+  `report/single_scenario.html` or `report/compare_scenario.html` after being collected by the py function `get_project_reportitems`
+  of dashboards/models.py (the render_json method of report_items_data is called). To pass safely the json data to the html template, we use {{ report_items_data|json_script:"existingReportItemsData" }}
+  in static/js/report_items.js and loop over the report items to run the js function `addReportItemGraphToDOM`
+
+{% endcomment %}
+
 
 {% block title %}{% translate "Single Scenarios" %}{% endblock title %}
 
@@ -110,11 +145,12 @@
 		<!-- ES design stop -->
 		<!-- Graphs area start -->
 		<div class="row">
-			<div class="col" id="report_items">
-				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
-				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries by sector" %}
+			<div class="col" id="report_items" style="display:flex;flex-direction:column-reverse;">
 				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
+				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries by sector" %}
+				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
+
 			</div>
 		</div>
 		<!-- Graphs area  stop -->

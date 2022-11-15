@@ -10,7 +10,12 @@ from epa.settings import (
     MVS_SA_POST_URL,
     MVS_SA_GET_URL,
 )
-from dashboard.models import AssetsResults, KPICostsMatrixResults, KPIScalarResults
+from dashboard.models import (
+    AssetsResults,
+    KPICostsMatrixResults,
+    KPIScalarResults,
+    FlowResults,
+)
 from projects.constants import DONE, PENDING, ERROR
 import logging
 
@@ -185,6 +190,16 @@ def parse_mvs_results(simulation, response_results):
         AssetsResults.objects.create(
             assets_list=json.dumps(data_subdict), simulation=simulation
         )
+    qs = FlowResults.objects.filter(simulation=simulation)
+    if qs.exists():
+        asset_results = qs.first()
+        # TODO add safety here with json schema
+        asset_results.flow_data = data["raw_results"]
+        asset_results.save()
+    else:
+        # TODO add safety here with json schema
+        FlowResults.objects.create(flow_data=data["raw_results"], simulation=simulation)
+
     return response_results
 
 

@@ -49,11 +49,6 @@ urlpatterns = [
         name="ajax_get_sensitivity_analysis_parameters",
     ),
     path(
-        "scenario/results/request/<int:scen_id>",
-        scenario_request_results,
-        name="scenario_request_results",
-    ),
-    path(
         "scenario/results/available/<int:scen_id>",
         scenario_available_results,
         name="scenario_available_results",
