@@ -1731,7 +1731,7 @@ msgstr "Als PDF speichern"
 #, fuzzy
 #| msgid "There are no projects yet"
 msgid "Use as a project template"
-msgstr "Es sind noch keine Projekte vorhanden"
+msgstr "Verwendung als Projektvorlage"
 
 #: templates/usecase/usecase_search.html:165
 #, fuzzy
@@ -1787,15 +1787,6 @@ msgstr "Dashboard prüfen"
 
 msgid "Check status"
 msgstr "Status prüfen"
-
-msgid "Electricity"
-msgstr "Elektrizität"
-
-msgid "Heat"
-msgstr "Wärme"
-
-msgid "Gas"
-msgstr "Gas"
 
 msgid " Actual CAPEX of the asset, i.e., specific investment costs"
 msgstr " Tatsächliche CAPEX der Anlage, d.h. spezifische Investitionskosten"
@@ -2120,22 +2111,10 @@ msgstr ""
 "Die Daten und der Zeitpunkt, an dem die Simulation im ersten Schritt "
 "beginnt."
 
-msgid "Name of a csv file containing the properties of a storage component"
-msgstr ""
-"Name einer csv-Datei, die die Eigenschaften einer Speicherkomponente "
-"enthält"
 
 msgid "Minutes"
 msgstr "Minuten"
 
-msgid ""
-"Input the type of OEMOF component. For example, a PV plant would be a "
-"source, a solar inverter would be a transformer, etc.  The `type_oemof` "
-"will later on be determined through the EPA."
-msgstr ""
-"Geben Sie den Typ der OEMOF-Komponente ein. Zum Beispiel wäre eine PV-"
-"Anlage eine Quelle, ein Solarwechselrichter ein Transformator, usw.  Der "
-"`Typ_oemof` wird später durch die EPA bestimmt."
 
 msgid "Unit associated with the capacity of the component."
 msgstr "Einheit, die mit der Kapazität der Komponente verbunden ist."
@@ -2224,9 +2203,6 @@ msgstr "Emissionen pro Versandeinheit einer Anlage"
 msgid "Price of the energy carrier sourced from the utility grid."
 msgstr "Preis des Energieträgers, der aus dem Versorgungsnetz bezogen wird."
 
-msgid "Energy vector/commodity. Convention: For an energy conversion asset define energyVector of the output. For a sink define based on inflow. For a source define based on output flow. For a storage, define based on stored energy carrier."
-msgstr "Energievektor/Rohstoff. Konvention: Für eine Energieumwandlungsanlage definieren Sie den Energievektor des Ausgangs. Für eine Senke definieren Sie auf Basis des Zuflusses. Für eine Quelle definieren Sie basierend auf dem Ausgangsfluss. Für einen Speicher, definieren Sie basierend auf dem gespeicherten Energieträger."
-
 msgid "The number of days for which the simulation is to be run"
 msgstr "Die Anzahl der Tage, für die die Simulation durchgeführt werden soll"
 
@@ -2241,18 +2217,6 @@ msgstr "Maximale Kapazität zur Einspeisung von Strom ins Netz"
 
 msgid "Price received for feeding electricity into the grid"
 msgstr "Erhaltener Preis für die Einspeisung von Strom ins Netz"
-
-msgid "Name of a csv file containing the input generation or demand timeseries."
-msgstr "Name einer csv-Datei, die die Zeitreihe der Einspeisung enthält."
-
-msgid "Thermal losses of storage independent of state of charge and independent of nominal storage capacity between two consecutive timesteps."
-msgstr "Thermische Verluste des Speichers unabhängig vom Ladezustand und unabhängig von der nominalen Speicherkapazität zwischen zwei aufeinanderfolgenden Zeitschritten."
-
-msgid "Thermal losses of storage independent of state of charge between two consecutive timesteps relative to nominal storage capacity."
-msgstr "Thermische Verluste des Speichers unabhängig vom Ladezustand zwischen zwei aufeinanderfolgenden Zeitschritten relativ zur nominalen Speicherkapazität."
-
-msgid "The label of the bus/component from which the energyVector is arriving into the asset."
-msgstr "Die Bezeichnung des Busses/der Komponente, von dem/der der Energievektor in die Anlage gelangt."
 
 msgid "Installed capacity"
 msgstr "Installierte Leistung"
@@ -2291,7 +2255,7 @@ msgid "The minimum degree of autonomy that needs to be met by the optimization"
 msgstr "Das Mindestmaß an Autonomie, das durch die Optimierung erreicht werden muss"
 
 msgid "The minimum share of energy supplied by renewable generation that needs to be met by the optimization"
-msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss" msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
+msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
 
 msgid "Specifies whether optimization needs to result into a net zero energy system (True) or not (False)"
 msgstr "Gibt an, ob die Optimierung zu einem Netto-Nullenergie-System führen muss (True) oder nicht (False)"
@@ -2301,12 +2265,6 @@ msgstr "Kapazität optimieren"
 
 msgid "Choose if capacity optimization should be performed for this asset."
 msgstr "Wählen Sie, ob für diese Anlage eine Kapazitätsoptimierung durchgeführt werden soll."
-
-msgid "The label of bus/component towards which the energyVector is leaving from the asset."
-msgstr "Die Bezeichnung des Busses/der Komponente, zu dem/der der Energievektor von der Anlage abgeht."
-
-msgid "Enable the generation of a file with the linear equation system describing the simulation, ie., with the objective function and all the constraints. This lp file enables the user look at the underlying equations of the optimization."
-msgstr "Aktiviere die Erzeugung einer Datei mit dem linearen Gleichungssystem, das die Simulation beschreibt, d.h. mit der Zielfunktion und allen Nebenbedingungen. Diese lp-Datei ermöglicht es dem Benutzer, die zugrundeliegenden Gleichungen der Optimierung zu betrachten."
 
 msgid "Price to be paid additionally for energy consumption based on the peak demand of a given period"
 msgstr "Zusätzlich zu zahlender Preis für den Energieverbrauch auf der Grundlage des Spitzenbedarfs eines bestimmten Zeitraums"
@@ -2341,23 +2299,15 @@ msgstr "Weisen Sie eine Szenario-ID nach Ihren Wünschen zu."
 msgid "Assign a scenario name as per your preference."
 msgstr "Weisen Sie einen Szenariennamen nach Ihren Wünschen zu."
 
-msgid "The level of charge (as a factor of the actual capacity) in the storage in the zeroth time-step."
-msgstr "Der Ladezustand (als Faktor der tatsächlichen Kapazität) des Speichers im nullten Zeitschritt."
-
 msgid "The maximum permissible level of charge in the battery (generally, it is when the battery is filled to its nominal capacity), represented by the value 1.0. Users can  also specify a certain value as a factor of the actual capacity."
 msgstr "Der maximal zulässige Ladezustand des Akkus (in der Regel, wenn der Akku bis zu seiner Nennkapazität gefüllt ist), dargestellt durch den Wert 1.0. Benutzer können auch einen bestimmten Wert als Faktor der tatsächlichen Kapazität angeben."
 
 msgid "The minimum permissible level of charge in the battery as a factor of the nominal capacity of the battery."
 msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nennkapazität des Akkus."
 
-msgid "Actual CAPEX of an asset, i.e., specific investment costs"
-msgstr "Tatsächliche CAPEX einer Anlage, d.h. spezifische Investitionskosten"
-
 msgid "Operation and management costs"
 msgstr "Betriebs- und Verwaltungskosten"
 
-msgid "Actual OPEX of an asset, i.e., specific operational and maintenance costs."
-msgstr "Tatsächliche OPEX einer Anlage, d.h. spezifische Betriebs- und Wartungskosten."
 
 msgid "The date and time on which the simulation starts at the first step."
 msgstr "Das Datum und die Uhrzeit, zu der die Simulation mit dem ersten Schritt beginnt."
@@ -2546,14 +2496,9 @@ msgstr "3. Wärmepumpen"
 msgid "The required capacities to fully cover the heat supply with solar thermal + heat pumps is determined."
 msgstr "Es werden die erforderlichen Kapazitäten zur vollständigen Deckung der Wärmeversorgung mit Solarthermie + Wärmepumpen ermittelt."
 
-msgid: ""
-"Optimization of the home supply near Constance for a single family house with the following data:"
-"3500kWh/year electricity consumption BDEW h0 profile"
-"28600kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW."
-"Weather data from German weather service for Konstanz 2018."
-"Cost data for components largely from Danish technology catalog."
-"Assumed roof pitch of 30° with south orientation for solar collector and PV modules"
-msgstr: ""
+msgid ""
+"Optimization of the home supply near Constance for a single family house with the following data:3500kWh/year electricity consumption BDEW h0 profile 28600kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW. Weather data from German weather service for Konstanz 2018. Cost data for components largely from Danish technology catalog. Assumed roof pitch of 30° with south orientation for solar collector and PV modules"
+msgstr ""
 "Optimierung der Hausversorgung bei Konstanz für ein Einfamilienhaus mit folgenden Daten: "
 "3500kWh/Jahr Stromverbrauch BDEW h0 Profil, "
 "28600kWh/Jahr Wärmeverbrauch (Heizung+Warmwasser) modelliert durch Außentemperatur nach BDEW. "
@@ -2570,13 +2515,9 @@ msgstr "Eigenheim Optimierung mit Sole Wärmepumpe"
 msgid "Home optimization with air heat pump"
 msgstr "Eigenheim Optimierung mit Luftwärmepumpe"
 
-msgid: ""
-"Optimization of an apartment building (approx. 20 apartments) near Konstanz with the following data:"
-"70,000 kWh/year electricity consumption BDEW H0 profile"
-"286,000 kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW."
-"Weather data from German weather service for Constance 2018."
-"Cost data for components largely from Danish technology catalog"
-msgstr: ""
+msgid ""
+"Optimization of an apartment building (approx. 20 apartments) near Konstanz with the following data: 70,000 kWh/year electricity consumption BDEW H0 profile 286,000 kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW. Weather data from German weather service for Constance 2018. Cost data for components largely from Danish technology catalog"
+msgstr ""
 "Optimierung eines Mehrfamilienhauses (ca. 20 Wohnungen) bei Konstanz mit den folgenden Daten: "
 "70.000 kWh/Jahr Stromverbrauch BDEW H0-Profil, "
 "286.000 kWh/Jahr Wärmeverbrauch (Heizung+Warmwasser) modelliert durch Außentemperatur nach BDEW. "
