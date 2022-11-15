@@ -657,6 +657,8 @@ class AssetCreateForm(OpenPlanModelForm):
             )
             self.fields["efficiency"].label = "COP"
 
+            value = self.fields.pop("efficiency")
+            self.fields["efficiency"] = value
         if self.asset_type_name == "chp":
             self.fields["efficiency"] = DualNumberField(
                 default=1, min=0, max=1, param_name="efficiency"
