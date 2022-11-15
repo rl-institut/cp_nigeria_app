@@ -18,6 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 #: dashboard/forms.py:29 templates/report/single_scenario.html:59
 #: templates/scenario/scenario_progression.html:17
 #, fuzzy
@@ -2065,7 +2066,7 @@ msgstr ""
 "Anzahl der Bezugszeiträume in einem Jahr für den Spitzenbedarfspreis."
 
 msgid "times per year (1,2,3,4,6,12)"
-msgstr "Mal jährlich (1,2,3,4,6,12)"
+msgstr "mal pro Jahr (1,2,3,4,6,12)"
 
 msgid "Years"
 msgstr "Jahre"
@@ -2096,7 +2097,7 @@ msgstr ""
 "nullten Zeitschritt."
 
 msgid "None or factor"
-msgstr "Keiner oder Faktor"
+msgstr "Kein oder Faktor"
 
 msgid "Actual CAPEX of an asset, i.e., specific investment costs"
 msgstr ""
@@ -2182,16 +2183,16 @@ msgid "All timeseries"
 msgstr "Alle Zeitreihen"
 
 msgid "Previous years of operations"
-msgstr "Frühere Jahre der Tätigkeit"
+msgstr "Frühere Jahre der Geschäftstätigkeit"
 
 msgid "The number of years the asset has already been in operation"
 msgstr "Die Anzahl der Jahre, die die Anlage bereits in Betrieb ist"
 
 msgid "The rate at which the storage can be charged or discharged relative to the nominal capacity of the storage"
-msgstr "Die Rate, mit der der Speicher geladen oder entladen werden kann, bezogen auf die Nominalkapazität des Speichers"
+msgstr "Die Rate, mit der der Speicher geladen oder entladen werden kann, bezogen auf die Nennkapazität des Speichers"
 
 msgid "The name of the country where the project is being deployed"
-msgstr "Der Name des Landes, in dem das Projekt entwickelt wird"
+msgstr "Der Name des Landes, in dem das Projekt eingesetzt wird"
 
 msgid "The currency of the country where the project is implemented"
 msgstr "Die Währung des Landes, in dem das Projekt umgesetzt wird"
@@ -2203,19 +2204,19 @@ msgid "Fixed project costs"
 msgstr "Feste Projektkosten"
 
 msgid "Discount factor"
-msgstr "Ermäßigungsfaktor"
+msgstr "Abzinsungsfaktor"
 
 msgid "The factor which accounts for the depreciation in the value of money in the future, compared to the current value of the same money. The common method is to calculate the weighted average cost of capital (WACC) and use it as the discount rate."
 msgstr "Der Faktor, der die Wertminderung des Geldes in der Zukunft im Vergleich zum aktuellen Wert des gleichen Geldes berücksichtigt. Die übliche Methode ist die Berechnung der gewichteten durchschnittlichen Kapitalkosten (WACC) und deren Verwendung als Abzinsungssatz."
 
 msgid "Costs associated with a flow through/from the asset"
-msgstr "Kosten im Zusammenhang mit dem Fluss durch/von der Anlage"
+msgstr "Kosten im Zusammenhang mit einem Fluss durch/von der Anlage"
 
 msgid "Stands for Demand Side Management. Currently, not implemented."
 msgstr "Steht für Demand Side Management. Derzeit nicht implementiert."
 
 msgid "Ratio of energy output/energy input"
-msgstr "Verhältnis von Energieabgabe/Energieinput"
+msgstr "Verhältnis von Energieertrag/Energieaufwand"
 
 msgid "Emissions per unit dispatch of an asset"
 msgstr "Emissionen pro Versandeinheit einer Anlage"
@@ -2224,7 +2225,7 @@ msgid "Price of the energy carrier sourced from the utility grid."
 msgstr "Preis des Energieträgers, der aus dem Versorgungsnetz bezogen wird."
 
 msgid "Energy vector/commodity. Convention: For an energy conversion asset define energyVector of the output. For a sink define based on inflow. For a source define based on output flow. For a storage, define based on stored energy carrier."
-msgstr "Energievektor/Rohstoff. Konvention: Für eine Energieumwandlungsanlage definieren Sie den Energievektor des Ausgabe. Für eine Senke definieren Sie basierend auf dem Zufluss. Für eine Quelle definieren Sie basierend auf dem Ausgangsfluss. Für einen Speicher, definieren Sie basierend auf dem gespeicherten Energieträger."
+msgstr "Energievektor/Rohstoff. Konvention: Für eine Energieumwandlungsanlage definieren Sie den Energievektor des Ausgangs. Für eine Senke definieren Sie auf Basis des Zuflusses. Für eine Quelle definieren Sie basierend auf dem Ausgangsfluss. Für einen Speicher, definieren Sie basierend auf dem gespeicherten Energieträger."
 
 msgid "The number of days for which the simulation is to be run"
 msgstr "Die Anzahl der Tage, für die die Simulation durchgeführt werden soll"
@@ -2242,7 +2243,7 @@ msgid "Price received for feeding electricity into the grid"
 msgstr "Erhaltener Preis für die Einspeisung von Strom ins Netz"
 
 msgid "Name of a csv file containing the input generation or demand timeseries."
-msgstr "Name einer csv-Datei, die die Inputgeneration der Einspeisung enthält."
+msgstr "Name einer csv-Datei, die die Zeitreihe der Einspeisung enthält."
 
 msgid "Thermal losses of storage independent of state of charge and independent of nominal storage capacity between two consecutive timesteps."
 msgstr "Thermische Verluste des Speichers unabhängig vom Ladezustand und unabhängig von der nominalen Speicherkapazität zwischen zwei aufeinanderfolgenden Zeitschritten."
@@ -2254,10 +2255,10 @@ msgid "The label of the bus/component from which the energyVector is arriving in
 msgstr "Die Bezeichnung des Busses/der Komponente, von dem/der der Energievektor in die Anlage gelangt."
 
 msgid "Installed capacity"
-msgstr "Installierte Kapazität"
+msgstr "Installierte Leistung"
 
 msgid "The already existing installed capacity in-place"
-msgstr "Die bereits vorhandene installierte Kapazität vor Ort"
+msgstr "Die bereits vorhandene installierte Leistung an Ort und Stelle"
 
 msgid "Location's latitude"
 msgstr "Breitengrad des Standorts"
@@ -2269,7 +2270,7 @@ msgid "Asset lifetime"
 msgstr "Lebensdauer der Anlage"
 
 msgid "Number of operational years of the asset until it has to be replaced"
-msgstr "Anzahl der Betriebsjahre der Anlage, bis sie ersetzt werden muss"
+msgstr "Anzahl der Betriebsjahre des Assets, bis es ersetzt werden muss"
 
 msgid "Location's longitude"
 msgstr "Längengrad des Standortes"
@@ -2290,10 +2291,10 @@ msgid "The minimum degree of autonomy that needs to be met by the optimization"
 msgstr "Das Mindestmaß an Autonomie, das durch die Optimierung erreicht werden muss"
 
 msgid "The minimum share of energy supplied by renewable generation that needs to be met by the optimization"
-msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
+msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss" msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
 
 msgid "Specifies whether optimization needs to result into a net zero energy system (True) or not (False)"
-msgstr "Gibt an, ob die Optimierung zu einem Net-Zero-Energiesystem führen muss (True) oder nicht (False)"
+msgstr "Gibt an, ob die Optimierung zu einem Netto-Nullenergie-System führen muss (True) oder nicht (False)"
 
 msgid "Optimize capacity"
 msgstr "Kapazität optimieren"
@@ -2305,13 +2306,13 @@ msgid "The label of bus/component towards which the energyVector is leaving from
 msgstr "Die Bezeichnung des Busses/der Komponente, zu dem/der der Energievektor von der Anlage abgeht."
 
 msgid "Enable the generation of a file with the linear equation system describing the simulation, ie., with the objective function and all the constraints. This lp file enables the user look at the underlying equations of the optimization."
-msgstr "Erlaube die Erzeugung einer Datei mit dem linearen Gleichungssystem, das die Simulation beschreibt, d.h. mit der Zielfunktion und allen Nebenbedingungen. Diese lp-Datei ermöglicht es dem Benutzer, die zugrundeliegenden Gleichungen der Optimierung zu betrachten."
+msgstr "Aktiviere die Erzeugung einer Datei mit dem linearen Gleichungssystem, das die Simulation beschreibt, d.h. mit der Zielfunktion und allen Nebenbedingungen. Diese lp-Datei ermöglicht es dem Benutzer, die zugrundeliegenden Gleichungen der Optimierung zu betrachten."
 
 msgid "Price to be paid additionally for energy consumption based on the peak demand of a given period"
 msgstr "Zusätzlich zu zahlender Preis für den Energieverbrauch auf der Grundlage des Spitzenbedarfs eines bestimmten Zeitraums"
 
 msgid "Number of reference periods in one year for the peak demand pricing"
-msgstr "Anzahl der Referenzperioden in einem Jahr für den Spitzenbelastungspreis"
+msgstr "Anzahl der Referenzperioden in einem Jahr für den Spitzenlasttarif"
 
 msgid "Project duration"
 msgstr "Projektdauer"
@@ -2320,10 +2321,10 @@ msgid "The number of years the project is intended to be operational"
 msgstr "Die Anzahl der Jahre, die das Projekt in Betrieb sein soll"
 
 msgid "Assign a project ID as per your preference."
-msgstr "Weisen Sie eine Projekt-ID Ihres Wunsches zu."
+msgstr "Weisen Sie eine Projekt-ID nach Ihren Wünschen zu."
 
 msgid "Assign a project name as per your preference."
-msgstr "Weisen Sie einen Projektnamen Ihres Wunsches zu."
+msgstr "Weisen Sie einen Projektnamen nach Ihren Wünschen zu."
 
 msgid "The share of renewables in the generation mix of the energy supplied by the DSO utility"
 msgstr "Der Anteil der erneuerbaren Energien am Erzeugungsmix der vom DSO-Versorger gelieferten Energie"
@@ -2335,19 +2336,19 @@ msgid "Brief description of the scenario being simulated"
 msgstr "Kurze Beschreibung des zu simulierenden Szenarios"
 
 msgid "Assign a scenario id as per your preference."
-msgstr "Weisen Sie eine Szenario-ID Ihres Wunsches zu."
+msgstr "Weisen Sie eine Szenario-ID nach Ihren Wünschen zu."
 
 msgid "Assign a scenario name as per your preference."
-msgstr "Weisen Sie einen Szenariennamen Ihres Wunsches zu."
+msgstr "Weisen Sie einen Szenariennamen nach Ihren Wünschen zu."
 
 msgid "The level of charge (as a factor of the actual capacity) in the storage in the zeroth time-step."
 msgstr "Der Ladezustand (als Faktor der tatsächlichen Kapazität) des Speichers im nullten Zeitschritt."
 
 msgid "The maximum permissible level of charge in the battery (generally, it is when the battery is filled to its nominal capacity), represented by the value 1.0. Users can  also specify a certain value as a factor of the actual capacity."
-msgstr "Der maximal zulässige Ladezustand des Akkus (in der Regel, wenn der Akku bis zu seiner Nominalkapazität gefüllt ist), dargestellt durch den Wert 1.0. Benutzer können auch einen bestimmten Wert als Faktor der tatsächlichen Kapazität angeben."
+msgstr "Der maximal zulässige Ladezustand des Akkus (in der Regel, wenn der Akku bis zu seiner Nennkapazität gefüllt ist), dargestellt durch den Wert 1.0. Benutzer können auch einen bestimmten Wert als Faktor der tatsächlichen Kapazität angeben."
 
 msgid "The minimum permissible level of charge in the battery as a factor of the nominal capacity of the battery."
-msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nominalkapazität des Akkus."
+msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nennkapazität des Akkus."
 
 msgid "Actual CAPEX of an asset, i.e., specific investment costs"
 msgstr "Tatsächliche CAPEX einer Anlage, d.h. spezifische Investitionskosten"
@@ -2377,13 +2378,13 @@ msgid "Unit associated with the capacity of the component"
 msgstr "Mit der Kapazität der Komponente verbundene Einheit"
 
 msgid "Power loss index"
-msgstr "Leistungsverlust-Index"
+msgstr "Verlustleistungsindex"
 
 msgid "beta"
 msgstr "beta"
 
 msgid "Power loss index for CHPs, usually known as beta coefficient"
-msgstr "Leistungsverlust-Index für BHKWs, meist bekannt als Beta-Koeffizient"
+msgstr "Verlustleistungsindex für BHKWs, meist bekannt als Beta-Koeffizient"
 
 msgid "Industriestandort Max Bögl"
 msgstr "Industriestandort Max Bögl"
@@ -2404,7 +2405,7 @@ msgid "Electricity supply to community"
 msgstr "Elektrizitätsversorgung der Gemeinde"
 
 msgid "A community of 3,000 residents wants to determine how they can increase the self-sufficiency of their electricity supply. PV and wind as renewable sources are considered, and battery storage."
-msgstr "Eine Gemeinde mit 3.000 Einwohnern möchte herausfinden, wie sie die Autakie ihrer Stroversorgung erhöhen kann. In Frage kommen PV und Wind als erneuerbare Quellen sowie Batteriespeicher."
+msgstr "Eine Gemeinde mit 3.000 Einwohnern möchte herausfinden, wie sie die Autarkie ihrer Stromversorgung erhöhen kann. In Frage kommen PV und Wind als erneuerbare Quellen sowie Batteriespeicher."
 
 msgid "1. DSO supply to community"
 msgstr "1. DSO-Versorgung der Gemeinde"
@@ -2422,7 +2423,7 @@ msgid "2. DSO + PV supply to community"
 msgstr "2. DSO + PV-Versorgung der Gemeinde"
 
 msgid "The community investigates if investing in PV is a feasible option. The optimal capacity is determined."
-msgstr "Die Gemeinde untersucht, ob eine Investition in PV-Anlagen eine machbare Option ist. Die optimale Leistung wird ermittelt."
+msgstr "Die Gemeinde untersucht, ob eine Investition in PV eine machbare Option ist. Die optimale Leistung wird ermittelt."
 
 msgid "4. DSO + PV + wind supply to community"
 msgstr "4. DSO + PV + Windversorgung der Gemeinde"
@@ -2465,4 +2466,129 @@ msgstr "4. Wärmeversorgung + PV/Wärmepumpen + Speicher an Gemeinde"
 
 msgid "The community aims to have 70 % minimum of their heat supply from renewable sources. The optimal capacities for PV and air-source heat pumps are determined. The option for thermal storage is also included to see what effects, if any, this has on the system results."
 msgstr "Die Gemeinde strebt an, mindestens 70 % ihrer Wärmeversorgung aus erneuerbaren Quellen zu beziehen. Es werden die optimalen Kapazitäten für PV und Luftwärmepumpen ermittelt. Außerdem wird die Option eines Wärmespeichers einbezogen, um zu sehen, ob und welche Auswirkungen dieser auf die Systemergebnisse hat."
+
+
+msgid "Industrial site Max Bögl"
+msgstr "Industriestandort Max Bögl"
+
+msgid "2. S01 + PV"
+msgstr "2. S01 + PV"
+
+msgid "3. S01 + PV + Wind"
+msgstr "3. S01 + PV + Wind"
+
+msgid "1. actual state"
+msgstr "1. aktueller Stand"
+
+msgid "4. S01 + PV + Wind + Battery"
+msgstr "4. S01 + PV + Wind + Batterie"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Hydrogen production for a technology park"
+msgstr "Wasserstoffproduktion für einen Technologiepark"
+
+msgid "A technology park considers locally producing hydrogen from excess PV generation, either for using as a means of electricity storage or for external sales."
+msgstr "Ein Technologiepark erwägt die lokale Produktion von Wasserstoff aus überschüssiger PV-Erzeugung, entweder zur Nutzung als Stromspeicher oder zum externen Verkauf."
+
+msgid "1. Current energy suppy"
+msgstr "1. aktuelle Energieversorgung"
+
+msgid "The current electricity supply of the technology park is evaluated, as a reference case. 150 kWp PV is already installed."
+msgstr "Als Referenzfall wird die aktuelle Stromversorgung des Technologieparks bewertet. Es sind bereits 150 kWp PV installiert."
+
+msgid "2. Additional PV"
+msgstr "2. zusätzliche PV"
+
+msgid "The technology park invests in an additional 150 kWp PV to see if this increases the renewable share of the energy system, and if it's financially beneficial."
+msgstr "Der Technologiepark investiert in eine zusätzliche 150 kWp-PV, um zu sehen, ob dies den Anteil der erneuerbaren Energien am Energiesystem erhöht und ob es sich finanziell lohnt."
+
+msgid "4. Additional PV + H2 for sales (10 €/kgH2)"
+msgstr "4. zusätzliche PV + H2 für den Verkauf (10 €/kgH2)"
+
+msgid "The technology park invests in an additional 150 kWp PV, and the costs of supplying H2 for 10 €/kg is analysed. Note: the electrolyzer costs must be set in €/kgH2, and the output capacity will be in kgH2."
+msgstr "Der Technologiepark investiert in eine zusätzliche 150 kWp PV, und die Kosten für die Bereitstellung von H2 für 10 €/kg werden analysiert. Hinweis: Die Kosten für den Elektrolyseur müssen in €/kgH2 angegeben werden, und die Produktionskapazität wird in kgH2 angegeben."
+
+msgid "5. Additional PV + H2 for sales (12 €/kgH2)"
+msgstr "5. zusätzliche PV + H2 für den Verkauf (12 €/kgH2)"
+
+msgid "The technology park invests in an additional 150 kWp PV, and the costs of supplying H2 for 12 €/kg is analysed. Note: the electrolyzer costs must be set in €/kgH2, and the output capacity will be in kgH2."
+msgstr "Der Technologiepark investiert in eine zusätzliche 150 kWp PV, und die Kosten für die Bereitstellung von H2 für 12 €/kg werden analysiert. Hinweis: Die Kosten für den Elektrolyseur müssen in €/kgH2 angegeben werden, und die Produktionskapazität wird in kgH2 angegeben."
+
+msgid "3. Additional PV + H2 for electricity storage (opt cap)"
+msgstr "3. zusätzliche PV + H2 zur Stromspeicherung (opt cap)"
+
+msgid "The technology park invests in an additional 150 kWp PV, and the potential for H2 as electricity storage from excess PV production is considered. The electrolyzer and storage costs are in €/kgH2, and if the assets chosen to be installed in the system, the capacity is also in kg. Fuel cell costs are in €/kW (output power)."
+msgstr "Der Technologiepark investiert in zusätzliche 150 kWp PV, und das Potenzial für H2 als Stromspeicher aus überschüssiger PV-Produktion wird berücksichtigt. Die Kosten für den Elektrolyseur und den Speicher sind in €/kgH2 angegeben, und wenn die Anlagen im System installiert werden sollen, ist die Kapazität ebenfalls in kg angegeben. Die Kosten der Brennstoffzelle sind in €/kW (Ausgangsleistung) angegeben."
+
+msgid "Sector coupling for office building"
+msgstr "Sektorenkopplung für Bürogebäude"
+
+msgid "An office building aims to improve the sustainability, overall efficiency and flexibility of its energy system by introducing renewables and considering sector coupling for electricity and heat."
+msgstr "Ein Bürogebäude zielt darauf ab, die Nachhaltigkeit, Gesamteffizienz und Flexibilität seines Energiesystems durch die Einführung erneuerbarer Energien und die Berücksichtigung der Sektorkopplung für Strom und Wärme zu verbessern."
+
+msgid "1. Current energy suppy to building"
+msgstr "1. aktuelle Energieversorgung des Gebäudes"
+
+msgid "The energy supply of an office building is shown as a reference case."
+msgstr "Die Energieversorgung eines Bürogebäudes wird als Referenzfall dargestellt."
+
+msgid "2. Rooftop PV and solar thermal"
+msgstr "2. Aufdach-PV und Solarthermie"
+
+msgid "The office building looks to invest in 100 kWp solar PV and 50 kW solar thermal on the rooftops."
+msgstr "Das Bürogebäude plant eine Investition in 100 kWp Photovoltaik und 50 kW Solarthermie auf den Dächern."
+
+msgid "3. Heat pumps"
+msgstr "3. Wärmepumpen"
+
+msgid "The required capacities to fully cover the heat supply with solar thermal + heat pumps is determined."
+msgstr "Es werden die erforderlichen Kapazitäten zur vollständigen Deckung der Wärmeversorgung mit Solarthermie + Wärmepumpen ermittelt."
+
+msgid: ""
+"Optimization of the home supply near Constance for a single family house with the following data:"
+"3500kWh/year electricity consumption BDEW h0 profile"
+"28600kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW."
+"Weather data from German weather service for Konstanz 2018."
+"Cost data for components largely from Danish technology catalog."
+"Assumed roof pitch of 30° with south orientation for solar collector and PV modules"
+msgstr: ""
+"Optimierung der Hausversorgung bei Konstanz für ein Einfamilienhaus mit folgenden Daten: "
+"3500kWh/Jahr Stromverbrauch BDEW h0 Profil, "
+"28600kWh/Jahr Wärmeverbrauch (Heizung+Warmwasser) modelliert durch Außentemperatur nach BDEW. "
+"Wetterdaten vom Deutschen Wetterdienst für Konstanz 2018. "
+"Kostendaten für Komponenten weitgehend aus dänischem Technologiekatalog. "
+"Angenommene Dachneigung von 30° mit Südausrichtung für Solarkollektor und PV-Module"
+
+msgid "Einfamilienhaus"
+msgstr "Einzelhaushalt"
+
+msgid "Home optimization with brine heat pump"
+msgstr "Eigenheim Optimierung mit Sole Wärmepumpe"
+
+msgid "Home optimization with air heat pump"
+msgstr "Eigenheim Optimierung mit Luftwärmepumpe"
+
+msgid: ""
+"Optimization of an apartment building (approx. 20 apartments) near Konstanz with the following data:"
+"70,000 kWh/year electricity consumption BDEW H0 profile"
+"286,000 kWh/year heat consumption (heating+hot water) modeled by outdoor temperature according to BDEW."
+"Weather data from German weather service for Constance 2018."
+"Cost data for components largely from Danish technology catalog"
+msgstr: ""
+"Optimierung eines Mehrfamilienhauses (ca. 20 Wohnungen) bei Konstanz mit den folgenden Daten: "
+"70.000 kWh/Jahr Stromverbrauch BDEW H0-Profil, "
+"286.000 kWh/Jahr Wärmeverbrauch (Heizung+Warmwasser) modelliert durch Außentemperatur nach BDEW. "
+"Wetterdaten vom Deutschen Wetterdienst für Konstanz 2018. "
+"Kostendaten für Komponenten weitgehend aus dänischem Technikkatalog"
+
+msgid "Apartment building"
+msgstr "Mehrfamilienhaus"
+
+msgid "Optimization with CHP and air heat pump"
+msgstr "Eigenheim Optimierung mit Luftwärmepumpe"
+
+msgid "Optimization with CHP"
+msgstr "Optimierung mit BHWK"
 
