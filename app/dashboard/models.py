@@ -153,7 +153,7 @@ class KPICostsMatrixResults(models.Model):
 
 
 class OemofBusResults(pd.DataFrame):  # real results
-    def __init__(self, results, busses=None):
+    def __init__(self, results):
 
         js = json.loads(results)
         mindex = pd.MultiIndex.from_tuples(
@@ -167,33 +167,56 @@ class OemofBusResults(pd.DataFrame):  # real results
                 "oemof_type",
             ],
         )
-        df = pd.DataFrame(data=js["data"], index=js["index"])
-        df.index = pd.to_datetime(df.index, unit="ms")
-        # print(df.to_dict())
+        df = pd.DataFrame(data=js["data"], columns=mindex)
+
+        ts_df = df.iloc[:-1]
+        ts_index = pd.to_datetime(js["index"][:-1], unit="ms")
+        investments = df.iloc[-1]
+        ts_df.index = ts_index
+
         super().__init__(
-            data=df.T.to_dict(orient="split")["data"], index=mindex, columns=df.index
+            data=ts_df.T.to_dict(orient="split")["data"],
+            index=mindex,
+            columns=ts_df.index,
         )
+
+        self["investments"] = investments
         self.sort_index(inplace=True)
 
     def to_json(self, **kwargs):
         kwargs["orient"] = "split"
         return self.T.to_json(**kwargs)
 
-    def bus_flows(self, bus_name):
-        return self.loc[bus_name].T
+    def bus_flows(self):
+        return self.loc[:, self.columns != "investments"]
+
+    def asset_optimized_capacities(self):
+        return self.loc[:, "investments"]
+
+    def asset_optimized_capacity(self, asset_name):
+        optimized_capacity = self.loc[
+            self.index.get_level_values("asset") == asset_name, "investments"
+        ].dropna()
+        if len(optimized_capacity) == 1:
+            optimized_capacity = optimized_capacity[0]
+        return optimized_capacity
 
 
 class FlowResults(models.Model):
     flow_data = models.TextField()  # to store the assets list
     simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE)
     __df_flows = None
+    __df_capacities = None
 
     @property
     def df_flows(self):
         if self.__df_flows is None:
-            self.__df_flows = OemofBusResults(self.flow_data)
+            self.__df_flows = OemofBusResults(self.flow_data).bus_flows()
 
         return self.__df_flows
+
+    def asset_optimized_capacity(self, asset_name):
+        return OemofBusResults(self.flow_data).asset_optimized_capacity(asset_name)
 
     @property
     def busses(self):
@@ -633,6 +656,8 @@ def graph_capacities(simulations, y_variables):
 
         assets_results_obj = AssetsResults.objects.get(simulation=simulation)
 
+        qs = FlowResults.objects.filter(simulation=simulation)
+
         results_dict = json.loads(simulation.results)
 
         kpi_scalar_matrix = results_dict["kpi"]["scalar_matrix"]
@@ -660,15 +685,28 @@ def graph_capacities(simulations, y_variables):
                 else:
                     installed_cap = 0
                 installed_capacity_dict["capacity"].append(installed_cap)
-                if y_var in kpi_scalar_matrix:
-                    optimized_capacity_dict["capacity"].append(
-                        kpi_scalar_matrix[y_var]["optimized_add_cap"]
-                    )
+                if qs.exists():
+                    flow_results = qs.get()
+
+                    optimized_cap = flow_results.asset_optimized_capacity(y_var)
+
+                    if isinstance(optimized_cap, pd.Series):
+                        if optimized_cap.empty is False:
+                            optimized_cap = optimized_cap[
+                                optimized_cap.index.get_level_values("direction")
+                                == "out"
+                            ].values[0]
+                        else:
+                            optimized_cap = None
                 else:
-                    optimized_cap = 0
-                    if asset is not None:
-                        if "optimized_add_cap" in asset:
-                            optimized_cap = asset["optimized_add_cap"]["value"]
+                    if y_var in kpi_scalar_matrix:
+                        optimized_cap = kpi_scalar_matrix[y_var]["optimized_add_cap"]
+                    else:
+                        optimized_cap = 0
+                        if asset is not None:
+                            if "optimized_add_cap" in asset:
+                                optimized_cap = asset["optimized_add_cap"]["value"]
+                if optimized_cap is not None:
                     optimized_capacity_dict["capacity"].append(optimized_cap)
         y_values.append(installed_capacity_dict)
         y_values.append(optimized_capacity_dict)
@@ -981,10 +1019,9 @@ class ReportItem(models.Model):
                     flow_results = qs.get()
                     fig_dict = flow_results.load_duration_figure(energy_vector)
                 else:
-                    raise ValueError(
-                        "There is no results ready for this graph. "
-                        "Rerun the simulation could fiy the issue as the simulator was updated recently"
-                    )
+                    fig_dict = {
+                        "layout": {"title": "There is an error with this graph."}
+                    }
 
                 return fig_dict
 
