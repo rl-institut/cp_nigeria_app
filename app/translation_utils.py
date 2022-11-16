@@ -198,8 +198,14 @@ def insert_translations_into_po_file(trans_dict, fname, fpath=LOCALE_PATH):
                 long_line_str = True
                 msg_value.append(l)
             else:
-                msgstrs.append(l)  # .replace("msgstr ", "")
-                lines_to_write.append(l)
+                msgid = msgids[-1]
+                if msgid in trans_dict:
+                    dict_msgid = trans_dict.pop(msgid)
+                    msgstrs.append(dict_msgid)
+                    lines_to_write = lines_to_write + list(dict_msgid)
+                else:
+                    msgstrs.append(l)  # .replace("msgstr ", "")
+                    lines_to_write.append(l)
 
         # if the value of msgstr was several lines, terminates it
         elif l[0] == "\n" and long_line_str is True:
@@ -207,8 +213,12 @@ def insert_translations_into_po_file(trans_dict, fname, fpath=LOCALE_PATH):
             if len(msg_value) == 1 and msg_value[0] == 'msgstr ""\n':
                 msgid = msgids[-1]
                 if msgid in trans_dict:
-                    msgstrs.append(trans_dict[msgid])
-                    lines_to_write = lines_to_write + list(trans_dict[msgid])
+                    dict_msgid = trans_dict.pop(msgid)
+                    msgstrs.append(dict_msgid)
+                    lines_to_write = lines_to_write + list(dict_msgid)
+                else:
+                    msgstrs.append(tuple(msg_value))
+                    lines_to_write = lines_to_write + msg_value
             else:
                 msgstrs.append(tuple(msg_value))
                 lines_to_write = lines_to_write + msg_value
@@ -224,6 +234,19 @@ def insert_translations_into_po_file(trans_dict, fname, fpath=LOCALE_PATH):
             msg_value.append(l)
         else:
             lines_to_write.append(l)
+
+    # the remaining items are new elements that were not previously in the .po file
+    if len(trans_dict) > 0:
+        lines_to_write.append("\n")
+
+    for k, v in trans_dict.items():
+        if isinstance(k, tuple):
+            lines_to_write = lines_to_write + list(k)
+            lines_to_write = lines_to_write + list(v)
+        else:
+            lines_to_write.append(k)
+            lines_to_write.append(v)
+        lines_to_write.append("\n")
 
     with open(f"{fpath}/{fname}_translated.po", "w") as fp:
         lines = fp.writelines(lines_to_write)
@@ -249,6 +272,19 @@ if __name__ == "__main__":
     # paste the content of the proofed translation into "proofed_translation.txt" and run
 
     trans_dict = read_translated_msgtr("proofed_translation.txt")
+
+    new_trans_dict = {}
+    for k, v in trans_dict.items():
+        if isinstance(k, tuple):
+            k[0].replace("msgid:", "msgid")
+            v[0].replace("msgstr:", "msgstr")
+            new_trans_dict[k] = v
+        else:
+            new_trans_dict[k.replace("msgid:", "msgid")] = v.replace(
+                "msgstr:", "msgstr"
+            )
+
+    trans_dict = new_trans_dict
 
     insert_translations_into_po_file(trans_dict, "django")
 
