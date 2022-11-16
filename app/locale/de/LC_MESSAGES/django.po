@@ -2437,3 +2437,5 @@ msgstr "Eigenheim Optimierung mit Luftwärmepumpe"
 msgid "Optimization with CHP"
 msgstr "Optimierung mit BHWK"
 
+msgid "Create project from usecase"
+msgstr "Projekt aus Anwendungsfall erstellen"

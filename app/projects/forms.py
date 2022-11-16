@@ -353,7 +353,7 @@ class UseCaseForm(forms.Form):
         usecase_url = kwargs.pop("usecase_url", "usecase_url")
         super().__init__(*args, **kwargs)
         if usecase_qs is not None:
-            self.fields["usecase"].choices = [(uc.id, uc.name) for uc in usecase_qs]
+            self.fields["usecase"].choices = [(uc.id, _(uc.name)) for uc in usecase_qs]
             self.fields["usecase"].label = (
                 _("Select a use case (or")
                 + f"<a href='{usecase_url}'>"
