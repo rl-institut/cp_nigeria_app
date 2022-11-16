@@ -18,19 +18,10 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-
 #: dashboard/forms.py:29 templates/report/single_scenario.html:59
 #: templates/scenario/scenario_progression.html:17
-#, fuzzy
-#| msgid "Scenario step"
 msgid "Scenario"
-msgstr "Schritt des Szenarios"
-
-#: dashboard/forms.py:37 templates/report/compare_scenario.html:17
-#, fuzzy
-#| msgid "Scenario step"
-msgid "Scenarios"
-msgstr "Schritt des Szenarios"
+msgstr "Szenarios"
 
 #: dashboard/forms.py:49
 msgid "Type of report item"
@@ -42,27 +33,19 @@ msgstr "Titel"
 
 #: dashboard/forms.py:56 dashboard/forms.py:82 dashboard/forms.py:108
 #: dashboard/forms.py:137 dashboard/forms.py:147
-#, fuzzy
-#| msgid "Energy carrier"
 msgid "Energy vector"
-msgstr "Energieträger"
+msgstr "Energievektor"
 
 #: dashboard/forms.py:58 dashboard/forms.py:84
-#, fuzzy
-#| msgid "Timeseries vector"
 msgid "Timeseries variable(s)"
-msgstr "Zeitreihenvektor"
+msgstr "Zeitreihenvariable(n)"
 
 #: dashboard/forms.py:110
-#, fuzzy
-#| msgid "Component"
 msgid "Component(s)"
 msgstr "Komponente"
 
 #: dashboard/forms.py:170 projects/views.py:1125
 #: templates/report/sensitivity_analysis.html:8
-#, fuzzy
-#| msgid "Sensitivity Analysis"
 msgid "Sensitivity analysis"
 msgstr "Sensitivitätsanalyse"
 
@@ -75,16 +58,12 @@ msgid "Parameter of interest"
 msgstr "Parameter von Interesse"
 
 #: dashboard/helpers.py:374
-#, fuzzy
-#| msgid "Timeseries vector"
 msgid "Timeseries graph"
-msgstr "Zeitreihenvektor"
+msgstr "Zeitreihen Grafik"
 
 #: dashboard/helpers.py:375
-#, fuzzy
-#| msgid "Stacked timeseries by sector"
 msgid "Stacked timeseries graph"
-msgstr "Gestapelte Zeitreihen nach Sektor"
+msgstr "Gestapelte Zeitreihen Grafik"
 
 #: dashboard/helpers.py:376
 msgid "Installed and optimized capacities"
@@ -107,10 +86,8 @@ msgid "Sankey diagram"
 msgstr "Sankey Diagramm"
 
 #: dashboard/helpers.py:426 dashboard/helpers.py:430
-#, fuzzy
-#| msgid "Time Step"
 msgid "Time"
-msgstr "Zeitschritt"
+msgstr "Zeit"
 
 #: dashboard/helpers.py:427 dashboard/helpers.py:431
 msgid "Energy"
@@ -165,10 +142,8 @@ msgid "Scenario {scen_id} was selected"
 msgstr "Szenario {scen_id} wurde ausgewählt"
 
 #: dashboard/views.py:596
-#, fuzzy
-#| msgid "Scenario Setup"
 msgid "Scenarios were updated"
-msgstr "Szenario-Einstellung"
+msgstr "Szenarien wurden aktualisiert"
 
 #: dashboard/views.py:1286 projects/views.py:956
 msgid ""
@@ -227,8 +202,6 @@ msgid "Name of the country where the project is being deployed"
 msgstr "Name des Landes, in dem das Projekt eingesetzt werden soll"
 
 #: projects/forms.py:204
-#, fuzzy
-#| msgid "Location's longitude"
 msgid "Location, longitude"
 msgstr "Standort, Längengrad"
 
@@ -237,8 +210,6 @@ msgid "Longitude coordinate of the project's geographical location."
 msgstr "Längengradkoordinate des geografischen Standorts des Projekts."
 
 #: projects/forms.py:217
-#, fuzzy
-#| msgid "Location's latitude"
 msgid "Location, latitude"
 msgstr "Standort Breitengrad"
 
@@ -272,8 +243,6 @@ msgid "The currency of the country where the project is implemented."
 msgstr "Die Währung des Landes, in dem das Projekt durchgeführt wird."
 
 #: projects/forms.py:257
-#, fuzzy
-#| msgid "Discount factor"
 msgid "Discount Factor"
 msgstr "Abzinsungsfaktor"
 
@@ -349,10 +318,8 @@ msgid "Scenario name"
 msgstr "Name des Szenarios"
 
 #: projects/forms.py:418
-#, fuzzy
-#| msgid "Project Description"
 msgid "Scenario description"
-msgstr "Projektbeschreibung"
+msgstr "Szenariobeschreibung"
 
 #: projects/forms.py:419
 msgid "Evaluated Period"
@@ -399,16 +366,10 @@ msgid "Efficiency gaz to electricity"
 msgstr "Wirkungsgrad gaz auf Strom"
 
 #: projects/forms.py:705
-#, fuzzy
-#| msgid "Efficiency"
-msgid "Efficiency gaz to heat"
-msgstr "Wirkungsgrad"
+msgid "Efficiency gas to heat"
+msgstr "Wirkungsgrad gaz-Wärme"
 
 #: projects/forms.py:774
-#, fuzzy
-#| msgid ""
-#| "File not properly formatted. Please ensure you upload a comma seperated "
-#| "array of values. E.g. [1,2,0.32]"
 msgid ""
 "File not properly formatted. Please ensure you upload a comma separated "
 "array of values. E.g. [1,2,0.32]"
@@ -481,8 +442,6 @@ msgstr ""
 "mit Punkt als Dezimaltrennzeichen."
 
 #: projects/forms.py:982
-#, fuzzy
-#| msgid "installed capacity (kW)"
 msgid "Installed capacity (kWh)"
 msgstr "installierte Leistung (kW)"
 
@@ -645,34 +604,24 @@ msgid "Form - mail sending error:"
 msgstr "Formular - Fehler beim Mailversand:"
 
 #: projects/special_form.py:28
-#, fuzzy
-#| msgid "From use case"
 msgid "Select a use case"
-msgstr "Aus Anwendungsfall"
+msgstr "Anwendungsfall Auswähl"
 
 #: projects/views.py:401
-#, fuzzy
-#| msgid "New scenario"
 msgid "New scenario name"
-msgstr "Neues Szenario"
+msgstr "Neuer Szenarioname"
 
 #: projects/views.py:401
-#, fuzzy
-#| msgid "Scenario step"
 msgid "Scenario file"
-msgstr "Schritt des Szenarios"
+msgstr "Szenariosdatei"
 
 #: projects/views.py:404
-#, fuzzy
-#| msgid "Project Name"
 msgid "New project name"
-msgstr "Projektname"
+msgstr "Neuer Projektname"
 
 #: projects/views.py:404
-#, fuzzy
-#| msgid "Project List"
 msgid "Project file"
-msgstr "Projektliste"
+msgstr "Projektdatei"
 
 #: projects/views.py:425 projects/views.py:464
 #: templates/project/project_search.html:138
@@ -701,10 +650,8 @@ msgid "Simulation"
 msgstr "Simulation"
 
 #: projects/views.py:591
-#, fuzzy
-#| msgid "Project Description"
 msgid "Project selection"
-msgstr "Projektbeschreibung"
+msgstr "Projektauswahl"
 
 #: projects/views.py:597
 msgid "You have currently no projects, please create one first"
@@ -838,10 +785,8 @@ msgid "Results"
 msgstr "Ergebnisse"
 
 #: templates/asset/asset_create_form.html:17
-#, fuzzy
-#| msgid "Optimized Capacity"
 msgid "Optimized additional capacity"
-msgstr "Optimierte Leistung"
+msgstr "Optimierte zusätzliche Kapazität"
 
 #: templates/asset/asset_create_form.html:25
 #: templates/asset/storage_asset_create_form.html:26
@@ -955,10 +900,8 @@ msgid "Feedback or question?"
 msgstr "Feedback oder Frage?"
 
 #: templates/legal/about.html:36
-#, fuzzy
-#| msgid "Simulation error"
 msgid "Simulation server"
-msgstr "Simulationsfehler"
+msgstr "Simulationserver"
 
 #: templates/legal/about.html:38
 msgid ""
@@ -970,10 +913,8 @@ msgstr ""
 "und öffentlich zugänglich auf"
 
 #: templates/legal/about.html:43
-#, fuzzy
-#| msgid "Clear design"
 msgid "This webapp design"
-msgstr "Entwurf löschen"
+msgstr "Auslegegung des Webapps"
 
 #: templates/legal/about.html:44
 msgid "Bryan Lancien from Reiner Lemoine Institut"
@@ -1267,7 +1208,7 @@ msgstr "Projekt exportieren"
 
 #: templates/project/project_search.html:164
 msgid "Pending..."
-msgstr "Pending..."
+msgstr "Anhängig..."
 
 #: templates/project/project_search.html:168
 msgid "Error"
@@ -1275,10 +1216,8 @@ msgstr "Fehler"
 
 #: templates/project/project_search.html:177
 #: templates/project/project_search.html:182
-#, fuzzy
-#| msgid "Go to simulation"
 msgid "No simulation"
-msgstr "Zum Simulation"
+msgstr "Keine Simulation"
 
 #: templates/project/project_search.html:200
 #: templates/usecase/usecase_search.html:132
@@ -1330,10 +1269,8 @@ msgstr "Haben Sie Ihr Passwort vergessen?"
 #: templates/registration/login.html:27
 #: templates/registration/password_reset_form.html:9
 #: templates/registration/user_info.html:87
-#, fuzzy
-#| msgid "Password"
 msgid "Reset Password"
-msgstr "Passwort"
+msgstr "Passwort zurücksetzen"
 
 #: templates/registration/login.html:33
 msgid "Login"
@@ -1356,10 +1293,8 @@ msgid "Please enter your new password."
 msgstr "Bitte geben Sie Ihr neues Kennwort ein."
 
 #: templates/registration/password_reset_confirm.html:15
-#, fuzzy
-#| msgid "Password"
 msgid "Reset password"
-msgstr "Passwort"
+msgstr "Passwort zurücksetzen"
 
 #: templates/registration/password_reset_done.html:7
 msgid "Password reset sent"
@@ -1412,20 +1347,14 @@ msgstr ""
 #: templates/registration/user_info.html:22
 #: templates/registration/user_info.html:41
 #: templates/registration/user_info.html:98
-#, fuzzy
-#| msgid "Account"
 msgid "Delete Account"
-msgstr "Konto"
+msgstr "Konto löschen"
 
 #: templates/registration/user_info.html:30
-#, fuzzy
-#| msgid "Do you already have an account?"
 msgid "Do you really want to delete your account?"
-msgstr "Besitzen Sie bereits ein Konto?"
+msgstr "Wollen Sie Ihr Konto wirklich löschen?"
 
 #: templates/report/compare_scenario.html:8
-#, fuzzy
-#| msgid "Compare scenarios"
 msgid "Compare Scenarios"
 msgstr "Szenarienvergleich"
 
@@ -1466,8 +1395,6 @@ msgid "Create graph"
 msgstr "Grafik hinzufügen"
 
 #: templates/report/single_scenario.html:43
-#, fuzzy
-#| msgid "Single scenarios"
 msgid "Single Scenarios"
 msgstr "Einzelne Szenarien"
 
@@ -1476,16 +1403,12 @@ msgid "Download Timeseries"
 msgstr "Zeitreihen speichern"
 
 #: templates/report/single_scenario.html:48
-#, fuzzy
-#| msgid "Download Timeseries"
 msgid "Download KPIs"
-msgstr "Zeitreihen speichern"
+msgstr "KPIs herunterladen"
 
 #: templates/report/single_scenario.html:49
-#, fuzzy
-#| msgid "Download Timeseries"
 msgid "Download Component Costs"
-msgstr "Zeitreihen speichern"
+msgstr "Kosten herunterladen"
 
 #: templates/report/single_scenario.html:90
 msgid "Choose KPI table display"
@@ -1500,8 +1423,6 @@ msgid "Add KPI"
 msgstr "KPI hinzufügen"
 
 #: templates/report/single_scenario.html:127
-#, fuzzy
-#| msgid "Energy system design"
 msgid "Energy system"
 msgstr "Auslegung des Energiesystems"
 
@@ -1543,28 +1464,20 @@ msgid "Unit"
 msgstr "Einheit"
 
 #: templates/scenario/scenario_results_page.html:67
-#, fuzzy
-#| msgid "Description"
 msgid "Definition"
 msgstr "Beschreibung"
 
 #: templates/scenario/scenario_results_page.html:77
-#, fuzzy
-#| msgid "Update results"
 msgid "Add to results"
-msgstr "Ergebnisse aktualisieren"
+msgstr "Zur Ergebnisse hinfügen"
 
 #: templates/scenario/scenario_results_page.html:100
-#, fuzzy
-#| msgid "Perform a sensitivity analysis"
 msgid "Add a sensitivity analysisgraph"
-msgstr "Durchführung einer Sensitivitätsanalyse"
+msgstr "Sensitivitätsanalyse Grafik hinzufügen"
 
 #: templates/scenario/scenario_results_page.html:113
-#, fuzzy
-#| msgid "Created"
 msgid "Create"
-msgstr "Erstellt"
+msgstr "Erstellen"
 
 #: templates/scenario/scenario_results_page.html:126
 msgid "To scenario"
@@ -1635,10 +1548,8 @@ msgid "There is no simulation_status"
 msgstr "Es gibt keinen simulation_status"
 
 #: templates/scenario/sensitivity_analysis.html:46
-#, fuzzy
-#| msgid "Sensitivity Analysis"
 msgid "Run sensitivity analysis"
-msgstr "Sensitivitätsanalyse"
+msgstr "Sensitivitätsanalyse durchführen"
 
 #: templates/scenario/simulation/error.html:12
 msgid "Simulation error"
@@ -1682,10 +1593,8 @@ msgid "Perform a sensitivity analysis"
 msgstr "Durchführung einer Sensitivitätsanalyse"
 
 #: templates/scenario/simulation/pending.html:12
-#, fuzzy
-#| msgid "Simulation"
 msgid "Simulating..."
-msgstr "Simulation"
+msgstr "Simulieren"
 
 #: templates/scenario/simulation/pending.html:16
 msgid "Simulation pending"
@@ -1708,10 +1617,8 @@ msgid "Your simulation is complete."
 msgstr "Ihre Simulation ist erfolgreich beendet."
 
 #: templates/scenario/simulation/success.html:33
-#, fuzzy
-#| msgid "Download Timeseries"
 msgid "Download LP files"
-msgstr "Zeitreihen speichern"
+msgstr "LP files speichern"
 
 #: templates/usecase/usecase_search.html:13
 msgid "Usecases - open_plan"
@@ -1722,22 +1629,16 @@ msgid "Show"
 msgstr "Anzeigen"
 
 #: templates/usecase/usecase_search.html:65
-#, fuzzy
-#| msgid "Export as PDF"
 msgid "Export"
-msgstr "Als PDF speichern"
+msgstr "Exportieren"
 
 #: templates/usecase/usecase_search.html:68
-#, fuzzy
-#| msgid "There are no projects yet"
 msgid "Use as a project template"
 msgstr "Verwendung als Projektvorlage"
 
 #: templates/usecase/usecase_search.html:165
-#, fuzzy
-#| msgid "There are no projects yet"
 msgid "There are no usecase yet"
-msgstr "Es sind noch keine Projekte vorhanden"
+msgstr "Es sind noch keine usecase vorhanden"
 
 #: users/views.py:34
 msgid "Activate your account."
