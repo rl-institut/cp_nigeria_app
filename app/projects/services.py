@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 import requests
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import json
 from django_q.models import Schedule
@@ -35,6 +34,8 @@ from epa.settings import (
     TIME_ZONE,
     USE_EXCHANGE_EMAIL_BACKEND,
 )
+from plotly.offline import plot
+from plotly.graph_objs import Scatter
 
 from projects.constants import PENDING
 from projects.models import Simulation
@@ -245,7 +246,7 @@ def get_selected_scenarios_in_cache(request, proj_id):
 
 
 class RenewableNinjas:
-    token = 'f8c619d5a5a227629019fa61c24ce7bcd3c70ab9'
+    token = os.environ["RN_API_TOKEN"]
     api_base = 'https://www.renewables.ninja/api/'
 
     def __init__(self):
@@ -285,11 +286,10 @@ class RenewableNinjas:
 
         self.data = pv_data
         return
-"""
+
     def create_pv_graph(self):
         date_range = pd.Series(pd.date_range('2019-01-01', '2019-12-31'))
         daily_avg = [np.mean(self.data.loc[day.strftime('%Y-%m-%d')]) for day in date_range]
-        fig = plt.plot(date_range, daily_avg)
-        plt.ylabel('kW')
-        return fig
-"""
+        plot_div = plot([Scatter(x=date_range, y=daily_avg, mode='lines')], output_type='div')
+        return plot_div
+
