@@ -649,7 +649,9 @@ class AssetCreateForm(OpenPlanModelForm):
             if qs.exists():
                 self.timestamps = qs.get().get_timestamps()
 
-        self.fields["inputs"] = forms.CharField(widget=forms.HiddenInput())
+        self.fields["inputs"] = forms.CharField(
+            widget=forms.HiddenInput(), required=False
+        )
 
         if self.asset_type_name == "heat_pump":
             self.fields["efficiency"] = DualNumberField(

@@ -36,7 +36,7 @@ from .scenario_topology_helpers import (
     load_scenario_from_dict,
     load_project_from_dict,
 )
-from projects.helpers import format_scenario_for_mvs
+from projects.helpers import format_scenario_for_mvs, PARAMETERS
 from .constants import DONE, PENDING, ERROR, MODIFIED
 from .services import (
     create_or_delete_simulation_scheduler,
@@ -838,6 +838,10 @@ def scenario_create_constraints(request, proj_id, scen_id, step_id=3, max_step=4
                 )
             else:
                 unbound_forms[constraint_type] = constraint_form(prefix=constraint_type)
+            unbound_forms[constraint_type].fields["activated"].help_text = _(
+                PARAMETERS[constraint_type][":Definition_Short:"]
+            )
+
         return render(
             request,
             f"scenario/scenario_step{step_id}.html",
