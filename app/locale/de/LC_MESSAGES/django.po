@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-15 21:46+0100\n"
+"POT-Creation-Date: 2023-01-16 00:41+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2135,12 +2135,12 @@ msgstr "Abmelden"
 
 #: templates/navbar.html:122
 #: templates/registration/password_reset_complete.html:10
-#: templates/registration/signup.html:25
+#: templates/registration/signup.html:23
 msgid "Log in"
 msgstr "Anmelden"
 
 #: templates/navbar.html:126 templates/registration/login.html:23
-#: templates/registration/signup.html:36
+#: templates/registration/signup.html:28
 msgid "Sign up"
 msgstr "Registrieren"
 
@@ -2287,7 +2287,7 @@ msgstr ""
 msgid "Log In"
 msgstr "Anmelden"
 
-#: templates/registration/login.html:19 templates/registration/signup.html:22
+#: templates/registration/login.html:19 templates/registration/signup.html:20
 msgid "Welcome to the open_plan tool"
 msgstr "Willkommen im open_plan-Tool"
 
@@ -2359,19 +2359,9 @@ msgstr ""
 msgid "Send email"
 msgstr "E-Mail senden"
 
-#: templates/registration/signup.html:25
+#: templates/registration/signup.html:23
 msgid "Do you already have an account?"
 msgstr "Besitzen Sie bereits ein Konto?"
-
-#: templates/registration/signup.html:33
-#, python-format
-msgid ""
-"I have read and accept the <a href=\"%(registration_url)s\">registration</a> "
-"and <a href=\"%(privacy_url)s\">privacy statements</a> from open_plan."
-msgstr ""
-"Ich habe die <a href=\"%(registration_url)s\">Registrierungs </a> und <a "
-"href=\"%(privacy_url)s\">Datenschutzbestimmungen</a> von open_plan gelesen "
-"und akzeptiert."
 
 #: templates/registration/user_info.html:22
 #: templates/registration/user_info.html:41
@@ -2669,34 +2659,42 @@ msgstr "Verwendung als Projektvorlage"
 msgid "There are no usecase yet"
 msgstr "Es sind noch keine usecase vorhanden"
 
-#: users/views.py:34
+#: users/forms.py:20
+msgid ""
+"I have read and accept the <a target='_blank' href='%(privacy_url)s'>privacy "
+"statement</a> from open_plan"
+msgstr ""
+"Ich habe die <a target='_blank' href=\"%(privacy_url)s\">Datenschutzbestimmungen</a> von "
+"open_plan gelesen und akzeptiert."
+
+#: users/views.py:35
 msgid "Activate your account."
 msgstr "Aktivieren Sie Ihr Konto."
 
-#: users/views.py:50
+#: users/views.py:51
 msgid "Please confirm your email address to complete the registration"
 msgstr ""
 "Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Registrierung abzuschließen"
 
-#: users/views.py:70
+#: users/views.py:71
 msgid "Thank you for your email confirmation. Now you can log in your account."
 msgstr ""
 "Vielen Dank für Ihre E-Mail-Bestätigung. Sie können sich jetzt in Ihrem "
 "Konto anmelden."
 
-#: users/views.py:86
+#: users/views.py:87
 msgid "User info successfully updated!"
 msgstr "Benutzerdaten erfolgreich aktualisiert!"
 
-#: users/views.py:89 users/views.py:106
+#: users/views.py:90 users/views.py:107
 msgid "Please check errors and resubmit!"
 msgstr "Bitte Fehler prüfen und erneut senden!"
 
-#: users/views.py:103
+#: users/views.py:104
 msgid "Your password was successfully updated!"
 msgstr "Ihr Passwort wurde erfolgreich aktualisiert!"
 
-#: users/views.py:146
+#: users/views.py:147
 msgid "Your user account has been deleted."
 msgstr "Ihr Benutzerkonto wurde gelöscht."
 
