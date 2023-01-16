@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-16 00:41+0100\n"
+"POT-Creation-Date: 2023-01-16 13:18+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1134,6 +1134,10 @@ msgstr "Aufgang D"
 msgid "Telephone: +49 (0)30 1208 434 0"
 msgstr "Telefon: +49 (0)30 1208 434 0"
 
+#: templates/legal/privacy.html:31
+msgid "Website"
+msgstr "Webseite"
+
 #: templates/legal/privacy.html:34
 msgid "II. Data Protection Officer"
 msgstr "II. Datenschutzbeauftragter"
@@ -1384,15 +1388,15 @@ msgstr "VI. E-Mail-Kontakt"
 
 #: templates/legal/privacy.html:83
 msgid ""
-"The e-mail addresses of all employees are listed on our website so that they "
-"can be contacted. If a user makes use of this option, the personal data of "
-"the user transmitted with the e-mail will be stored.\n"
+"If a user wants to leave a feedback, the feedback formular requires a "
+"contact email from the user. If a user makes use of this option, the "
+"personal data of the user transmitted with the e-mail will be stored.\n"
 "                        In this context, the data will not be passed on to "
 "third parties. The data is used exclusively for the processing of the "
 "conversation."
 msgstr ""
-"Auf unserer Internetseite werden die E-Mail-Adressen aller Mitarbeitenden "
-"zur Möglichkeit der Kontaktaufnahme genannt. Nimmt ein Nutzer diese "
+"Wenn ein NutzerInnen ein Feedback hinterlassen möchte, benötigt das Feedback-"
+"Formular eine Kontakt-E-Mail des BenutzerInnen. Nimmt ein Nutzer diese "
 "Möglichkeit wahr, so werden die mit der E-Mail übermittelten "
 "personenbezogenen Daten des Nutzers gespeichert.\n"
 "Es erfolgt in diesem Zusammenhang keine Weitergabe der Daten an Dritte. Die "
@@ -2660,12 +2664,13 @@ msgid "There are no usecase yet"
 msgstr "Es sind noch keine usecase vorhanden"
 
 #: users/forms.py:20
+#, python-format
 msgid ""
 "I have read and accept the <a target='_blank' href='%(privacy_url)s'>privacy "
 "statement</a> from open_plan"
 msgstr ""
-"Ich habe die <a target='_blank' href=\"%(privacy_url)s\">Datenschutzbestimmungen</a> von "
-"open_plan gelesen und akzeptiert."
+"Ich habe die <a target='_blank' href=\"%(privacy_url)s"
+"\">Datenschutzbestimmungen</a> von open_plan gelesen und akzeptiert."
 
 #: users/views.py:35
 msgid "Activate your account."
