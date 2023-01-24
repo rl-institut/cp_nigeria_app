@@ -496,6 +496,9 @@ def project_search(request, proj_id=None, scen_id=None):
         .order_by("date_created")
         .reverse()
     )
+    # combined_projects_list = Project.objects.filter(
+    #     (Q(user=request.user) | Q(viewers__user=request.user)) & Q(country="NIGERIA")
+    # ).distinct()
 
     scenario_upload_form = UploadFileForm(
         labels=dict(name=_("New scenario name"), file=_("Scenario file"))
