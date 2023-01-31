@@ -1447,8 +1447,8 @@ nav.navbar {
 .wizard {
   position: relative;
   background-color: #F4F7F9;
-  height: 5.5rem;
-  min-height: 5.5rem;
+  height: 8.5rem;
+  min-height: 8.5rem;
   display: flex;
   flex-direction: row;
   justify-content: center;

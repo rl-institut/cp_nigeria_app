@@ -13,6 +13,10 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/quick_fix.css' %}"/>
 {% endblock head_block %}
 
+{% block step_explanation %}
+Select the energy system components you would like to include in the simulation. The system can be comprised of a
+diesel generator, a PV-system, and a battery system (storage) in any combination.
+{% endblock step_explanation %}
 
 {% block start_body_scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.21/jquery.csv.min.js" integrity="sha512-Y8iWYJDo6HiTo5xtml1g4QqHtl/PO1w+dmUpQfQSOTqKNsMhExfyPN2ncNAe9JuJUSKzwK/b6oaNPop4MXzkwg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -43,9 +47,6 @@
           }
     }
     </script>
-    <div class="grid-container text">{% translate "Select your energy system components:" %}
-
-    </div>
     <div class="grid-container">
         <form method="post">
             <input class="form-check-input" type="checkbox" id="diesel" value="Diesel" onclick="displayForm('diesel_params');">
