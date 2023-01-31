@@ -374,9 +374,16 @@ def get_pv_output(request, proj_id):
 def ajax_usergroup_form(request, user_group_id=None):
     if request.is_ajax():
         form_ug = DummyForm()
-
+        scen_id = 0 # TODO link that to url.py
         return render(
             request,
             "cp_nigeria/steps/usergroup_form.html",
-            context={"form": form_ug},
+            context={"form": form_ug, "scen_id": scen_id},
         )
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def create_usergroup(request, scen_id=None):
+    # todo use redirect or use pure ajax call without redirect like for assets saving
+    return {"status":200}

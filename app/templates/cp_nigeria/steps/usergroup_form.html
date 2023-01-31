@@ -3,8 +3,9 @@
 
 
 <span>Some title here</span>
-<form method="POST">
+<form method="POST" action="{% url 'create_usergroup' scen_id %}">
 {% csrf_token %}
 {{ form | crispy}}
+	<input type="submit">
 </form>
 <div>graphik mit plotly</div>
