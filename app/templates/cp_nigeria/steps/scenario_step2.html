@@ -4,6 +4,11 @@
 {% load i18n %}
 
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+{% block step_explanation %}
+Please input user group data. This includes user type information about households and enterprises and predicted
+energy demand tiers as collected from survey data or available information about the community.
+{% endblock step_explanation %}
+
 {% block progression_content %}
 <main>
     <script>
@@ -20,8 +25,9 @@
     });
     </script>
 
+
+
     <div class="grid-container">
-        <div class="text">{% translate "Input community demand parameters:" %}</div>
         <button class="btn btn--medium btn--short" type="button" onclick="displayForm('demand_2');">Add Household Group 2</button>
         <button class="btn btn--medium btn--short" type="button" onclick="displayForm('demand_3');">Add Household Group 3</button>
     </div>

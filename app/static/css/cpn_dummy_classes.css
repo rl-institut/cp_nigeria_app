@@ -1,3 +1,19 @@
+.step_description {
+  position: relative;
+  color: #A8B5C0;
+  font-size: 0.875rem;
+  text-align: center;
+  display: flex;
+  max-width: 70%;
+  flex-direction: row;
+  justify-content: center;
+  padding-bottom: 1rem;
+  padding-top: 1rem;
+  }
+
+
+
+
 .dummy_column {
   float: left;
   width: 33.3%;
