@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
@@ -51,7 +52,7 @@ def signup(request):
             )
             return redirect("home")
     else:
-        form = CustomUserCreationForm()
+        form = CustomUserCreationForm(privacy_url=reverse("privacy"))
     return render(request, "registration/signup.html", {"form": form})
 
 
