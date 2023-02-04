@@ -39,7 +39,7 @@ class UserType(models.Model):
              ("E", "Enterprise"),
              ("PF", "Public facility"),
              ("HF", "Health facility"))
-    user_type = models.CharField(max_length=120, choices=USER_TYPES)
+    user_type = models.CharField(max_length=120, choices=USERS)
 
     def __str__(self):
         return self.user_type
@@ -71,11 +71,11 @@ class FacilityType(models.Model):
 
 
 class UserGroup(models.Model):
-    # TODO create foreignkey dependencies
     TIERS = (("Tier 1", "Tier 1"),
              ("Tier 2", "Tier 2"))
 
-    user_type = models.CharField(max_length=120, choices=USER_TYPES)
+    user_type = models.ForeignKey(UserType, on_delete=models.CASCADE)
+    facility_type = models.ForeignKey(FacilityType, on_delete=models.CASCADE)
     tier = models.CharField(max_length=30, choices=TIERS)
     number_users = models.IntegerField()
 
