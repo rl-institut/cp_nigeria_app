@@ -394,3 +394,15 @@ def ajax_load_facilities(request):
 def create_usergroup(request, scen_id=None):
     # todo use redirect or use pure ajax call without redirect like for assets saving
     return {"status":200}
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def delete_usergroup(request, scen_id=None):
+    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
+    if request.is_ajax():
+        qs = request.POST
+        user_group_id = qs.get("user_group_id")
+
+    return {"user group":user_group_id}
