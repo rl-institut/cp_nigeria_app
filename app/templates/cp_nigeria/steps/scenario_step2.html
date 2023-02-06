@@ -9,6 +9,27 @@
 	const postUrl = `{% url 'ajax_usergroup_form' %}`;
 	const csrfToken = `{{ csrf_token }}`;
     const dropdownUrl = `{% url 'ajax_load_facilities' %}`;
+    // delete item on delete button click
+
+    const urlDeleteUserGroup = `{% url 'delete_usergroup' scen_id %}`;
+    const deleteUserGroup = (event) => {
+        //submit the form to delete a report item
+        const userGroupId = event.target.closest('div').id
+        if(confirm("Are you sure ? This action cannot be undone")){
+            $.ajax({
+                headers: {'X-CSRFToken': `{{ csrf_token }}` },
+                type: "POST",
+                url: urlDeleteUserGroup,
+                data: {user_group_id: userGroupId},
+                success: function (jsonRes) {
+                    document.getElementById(userGroupId).remove();
+                },
+                error: function (err) {
+                    console.log(err);
+                },
+            })
+        }
+    };
 </script>
 <script src="{% static 'js/user_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
@@ -18,6 +39,7 @@
 
 {% block progression_content %}
 <main>
+
     <script>
     function displayForm(form_id) {
           const elem = document.getElementById(form_id);

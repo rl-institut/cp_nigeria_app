@@ -23,4 +23,5 @@ urlpatterns = [
     path("ajax/usergroup/form", ajax_usergroup_form, name="ajax_usergroup_form"),
     path("ajax/load-facilities", ajax_load_facilities, name="ajax_load_facilities"),
     path("usergroup/create/<int:scen_id>", create_usergroup, name="create_usergroup"),
+    path("usergroup/delete/<int:scen_id>", delete_usergroup, name="delete_usergroup"),
 ]
