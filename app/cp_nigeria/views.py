@@ -83,14 +83,183 @@ def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_scenario(request, proj_id, scen_id, step_id=3):
-    messages.info(request, "Select the energy system components you would like to include in the simulation. The "
-                           "system can be comprised of a diesel generator, a PV-system, and a battery system (storage) "
-                           "in any combination.")
-    return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
-                  {"proj_id": proj_id,
-                   "step_id": step_id,
-                   "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST})
+    scenario = Scenario.objects.get(id=scen_id)
+
+    if request.method == "GET":
+        messages.info(
+            request,
+            "Select the energy system components you would like to include in the simulation. The "
+            "system can be comprised of a diesel generator, a PV-system, and a battery system (storage) "
+            "in any combination.",
+        )
+
+        context = {
+            "proj_id": proj_id,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_LIST,
+            "es_assets": [],
+        }
+
+        asset_type_name = "bess"
+
+        qs = Asset.objects.filter(
+            scenario=scenario.id, asset_type__asset_type=asset_type_name
+        )
+
+        if qs.exists():
+            existing_ess_asset = qs.get()
+            ess_asset_children = Asset.objects.filter(
+                parent_asset=existing_ess_asset.id
+            )
+            ess_capacity_asset = ess_asset_children.get(
+                asset_type__asset_type="capacity"
+            )
+            ess_charging_power_asset = ess_asset_children.get(
+                asset_type__asset_type="charging_power"
+            )
+            ess_discharging_power_asset = ess_asset_children.get(
+                asset_type__asset_type="discharging_power"
+            )
+            # also get all child assets
+            context["es_assets"].append(asset_type_name)
+            context["form_storage"] = BessForm(
+                initial={
+                    "name": existing_ess_asset.name,
+                    "installed_capacity": ess_capacity_asset.installed_capacity,
+                    "age_installed": ess_capacity_asset.age_installed,
+                    "capex_fix": ess_capacity_asset.capex_fix,
+                    "capex_var": ess_capacity_asset.capex_var,
+                    "opex_fix": ess_capacity_asset.opex_fix,
+                    "opex_var": ess_capacity_asset.opex_var,
+                    "lifetime": ess_capacity_asset.lifetime,
+                    "crate": ess_capacity_asset.crate,
+                    "efficiency": ess_capacity_asset.efficiency,
+                    "dispatchable": ess_capacity_asset.dispatchable,
+                    "optimize_cap": ess_capacity_asset.optimize_cap,
+                    "soc_max": ess_capacity_asset.soc_max,
+                    "soc_min": ess_capacity_asset.soc_min,
+                }
+            )
+        else:
+            context["form_bess"] = BessForm()
+
+        for asset_type_name, form in zip(
+            ["pv_plant", "diesel_generator"], [PVForm, DieselForm]
+        ):
+            qs = Asset.objects.filter(
+                scenario=scenario.id, asset_type__asset_type=asset_type_name
+            )
+
+            if qs.exists():
+                existing_asset = qs.get()
+                context["es_assets"].append(asset_type_name)
+                context[f"form_{asset_type_name}"] = form(instance=existing_asset)
+
+            else:
+
+                context[f"form_{asset_type_name}"] = form()
+
+        return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html", context)
+    if request.method == "POST":
+
+        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
+        print(request.POST)
+        # import pdb;pdb.set_trace()
+        assets = request.POST.getlist("es_choice", [])
+
+        qs = Bus.objects.filter(scenario=scenario)
+
+        if qs.exists():
+            bus_el = qs.get()
+        else:
+            bus_el = Bus(
+                type="Electricity",
+                scenario=scenario,
+                pos_x=600,
+                pos_y=150,
+                name="el_bus",
+            )
+            bus_el.save()
+
+        for i, asset_name in enumerate(assets):
+            qs = Asset.objects.filter(
+                scenario=scenario, asset_type__asset_type=asset_name
+            )
+            if qs.exists():
+                form = asset_forms[asset_name](request.POST, instance=qs.first())
+            else:
+                form = asset_forms[asset_name](request.POST)
+
+            if form.is_valid():
+                asset_type = get_object_or_404(AssetType, asset_type=asset_name)
+
+                asset = form.save(commit=False)
+                # TODO the form save should do some specific things to save the storage correctly
+
+                asset.scenario = scenario
+                asset.asset_type = asset_type
+                asset.pos_x = 400
+                asset.pos_y = 150 + i * 150
+                asset.save()
+                if asset_name == "bess":
+                    ConnectionLink.objects.create(
+                        bus=bus_el,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.create(
+                        bus=bus_el,
+                        bus_connection_port="output_1",
+                        asset=asset,
+                        flow_direction="B2A",
+                        scenario=scenario,
+                    )
+                else:
+                    ConnectionLink.objects.create(
+                        bus=bus_el,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+
+        # Remove unselected assets
+        for asset in Asset.objects.filter(
+            scenario=scenario.id,
+            asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"],
+        ):
+            if asset.asset_type.asset_type not in assets:
+                asset.delete()
+
+        #     if form.is_valid():
+        #         # check whether the constraint is already associated to the scenario
+        #         qs = constraints_models[constraint_type].objects.filter(
+        #             scenario=scenario
+        #         )
+        #         if qs.exists():
+        #             if len(qs) == 1:
+        #                 constraint_instance = qs[0]
+        #                 for name, value in form.cleaned_data.items():
+        #                     if getattr(constraint_instance, name) != value:
+        #                         setattr(constraint_instance, name, value)
+        #                         if qs_sim.exists():
+        #                             qs_sim.update(status=MODIFIED)
+        #
+        #         else:
+        #             constraint_instance = form.save(commit=False)
+        #             constraint_instance.scenario = scenario
+        #
+        #         if constraint_type == "net_zero_energy":
+        #             constraint_instance.value = constraint_instance.activated
+        #
+        #         constraint_instance.save()
+        #
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, scen_id, 4]))
+
+        # import pdb;pdb.set_trace()
 
 
 @login_required
