@@ -9,6 +9,7 @@ from django.shortcuts import *
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from projects.requests import (
@@ -48,6 +49,8 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
     else:
         form = ProjectForm()
 
+    messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
+                           'input geographical data by clicking on the desired project location on the map.')
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
                    "proj_id": proj_id,
@@ -65,6 +68,9 @@ def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
     else:
         form = CPNLoadProfileForm()
         form2 = CPNLoadProfileForm()
+    messages.info(request, "Please input user group data. This includes user type information about "
+                           "households, enterprises and facilities and predicted energy demand tiers as collected from "
+                           "survey data or available information about the community.")
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
                    "form2": form2,
@@ -77,6 +83,9 @@ def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_scenario(request, proj_id, scen_id, step_id=3):
+    messages.info(request, "Select the energy system components you would like to include in the simulation. The "
+                           "system can be comprised of a diesel generator, a PV-system, and a battery system (storage) "
+                           "in any combination.")
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"proj_id": proj_id,
                    "step_id": step_id,
@@ -87,6 +96,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=3):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, scen_id, step_id=4):
+    messages.info(request, "Please include any relevant constraints for the optimization.")
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"proj_id": proj_id,
                    "step_id": step_id,
