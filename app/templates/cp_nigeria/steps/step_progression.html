@@ -43,6 +43,14 @@
 
         <div class="step_description">
             {% block step_explanation %}
+					 {% if messages %}
+    {% for message in messages %}
+    <div>
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
             {% endblock step_explanation %}
         </div>
     </div>
