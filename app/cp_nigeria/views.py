@@ -54,10 +54,10 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
     messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
                            'input geographical data by clicking on the desired project location on the map.')
 
-    data = []
-    with open('static/ts_year.txt') as f:
-        for line in f.readlines():
-            data.append(float(line))
+    # data = []
+    # with open('static/ts_year.txt') as f:
+    #     for line in f.readlines():
+    #         data.append(float(line))
     x = list(range(0, 8760))
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
@@ -65,7 +65,7 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
                    "step_id": step_id,
                    "scen_id": scen_id,
                    "step_list": CPN_STEP_LIST,
-                   "data": json.dumps(data),
+                   # "data": json.dumps(data),
                    "x": json.dumps(x)
                    })
 
@@ -384,7 +384,7 @@ def ajax_usergroup_form(request, user_group_id=None):
         return render(
             request,
             "cp_nigeria/steps/usergroup_form.html",
-            context={"form": form_ug, "scen_id": scen_id},
+            context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
         )
 
 

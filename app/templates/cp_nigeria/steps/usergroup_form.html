@@ -22,21 +22,8 @@
 {{ form | crispy}}
 	<input type="submit">
 </form>
-<div id="plot_div"></div>
+<div id="plot_div_{{ unique_id }}">
+	<img src="/static/assets/cp_nigeria/SPT_evening_peak.png" max-width="100%" height="auto" name="curveImage_3" />
+</div>
 
-<script>
-    var data = [{
-    x: {{x|safe}},
-    y: {{timeseries|safe}},
-    mode: "lines",
-    type: "scatter"
-    }];
 
-    var layout = {
-    xaxis: {range: [0, 8760], title: "Time"},
-    yaxis: {range: [0, 6000], title: "kWh"},
-    title: "Load profile (Year)"
-    };
-	var plot_div = document.getElementById('plot_div');
-    Plotly.newPlot(plot_div, data, layout);
-</script>
