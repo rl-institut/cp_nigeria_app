@@ -3,6 +3,7 @@
 {% load static %}
 
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
+<script src="{% static 'js/user_groups.js' %}"></script>
 <script>
 	const dropdownUrl = `{% url 'ajax_load_facilities' %}`;
 </script>
@@ -21,4 +22,21 @@
 {{ form | crispy}}
 	<input type="submit">
 </form>
-<div>graphik mit plotly</div>
+<div id="plot_div"></div>
+
+<script>
+    var data = [{
+    x: {{x|safe}},
+    y: {{timeseries|safe}},
+    mode: "lines",
+    type: "scatter"
+    }];
+
+    var layout = {
+    xaxis: {range: [0, 8760], title: "Time"},
+    yaxis: {range: [0, 6000], title: "kWh"},
+    title: "Load profile (Year)"
+    };
+	var plot_div = document.getElementById('plot_div');
+    Plotly.newPlot(plot_div, data, layout);
+</script>
