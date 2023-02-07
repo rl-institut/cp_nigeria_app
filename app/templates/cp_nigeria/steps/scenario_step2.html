@@ -75,6 +75,28 @@
 {% endblock progression_content %}
 
 {% block end_body_scripts %}
+<script>
+$(document).ready(function () {
+    var data = [{
+    x: [1,2,3,4],
+    y: [1.5,1.5,1.5,1.5],
+    mode: "lines",
+    type: "scatter"
+    }];
+
+    var layout = {
+    //xaxis: {range: [0, 8760], title: "Time"},
+    //yaxis: {range: [0, 6000], title: "kWh"},
+    title: "Total load profile (sum of user * user profiles)"
+    };
+
+    var plot_div = document.getElementById('demand-aggregate');
+    Plotly.newPlot(plot_div, data, layout);
+});
+
+
+
+</script>
 {% endblock end_body_scripts %}
 
 

@@ -22,12 +22,27 @@ function adduserGroupDivToDOM(unique_id, userGroupDOMId="ug_container"){
             },
             success: function (formContent) {
                 newUserGroupDOM.innerHTML = formContent;
+                ugContainer.appendChild(newUserGroupDOM);
+
+                var plot_div = ugContainer.querySelector('#plot_div_' + ug_next_id );console.log(plot_div);
+
+              var data = [{
+                x: [1,2,3,4], //TODO not use dummy data
+                y: [1.5,1.5,1.5,1.5],
+                mode: "lines",
+                type: "scatter"
+                }];
+
+                var layout = {
+                //xaxis: {range: [0, 8760], title: "Time"},
+                //yaxis: {range: [0, 6000], title: "kWh"},
+                title: "Load profile (Year)"
+                };
+                Plotly.newPlot(plot_div, data, layout);
+
             }
         });
 
-
-    // append the graph to the DOM
-    ugContainer.appendChild(newUserGroupDOM);
 
     return ug_next_id
 }
