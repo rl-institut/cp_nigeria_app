@@ -4,6 +4,7 @@ import logging
 import traceback
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http.response import Http404
+from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
@@ -365,3 +366,17 @@ def get_pv_output(request, proj_id):
     plot_div = location.create_pv_graph()
     #HttpResponseRedirect(reverse("home_cpn", args=[project.id]))
     return response
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def ajax_usergroup_form(request, user_group_id=None):
+    if request.is_ajax():
+        form_ug = DummyForm()
+
+        return render(
+            request,
+            "cp_nigeria/steps/usergroup_form.html",
+            context={"form": form_ug},
+        )

@@ -98,3 +98,11 @@ class BessForm(StorageForm):
         for field, value in zip(("name",), (self.asset_type_name,)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
+
+
+class DummyForm(forms.Form):
+    some_input = forms.ChoiceField(
+        label=_("Some INput"),
+        choices=(("a","a"), ("b", "b")),
+    )
+

@@ -3,6 +3,15 @@
 {% load crispy_forms_tags %}
 {% load i18n %}
 
+
+{% block start_body_scripts %}
+<script>
+	const postUrl = `{% url 'ajax_usergroup_form' %}`;
+	const csrfToken = `{{ csrf_token }}`;
+
+</script>
+<script src="{% static 'js/user_groups.js' %}"></script>
+{% endblock start_body_scripts %}
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 
 {% block progression_content %}
@@ -24,10 +33,10 @@
 
 
     <div class="grid-container">
-        <button class="btn btn--medium btn--short" type="button" onclick="displayForm('demand_2');">Add Household Group 2</button>
-        <button class="btn btn--medium btn--short" type="button" onclick="displayForm('demand_3');">Add Household Group 3</button>
+        <div class="text">{% translate "Input community demand parameters:" %}</div>
+        <button class="btn btn--medium btn--short" type="button" onclick="javascript:adduserGroupDivToDOM();">Add Household Group</button>
     </div>
-    <div class="grid-container">
+    <div class="grid-container" id="ug_container">
         <div id="demand_1">
             <form method="post">
                 <label class="col-form-label col-lg-8 requiredField" for="households">Number of households</label><br>
