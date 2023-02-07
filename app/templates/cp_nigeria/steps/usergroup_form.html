@@ -2,7 +2,6 @@
 {% load crispy_forms_tags %}
 
 
-<span>Some title here</span>
 <form method="POST" action="{% url 'create_usergroup' scen_id %}">
 {% csrf_token %}
 {{ form | crispy}}

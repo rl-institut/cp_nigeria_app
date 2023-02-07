@@ -373,7 +373,7 @@ def get_pv_output(request, proj_id):
 @require_http_methods(["POST"])
 def ajax_usergroup_form(request, user_group_id=None):
     if request.is_ajax():
-        form_ug = DummyForm()
+        form_ug = UserGroupForm()
         scen_id = 0 # TODO link that to url.py
         return render(
             request,

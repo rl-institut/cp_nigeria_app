@@ -1,15 +1,13 @@
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 from projects.forms import OpenPlanModelForm, ProjectCreateForm
-from .models import Project
+
 from projects.forms import StorageForm, AssetCreateForm
+
+from .models import Project, UserGroup
 
 CURVES = (("Evening Peak", "Evening Peak"),
           ("Midday Peak", "Midday Peak"))
-
-TIERS = (("Tier 1", "Tier 1"),
-         ("Tier 2", "Tier 2"),
-         ("Tier 3", "Tier 3"))
 
 
 class ProjectForm(OpenPlanModelForm):
@@ -31,7 +29,7 @@ class CPNLoadProfileForm(ProjectCreateForm):
     )
     tier = forms.ChoiceField(
         label=_("Demand Tier"),
-        choices=TIERS,
+        choices=UserGroup.TIERS,
         widget=forms.Select(
             attrs={
                 "data-bs-toggle": "tooltip",
@@ -105,4 +103,15 @@ class DummyForm(forms.Form):
         label=_("Some INput"),
         choices=(("a","a"), ("b", "b")),
     )
+
+class UserGroupForm(OpenPlanModelForm):
+    # TODO make a dependent drop down with user type / facility type
+    class Meta:
+        model = UserGroup
+        fields = "__all__"
+        labels = {
+            "user_type": "User type",
+            "tier": "Predicted demand tier",
+            "number_users": "Number of users"
+        }
 
