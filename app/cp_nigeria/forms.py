@@ -2,6 +2,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from projects.forms import OpenPlanModelForm, ProjectCreateForm
 from .models import Project
+from projects.forms import StorageForm, AssetCreateForm
 
 CURVES = (("Evening Peak", "Evening Peak"),
           ("Midday Peak", "Midday Peak"))
@@ -48,3 +49,52 @@ class CPNLoadProfileForm(ProjectCreateForm):
             }
         ),
     )
+
+
+class PVForm(AssetCreateForm):
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, asset_type="pv_plant", **kwargs)
+        # which fields exists in the form are decided upon AssetType saved in the db
+        self.prefix = self.asset_type_name
+
+        # for field in self.fields:
+        #     self.fields[field].required = False
+
+        self.fields["input_timeseries"].required = False
+
+        for field, value in zip(
+            ("name", "renewable_asset"), (self.asset_type_name, True)
+        ):
+            self.fields[field].widget = forms.HiddenInput()
+            self.fields[field].initial = value
+
+
+class DieselForm(AssetCreateForm):
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, asset_type="diesel_generator", **kwargs)
+        # which fields exists in the form are decided upon AssetType saved in the db
+        self.prefix = self.asset_type_name
+
+        # for field in self.fields:
+        #     self.fields[field].required = False
+
+        for field, value in zip(("name",), (self.asset_type_name,)):
+            self.fields[field].widget = forms.HiddenInput()
+            self.fields[field].initial = value
+
+
+class BessForm(StorageForm):
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, asset_type="bess", **kwargs)
+        # which fields exists in the form are decided upon AssetType saved in the db
+        self.prefix = self.asset_type_name
+
+        # for field in self.fields:
+        #     self.fields[field].required = False
+
+        for field, value in zip(("name",), (self.asset_type_name,)):
+            self.fields[field].widget = forms.HiddenInput()
+            self.fields[field].initial = value
