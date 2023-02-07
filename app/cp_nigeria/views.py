@@ -63,18 +63,14 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
-    if request.POST:
-        form = CPNLoadProfileForm(request.POST)
-        form2 = CPNLoadProfileForm(request.POST)
-    else:
-        form = CPNLoadProfileForm()
-        form2 = CPNLoadProfileForm()
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
                            "survey data or available information about the community.")
+
+    form = UserGroupForm()
+
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
-                   "form2": form2,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
@@ -380,6 +376,17 @@ def ajax_usergroup_form(request, user_group_id=None):
             "cp_nigeria/steps/usergroup_form.html",
             context={"form": form_ug, "scen_id": scen_id},
         )
+
+
+@login_required
+@json_view
+@require_http_methods(["GET", "POST"])
+def ajax_load_facilities(request):
+    if request.is_ajax():
+        user_type_id = request.GET.get('user_type')
+        facilities = FacilityType.objects.filter(user_type_id=user_type_id)
+        return render(request, 'cp_nigeria/steps/facility_dropdown_options.html', context={'facilities': facilities})
+
 
 @login_required
 @json_view

@@ -35,36 +35,15 @@ class Project(models.Model):
 
 
 class UserType(models.Model):
-    USERS = (("HH", "Household"),
-             ("E", "Enterprise"),
-             ("PF", "Public facility"),
-             ("HF", "Health facility"))
-    user_type = models.CharField(max_length=120, choices=USERS)
+    user_type = models.CharField(max_length=50)
 
     def __str__(self):
         return self.user_type
 
 
 class FacilityType(models.Model):
-    ENTERPRISES = (("F", "Food"),
-                   ("R", "Retail"),
-                   ("T", "Trades"),
-                   ("E-D", "Digital"),
-                   ("A", "Agricultural"))
-
-    PUBLIC_FACILITIES = (("School", "School"),
-                         ("Mosque", "Mosque"),
-                         ("Church", "Church"),
-                         ("Government building", "Government building"),
-                         ("Town Hall", "Town Hall"))
-
-    HEALTH_FACILITIES = (("Health Center", "Health Center"),
-                         ("Dispensary/Pharmacy", "Dispensary/Pharmacy"),
-                         ("Clinic", "Clinic"),
-                         ("Hospital", "Hospital"))
-
     user_type = models.ForeignKey(UserType, on_delete=models.CASCADE)
-    facility_type = models.CharField(max_length=120)
+    facility_type = models.CharField(max_length=100)
 
     def __str__(self):
         return self.facility_type

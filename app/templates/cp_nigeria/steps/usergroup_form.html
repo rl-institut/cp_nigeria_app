@@ -1,10 +1,16 @@
 {% load i18n %}
 {% load crispy_forms_tags %}
+{% load static %}
 
-
-<form method="POST" action="{% url 'create_usergroup' scen_id %}">
+<script src="{% static 'js/dependent_dropdown.js' %}"></script>
+<script>
+	const url = `{% url 'ajax_load_facilities' %}`;
+</script>
+<form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
 {% csrf_token %}
 {{ form | crispy}}
 	<input type="submit">
 </form>
 <div>graphik mit plotly</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>

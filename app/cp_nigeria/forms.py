@@ -4,7 +4,7 @@ from projects.forms import OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm
 
-from .models import Project, UserGroup
+from .models import *
 
 CURVES = (("Evening Peak", "Evening Peak"),
           ("Midday Peak", "Midday Peak"))
@@ -105,7 +105,6 @@ class DummyForm(forms.Form):
     )
 
 class UserGroupForm(OpenPlanModelForm):
-    # TODO make a dependent drop down with user type / facility type
     class Meta:
         model = UserGroup
         fields = "__all__"
@@ -114,4 +113,8 @@ class UserGroupForm(OpenPlanModelForm):
             "tier": "Predicted demand tier",
             "number_users": "Number of users"
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['facility_type'].queryset = FacilityType.objects.none()
 
