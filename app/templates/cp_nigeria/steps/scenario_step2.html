@@ -5,6 +5,7 @@
 
 
 {% block start_body_scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
 	const postUrl = `{% url 'ajax_usergroup_form' %}`;
 	const csrfToken = `{{ csrf_token }}`;
@@ -55,19 +56,15 @@
     </script>
 
 
-
     <div class="grid-container">
         <div class="text">{% translate "Input community demand parameters:" %}</div>
         <button class="btn btn--medium btn--short" type="button" onclick="javascript:adduserGroupDivToDOM();">Add Household Group</button>
     </div>
+		<div id="demand-aggregate">
+
+		</div>
     <div class="grid-container" id="ug_container">
-        <div id="demand_1">
-            <form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
-            {% csrf_token %}
-            {{ form | crispy}}
-                <input type="submit">
-            </form>
-        </div>
+
     </div>
     <center>
         <button class="btn btn--medium" type="button">{% translate "Generate load profile" %}</button>
