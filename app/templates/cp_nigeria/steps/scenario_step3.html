@@ -42,19 +42,33 @@
           }
     }
     </script>
-    <div class="grid-container">
-        <form method="post">
-            <input class="form-check-input" type="checkbox" id="diesel" value="Diesel" onclick="displayForm('diesel_params');">
-            <label class="form-check-label" for="diesel">Diesel</label>
-        </form>
-        <form method="post">
-            <input class="form-check-input" type="checkbox" id="pv" value="PV" onclick="displayForm('pv_params');">
-            <label class="form-check-label" for="diesel">PV-Plant</label>
-        </form>
-        <form method="post">
-            <input class="form-check-input" type="checkbox" id="storage" value="storage" onclick="displayForm('storage_params');">
-            <label class="form-check-label" for="diesel">Storage</label>
-        </form>
+	<section>
+		<form method="POST" action="{% url 'cpn_scenario' proj_id scen_id %}">
+			{% csrf_token %}
+			<center>
+				<!-- TODO move to next step-->
+				<button class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
+			</center>
+    <div class="grid-container" >
+<fieldset style="display: contents;">
+          <div>
+						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" onclick="displayForm('diesel_params');" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="diesel_checkbox">Diesel generator</label>
+						<img class="img" src="{% static 'assets/gui/diesel_generator.svg' %}" alt="diesel_generator">
+					</div>
+
+					<div>
+						<input class="form-check-input" type="checkbox" id="pv_checkbox" name="es_choice" value="pv_plant" onclick="displayForm('pv_params');" {% if 'pv_plant' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="pv_checkbox">PV-Plant</label>
+						<img class="img" src="{% static 'assets/gui/pv_plant.svg' %}" alt="pv_plant">
+					</div>
+
+					<div>
+						<input class="form-check-input" type="checkbox" id="storage_checkbox" name="es_choice" value="bess" onclick="displayForm('storage_params');" {% if 'bess' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="storage_checkbox">Storage</label>
+						<img class="img" src="{% static 'assets/gui/bess.svg' %}" alt="storage">
+					</div>
+</fieldset>
     </div>
     <div class="grid-container">
         <div class="form-stretch" id="diesel_params" {% if 'diesel_generator' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
@@ -67,10 +81,9 @@
 								{{ form_bess|crispy }}
 				</div>
     </div>
-                <center>
-                    <button class="btn btn--medium" type="button">{% translate "Create Scenario" %}</button>
-                </center>
-                </section>
+		</form>
+
+	</section>
 </main>
 
 {% endblock progression_content %}
