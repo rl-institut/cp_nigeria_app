@@ -1,0 +1,10 @@
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+<span>Some title here</span>
+<form method="POST">
+{% csrf_token %}
+{{ form | crispy}}
+</form>
+<div>graphik mit plotly</div>

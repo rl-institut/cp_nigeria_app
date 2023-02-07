@@ -20,4 +20,5 @@ urlpatterns = [
     ),
     path("<int:proj_id>/review/<int:scen_id>", cpn_review, name="cpn_review"),
     # path("<int:proj_id>/update/energy/system/<int:scen_id>", update_energy_system, name="update_energy_system"),
+    path("ajax/usergroup/form", ajax_usergroup_form, name="ajax_usergroup_form"),
 ]
