@@ -72,3 +72,22 @@ function nester(el, n) {
     }
     return el;
 }
+
+
+function addDummyPlot(x, timeseries) {
+    var data = [{
+    x: x,
+    y: timeseries,
+    mode: "lines",
+    type: "scatter"
+    }];
+
+    var layout = {
+    xaxis: {range: [0, 8760], title: "Time"},
+    yaxis: {range: [0, 6000], title: "kWh"},
+    title: "Load profile (Year)"
+    };
+
+    Plotly.newPlot("Dummy", data, layout)
+
+}

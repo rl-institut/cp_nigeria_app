@@ -50,14 +50,24 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
     else:
         form = ProjectForm()
 
+
     messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
                            'input geographical data by clicking on the desired project location on the map.')
+
+    data = []
+    with open('static/ts_year.txt') as f:
+        for line in f.readlines():
+            data.append(float(line))
+    x = list(range(0, 8760))
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST})
+                   "step_list": CPN_STEP_LIST,
+                   "data": json.dumps(data),
+                   "x": json.dumps(x)
+                   })
 
 
 @login_required
@@ -401,8 +411,4 @@ def create_usergroup(request, scen_id=None):
 @require_http_methods(["POST"])
 def delete_usergroup(request, scen_id=None):
     """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
-    if request.is_ajax():
-        qs = request.POST
-        user_group_id = qs.get("user_group_id")
-
-    return {"user group":user_group_id}
+    return {"status":200}
