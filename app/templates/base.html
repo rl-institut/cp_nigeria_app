@@ -51,7 +51,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-modal/2.2.6/js/bootstrap-modalmanager.min.js" integrity="sha512-/HL24m2nmyI2+ccX+dSHphAHqLw60Oj5sK8jf59VWtFWZi9vx7jzoxbZmcBeeTeCUc7z1mTs3LfyXGuBU32t+w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {% block start_body_scripts %}{% endblock %}
 
-{% setvar "https://open-plan.readthedocs.io/en/feature-new_documentation/" as documentation_url %}
+{% setvar "https://open-plan-documentation.readthedocs.io/en/latest/" as documentation_url %}
 
 {% block navbar %}
     {% include "navbar.html" with user=user documentation_url=documentation_url %}

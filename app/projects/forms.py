@@ -730,7 +730,7 @@ class AssetCreateForm(OpenPlanModelForm):
             else:
                 help_text = ""
             if self.fields[field].label is not None:
-                RTD_url = "https://open-plan.readthedocs.io/en/feature-new_documentation/model/input_parameters.html#"
+                RTD_url = "https://open-plan-documentation.readthedocs.io/en/latest/model/input_parameters.html#"
                 if field in PARAMETERS:
                     param_ref = PARAMETERS[field]["ref"]
                 else:
