@@ -565,10 +565,10 @@ msgstr ""
 
 #: projects/models/base_models.py:178
 msgid ""
-"The user(s) you selected seems to not be registered in the open_plan tool"
+"The user(s) you selected seems to not be registered in the open-plan-tool"
 msgstr ""
 "Der/die von Ihnen ausgewählte(n) Benutzer scheint/scheinen nicht im "
-"open_plan-Tool registriert zu sein."
+"open-plan-tool registriert zu sein."
 
 #: projects/models/simulation_models.py:49
 msgid ""
@@ -2291,9 +2291,9 @@ msgstr ""
 msgid "Log In"
 msgstr "Anmelden"
 
-#: templates/registration/login.html:19 templates/registration/signup.html:20
-msgid "Welcome to the open_plan tool"
-msgstr "Willkommen im open_plan-Tool"
+#: templates/registration/login.html:19 templates/registration/signup.html:22
+msgid "Welcome to the open-plan-tool"
+msgstr "Willkommen im open-plan-tool"
 
 #: templates/registration/login.html:26
 msgid "Forgot your password?"
