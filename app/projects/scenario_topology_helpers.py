@@ -438,9 +438,17 @@ def load_scenario_from_dict(model_data, user, project=None):
             asset_type=asset_type["asset_type"]
         )
 
+        COP_parameters = asset_data.pop("COP_parameters", None)
+
         asset = Asset(**asset_data)
         asset.scenario = scenario
         asset.save()
+
+        if COP_parameters is not None:
+            COP_parameters["asset"] = asset
+            COP_parameters["scenario"] = scenario
+            cop_parameters = COPCalculator(**COP_parameters)
+            cop_parameters.save()
 
     for bus_data in busses:
         bus_inputs = bus_data.pop("inputs")

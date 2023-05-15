@@ -499,6 +499,10 @@ class Asset(TopologyNode):
         dm = model_to_dict(self, fields=fields)
         dm["asset_info"] = self.asset_type.export()
 
+        cop_parameters = COPCalculator.objects.filter(asset=self)
+        if cop_parameters.exists():
+            dm["COP_parameters"] = cop_parameters.get().export()
+
         # check for parent assets
         if self.parent_asset is not None:
             dm["parent_asset"] = self.parent_asset.name
@@ -568,6 +572,10 @@ class COPCalculator(models.Model):
         if len(cops) == 1:
             cops = cops[0]
         return cops
+
+    def export(self):
+        dm = model_to_dict(self, exclude=["id", "scenario", "asset"])
+        return dm
 
 
 class Bus(TopologyNode):
