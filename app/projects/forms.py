@@ -23,7 +23,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings as django_settings
 from projects.models import *
-from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS
+from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS, CURRENCY_SYMBOLS
 
 from dashboard.helpers import KPI_PARAMETERS_ASSETS, KPIFinder
 from projects.helpers import (
@@ -644,6 +644,7 @@ class BusForm(OpenPlanModelForm):
 class AssetCreateForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         self.asset_type_name = kwargs.pop("asset_type", None)
+        proj_id = kwargs.pop("proj_id", None)
         scenario_id = kwargs.pop("scenario_id", None)
         view_only = kwargs.pop("view_only", False)
         self.existing_asset = kwargs.get("instance", None)
@@ -666,6 +667,16 @@ class AssetCreateForm(OpenPlanModelForm):
             qs = Scenario.objects.filter(id=scenario_id)
             if qs.exists():
                 self.timestamps = qs.get().get_timestamps()
+                if proj_id is None:
+                    proj_id = qs.get().project.id
+
+        currency = None
+        if proj_id is not None:
+            qs = Project.objects.filter(id=proj_id)
+            if qs.exists():
+                currency = qs.values_list("economic_data__currency", flat=True).get()
+                currency = CURRENCY_SYMBOLS[currency]
+                # TODO use mapping to display currency symbol
 
         self.fields["inputs"] = forms.CharField(
             widget=forms.HiddenInput(), required=False
@@ -758,6 +769,16 @@ class AssetCreateForm(OpenPlanModelForm):
                 else:
                     question_icon = ""
                 self.fields[field].label = self.fields[field].label + question_icon
+
+                if "capex_fix" in field:
+                    self.fields[field].label = self.fields[field].label.replace(
+                        "project costs", "costs"
+                    )
+
+                if "€" in self.fields[field].label and currency is not None:
+                    self.fields[field].label = self.fields[field].label.replace(
+                        "€", currency
+                    )
 
         """ ----------------------------------------------------- """
 

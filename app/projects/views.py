@@ -1323,6 +1323,7 @@ def get_asset_create_form(request, scen_id=0, asset_type_name="", asset_uuid=Non
                 asset_type=asset_type_name,
                 instance=existing_asset,
                 input_output_mapping=input_output_mapping,
+                proj_id=scenario.project.id,
             )
             input_timeseries_data = (
                 existing_asset.input_timeseries
@@ -1339,6 +1340,7 @@ def get_asset_create_form(request, scen_id=0, asset_type_name="", asset_uuid=Non
                 asset_type=asset_type_name,
                 initial={"name": default_name},
                 input_output_mapping=input_output_mapping,
+                proj_id=scenario.project.id,
             )
             input_timeseries_data = ""
 

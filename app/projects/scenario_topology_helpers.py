@@ -191,6 +191,7 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
             request.FILES,
             asset_type=asset_type_name,
             instance=existing_asset,
+            scenario_id=scen_id,
             input_output_mapping=input_output_mapping,
         )
     else:

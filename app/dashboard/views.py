@@ -745,7 +745,10 @@ def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
         existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
 
         form = AssetCreateForm(
-            asset_type=asset_type_name, instance=existing_asset, view_only=True
+            asset_type=asset_type_name,
+            instance=existing_asset,
+            view_only=True,
+            proj_id=scenario.project.id,
         )
         input_timeseries_data = (
             existing_asset.input_timeseries if existing_asset.input_timeseries else ""
