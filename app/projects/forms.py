@@ -1016,6 +1016,8 @@ class StorageForm(AssetCreateForm):
         self.fields["dispatchable"].widget = forms.HiddenInput()
         self.fields["dispatchable"].initial = True
         self.fields["installed_capacity"].label = _("Installed capacity (kWh)")
+        self.fields["maximum_capacity"].label = _("Maximum capacity (kWh)")
+
         if asset_type_name != "hess":
             self.fields["fixed_thermal_losses_relative"].widget = forms.HiddenInput()
             self.fields["fixed_thermal_losses_relative"].initial = 0
@@ -1037,9 +1039,10 @@ class StorageForm(AssetCreateForm):
         "capex_var",
         "opex_fix",
         "opex_var",
-        "installed_capacity",
-        "optimize_cap",
         "lifetime",
+        "maximum_capacity",
+        "optimize_cap",
+        "installed_capacity",
         "age_installed",
         "crate",
         "efficiency",
