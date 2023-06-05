@@ -39,6 +39,7 @@ from .scenario_topology_helpers import (
     load_project_from_dict,
 )
 from projects.helpers import format_scenario_for_mvs, PARAMETERS
+from dashboard.helpers import fetch_user_projects
 from .constants import DONE, PENDING, ERROR, MODIFIED
 from .services import (
     create_or_delete_simulation_scheduler,
@@ -632,7 +633,7 @@ def scenario_create_parameters(request, proj_id, scen_id=None, step_id=1, max_st
 
     project = get_object_or_404(Project, pk=proj_id)
     # all projects which the user is able to select (the one the user created)
-    user_projects = request.user.project_set.all()
+    user_projects = fetch_user_projects(request.user)
 
     form = ScenarioCreateForm(
         initial={"project": project}, project_queryset=user_projects

@@ -466,7 +466,11 @@ class ScenarioSelectProjectForm(OpenPlanModelForm):
         project_queryset = kwargs.pop("project_queryset", None)
         super().__init__(*args, **kwargs)
         if project_queryset is not None:
-            self.fields["project"].queryset = project_queryset
+            self.fields["project"] = forms.ChoiceField(
+                label="Project",
+                choices=[p for p in project_queryset.values_list("id", "label")],
+            )
+
         else:
             self.fields["project"] = forms.ChoiceField(label="Project", choices=())
         for visible in self.visible_fields():
@@ -486,7 +490,11 @@ class ScenarioUpdateForm(OpenPlanModelForm):
         project_queryset = kwargs.pop("project_queryset", None)
         super().__init__(*args, **kwargs)
         if project_queryset is not None:
-            self.fields["project"].queryset = project_queryset
+            self.fields["project"] = forms.ChoiceField(
+                label="Project",
+                choices=[p for p in project_queryset.values_list("id", "label")],
+            )
+
         else:
             self.fields["project"] = forms.ChoiceField(label="Project", choices=())
 

@@ -3,11 +3,11 @@ import copy
 import csv
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.translation import ugettext_lazy as _
-from django.db.models import Value, F
-from django.db.models.functions import Concat
+from django.db.models import Value, Q, F, Case, When
+from django.db.models.functions import Concat, Replace
 from numbers import Number
 
-from projects.models import Viewer
+from projects.models import Viewer, Project
 import pickle
 from django.conf import settings as django_settings
 
@@ -147,18 +147,26 @@ def update_selected_scenarios_in_cache(request, proj_id, scen_id):
 
 def fetch_user_projects(user):
     """Given a user return the projects they own as well as the shared ones"""
-    user_projects = user.project_set.all().annotate(
-        label=F("name"), shared=Value(False)
+    user_project_ids = user.project_set.values_list("id", flat=True).distinct()
+
+    viewer_project_ids = (
+        Viewer.objects.filter(user__email=user.email)
+        .values_list("viewer_projects", flat=True)
+        .distinct()
     )
-    viewers = Viewer.objects.filter(user__email=user.email)
-    if viewers.exists():
-        viewer_projects = [
-            viewer.viewer_projects.all().annotate(
-                label=Concat("name", Value(" (shared)")), shared=Value(True)
-            )
-            for viewer in viewers
-        ]
-        user_projects = user_projects.union(*viewer_projects)
+
+    user_projects = Project.objects.filter(
+        Q(id__in=user_project_ids) | Q(id__in=viewer_project_ids)
+    ).annotate(
+        label=Case(
+            When(Q(id__in=viewer_project_ids), then=Concat("name", Value(" (shared)"))),
+            default=F("name"),
+        ),
+        shared=Case(
+            When(Q(id__in=viewer_project_ids), then=Value(True)), default=Value(False)
+        ),
+    )
+
     return user_projects
 
 
