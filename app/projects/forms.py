@@ -779,6 +779,16 @@ class AssetCreateForm(OpenPlanModelForm):
                     self.fields[field].label = self.fields[field].label.replace(
                         "€", currency
                     )
+                if "unit" in self.fields[field].label:
+                    if self.asset_type_name == "capacity":
+                        unit = "kWh"
+                    elif self.asset_type_name == "pv_plant":
+                        unit = "kWp"
+                    else:
+                        unit = "kW"
+                    self.fields[field].label = self.fields[field].label.replace(
+                        "unit", unit
+                    )
 
         """ ----------------------------------------------------- """
 
