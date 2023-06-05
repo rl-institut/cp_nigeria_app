@@ -295,7 +295,11 @@ def project_update(request, proj_id):
     return render(
         request,
         "project/project_update.html",
-        {"project_form": project_form, "economic_data_form": economic_data_form},
+        {
+            "project_form": project_form,
+            "economic_data_form": economic_data_form,
+            "proj_id": proj_id,
+        },
     )
 
 
