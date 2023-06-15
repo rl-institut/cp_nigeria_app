@@ -24,6 +24,8 @@ from projects.constants import (
     TRUE_FALSE_CHOICES,
     BOOL_CHOICES,
     USER_RATING,
+    PARAM_CATEGORY,
+    PARAM_TYPE,
 )
 
 
@@ -511,6 +513,23 @@ class Asset(TopologyNode):
 
     def is_input_timeseries_empty(self):
         return self.input_timeseries == ""
+
+
+class ParameterInput(models.Model):
+    name = models.CharField(max_length=60, null=False, blank=False)
+    scenario = models.ForeignKey(
+        Scenario, on_delete=models.CASCADE, null=False, blank=False
+    )
+    old_value = models.TextField(null=True, blank=False)
+    new_value = models.TextField(null=True, blank=False)
+    parameter_category = models.CharField(max_length=20, choices=PARAM_CATEGORY)
+    parameter_type = models.CharField(
+        null=True, blank=True, max_length=20, choices=PARAM_TYPE
+    )
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} [{self.old_value}, {self.new_value}]"
 
 
 class COPCalculator(models.Model):

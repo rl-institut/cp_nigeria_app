@@ -279,6 +279,18 @@ ENERGY_VECTOR = (
 
 COP_MODES = (("Heat pump", "heat_pump"), ("Chiller", "chiller"))
 
+PARAM_CATEGORY = (
+    ("asset", "asset"),
+    ("project", "project"),
+    ("scenario", "scenario"),
+    ("constraint", "constraint"),
+)
+PARAM_TYPE = (
+    ("scalar", "scalar"),
+    ("vector", "vector"),
+    ("string", "string"),
+    ("bool", "bool"),
+)
 
 MVS_TYPE = (
     ("", "Choose..."),
