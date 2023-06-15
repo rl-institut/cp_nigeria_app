@@ -3,6 +3,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% load i18n %}
+{% load custom_template_tags %}
 
 {% block head_block %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" crossorigin=""
@@ -54,12 +55,27 @@
 
         {% for project in project_list %}
 
-            <section class="project" id="project-{{ project.id }}">
+						{% if project.user.email == request.user.email %}
+							{% setvar "project" as project_css %}
+							{% setvar "Author" as project_role %}
+						{% elif project.id|has_viewer_edit_rights:user %}
+							{% setvar "project project--shared" as project_css %}
+							{% setvar "Edit" as project_role %}
+						{% else %}
+							{% setvar "project project--shared-noedit" as project_css %}
+							{% setvar "Read" as project_role %}
+						{% endif %}
+
+
+            <section class="{{ project_css }}" id="project-{{ project.id }}">
                 <div>
                     <div class="project__top">
                         <a  href="{% url 'project_update' project.id %}">
                             <h2 class= "name"> {% translate project.name %} </h2>
                         </a>
+												<span class="role">
+													{{ project_role}}
+												</span>
                         <a href="{% url 'not_implemented' %}?url={{ request.get_full_path }}" class="location">
                             <span class="icon-pin" aria-hidden="true"></span>
                             {{ project.country }}

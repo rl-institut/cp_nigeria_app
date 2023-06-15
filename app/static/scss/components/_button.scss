@@ -136,6 +136,15 @@ footer button.btn {
     }
   }
 
+  &--warning {
+    @include btn-background-color($warning-color);
+    color: #553F06;
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(253, 197, 52, 0.25);
+    }
+  }
+
   &--error {
     @include btn-background-color($error-color);
     color: $white;

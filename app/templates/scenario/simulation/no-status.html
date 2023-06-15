@@ -25,18 +25,25 @@
 {% endblock progression_content %}
 
 {% block footer %}
-    <footer class="simulation-footer">
-      <div>
-              <form method="post" action="{% url 'request_mvs_simulation' scen_id %}">
-            {% csrf_token %}
+<footer class="simulation-footer">
+	<div>
 
-            <button class="btn btn--medium" type="submit" > {% translate "Run simulation" %}</button>
-            <input type="checkbox" name="output_lp_file"> Include LP file (advanced users) </input>
-        </form>
+		<form method="post" action="{% url 'request_mvs_simulation' scen_id %}">
+						 {% csrf_token %}
+					<div class="simulation-footer__btn">
+						<a class="btn btn--medium btn--transparent" href="{% url 'scenario_steps_edit' proj_id scen_id step_id|add:-1 %}" aria-disabled="true">{% translate "Previous" %}</a>
 
+						<button class="btn btn--medium" type="submit" > {% translate "Run simulation" %}</button>
+						<div class="form-check simulation-footer__check">
+						 <input class="form-check-input" type="checkbox" name="output_lp_file" id="output_lp_file">
+							<label class="form-check-label" for="output_lp_file">
+								{% translate "Include LP file (advanced users)" %}
+							</label>
+						</div>
+						<!--a class="btn btn--medium btn--hollow" href="{% url 'sensitivity_analysis_create' scen_id %}" aria-disabled="true">{% translate "Perform a sensitivity analysis" %}</a-->
 
-        <a class="btn btn--medium btn--hollow btn--previous" href="{% url 'scenario_steps_edit' proj_id scen_id step_id|add:-1 %}" aria-disabled="true">{% translate "Previous" %}</a>
-        <a class="btn btn--medium btn--hollow" href="{% url 'sensitivity_analysis_create' scen_id %}" aria-disabled="true">{% translate "Perform a sensitivity analysis" %}</a>
-      </div>
-    </footer>
+					</div>
+		</form>
+	</div>
+</footer>
 {% endblock footer %}

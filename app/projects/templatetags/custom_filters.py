@@ -47,6 +47,25 @@ def has_viewer_edit_rights(proj_id, user):
 
 
 @register.filter
+def has_viewer_read_rights(proj_id, user):
+    try:
+        project = Project.objects.get(pk=proj_id)
+    except Project.DoesNotExist:
+        project = None
+    answer = False
+    if project is not None:
+        if project.user == user:
+            answer = True
+        else:
+            qs = project.viewers.filter(
+                Q(user__email=user.email) & Q(share_rights="read")
+            )
+            if qs.exists():
+                answer = True
+    return answer
+
+
+@register.filter
 def pdb(element):
     import pdb
 
