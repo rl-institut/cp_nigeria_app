@@ -727,17 +727,62 @@ def scenario_create_parameters(request, proj_id, scen_id=None, step_id=1, max_st
             else:
                 scenario = Scenario.objects.get(id=scen_id)
 
-            qs_sim = Simulation.objects.filter(scenario=scenario)
-            # update the parameter values which are different from existing values
-            for name, value in form.cleaned_data.items():
-                if getattr(scenario, name) != value:
-                    setattr(scenario, name, value)
-                    if qs_sim.exists():
-                        qs_sim.update(status=MODIFIED)
+            # Only allow edition in DB for owner or share with edit rights
+            selected_project = form.cleaned_data["project"]
+            if (selected_project.user == request.user) or (
+                selected_project.viewers.filter(
+                    user__email=request.user.email, share_rights="edit"
+                ).exists()
+                is True
+            ):
 
-            # update the project associated to the scenario
-            proj_id = scenario.project.id
-            scenario.save()
+                qs_sim = Simulation.objects.filter(scenario=scenario)
+                # update the parameter values which are different from existing values
+                for name, value in form.cleaned_data.items():
+                    # only update fields if they were changed
+                    if getattr(scenario, name) != value:
+                        # if simulation exists we keep track of the change
+                        if qs_sim.exists():
+                            # if a previous change does not exist, we create one instance
+                            # if it does exist, we update its value, or we discard the change
+                            # if the assigned value is the same as the old one
+                            qs_param = ParameterInput.objects.filter(
+                                scenario=scenario,
+                                name=name,
+                                parameter_category="scenario",
+                            )
+                            # if a previous change does not exist, we create one instance
+                            if not qs_param.exists():
+                                pi = ParameterInput(
+                                    scenario=scenario,
+                                    name=name,
+                                    old_value=getattr(scenario, name),
+                                    new_value=value,
+                                    parameter_category="scenario",
+                                )
+                                pi.save()
+                            # if it does exist, we update its value, or we discard the change
+                            elif qs_param.count() == 1:
+                                pi = qs_param.get()
+                                old_value = pi.old_value
+                                if pi.parameter_type == "vector":
+                                    old_value = (old_value, None)
+
+                                # if the assigned value is the same as the old one
+                                if value == form.fields[pi.name].clean(old_value):
+                                    pi.delete()
+                                else:
+                                    qs_param.update(new_value=value)
+
+                            else:
+                                raise ValueError(
+                                    "There are too many parameters which should be singled out"
+                                )
+                        setattr(scenario, name, value)
+
+                # update the project associated to the scenario
+                proj_id = scenario.project.id
+                scenario.save()
             answer = HttpResponseRedirect(
                 reverse("scenario_create_topology", args=[proj_id, scenario.id])
             )
