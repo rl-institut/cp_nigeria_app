@@ -291,7 +291,12 @@ def project_create(request):
 def project_update(request, proj_id):
     project = get_object_or_404(Project, id=proj_id)
 
-    if project.user != request.user:
+    if (project.user != request.user) and (
+        project.viewers.filter(
+            user__email=request.user.email, share_right="edit"
+        ).exists()
+        is False
+    ):
         raise PermissionDenied
         # return HttpResponseForbidden()
 
@@ -340,9 +345,6 @@ def project_export(request, proj_id):
             bind_scenario_data = False
     else:
         bind_scenario_data = True
-
-    if project.user != request.user:
-        raise PermissionDenied
 
     response = HttpResponse(
         json.dumps(project.export(bind_scenario_data=bind_scenario_data)),
@@ -481,7 +483,10 @@ def project_duplicate(request, proj_id):
     # duplicate the project
     dm = project.export(bind_scenario_data=True)
     if (project.user == request.user) or (
-        project.viewers.filter(user__email=request.user.email).exists() is True
+        project.viewers.filter(
+            user__email=request.user.email, share_rights="edit"
+        ).exists()
+        is True
     ):
         new_proj_id = load_project_from_dict(dm, user=request.user)
     else:
@@ -844,7 +849,12 @@ def scenario_create_topology(request, proj_id, scen_id, step_id=2, max_step=3):
         # called by function save_topology() in templates/scenario/scenario_step2.html
 
         scenario = get_object_or_404(Scenario, pk=scen_id)
-        if request.user != scenario.project.user:
+        if (scenario.project.user != request.user) and (
+            scenario.project.viewers.filter(
+                user__email=request.user.email, share_rights="edit"
+            ).exists()
+            is False
+        ):
             return JsonResponse({"success": True}, status=403)
             # raise PermissionDenied
 
@@ -984,7 +994,13 @@ def scenario_create_constraints(request, proj_id, scen_id, step_id=3, max_step=4
                 if constraint_type == "net_zero_energy":
                     constraint_instance.value = constraint_instance.activated
 
-                constraint_instance.save()
+                if (scenario.project.user == request.user) or (
+                    scenario.project.viewers.filter(
+                        user__email=request.user.email, share_rights="edit"
+                    ).exists()
+                    is True
+                ):
+                    constraint_instance.save()
 
         return HttpResponseRedirect(reverse("scenario_review", args=[proj_id, scen_id]))
 
