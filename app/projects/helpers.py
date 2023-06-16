@@ -210,6 +210,8 @@ class DualNumberField(forms.MultiValueField):
             answer = input_timeseries_values
         else:
 
+            if scalar_value is None:
+                scalar_value = ""
             # check the input string is a number or a list
             if scalar_value != "":
                 try:
