@@ -746,15 +746,15 @@ def scenario_create_parameters(request, proj_id, scen_id=None, step_id=1, max_st
                             # if a previous change does not exist, we create one instance
                             # if it does exist, we update its value, or we discard the change
                             # if the assigned value is the same as the old one
-                            qs_param = ParameterInput.objects.filter(
-                                scenario=scenario,
+                            qs_param = ParameterChangeTracker.objects.filter(
+                                simulation=qs_sim.get(),
                                 name=name,
                                 parameter_category="scenario",
                             )
                             # if a previous change does not exist, we create one instance
                             if not qs_param.exists():
-                                pi = ParameterInput(
-                                    scenario=scenario,
+                                pi = ParameterChangeTracker(
+                                    simulation=scenario.simulation,
                                     name=name,
                                     old_value=getattr(scenario, name),
                                     new_value=value,
@@ -1056,8 +1056,10 @@ def scenario_review(request, proj_id, scen_id, step_id=4, max_step=5):
             elif simulation.status == PENDING:
                 html_template = "scenario/simulation/pending.html"
 
-            qs_param = ParameterInput.objects.filter(scenario=scenario)
-            qs_asset = AssetChangeTracker.objects.filter(scenario=scenario)
+            qs_param = ParameterChangeTracker.objects.filter(
+                simulation=scenario.simulation
+            )
+            qs_asset = AssetChangeTracker.objects.filter(simulation=scenario.simulation)
             if qs_param.exists() or qs_asset.exists():
                 context.update(
                     {
@@ -1231,7 +1233,7 @@ def scenario_delete(request, scen_id):
 
 # endregion Scenario
 
-# start region ParameterInput
+# start region ParameterChangeTracker
 
 
 @login_required
@@ -1248,7 +1250,7 @@ def reset_scenario_changes(request, scen_id):
         raise PermissionDenied
 
     if request.POST:
-        qs = ParameterInput.objects.filter(scenario=scenario)
+        qs = ParameterChangeTracker.objects.filter(simulation=scenario.simulation)
         qs.delete()
         if len(qs) == 0:
             messages.success(request, _("Scenario changes successfully reversed!"))
@@ -1257,7 +1259,7 @@ def reset_scenario_changes(request, scen_id):
         )
 
 
-# end region ParameterInput
+# end region ParameterChangeTracker
 
 
 @login_required

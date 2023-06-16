@@ -11,7 +11,7 @@ from projects.models import (
     EconomicData,
     COPCalculator,
     Simulation,
-    ParameterInput,
+    ParameterChangeTracker,
     AssetChangeTracker,
 )
 import json
@@ -60,7 +60,7 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
         bus.save()
         if not asset_uuid:
             AssetChangeTracker.objects.create(
-                scenario=scenario, name=bus.name, action=1
+                simulation=scenario.simulation, name=bus.name, action=1
             )
         return JsonResponse({"success": True, "asset_id": bus.id}, status=200)
     logger.warning(f"The submitted bus has erroneous field values.")
@@ -81,8 +81,8 @@ def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
         # if it does exist, we update its value, or we discard the change
         # if the assigned value is the same as the old one
         if old_value != new_value:
-            qs_param = ParameterInput.objects.filter(
-                scenario=scenario,
+            qs_param = ParameterChangeTracker.objects.filter(
+                simulation=scenario.simulation,
                 name=param,
                 parameter_category="asset",
                 asset=existing_asset,
@@ -97,8 +97,8 @@ def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
                     kwargs = {"parameter_type": "vector"}
                 else:
                     kwargs = {}
-                pi = ParameterInput(
-                    scenario=scenario,
+                pi = ParameterChangeTracker(
+                    simulation=scenario.simulation,
                     name=param,
                     old_value=old_value,
                     new_value=new_value,
@@ -260,7 +260,7 @@ def handle_storage_unit_form_post(
             ess_discharging_power_asset.save()
             if not asset_uuid:
                 AssetChangeTracker.objects.create(
-                    scenario=scenario, name=ess_asset.name, action=1
+                    simulation=scenario.simulation, name=ess_asset.name, action=1
                 )
             return JsonResponse(
                 {"success": True, "asset_id": ess_asset.unique_id}, status=200
@@ -340,7 +340,7 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
         asset.save()
         if not asset_uuid:
             AssetChangeTracker.objects.create(
-                scenario=scenario, name=asset.name, action=1
+                simulation=scenario.simulation, name=asset.name, action=1
             )
         # will apply for he
         cop_calculator_id = request.POST.get("copId", "")
@@ -723,7 +723,7 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
                 for name in qs.values_list("name", flat=True):
                     # TODO export asset dto to be able to undo the changes
                     AssetChangeTracker.objects.create(
-                        scenario=scenario, name=name, action=0
+                        simulation=scenario.simulation, name=name, action=0
                     )
             qs.delete()
 
@@ -741,7 +741,7 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
                 for name in qs.values_list("name", flat=True):
                     # TODO export asset dto to be able to undo the changes
                     AssetChangeTracker.objects.create(
-                        scenario=scenario, name=name, action=0
+                        simulation=scenario.simulation, name=name, action=0
                     )
             qs.delete()
         else:

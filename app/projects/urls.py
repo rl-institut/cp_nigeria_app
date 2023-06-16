@@ -154,7 +154,7 @@ urlpatterns = [
         asset_cops_create_or_update,
         name="asset_cops_create_or_update",
     ),
-    # ParameterInput (track of simulated scenario changes)
+    # ParameterChangeTracker (track of simulated scenario changes)
     path(
         "reset_scenario_changes/<int:scen_id>",
         reset_scenario_changes,
