@@ -10,6 +10,8 @@ from projects.models import (
     Project,
     EconomicData,
     COPCalculator,
+    Simulation,
+    ParameterInput,
 )
 import json
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
@@ -62,6 +64,57 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
     return JsonResponse(
         {"success": False, "form_html": form_html.render({"form": form})}, status=422
     )
+
+
+def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
+    if hasattr(existing_asset, param):
+        old_value = existing_asset.get_field_value(param)
+        if new_value is None:
+            new_value = form.cleaned_data.get(param)
+        # TODO problem by type of value
+        # if a previous change does not exist, we create one instance
+        # if it does exist, we update its value, or we discard the change
+        # if the assigned value is the same as the old one
+        if old_value != new_value:
+            qs_param = ParameterInput.objects.filter(
+                scenario=scenario,
+                name=param,
+                parameter_category="asset",
+                asset=existing_asset,
+            )
+            if not qs_param.exists():
+                if param in (
+                    "efficiency",
+                    "efficiency_multiple",
+                    "energy_price",
+                    "feedin_tariff",
+                ):
+                    kwargs = {"parameter_type": "vector"}
+                else:
+                    kwargs = {}
+                pi = ParameterInput(
+                    scenario=scenario,
+                    name=param,
+                    old_value=old_value,
+                    new_value=new_value,
+                    parameter_category="asset",
+                    asset=existing_asset,
+                    **kwargs,
+                )
+                pi.save()
+            elif qs_param.count() == 1:
+                pi = qs_param.get()
+                old_value = pi.old_value
+                if pi.parameter_type == "vector":
+                    old_value = (old_value, None)
+                if new_value == form.fields[pi.name].clean(old_value):
+                    pi.delete()
+                else:
+                    qs_param.update(new_value=new_value)
+            else:
+                raise ValueError(
+                    "There are too many parameters which should be singled out"
+                )
 
 
 def handle_storage_unit_form_post(
@@ -135,8 +188,14 @@ def handle_storage_unit_form_post(
                 parent_asset=ess_asset,
             )
 
+            qs_sim = Simulation.objects.filter(scenario=scenario)
             # Populate all subassets
             for param, value in form.cleaned_data.items():
+
+                if asset_uuid and qs_sim.exists():
+                    track_asset_changes(
+                        scenario, param, form, existing_asset=ess_capacity_asset
+                    )
                 setattr(ess_capacity_asset, param, value)
 
                 # split efficiency between charge and discharge
@@ -152,9 +211,25 @@ def handle_storage_unit_form_post(
                         setattr(ess_charging_power_asset, param, 0)
                 else:
                     if ess_charging_power_asset.has_parameter(param):
+                        if asset_uuid and qs_sim.exists():
+                            track_asset_changes(
+                                scenario,
+                                param,
+                                form,
+                                existing_asset=ess_charging_power_asset,
+                                new_value=value,
+                            )
                         setattr(ess_charging_power_asset, param, value)
 
                 if ess_discharging_power_asset.has_parameter(param):
+                    if asset_uuid and qs_sim.exists():
+                        track_asset_changes(
+                            scenario,
+                            param,
+                            form,
+                            existing_asset=ess_discharging_power_asset,
+                            new_value=value,
+                        )
                     setattr(ess_discharging_power_asset, param, value)
 
             ess_capacity_asset.save()
@@ -217,6 +292,14 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
         )
 
     if form.is_valid():
+
+        if asset_uuid:
+            existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
+            qs_sim = Simulation.objects.filter(scenario=scenario)
+            if qs_sim.exists():
+                for param in form.cleaned_data:
+                    track_asset_changes(scenario, param, form, existing_asset)
+
         asset = form.save(commit=False)
         asset.scenario = scenario
         asset.asset_type = asset_type

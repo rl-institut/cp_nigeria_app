@@ -440,6 +440,21 @@ class Asset(TopologyNode):
     def fields(self):
         return [f.name for f in self._meta.fields + self._meta.many_to_many]
 
+    def get_field_value(self, field_name):
+        answer = getattr(self, field_name)
+        if field_name in (
+            "efficiency",
+            "efficiency_multiple",
+            "energy_price",
+            "feedin_tariff",
+            "input_timeseries",
+        ):
+            try:
+                answer = float(answer)
+            except ValueError:
+                answer = json.loads(answer)
+        return answer
+
     @property
     def visible_fields(self):
         visible_fields = self.asset_type.visible_fields
