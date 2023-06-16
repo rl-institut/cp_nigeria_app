@@ -19,6 +19,17 @@
             <div class="simulation__alert simulation__alert--warning">
               <span>{% translate "If you rerun the simulation the previous results will be lost." %}</span>
             </div>
+						<form action="{% url 'reset_scenario_changes' scen_id %}" method="post">
+            	<div class="simulation__actions">
+              <div>
+								{% csrf_token %}
+                <button type="submit" class="btn btn--medium">{% translate "Reset changes" %}</button>
+              </div>
+              <div>
+                <a class="btn btn--medium btn--hollow" href="#">{% translate "Copy to a new scenario" %}</a>
+              </div>
+            </div>
+						</form>
           </div>
           <div class="simulation__changed">
             <p>{% translate "Changed parameters" %}</p>

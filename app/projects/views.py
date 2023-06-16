@@ -1211,6 +1211,34 @@ def scenario_delete(request, scen_id):
 
 # endregion Scenario
 
+# start region ParameterInput
+
+
+@login_required
+@require_http_methods(["POST"])
+def reset_scenario_changes(request, scen_id):
+    scenario = get_object_or_404(Scenario, id=scen_id)
+
+    if (scenario.project.user != request.user) and (
+        scenario.project.viewers.filter(
+            user__email=request.user.email, share_rights="edit"
+        ).exists()
+        is False
+    ):
+        raise PermissionDenied
+
+    if request.POST:
+        qs = ParameterInput.objects.filter(scenario=scenario)
+        qs.delete()
+        if len(qs) == 0:
+            messages.success(request, _("Scenario changes successfully reversed!"))
+        return HttpResponseRedirect(
+            reverse("scenario_review", args=[scenario.project.id, scen_id])
+        )
+
+
+# end region ParameterInput
+
 
 @login_required
 @require_http_methods(["GET", "POST"])
