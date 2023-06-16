@@ -547,6 +547,17 @@ class ParameterInput(models.Model):
         return f"{self.name} [{self.old_value}, {self.new_value}]"
 
 
+class AssetChangeTracker(models.Model):
+    name = models.CharField(max_length=60, null=False, blank=False)
+    scenario = models.ForeignKey(
+        Scenario, on_delete=models.CASCADE, null=False, blank=False
+    )
+    asset_dto = models.TextField(null=True, blank=True)
+    action = models.SmallIntegerField(
+        null=False, blank=False, choices=((0, "delete"), (0, "create"))
+    )
+
+
 class COPCalculator(models.Model):
 
     scenario = models.ForeignKey(

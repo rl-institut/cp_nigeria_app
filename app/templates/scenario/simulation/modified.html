@@ -31,6 +31,33 @@
             </div>
 						</form>
           </div>
+
+					<div class="simulation__changed">
+						<p>{% translate "Assets" %}</p>
+						<div class="table-changed">
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Created" %}
+                </div>
+								{% for scen_param in asset_create %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Deleted" %}
+                </div>
+								{% for scen_param in asset_delete %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+            </div>
+					</div>
+
           <div class="simulation__changed">
             <p>{% translate "Changed parameters" %}</p>
             <div class="table-changed">

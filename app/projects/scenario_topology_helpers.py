@@ -12,6 +12,7 @@ from projects.models import (
     COPCalculator,
     Simulation,
     ParameterInput,
+    AssetChangeTracker,
 )
 import json
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
@@ -57,6 +58,10 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
                 f"Failed to set positioning for bus {bus.name} in scenario: {scen_id}."
             )
         bus.save()
+        if not asset_uuid:
+            AssetChangeTracker.objects.create(
+                scenario=scenario, name=bus.name, action=1
+            )
         return JsonResponse({"success": True, "asset_id": bus.id}, status=200)
     logger.warning(f"The submitted bus has erroneous field values.")
 
@@ -253,6 +258,10 @@ def handle_storage_unit_form_post(
             ess_capacity_asset.save()
             ess_charging_power_asset.save()
             ess_discharging_power_asset.save()
+            if not asset_uuid:
+                AssetChangeTracker.objects.create(
+                    scenario=scenario, name=ess_asset.name, action=1
+                )
             return JsonResponse(
                 {"success": True, "asset_id": ess_asset.unique_id}, status=200
             )
@@ -329,7 +338,10 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
                 f"Failed to set positioning for asset {asset.name} in scenario: {scen_id}."
             )
         asset.save()
-
+        if not asset_uuid:
+            AssetChangeTracker.objects.create(
+                scenario=scenario, name=asset.name, action=1
+            )
         # will apply for he
         cop_calculator_id = request.POST.get("copId", "")
         if asset_type_name == "heat_pump" and cop_calculator_id != "":
@@ -696,6 +708,9 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
                 pos_x=node.pos_x, pos_y=node.pos_y
             )
 
+    scenario = get_object_or_404(Scenario, id=scenario_id)
+    qs_sim = Simulation.objects.filter(scenario=scenario)
+
     # deletes asset or bus which DB id is not in the topology anymore (was removed by user)
     for asset_id in scenario_assets_ids_excluding_storage_children:
 
@@ -704,7 +719,14 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             logger.debug(
                 f"Deleting asset {asset_id} of scenario {scenario_id} which was removed from the topology by the user."
             )
+            if qs_sim.exists():
+                for name in qs.values_list("name", flat=True):
+                    # TODO export asset dto to be able to undo the changes
+                    AssetChangeTracker.objects.create(
+                        scenario=scenario, name=name, action=0
+                    )
             qs.delete()
+
         else:
             qs.update(**asset_node_positions[asset_id])
 
@@ -715,6 +737,12 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             logger.debug(
                 f"Deleting bus {bus_id} of scenario {scenario_id} which was removed from the topology by the user."
             )
+            if qs_sim.exists():
+                for name in qs.values_list("name", flat=True):
+                    # TODO export asset dto to be able to undo the changes
+                    AssetChangeTracker.objects.create(
+                        scenario=scenario, name=name, action=0
+                    )
             qs.delete()
         else:
             qs.update(**bus_node_positions[bus_id])

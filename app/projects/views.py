@@ -1056,6 +1056,26 @@ def scenario_review(request, proj_id, scen_id, step_id=4, max_step=5):
             elif simulation.status == PENDING:
                 html_template = "scenario/simulation/pending.html"
 
+            qs_param = ParameterInput.objects.filter(scenario=scenario)
+            qs_asset = AssetChangeTracker.objects.filter(scenario=scenario)
+            if qs_param.exists() or qs_asset.exists():
+                context.update(
+                    {
+                        "project_parameters": [
+                            p for p in qs_param.filter(parameter_category="project")
+                        ],
+                        "scenario_parameters": [
+                            p for p in qs_param.filter(parameter_category="scenario")
+                        ],
+                        "asset_parameters": [
+                            p for p in qs_param.filter(parameter_category="asset")
+                        ],
+                        "asset_create": [p for p in qs_asset.filter(action=1)],
+                        "asset_delete": [p for p in qs_asset.filter(action=0)],
+                    }
+                )
+
+                html_template = "scenario/simulation/modified.html"
         else:
             print("no simulation existing")
 
