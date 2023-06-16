@@ -499,7 +499,7 @@ class Asset(TopologyNode):
             answer = []
         return answer
 
-    def export(self):
+    def export(self, connections=False):
         """
         Returns
         -------
@@ -520,6 +520,8 @@ class Asset(TopologyNode):
         # check for parent assets
         if self.parent_asset is not None:
             dm["parent_asset"] = self.parent_asset.name
+
+        # TODO add connections here if True, then one can recreate the asset
 
         return dm
 

@@ -36,10 +36,10 @@
             	<div class="simulation__actions">
               <div>
 								{% csrf_token %}
-                <button type="submit" class="btn btn--medium">{% translate "Reset changes" %}</button>
+                <!--button type="submit" class="btn btn--medium">{% translate "Reset changes" %}</button-->
               </div>
               <div>
-                <a class="btn btn--medium btn--hollow" href="#">{% translate "Copy to a new scenario" %}</a>
+                <a class="btn btn--medium btn--hollow" href="{% url 'scenario_duplicate' scen_id %}">{% translate "Copy to a new scenario" %}</a>
               </div>
             </div>
 						</form>
@@ -47,6 +47,9 @@
 
           <div class="simulation__changed">
             <p>{% translate "Changed parameters" %}</p>
+						<div class="simulation__alert simulation__alert--info">
+							<span>{% translate "The following changes displayed for your information" %}</span>
+            </div>
             <div class="table-changed">
               <div class="table-changed__item">
                 <div class="table-changed__header">
@@ -87,9 +90,6 @@
 
 					<div class="simulation__changed">
 						<p>{% translate "Assets creation/deletion" %}</p>
-						<div class="simulation__alert simulation__alert--info">
-							<span>{% translate "The following changes are not reversible yet, they are only displayed for information" %}</span>
-            </div>
 						<div class="table-changed">
               <div class="table-changed__item">
                 <div class="table-changed__header">

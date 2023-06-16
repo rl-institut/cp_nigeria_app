@@ -1251,6 +1251,7 @@ def reset_scenario_changes(request, scen_id):
 
     if request.POST:
         qs = ParameterChangeTracker.objects.filter(simulation=scenario.simulation)
+        # TODO reverse the changes here
         qs.delete()
         if len(qs) == 0:
             messages.success(request, _("Scenario changes successfully reversed!"))

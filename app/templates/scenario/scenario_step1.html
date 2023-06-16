@@ -70,7 +70,6 @@
     <div>
         <div class="step-footer__left"></div>
         <div class="step-footer__center">
-				<!--scenario.project.user == request.user-->
 				{% if proj_id|has_viewer_edit_rights:request.user %}
 					<button onclick="javascript:next_btn_clicked()" class="btn btn--medium" >{% translate "Next" %} </button>
         {% else %}
