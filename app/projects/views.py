@@ -1379,6 +1379,7 @@ def get_asset_create_form(request, scen_id=0, asset_type_name="", asset_uuid=Non
                     "efficiency": ess_capacity_asset.efficiency,
                     "dispatchable": ess_capacity_asset.dispatchable,
                     "optimize_cap": ess_capacity_asset.optimize_cap,
+                    "maximum_capacity": ess_capacity_asset.maximum_capacity,
                     "soc_max": ess_capacity_asset.soc_max,
                     "soc_min": ess_capacity_asset.soc_min,
                     "thermal_loss_rate": ess_capacity_asset.thermal_loss_rate,

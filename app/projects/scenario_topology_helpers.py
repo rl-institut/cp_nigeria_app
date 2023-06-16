@@ -149,44 +149,62 @@ def handle_storage_unit_form_post(
             # First delete all existing associated storage assets from the db
             if asset_uuid:
                 existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
-                existing_asset.delete()  # deletes also automatically all children using models.CASCADE
+                # existing_asset.delete()  # deletes also automatically all children using models.CASCADE
+                ess_asset = existing_asset
+                ess_capacity_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="capacity"
+                )
+                ess_charging_power_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="charging_power"
+                )
+                ess_discharging_power_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="discharging_power"
+                )
+                new_name = form.cleaned_data.pop("name", None)
+                if new_name is not None:
+                    ess_asset.name = new_name
+                    ess_asset.save()
+            else:
+                # Create the ESS Parent Asset
+                ess_asset = Asset.objects.create(
+                    name=form.cleaned_data.pop("name"),
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type=f"{asset_type_name}"
+                    ),
+                    pos_x=float(form.data["pos_x"]),
+                    pos_y=float(form.data["pos_y"]),
+                    unique_id=asset_uuid
+                    or str(
+                        uuid.uuid4()
+                    ),  # if exising asset create an asset with the exact same unique_id else generate a new one
+                    scenario=scenario,
+                )
 
-            # Create the ESS Parent Asset
-            ess_asset = Asset.objects.create(
-                name=form.cleaned_data.pop("name"),
-                asset_type=get_object_or_404(
-                    AssetType, asset_type=f"{asset_type_name}"
-                ),
-                pos_x=float(form.data["pos_x"]),
-                pos_y=float(form.data["pos_y"]),
-                unique_id=asset_uuid
-                or str(
-                    uuid.uuid4()
-                ),  # if exising asset create an asset with the exact same unique_id else generate a new one
-                scenario=scenario,
-            )
-
-            # Create the ess chanrging power
-            ess_charging_power_asset = Asset(
-                name=f"{ess_asset.name} input power",
-                asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
-            # Create the ess dischanrging power
-            ess_discharging_power_asset = Asset(
-                name=f"{ess_asset.name} output power",
-                asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
-            # Create the ess capacity
-            ess_capacity_asset = Asset(
-                name=f"{ess_asset.name} capacity",
-                asset_type=get_object_or_404(AssetType, asset_type="capacity"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
+                # Create the ess charging power
+                ess_charging_power_asset = Asset(
+                    name=f"{ess_asset.name} input power",
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type="charging_power"
+                    ),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
+                # Create the ess discharging power
+                ess_discharging_power_asset = Asset(
+                    name=f"{ess_asset.name} output power",
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type="discharging_power"
+                    ),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
+                # Create the ess capacity
+                ess_capacity_asset = Asset(
+                    name=f"{ess_asset.name} capacity",
+                    asset_type=get_object_or_404(AssetType, asset_type="capacity"),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
 
             qs_sim = Simulation.objects.filter(scenario=scenario)
             # Populate all subassets
