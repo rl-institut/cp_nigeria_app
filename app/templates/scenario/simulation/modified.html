@@ -8,16 +8,29 @@
         <div class="simulation__heading" aria-hidden="true">
         </div>
         <div class="simulation__content">
-          <h2>{% translate "Simulation existing, but scenario parameter changed" %}</h2>
+					{% if simulation_status == "DONE" %}
+          	<h2>{% translate "Simulation existing, but scenario parameter changed" %}</h2>
+					{% elif simulation_status == "ERROR" %}
+						<h2>{% translate "Scenario parameter changed, hopefully your error will be fixed" %}</h2>
+					{% endif %}
           <div class="simulation__feedback">
+						{% if simulation_status == "DONE" %}
             <div class="simulation__alert simulation__alert--info">
               <!--span>To add information</span-->
 							<a class="btn btn--medium" href="{% url 'scenario_visualize_results' scen_id %}">{% translate "Existing simulation's results" %}</a>
+						</div>
+						{% elif simulation_status == "ERROR" %}
+						<div class="simulation__alert simulation__alert--info">
+							<div class="item item--error">
+								<p>{% translate "The following input parameters contain errors" %}:</p>
+								<div>{{ simulation_error_msg }}</div>
+							</div>
+						</div>
+						{% endif %}
 
-            </div>
 
-            <div class="simulation__alert simulation__alert--warning">
-              <span>{% translate "If you rerun the simulation the previous results will be lost." %}</span>
+					  <div class="simulation__alert simulation__alert--warning">
+							<span>{% translate "If you rerun the simulation the previous results will be lost." %}</span>
             </div>
 						<form action="{% url 'reset_scenario_changes' scen_id %}" method="post">
             	<div class="simulation__actions">
@@ -31,32 +44,6 @@
             </div>
 						</form>
           </div>
-
-					<div class="simulation__changed">
-						<p>{% translate "Assets" %}</p>
-						<div class="table-changed">
-              <div class="table-changed__item">
-                <div class="table-changed__header">
-                  {% translate "Created" %}
-                </div>
-								{% for scen_param in asset_create %}
-								 <div class="table-changed__content">
-                  <div class="key">{% translate scen_param.name %}</div>
-                </div>
-								{% endfor %}
-              </div>
-              <div class="table-changed__item">
-                <div class="table-changed__header">
-                  {% translate "Deleted" %}
-                </div>
-								{% for scen_param in asset_delete %}
-								 <div class="table-changed__content">
-                  <div class="key">{% translate scen_param.name %}</div>
-                </div>
-								{% endfor %}
-              </div>
-            </div>
-					</div>
 
           <div class="simulation__changed">
             <p>{% translate "Changed parameters" %}</p>
@@ -96,6 +83,39 @@
               </div>
             </div>
           </div>
+
+
+					<div class="simulation__changed">
+						<p>{% translate "Assets creation/deletion" %}</p>
+						<div class="simulation__alert simulation__alert--info">
+							<span>{% translate "The following changes are not reversible yet, they are only displayed for information" %}</span>
+            </div>
+						<div class="table-changed">
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Created" %}
+                </div>
+								{% for scen_param in asset_create %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Deleted" %}
+                </div>
+								{% for scen_param in asset_delete %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+            </div>
+					</div>
+
+
+
 				</div>
 			</div>
     </main>
