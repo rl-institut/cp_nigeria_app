@@ -298,24 +298,71 @@ def project_update(request, proj_id):
         is False
     ):
         raise PermissionDenied
-        # return HttpResponseForbidden()
 
     project_form = ProjectUpdateForm(request.POST or None, instance=project)
     economic_data_form = EconomicDataUpdateForm(
         request.POST or None, instance=project.economic_data
     )
 
-    if (
-        request.method == "POST"
-        and project_form.is_valid()
-        and economic_data_form.is_valid()
-    ):
-        logger.info(f"Updating project with economic data...")
-        project_form.save()
-        economic_data_form.save()
-        # Save was successful, so send message
-        messages.success(request, "Project Info updated successfully!")
-        return HttpResponseRedirect(reverse("project_search", args=[proj_id]))
+    if request.method == "POST":
+        qs_sim = Simulation.objects.filter(scenario__project=project)
+        if qs_sim.exists():
+            for form, object in (
+                (project_form, project),
+                (economic_data_form, project.economic_data),
+            ):
+                if form.has_changed():
+                    for name in form.changed_data:
+                        value = form.fields[name].clean(form.data[name])
+                        # only update fields if they were changed
+                        if getattr(object, name) != value:
+                            # if simulation exists we keep track of the change
+                            # if a previous change does not exist, we create one instance
+                            # if it does exist, we update its value, or we discard the change
+                            # if the assigned value is the same as the old one
+                            for sim in qs_sim:
+                                qs_param = ParameterChangeTracker.objects.filter(
+                                    simulation=sim,
+                                    name=name,
+                                    parameter_category="project",
+                                )
+                                # if a previous change does not exist, we create one instance
+                                if not qs_param.exists():
+                                    pi = ParameterChangeTracker(
+                                        simulation=sim,
+                                        name=name,
+                                        old_value=getattr(object, name),
+                                        new_value=value,
+                                        parameter_category="project",
+                                    )
+                                    pi.save()
+                                # if it does exist, we update its value, or we discard the change
+                                elif qs_param.count() == 1:
+                                    pi = qs_param.get()
+                                    old_value = pi.old_value
+                                    if pi.parameter_type == "vector":
+                                        old_value = (old_value, None)
+
+                                    # if the assigned value is the same as the old one
+                                    if value == form.fields[pi.name].clean(old_value):
+                                        pi.delete()
+                                    else:
+                                        qs_param.update(new_value=value)
+
+                                else:
+                                    raise ValueError(
+                                        "There are too many parameters which should be singled out"
+                                    )
+
+        if project_form.is_valid() and economic_data_form.is_valid():
+
+            logger.info(f"Updating project with economic data...")
+
+            project_form.save()
+            economic_data_form.save()
+            # Save was successful, so send message
+            messages.success(request, _("Project Info updated successfully!"))
+            return HttpResponseRedirect(reverse("project_search", args=[proj_id]))
 
     return render(
         request,
