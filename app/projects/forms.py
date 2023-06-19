@@ -1025,8 +1025,8 @@ class StorageForm(AssetCreateForm):
         super(StorageForm, self).__init__(*args, asset_type="capacity", **kwargs)
         self.fields["dispatchable"].widget = forms.HiddenInput()
         self.fields["dispatchable"].initial = True
-        self.fields["installed_capacity"].label = _("Installed capacity (kWh)")
-        self.fields["maximum_capacity"].label = _("Maximum capacity (kWh)")
+        self.fields["installed_capacity"].label = _("Installed capacity") + " (kWh)"
+        self.fields["maximum_capacity"].label = _("Maximum capacity") + " (kWh)"
 
         if asset_type_name != "hess":
             self.fields["fixed_thermal_losses_relative"].widget = forms.HiddenInput()

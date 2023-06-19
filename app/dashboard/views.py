@@ -241,8 +241,9 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
                 messages.error(
                     request,
                     _(
-                        f"An error occured. It might be because 1) your scenario was never simulated 2) the results are still pending 3) there is an error in the simulation or 4) the simulation format has been updated and you need to rerun it to benefit from the updated results view. In case of 1), please click on 'Run simulation'. In case of 4) first 'Reset simulation' then on 'Run simulation'. In case of 3) The error message might contain useful information, if you still cannot figure out what was wrong, please contact us using the feedback form {request.build_absolute_uri(reverse('user_feedback'))}"
+                        "An error occured. It might be because 1) your scenario was never simulated 2) the results are still pending 3) there is an error in the simulation or 4) the simulation format has been updated and you need to rerun it to benefit from the updated results view. In case of 1), please click on 'Run simulation'. In case of 4) first 'Reset simulation' then on 'Run simulation'. In case of 3) The error message might contain useful information, if you still cannot figure out what was wrong, please contact us using the feedback form"
                     ),
+                    +request.build_absolute_uri(reverse("user_feedback")),
                 )
                 answer = HttpResponseRedirect(
                     reverse("scenario_review", args=[proj_id, scen_id])
