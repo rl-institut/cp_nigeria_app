@@ -11,6 +11,7 @@ import pandas as pd
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import get_object_or_404
 from django.db import models
+from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
 
@@ -19,9 +20,9 @@ class BusinessModel(models.Model):
     # def save(self, *args, **kwargs):
     #     super().save(*args, **kwargs)
 
-    # scenario = models.ForeignKey(
-    #     Scenario, on_delete=models.CASCADE, null=False, blank=False
-    # )
+    scenario = models.ForeignKey(
+        Scenario, on_delete=models.CASCADE, null=True, blank=False
+    )
 
     grid_connection = models.BooleanField(
         choices=((False, "no"), (True, "yes")), null=True, default=False, blank=False
