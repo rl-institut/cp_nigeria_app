@@ -5,6 +5,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django.forms import ModelForm
 from .models import *
+from .helpers import model_score_mapping
 
 
 class GridQuestionForm(ModelForm):
@@ -31,15 +32,9 @@ class ModelSuggestionForm(ModelForm):
     def __init__(self, *args, **kwargs):
         score = kwargs.pop("score", None)
         super().__init__(*args, **kwargs)
+
         if score is not None:
-            if 0.3 > score >= 0:
-                self.fields["model_name"].initial = "Operator led"
-            elif 0.6 > score >= 0.3:
-                self.fields[
-                    "model_name"
-                ].initial = "Co-op / Project Developer hybrid model"
-            elif 1 >= score >= 0.6:
-                self.fields["model_name"].initial = "Cooperative Model"
+            self.fields["model_name"].initial = model_score_mapping(score)
 
 
 class CapacitiesForm(forms.Form):

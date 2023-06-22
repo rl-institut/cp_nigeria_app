@@ -27,6 +27,12 @@
 	(for information at the moment, score of the business model questions): {{ score }}
 </div>
 
+{% if recommanded_model %}
+<p>
+	Recommanded model: {{ recommanded_model }}
+	<span>Text explaning why this model was choosen</span>
+</p>
+{% endif %}
 {% endblock progression_content %}
 
 

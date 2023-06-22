@@ -452,6 +452,8 @@ def cpn_model_choice(request, proj_id, scen_id=1, step_id=6):
             score = bm.total_score
         context["form"] = ModelSuggestionForm(score=score)
         context["score"] = score
+        if score is not None:
+            context["recommanded_model"] = model_score_mapping(score)
     return render(request, html_template, context)
 
 
