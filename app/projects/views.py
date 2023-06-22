@@ -877,13 +877,13 @@ def scenario_create_topology(request, proj_id, scen_id, step_id=2, max_step=3):
         "storage": {
             "bess": _("Electricity Storage"),
             # "gess": _("Gas Storage"),
-            # "h2ess": _("H2 Storage"),
+            "h2ess": _("H2 Storage"),
             "hess": _("Heat Storage"),
         },
         "demand": {
             "demand": _("Electricity Demand"),
             # "gas_demand": _("Gas Demand"),
-            # "h2_demand": _("H2 Demand"),
+            "h2_demand": _("H2 Demand"),
             "heat_demand": _("Heat Demand"),
         },
         "bus": {"bus": _("Bus")},
