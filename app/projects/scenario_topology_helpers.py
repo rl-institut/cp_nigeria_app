@@ -58,7 +58,8 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
                 f"Failed to set positioning for bus {bus.name} in scenario: {scen_id}."
             )
         bus.save()
-        if not asset_uuid:
+        qs_sim = Simulation.objects.filter(scenario=scenario)
+        if not asset_uuid and qs_sim.exists():
             AssetChangeTracker.objects.create(
                 simulation=scenario.simulation, name=bus.name, action=1
             )
@@ -258,7 +259,7 @@ def handle_storage_unit_form_post(
             ess_capacity_asset.save()
             ess_charging_power_asset.save()
             ess_discharging_power_asset.save()
-            if not asset_uuid:
+            if not asset_uuid and qs_sim.exists():
                 AssetChangeTracker.objects.create(
                     simulation=scenario.simulation, name=ess_asset.name, action=1
                 )
@@ -319,10 +320,10 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
         )
 
     if form.is_valid():
-
+        qs_sim = Simulation.objects.filter(scenario=scenario)
         if asset_uuid:
             existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
-            qs_sim = Simulation.objects.filter(scenario=scenario)
+
             if qs_sim.exists():
                 for param in form.cleaned_data:
                     track_asset_changes(scenario, param, form, existing_asset)
@@ -338,7 +339,7 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
                 f"Failed to set positioning for asset {asset.name} in scenario: {scen_id}."
             )
         asset.save()
-        if not asset_uuid:
+        if not asset_uuid and qs_sim.exists():
             AssetChangeTracker.objects.create(
                 simulation=scenario.simulation, name=asset.name, action=1
             )
