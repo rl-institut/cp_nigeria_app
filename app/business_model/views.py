@@ -22,7 +22,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.staticfiles.storage import staticfiles_storage
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +41,7 @@ def index(request, scen_id, bm_id=None):
     else:
         bm = get_object_or_404(BusinessModel, id=bm_id)
         form = GridQuestionForm(instance=bm)
-        answer = render(request, "business_model/index.html", {"bm": bm, "form": form})
+        answer = render(request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form})
     return answer
 
 
@@ -56,7 +55,7 @@ def grid_question(request, bm_id):
 
         form = GridQuestionForm(instance=bm)
 
-        answer = render(request, "business_model/index.html", {"bm": bm, "form": form})
+        answer = render(request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form})
 
     if request.method == "POST":
         form = GridQuestionForm(request.POST, instance=bm)
@@ -69,7 +68,7 @@ def grid_question(request, bm_id):
             if grid_connection is True:
                 answer = render(
                     request,
-                    "business_model/grid_connection.html",
+                    "cp_nigeria/business_model/grid_connection.html",
                     {"bm": bm, "form": form},
                 )
             else:
@@ -89,7 +88,7 @@ def edisco_question(request, bm_id):
         form = EdiscoQuestionForm(instance=bm)
 
         answer = render(
-            request, "business_model/edisco_question.html", {"bm": bm, "form": form}
+            request, "cp_nigeria/business_model/edisco_question.html", {"bm": bm, "form": form}
         )
 
     if request.method == "POST":
@@ -103,7 +102,7 @@ def edisco_question(request, bm_id):
             edisco = form.cleaned_data["regional_active_disco"]
             if edisco is True:
                 answer = render(
-                    request, "business_model/edisco.html", {"bm": bm, "form": form}
+                    request, "cp_nigeria/business_model/edisco.html", {"bm": bm, "form": form}
                 )
             else:
                 answer = HttpResponseRedirect(
@@ -124,7 +123,7 @@ def regulation_question(request, bm_id):
         form = RegulationQuestionForm()
 
         answer = render(
-            request, "business_model/regulation_question.html", {"bm": bm, "form": form}
+            request, "cp_nigeria/business_model/regulation_question.html", {"bm": bm, "form": form}
         )
 
     if request.method == "POST":
@@ -169,7 +168,7 @@ def capacities_question(request, bm_id):
         form = CapacitiesForm(qs=CapacitiesAnswer.objects.filter(business_model=bm))
 
         answer = render(
-            request, "business_model/capacities_question.html", {"bm": bm, "form": form}
+            request, "cp_nigeria/business_model/capacities_question.html", {"bm": bm, "form": form}
         )
 
     if request.method == "POST":
