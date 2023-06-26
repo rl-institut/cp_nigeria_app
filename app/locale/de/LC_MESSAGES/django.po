@@ -18,6 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 #: dashboard/forms.py:30 templates/report/single_scenario.html:59
 #: templates/scenario/scenario_progression.html:17
 #: templates/scenario/simulation/modified.html:67
@@ -80,7 +81,7 @@ msgstr "Balkendiagramm"
 
 #: dashboard/helpers.py:413
 msgid "Cost breakdown"
-msgstr ""
+msgstr "Kostenaufschlüsselung"
 
 #: dashboard/helpers.py:414
 msgid "Pie chart"
@@ -112,7 +113,7 @@ msgstr "Leistung"
 
 #: dashboard/helpers.py:475
 msgid "Costs"
-msgstr ""
+msgstr "Kosten"
 
 #: dashboard/models.py:1048
 msgid "Installed Capacity"
@@ -145,6 +146,14 @@ msgid ""
 "information, if you still cannot figure out what was wrong, please contact "
 "us using the feedback form"
 msgstr ""
+"Es ist ein Fehler aufgetreten. Es könnte daran liegen, dass 1) Ihr Szenario nie simuliert wurde "
+"2) die Ergebnisse noch ausstehen 3) ein Fehler in der Simulation vorliegt oder "
+"4) das Simulationsformat wurde aktualisiert und Sie müssen es erneut ausführen, um von der "
+"aktualisierten Ergebnisansicht zu profitieren. Im Falle von 1) klicken Sie bitte auf 'Simulation "
+"ausführe'. Im Fall von 4) klicken Sie zuerst auf 'Simulation zurücksetzen' und dann auf 'Simulation ausführen'."
+"Im Falle von 3) enthält die Fehlermeldung möglicherweise nützliche "
+"Informationen, wenn Sie trotzdem nicht herausfinden können, was falsch war, kontaktieren Sie bitte "
+"uns über das Feedback-Formular"
 
 #: dashboard/views.py:571
 #, python-brace-format
@@ -166,11 +175,11 @@ msgstr "Szenarien wurden aktualisiert"
 
 #: dashboard/views.py:829
 msgid "Discharge"
-msgstr ""
+msgstr "Entladen"
 
 #: dashboard/views.py:833
 msgid "Charge"
-msgstr ""
+msgstr "Aufladen"
 
 #: dashboard/views.py:1349 projects/views.py:1163
 msgid ""
@@ -395,7 +404,7 @@ msgstr "Wirkungsgrad gaz auf Strom"
 
 #: projects/forms.py:731
 msgid "Efficiency gaz to heat"
-msgstr ""
+msgstr "Wirkungsgrad Gas zu Wärme"
 
 #: projects/forms.py:820
 msgid ""
@@ -645,10 +654,13 @@ msgid ""
 "It might be an exported project file, in that case use the 'From file' "
 "option on the 'Create project' dropdown at the top of the projects view page."
 msgstr ""
+"Die Datei, die Sie hochladen wollten, scheint keine exportierte Szenariodatei zu sein. "
+"Es könnte eine exportierte Projektdatei sein, in diesem Fall verwenden Sie die Option 'Aus Datei' "
+"im Dropdown-Menü 'Projekt erstellen' oben auf der Projektansichtsseite."
 
 #: projects/views.py:364
 msgid "Project Info updated successfully!"
-msgstr ""
+msgstr "Projektinfo erfolgreich aktualisiert!"
 
 #: projects/views.py:426
 msgid ""
@@ -657,6 +669,10 @@ msgid ""
 "option on the 'Create scenario' dropdown of a project in which you want to "
 "import your scenario."
 msgstr ""
+"Die Datei, die Sie hochladen wollten, scheint keine exportierte Projektdatei zu sein. "
+"Es könnte eine exportierte Szenariodatei sein. In diesem Fall verwenden Sie die Option 'Aus Datei' "
+"im Dropdown-Menü 'Szenario erstellen' eines Projekts, in das Sie Ihr Szenario "
+"importieren möchten."
 
 #: projects/views.py:493
 msgid "New scenario name"
@@ -689,6 +705,7 @@ msgid ""
 "You cannot duplicate a shared project without the owner granting you 'edit' "
 "rights"
 msgstr ""
+"Sie können ein freigegebenes Projekt nicht duplizieren, ohne dass der Eigentümer Ihnen " "Bearbeitungsrechte" "gewährt."
 
 #: projects/views.py:675
 msgid "Scenario Setup"
@@ -840,16 +857,19 @@ msgid ""
 "compatible with the result view anymore, please reset and rerun the "
 "simulation"
 msgstr ""
+"" "Die Simulation wurde mit einer älteren MVS-Version durchgeführt, die nicht mehr" "mit der Ergebnisansicht kompatibel ist."
+"Bitte setzen Sie die " "Simulation zurück und führen Sie sie erneut aus."
 
 #: projects/views.py:1320
 msgid "Scenario changes successfully reversed!"
-msgstr ""
+msgstr "Szenarioänderungen erfolgreich rückgängig gemacht!"
 
 #: projects/views.py:1803
 msgid ""
 "You do not have the permission to reset a simulation on a project shared "
 "with you"
 msgstr ""
+"" "Sie haben nicht die Berechtigung, eine Simulation in einem " "gemeinsamen Projekt zurückzusetzen."
 
 #: templates/asset/asset_create_form.html:13
 #: templates/project/project_search.html:108
@@ -865,7 +885,7 @@ msgstr "Optimierte zusätzliche Leistung"
 #: templates/asset/asset_create_form.html:26
 #: templates/asset/storage_asset_create_form.html:27
 msgid "Aggregated flow"
-msgstr ""
+msgstr "Aggregierter Fluss"
 
 #: templates/asset/asset_create_form.html:35
 #: templates/asset/storage_asset_create_form.html:36
@@ -988,11 +1008,11 @@ msgstr "Auslegegung des Webapps"
 
 #: templates/legal/about.html:44
 msgid "Bryan Lancien from Reiner Lemoine Institut"
-msgstr ""
+msgstr "Bryan Lancien vom Reiner Lemoine Institut"
 
 #: templates/legal/imprint.html:4
 msgid "Imprint - open_plan"
-msgstr ""
+msgstr "Impressum - open_plan"
 
 #: templates/legal/imprint.html:22
 msgid "Published by:"
@@ -2271,7 +2291,7 @@ msgstr "Jahre"
 
 #: templates/project/project_search.html:100
 msgid "Shared by"
-msgstr ""
+msgstr "Geteilt durch"
 
 #: templates/project/project_search.html:121
 msgid "Duplicate"
@@ -2466,7 +2486,7 @@ msgstr "Als PDF speichern"
 
 #: templates/report/kpis_template.html:22
 msgid "KPI table"
-msgstr ""
+msgstr "KPI-Tabelle"
 
 #: templates/report/kpis_template.html:30
 msgid "View KPIs"
@@ -2665,56 +2685,56 @@ msgstr "Link zum automatischen Senden eines Fehlerberichts"
 
 #: templates/scenario/simulation/modified.html:12
 msgid "Simulation existing, but scenario parameter changed"
-msgstr ""
+msgstr "Simulation vorhanden, aber Szenarioparameter geändert"
 
 #: templates/scenario/simulation/modified.html:14
 msgid "Scenario parameter changed, hopefully your error will be fixed"
-msgstr ""
+msgstr "Szenarioparameter geändert, hoffentlich wird Ihr Fehler behoben"
 
 #: templates/scenario/simulation/modified.html:20
 msgid "Existing simulation's results"
-msgstr ""
+msgstr "Vorhandene Ergebnisse der Simulation"
 
 #: templates/scenario/simulation/modified.html:33
 msgid "If you rerun the simulation the previous results will be lost."
-msgstr ""
+msgstr "Wenn Sie die Simulation erneut ausführen, gehen die vorherigen Ergebnisse verloren."
 
 #: templates/scenario/simulation/modified.html:39
 msgid "Reset changes"
-msgstr ""
+msgstr "Änderungen zurücksetzen"
 
 #: templates/scenario/simulation/modified.html:42
 msgid "Copy to a new scenario"
-msgstr ""
+msgstr "In ein neues Szenario kopieren"
 
 #: templates/scenario/simulation/modified.html:49
 msgid "Changed parameters"
-msgstr ""
+msgstr "Geänderte Parameter"
 
 #: templates/scenario/simulation/modified.html:51
 msgid "The following changes displayed for your information"
-msgstr ""
+msgstr "Die folgenden Änderungen werden zu Ihrer Information angezeigt"
 
 #: templates/scenario/simulation/modified.html:78
 msgid "Asset"
-msgstr ""
+msgstr "Anlage"
 
 #: templates/scenario/simulation/modified.html:92
 msgid "Assets creation/deletion"
-msgstr ""
+msgstr "Erstellung/Löschung von Anlagen"
 
 #: templates/scenario/simulation/modified.html:106
 msgid "Deleted"
-msgstr ""
+msgstr "Gelöscht"
 
 #: templates/scenario/simulation/modified.html:135
 msgid "Rerun simulation"
-msgstr ""
+msgstr "Simulation neu starten"
 
 #: templates/scenario/simulation/modified.html:139
 #: templates/scenario/simulation/no-status.html:40
 msgid "Include LP file (advanced users)"
-msgstr ""
+msgstr "LP-Datei einbeziehen (fortgeschrittene Benutzer)"
 
 #: templates/scenario/simulation/no-status.html:11
 msgid "No simulation conducted"
