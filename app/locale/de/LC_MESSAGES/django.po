@@ -327,7 +327,7 @@ msgstr "Wählen Sie einen Anwendungsfall (oder"
 
 #: projects/forms.py:360
 msgid " visit use cases page link"
-msgstr " visit use cases page link"
+msgstr ""
 
 #: projects/forms.py:390
 msgid "Length of the time-steps."
@@ -2548,7 +2548,7 @@ msgstr "Schritt des Szenarios"
 #: templates/scenario/simulation/modified.html:133
 #: templates/scenario/simulation/no-status.html:34
 msgid "Previous"
-msgstr "Vorherige"
+msgstr "Zurück"
 
 #: templates/scenario/scenario_progression.html:59
 #: templates/scenario/scenario_step0.html:68
@@ -2621,7 +2621,7 @@ msgstr "Bitte wählen Sie zuerst ein Projekt aus"
 #: templates/scenario/scenario_step2.html:292
 #: templates/scenario/scenario_step3.html:88
 msgid "Go to simulation"
-msgstr "Zum Simulation"
+msgstr "Zur Simulation"
 
 #: templates/scenario/scenario_step2.html:60
 msgid "compute COP"
@@ -2865,14 +2865,14 @@ msgstr "Status prüfen"
 msgid " Actual CAPEX of the asset, i.e., specific investment costs"
 msgstr " Tatsächliche CAPEX der Anlage, d.h. spezifische Investitionskosten"
 
-msgid "Specific costs"
-msgstr "Spezifische Kosten"
+msgid "Investment costs"
+msgstr "Investitionskosten"
 
-msgid "Specific OM costs"
-msgstr "Spezifische OM-Kosten"
+msgid "Fixed operational costs"
+msgstr ""
 
-msgid "Dispatch price"
-msgstr "Versandpreis"
+msgid "Variable operational costs"
+msgstr ""
 
 msgid ""
 "The share of renewables in the generation mix of the energy supplied by "
@@ -2911,17 +2911,20 @@ msgstr "Energiepreis"
 msgid "Feedin tariff"
 msgstr "Einspeisetarif"
 
-msgid "Peak demand pricing"
+msgid "Peak demand price"
 msgstr "Spitzenlasttarif"
 
-msgid "Peak demand pricing period (times/year)"
-msgstr "Zeitraum der Spitzenlastbepreisung (Zeiten/Jahr)"
+msgid "Period of peak demand pricing"
+msgstr "Zeitraum der Spitzenlastbepreisung"
 
-msgid "Renewable share"
-msgstr "Erneuerbarer Anteil"
+msgid "Renewable share electricity mix"
+msgstr "Anteil erneuerbarer Energien im Strommix"
 
-msgid "Age installed"
-msgstr "Alter der Anlage"
+msgid "Age of the installed plant"
+msgstr "Alter der installierten Anlage"
+
+msgid "Efficiency"
+msgstr "Wirkungsgrad"
 
 msgid "ESS Name"
 msgstr "ESS Name"
@@ -3253,6 +3256,9 @@ msgstr "€"
 msgid "Fixed project costs"
 msgstr "Feste Projektkosten"
 
+msgid "Fixed costs"
+msgstr "Feste Kosten"
+
 msgid "Discount factor"
 msgstr "Abzinsungsfaktor"
 
@@ -3277,7 +3283,7 @@ msgstr "Preis des Energieträgers, der aus dem Versorgungsnetz bezogen wird."
 msgid "The number of days for which the simulation is to be run"
 msgstr "Die Anzahl der Tage, für die die Simulation durchgeführt werden soll"
 
-msgid "Feedin maximum cap"
+msgid "Maximum feedin capacity"
 msgstr "Einspeisungshöchstgrenze"
 
 msgid "kW"
@@ -3324,6 +3330,21 @@ msgstr "Das Mindestmaß an Autonomie, das durch die Optimierung erreicht werden 
 
 msgid "The minimum share of energy supplied by renewable generation that needs to be met by the optimization"
 msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
+
+msgid "Temperature high"
+msgstr "Vorlauftemperatur"
+
+msgid "Temperature low"
+msgstr "Verdampfungstemperatur"
+
+msgid "Factor icing"
+msgstr "Vereisungsfaktor"
+
+msgid "Temp threshold icing"
+msgstr "Temperaturschwelle der Vereisung"
+
+msgid "Quality grade"
+msgstr "Gütegrad"
 
 
 msgid ""
@@ -3402,6 +3423,11 @@ msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nennkapazit�
 msgid "Operation and management costs"
 msgstr "Betriebs- und Verwaltungskosten"
 
+msgid "Maximum state of charge"
+msgstr "Maximaler Ladezustand"
+
+msgid "Minimum state of charge"
+msgstr "Minimaler Ladezustand"
 
 msgid "The date and time on which the simulation starts at the first step."
 msgstr "Das Datum und die Uhrzeit, zu der die Simulation mit dem ersten Schritt beginnt."
@@ -3632,3 +3658,4 @@ msgstr "Optimierung mit BHWK"
 
 msgid "Create project from usecase"
 msgstr "Projekt aus Anwendungsfall erstellen"
+
