@@ -261,7 +261,7 @@
 
     // components images
     @each $component-name, $component-category in $component-categories-mapping {
-              &.#{$component-category} {
+              &.#{$component-name} {
                       border-bottom-color: map-get($component-categories, $component-category);
                     }
 

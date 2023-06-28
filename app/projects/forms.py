@@ -83,6 +83,8 @@ def set_parameter_info(param_name, field, parameters=PARAMETERS):
             verbose = None
         if default_value == "None":
             default_value = None
+    else:
+        print(f"{param_name} not in the parameters file")
 
     if verbose is not None:
         field.label = verbose
@@ -172,7 +174,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Name"),
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Name...",
+                "placeholder": _("Name..."),
                 "data-bs-toggle": "tooltip",
                 "title": _("A self explanatory name for the project."),
             }
@@ -182,7 +184,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Description"),
         widget=forms.Textarea(
             attrs={
-                "placeholder": "More detailed description here...",
+                "placeholder": _("More detailed description here..."),
                 "data-bs-toggle": "tooltip",
                 "title": _(
                     "A description of what this project objectives or test cases."
@@ -204,7 +206,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Location, longitude"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "click on the map",
+                "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
                 "title": _(
@@ -217,7 +219,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Location, latitude"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "click on the map",
+                "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
                 "title": _(
@@ -230,7 +232,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Duration"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "eg. 1",
+                "placeholder": _("eg. 1"),
                 "min": "0",
                 "max": "100",
                 "step": "1",
@@ -257,7 +259,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Discount Factor"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "eg. 0.1",
+                "placeholder": _("eg. 0.1"),
                 "min": "0.0",
                 "max": "1.0",
                 "step": "0.0001",
@@ -272,7 +274,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Tax"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "eg. 0.3",
+                "placeholder": _("eg. 0.3"),
                 "min": "0.0",
                 "max": "1.0",
                 "step": "0.0001",
@@ -357,7 +359,7 @@ class UseCaseForm(forms.Form):
             self.fields["usecase"].label = (
                 _("Select a use case (or")
                 + f"<a href='{usecase_url}'>"
-                + _(" visit use cases page link")
+                + _("visit use cases page")
                 + "</a>)"
             )
 
@@ -594,7 +596,7 @@ class SensitivityAnalysisForm(ModelForm):
         return data_js
 
 
-class COPCalculatorForm(ModelForm):
+class COPCalculatorForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["temperature_high"] = DualNumberField(
@@ -771,9 +773,18 @@ class AssetCreateForm(OpenPlanModelForm):
                 self.fields[field].label = self.fields[field].label + question_icon
 
                 if "capex_fix" in field:
-                    self.fields[field].label = self.fields[field].label.replace(
-                        "project costs", "costs"
+                    unit = self.fields[field].label.split(")")[0]
+                    if len(unit.split("(")) > 1:
+                        unit = unit.split("(")[1]
+                    else:
+                        unit = None
+                    self.fields[field].label = self.fields[field].label = _(
+                        "Fixed costs"
                     )
+                    if unit is not None:
+                        self.fields[field].label = (
+                            self.fields[field].label + f" ({unit})"
+                        )
 
                 if "€" in self.fields[field].label and currency is not None:
                     self.fields[field].label = self.fields[field].label.replace(

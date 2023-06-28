@@ -3029,14 +3029,8 @@ msgstr "Ein mnemonischer Name für die ESS Einheit."
 msgid "Gas Storage"
 msgstr "Gasspeicher"
 
-msgid "H2 Storage"
-msgstr "Wasserstoffspeicher"
-
 msgid "Gas Demand"
 msgstr "Gasnachfrage"
-
-msgid "H2 Demand"
-msgstr "Wasserstoffbedarf"
 
 msgid "Year"
 msgstr "Jahr"
@@ -3349,9 +3343,6 @@ msgstr "€"
 
 msgid "Fixed project costs"
 msgstr "Feste Projektkosten"
-
-msgid "Fixed costs"
-msgstr "Feste Kosten"
 
 msgid "Discount factor"
 msgstr "Abzinsungsfaktor"

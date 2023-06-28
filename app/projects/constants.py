@@ -262,9 +262,9 @@ CURRENCY = tuple(
     [("", "Choose...")] + [(k, f"{k} ({v})") for k, v in CURRENCY_SYMBOLS.items()]
 )
 
-TRUE_FALSE_CHOICES = ((None, "Choose"), (True, "Yes"), (False, "No"))
+TRUE_FALSE_CHOICES = ((None, _("Choose")), (True, _("Yes")), (False, _("No")))
 
-BOOL_CHOICES = ((True, "Yes"), (False, "No"))
+BOOL_CHOICES = ((True, _("Yes")), (False, _("No")))
 
 FLOW_DIRECTION = (("B2A", "Bus_to_Asset"), ("A2B", "Asset_to_Bus"))
 
@@ -277,7 +277,7 @@ ENERGY_VECTOR = (
     # ('Diesel', 'Diesel'),
 )
 
-COP_MODES = (("Heat pump", "heat_pump"), ("Chiller", "chiller"))
+COP_MODES = ((_("Heat pump"), "heat_pump"), (_("Chiller"), "chiller"))
 
 PARAM_CATEGORY = (
     ("asset", "asset"),

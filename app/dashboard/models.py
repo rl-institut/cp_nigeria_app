@@ -245,7 +245,9 @@ class FlowResults(models.Model):
         return self.__df_flows
 
     def asset_optimized_capacity(self, asset_name):
-        return OemofBusResults(self.flow_data).asset_optimized_capacity(asset_name)
+        if self.__df_capacities is None:
+            self.__df_capacities = OemofBusResults(self.flow_data)
+        return self.__df_capacities.asset_optimized_capacity(asset_name)
 
     @property
     def busses(self):
@@ -261,6 +263,7 @@ class FlowResults(models.Model):
     def single_bus_flows(self, bus_name):
         df_bus = self.df_flows.loc[bus_name]
         energy_vector = df_bus.index.get_level_values("energy_vector").unique()[0]
+        # TODO label charge and discharge for storages
         df_bus.index = df_bus.index.droplevel(
             ["asset_type", "energy_vector", "oemof_type"]
         )
@@ -296,6 +299,69 @@ class FlowResults(models.Model):
 
         return fig.to_dict()
 
+    def all_flows(self, include_hidden_assets=False, asset_list=None):
+        df = self.df_flows
+        # df = df.loc[
+        #     (
+        #         (df.index.get_level_values("direction") == "out")
+        #         & (df.index.get_level_values("oemof_type") == "transformer")
+        #     )
+        #     == False
+        # ]
+
+        if asset_list is not None:
+            include_hidden_assets = True
+
+        if include_hidden_assets is False:
+            df = df.loc[
+                (
+                    df.index.get_level_values("asset").str.contains("@")
+                    | df.index.get_level_values("asset").str.contains("_excess")
+                )
+                == False
+            ]
+
+        if asset_list is not None:
+            df = df.loc[df.index.get_level_values("asset").isin(asset_list)]
+
+        df.index = df.index.droplevel(["asset_type", "energy_vector", "bus"])
+        df = df.T
+
+        # Label charge and discharge of storage components
+        col_names = []
+        for col in df.columns:
+            if col[2] == "storage":
+                suffix = "charge" if col[0] == "out" else "discharge"
+                col_names.append(f"{col[1]} {suffix}")
+            elif col[2] == "transformer":
+                suffix = "inflow" if col[0] == "out" else "outflow"
+                col_names.append(f"{col[1]} ({suffix})")
+            else:
+                col_names.append(col[1])
+
+        df.columns = col_names
+
+        return df
+
+    def all_flows_figure(
+        self,
+        include_hidden_assets=False,
+        asset_list=None,
+        title="All timeseries",
+        df=None,
+    ):
+        if df is None:
+            df = self.all_flows(include_hidden_assets, asset_list)
+        fig = go.Figure(
+            data=[
+                go.Scatter(x=df.index.tolist(), y=df.loc[:, col].values, name=col)
+                for col in df.columns
+            ],
+            layout=dict(title=title, hovermode="x unified", yaxis_title="Power (kW)"),
+        )
+        # import pdb;pdb.set_trace()
+        return fig.to_json()
+
     # def all_bus_flows_figure(self, exclude=None):
     #     if exclude is None:
     #         exclude = []
@@ -313,6 +379,81 @@ class FlowResults(models.Model):
     #     )
     #
     #     return fig.to_dict()
+
+    def energy_sector_flows(
+        self, energy_vector, include_hidden_assets=False, asset_list=None
+    ):
+        df = self.df_flows.loc[
+            (self.df_flows.index.get_level_values("energy_vector") == energy_vector)
+        ]
+
+        if asset_list is not None:
+            include_hidden_assets = True
+
+        if include_hidden_assets is False:
+            df = df.loc[
+                (
+                    df.index.get_level_values("asset").str.contains("@")
+                    | df.index.get_level_values("asset").str.contains("_excess")
+                )
+                == False
+            ]
+
+        if asset_list is not None:
+            df = df.loc[df.index.get_level_values("asset").isin(asset_list)]
+
+        # ignore the flows which are 0 everywhere
+        df = df[df.sum(axis=1).values != 0]  # .sum(axis=1).values
+
+        df.index = df.index.droplevel(["asset_type", "energy_vector", "bus"])
+        df = df.T
+
+        # Label inflow and outflow of transformer components
+        col_names = []
+        for col in df.columns:
+            if col[2] != "transformer":
+                col_names.append(col[1])
+            else:
+                suffix = "inflow" if col[0] == "out" else "outflow"
+                col_names.append(f"{col[1]} ({suffix})")
+
+        df.columns = col_names
+
+        # TDB if we keep it (if we discard one of the in or out flow of transformer component
+        # If a transformers appears twice we keep only the flow which goes from
+        # for asset_name in df.loc[df.index.get_level_values("oemof_type") == "transformer"].index.get_level_values("asset").unique():
+        #    if len(df.loc[df_ev.index.get_level_values("asset") == asset_name]) > 1:
+        #        idx_to_drop = (df.index.get_level_values("asset") == asset_name) & (df.index.get_level_values("direction") == "out")
+        #        #df.drop(index=df[idx_to_drop].index, inplace=True)
+        #
+        # df.loc[idx_to_drop].rename({asset_name: asset_name + "out"})
+        return df
+
+    def energy_sector_flows_figure(
+        self,
+        energy_vector,
+        include_hidden_assets=False,
+        asset_list=None,
+        title="All timeseries",
+        df=None,
+    ):
+        if df is None:
+            df = self.energy_sector_flows(
+                energy_vector, include_hidden_assets, asset_list
+            )
+        fig = go.Figure(
+            data=[
+                go.Scatter(x=df.index, y=df.loc[:, col].values, name=col)
+                for col in df.columns
+            ],
+            layout=dict(
+                title=f"{title} {energy_vector}",
+                hovermode="x unified",
+                yaxis_title="Power (kW)",
+            ),
+        )
+
+        return fig.to_json()
 
     def load_duration_figure(self, energy_vector):
         df_consumption = (
@@ -367,7 +508,111 @@ class FlowResults(models.Model):
             ),
         )
 
-        return fig.to_dict()
+        return fig.to_json()
+
+    # TODO use Fancy results for it
+    def sankey(self, energy_vector):
+        if isinstance(energy_vector, list) is False:
+            energy_vector = [energy_vector]
+        if energy_vector is not None:
+            labels = []
+            sources = []
+            targets = []
+            values = []
+            colors = []
+
+            for bus_name in self.busses:
+                if "@" not in bus_name:
+                    bus_label = bus_name
+                    labels.append(bus_label)
+                    colors.append("blue")
+                    df_bus = self.df_flows.loc[bus_label]
+                    asset_to_bus_names = []
+                    bus_to_asset_names = []
+
+                    bus_inputs = df_bus.loc[
+                        df_bus.index.get_level_values("direction") == "in"
+                    ].index.get_level_values("asset")
+                    for component in bus_inputs:
+
+                        asset_to_bus_names.append(component)
+
+                    bus_outputs = df_bus.loc[
+                        df_bus.index.get_level_values("direction") == "out"
+                    ].index.get_level_values("asset")
+                    for component in bus_outputs:
+                        bus_to_asset_names.append(component)
+
+                    for component_label in asset_to_bus_names:
+                        # draw link from the component to the bus
+                        if component_label not in labels:
+                            labels.append(component_label)
+                            colors.append("green")
+
+                        sources.append(labels.index(component_label))
+                        targets.append(labels.index(bus_label))
+
+                        val = df_bus.loc[
+                            (df_bus.index.get_level_values("direction") == "in")
+                            & (
+                                df_bus.index.get_level_values("asset")
+                                == component_label
+                            )
+                        ].T.sum()[0]
+
+                        if val == 0:
+                            val = 1e-6
+
+                        values.append(val)
+
+                    for component_label in bus_to_asset_names:
+                        # draw link from the bus to the component
+                        if component_label not in labels:
+                            labels.append(component_label)
+                            colors.append("red")
+
+                        sources.append(labels.index(bus_label))
+                        targets.append(labels.index(component_label))
+
+                        val = df_bus.loc[
+                            (df_bus.index.get_level_values("direction") == "out")
+                            & (
+                                df_bus.index.get_level_values("asset")
+                                == component_label
+                            )
+                        ].T.sum()
+
+                        val = val[0]
+
+                        if val == 0:
+                            val = 1e-6
+                        values.append(val)
+
+        fig = go.Figure(
+            data=[
+                go.Sankey(
+                    node=dict(
+                        pad=15,
+                        thickness=20,
+                        line=dict(color="black", width=0.5),
+                        label=labels,
+                        hovertemplate="Node has total value %{value}<extra></extra>",
+                        color=colors,
+                    ),
+                    link=dict(
+                        source=sources,  # indices correspond to labels
+                        target=targets,
+                        value=values,
+                        hovertemplate="Link from node %{source.label}<br />"
+                        + "to node%{target.label}<br />has value %{value}"
+                        + "<br />and data <extra></extra>",
+                    ),
+                )
+            ]
+        )
+
+        fig.update_layout(font_size=10)
+        return fig.to_json()
 
 
 class AssetsResults(models.Model):
@@ -463,6 +708,7 @@ class AssetsResults(models.Model):
                         if (
                             "flow" in asset
                             and "_consumption_period" not in asset["label"]
+                            and "@" not in asset["label"]
                         ):
                             asset["category"] = category
                             qs = ConnectionLink.objects.filter(
@@ -1302,6 +1548,18 @@ class ReportItem(models.Model):
     def fetch_parameters_values(self):
         parameters = json.loads(self.parameters)
         # TODO : adjust for other report types
+
+        n_simulations = len(self.simulations.all())
+        qs = FancyResults.objects.filter(simulation__in=self.simulations.all())
+
+        if qs.count() == 0 or qs.count() < n_simulations:
+            fig_json = {
+                "layout": {
+                    "title": "Some simulations haven't been ran since the update of open-plan-tool. Please consider running the simulation from the last step of the scenario again"
+                }
+            }
+            return fig_json
+
         if self.report_type == GRAPH_TIMESERIES:
             y_variables = parameters.get("y", None)
             if y_variables is not None:

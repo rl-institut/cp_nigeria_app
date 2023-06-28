@@ -1679,18 +1679,18 @@ def request_mvs_simulation(request, scen_id=0):
         )
     # Load scenario
     scenario = Scenario.objects.get(pk=scen_id)
-    try:
-        data_clean = format_scenario_for_mvs(scenario)
-        # err = 1/0
-    except Exception as e:
-        error_msg = f"Scenario Serialization ERROR! User: {scenario.project.user.username}. Scenario Id: {scenario.id}. Thrown Exception: {e}."
-        logger.error(error_msg)
-        messages.error(request, error_msg)
-        answer = JsonResponse(
-            {"error": f"Scenario Serialization ERROR! Thrown Exception: {e}."},
-            status=500,
-            content_type="application/json",
-        )
+    # try:
+    data_clean = format_scenario_for_mvs(scenario)
+    # err = 1/0
+    # except Exception as e:
+    #     error_msg = f"Scenario Serialization ERROR! User: {scenario.project.user.username}. Scenario Id: {scenario.id}. Thrown Exception: {e}."
+    #     logger.error(error_msg)
+    #     messages.error(request, error_msg)
+    #     answer = JsonResponse(
+    #         {"error": f"Scenario Serialization ERROR! Thrown Exception: {e}."},
+    #         status=500,
+    #         content_type="application/json",
+    #     )
 
     if request.method == "POST":
         output_lp_file = request.POST.get("output_lp_file", None)
@@ -1714,6 +1714,7 @@ def request_mvs_simulation(request, scen_id=0):
 
         # delete existing simulation
         Simulation.objects.filter(scenario_id=scen_id).delete()
+
         # Create empty Simulation model object
         simulation = Simulation(start_date=datetime.now(), scenario_id=scen_id)
 

@@ -221,6 +221,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     var traces = [];
     var plot_y_axis = "y";
     for(var i=0; i<ts_data.length;++i){
+        console.log(ts_data[i])
     // change legend layout
         plot_y_axis = (ts_data[i].name.includes("capacity") ? "y2" : "y");
         traces.push({type: "scatter", x: x, y: ts_data[i].value, name: ts_data[i].name + "(" + ts_data[i].unit + ")", yaxis: plot_y_axis});
@@ -264,6 +265,7 @@ function plotTimeseries(x, ts_data, plot_id="",userLayout=null){
     var trace_label = "";
     for(var i=0; i<ts_data.length;++i){
         trace_label = "";
+        console.log(ts_data[i]);
         if(ts_data[i].name){
             trace_label = ts_data[i].name;
             if(ts_data[i].unit){
@@ -369,13 +371,26 @@ function addCostScenariosGraph(graphId, parameters){
     const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
     const patterns = ["", ".", "/", "x", "+", "-"]
     const n_colors = colors.length;
+    //parameters.data.forEach((scenario,j) => {
     parameters.data.forEach((timeseries,j) => {
+//    console.log(scenario);
+//        scenario.timeseries.forEach((timeseries,i) => {
+            // todo provide a function to format the name of the timeseries
             data.push({
                 x: timeseries.timestamps,
+                //y: timeseries.value,
                 y: timeseries.timeseries,
+                //name:timeseries.name,
                 name:timeseries.scenario_name,
+               // text: timeseries.text,
                 type: 'bar',
+               // offsetgroup: scenario.scenario_id,
+              //  base: timeseries.base,
+               // marker: {color:colors[j%n_colors], pattern:{shape: patterns[i%6]}},
+             //   customdata: timeseries.customdata,
+              //  hovertemplate:timeseries.hover,
             })
+//        });
     });
 
     // prepare graph layout in plotly format
