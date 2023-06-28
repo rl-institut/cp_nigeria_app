@@ -929,7 +929,7 @@ class AssetCreateForm(OpenPlanModelForm):
         widgets = {
             "optimize_cap": forms.Select(choices=BOOL_CHOICES),
             "dispatchable": forms.Select(choices=TRUE_FALSE_CHOICES),
-            "renewable_asset": forms.Select(choices=TRUE_FALSE_CHOICES),
+            "renewable_asset": forms.Select(choices=BOOL_CHOICES),
             "name": forms.TextInput(
                 attrs={
                     "placeholder": _("Asset Name"),
@@ -1006,13 +1006,8 @@ class AssetCreateForm(OpenPlanModelForm):
             "peak_demand_pricing": forms.NumberInput(
                 attrs={"placeholder": "e.g. 60", "min": "0.0", "step": ".01"}
             ),
-            "peak_demand_pricing_period": forms.NumberInput(
-                attrs={
-                    "placeholder": "times per year, e.g. 2",
-                    "min": "1",
-                    "max": "12",
-                    "step": "1",
-                }
+            "peak_demand_pricing_period": forms.Select(
+                choices=((1, 1), (2, 2), (3, 3), (4, 4), (6, 6), (12, 12))
             ),
             "renewable_share": forms.NumberInput(
                 attrs={
