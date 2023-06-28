@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-27 10:54+0200\n"
+"POT-Creation-Date: 2023-06-28 13:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -155,33 +155,33 @@ msgstr ""
 "möglicherweise nützliche Informationen, wenn Sie trotzdem nicht herausfinden "
 "können, was falsch war, kontaktieren Sie bitte uns über das Feedback-Formular"
 
-#: dashboard/views.py:571
+#: dashboard/views.py:570
 #, python-brace-format
 msgid "Scenario {scen_id} was deselected"
 msgstr "Szenario {scen_id} wurde abgewählt"
 
-#: dashboard/views.py:573
+#: dashboard/views.py:572
 msgid "At least one scenario need to be selected"
 msgstr "Es muss mindestens ein Szenario ausgewählt werden"
 
-#: dashboard/views.py:577
+#: dashboard/views.py:576
 #, python-brace-format
 msgid "Scenario {scen_id} was selected"
 msgstr "Szenario {scen_id} wurde ausgewählt"
 
-#: dashboard/views.py:608
+#: dashboard/views.py:614
 msgid "Scenarios were updated"
 msgstr "Szenarien wurden aktualisiert"
 
-#: dashboard/views.py:829
+#: dashboard/views.py:835
 msgid "Discharge"
 msgstr "Entladen"
 
-#: dashboard/views.py:833
+#: dashboard/views.py:839
 msgid "Charge"
 msgstr "Aufladen"
 
-#: dashboard/views.py:1349 projects/views.py:1163
+#: dashboard/views.py:1355 projects/views.py:1163
 msgid ""
 "No scenario was available in the cache, try refreshing the page and make "
 "sure one scenario is selected."
@@ -1057,40 +1057,125 @@ msgstr ""
 msgid "open_plan project consortium"
 msgstr "open_plan Projektkonsortium"
 
-#: templates/legal/about.html:24
+#: templates/legal/about.html:21
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t<p>The open_plan project consortium is composed of the <a href="
+"\"%(url_rli)s\" target=\"_blank\" rel=\"noreferrer\">Reiner Lemoine "
+"Institut</a> (RLI), <a href=\"%(url_dgs)s\" target=\"_blank\" rel="
+"\"noreferrer\">Deutsche Gesellschaft für Sonnenenergie</a> (DGS) and the <a "
+"href=\"%(url_pik)s\" target=\"_blank\" rel=\"noreferrer\">Potsdam Institut "
+"für Klimafolgenforschung</a> (PIK). It is funded within the framework of the "
+"\"Technology-oriented systems analysis\" funding area of the BMWi's 7th "
+"Energy Research Programme \"Innovation for the energy transition\".</p>\n"
+"\t\t\t\t"
+msgstr ""
+"\n"
+"\t\t\t\t<p>Das open_plan Projektkonsortium besteht aus dem <a href="
+"\"%(url_rli)s\" target=\"_blank\" rel=\"noreferrer\">Reiner Lemoine "
+"Institut</a> (RLI), <a href=\"%(url_dgs)s\" target=\"_blank\" rel="
+"\"noreferrer\">Deutsche Gesellschaft für Sonnenenergie</a> (DGS) und die <a "
+"href=\"%(url_pik)s\" target=\"_blank\" rel=\"noreferrer\">Potsdam Institut "
+"für Klimafolgenforschung</a> (PIK). Gefördert wird es im Rahmen des "
+"Programms \"Technologieorientierte Systemanalyse\" des 7. "
+"Energieforschungsprogramms \"Innovation für die Energiewende\" des BMWi "
+"gefördert.</p>\n"
+"\t\t\t\t"
+
+#: templates/legal/about.html:26
 msgid "open_plan project website"
 msgstr "open_plan Projekt Webseite"
 
-#: templates/legal/about.html:28
+#: templates/legal/about.html:27
+#, python-format
+msgid ""
+"<p>You can visit the open_plan <a href=\"%(url_op)s\" target=\"_blank\" rel="
+"\"noreferrer\">website</a> to know more about the cellular approach and the "
+"open_plan project </p>"
+msgstr ""
+"<p>Sie können die open_plan <a href=\"%(url_op)s\" target=\"_blank\" rel="
+"\"noreferrer\">Website</a>, um mehr über den zellulären Ansatz und das "
+"open_plan project </p>"
+
+#: templates/legal/about.html:30
 msgid "Feedback or question?"
 msgstr "Feedback oder Frage?"
 
-#: templates/legal/about.html:29
-msgid "You can always <a href="
+#: templates/legal/about.html:32
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t<p>You can always <a href=\"%(url_feedback)s\">leave us a comment or "
+"feedback</a> on things you would improve. You can also visit <a href="
+"\"%(url_github)s\" target=\"_blank\" rel=\"noreferrer\">our github project "
+"page</a> to see which bugs are being fixed and which new features are being "
+"developed.</p>\n"
+"\t\t\t\t"
 msgstr ""
-
-#: templates/legal/about.html:36
-msgid "Simulation server"
-msgstr "Simulationserver"
+"\n"
+"\t\t\t\t<p>Sie können uns jederzeit <a href=\"%(url_feedback)s\">einen "
+"Kommentar oder Feedback</a> zu Dingen, die Sie verbessern würden. Sie können "
+"auch auf <a href=\"%(url_github)s\" target=\"_blank\" rel=\"noreferrer"
+"\">unser Github-Projekt Seite</a>, um zu sehen, welche Bugs behoben und "
+"welche neuen Features entwickelt werden.</p>\n"
+"\t\t\t\t"
 
 #: templates/legal/about.html:38
 msgid ""
-"Our simulations run on a server hosted at RLI, the code to setup the "
-"simulation server is licenced under MIT License and publicly available on"
+"\n"
+"\t\t\t\t<p>You can follow the development of this <a href=\"%(url_github)s\" "
+"target=\"_blank\" rel=\"noreferrer\">user interface</a>, or deploy your own "
+"open-plan tool (including <a href=\"%(url_simulation_server)s\" target="
+"\"_blank\" rel=\"noreferrer\">simulation server</a> and user interface) by "
+"visiting our <a href=\"%(url_gui)s\" target=\"_blank\" rel=\"noreferrer"
+"\">github page</a></p>\n"
+"\t\t\t\t"
 msgstr ""
-"Unsere Simulationen laufen auf einem Server, der bei RLI gehostet wird, der "
-"Code zur Einrichtung des Simulationsserver ist unter MIT-Lizenz lizensiert "
-"und öffentlich zugänglich auf"
-
-#: templates/legal/about.html:38
-msgid "our github page"
-msgstr ""
+"\n"
+"\t\t\t\t<p>Sie können die Entwicklung dieser <a href=\"%(url_github)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Benutzeroberfläche</a>, oder Ihr "
+"eigenes open-plan-tool (einschließlich <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Simulationsserver</a> und "
+"Benutzeroberfläche), indem Sie Besuchen Sie unsere <a href=\"%(url_gui)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Github-Seite</a></p>\n"
+"\t\t\t\t"
 
 #: templates/legal/about.html:43
+msgid "Simulation server"
+msgstr "Simulationserver"
+
+#: templates/legal/about.html:45
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t\tOur simulations run on a server hosted at RLI, the code to setup "
+"the simulation server is licenced under MIT License and publicly available "
+"on <a href=\"%(url_simulation_server)s\" target=\"_blank\" rel=\"noreferrer"
+"\">our github page</a>.\n"
+"\t\t\t\t\tThe simulation are perfomed with <a href=\"%(url_mvs)s\" target="
+"\"_blank\" rel=\"noreferrer\">multi-vector-simulator</a>, a code using <a "
+"href=\"%(url_oemof)s\" target=\"_blank\" rel=\"noreferrer\">oemof-solph</a> "
+"to simulate energy system model from techno-economic parameters.\n"
+"\t\t\t\t\t"
+msgstr ""
+"\n"
+"\t\t\t\t\tUnsere Simulationen laufen auf einem Server, der bei RLI gehostet "
+"wird, der Code zur Einrichtung der Simulationsserver steht unter MIT-Lizenz "
+"und ist öffentlich verfügbar auf <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">unserer Github-Seite</a>.\n"
+"\t\t\t\t\tDie Simulationen werden mit <a href=\"%(url_mvs)s\" target=\"_blank"
+"\" rel=\"noreferrer\">multi-vector-simulator</a>, ein Code mit <a href="
+"%(url_oemof)s\" target=\"_blank\" rel=\"noreferrer\">oemof-solph</a> , um "
+"ein Energiesystemmodell aus technisch-ökonomischen Parametern zu "
+"simulieren.\n"
+"\t\t\t\t\t"
+
+#: templates/legal/about.html:52
 msgid "This webapp design"
 msgstr "Auslegegung des Webapps"
 
-#: templates/legal/about.html:44
+#: templates/legal/about.html:53
 msgid "Bryan Lancien from "
 msgstr "Bryan Lancien vom "
 
@@ -1270,9 +1355,20 @@ msgstr ""
 msgid "License - open_plan"
 msgstr "Lizenz - open_plan"
 
-#: templates/legal/license.html:19
-msgid "The source code of this "
+#: templates/legal/license.html:21
+#, python-format
+msgid ""
+"The source code of this <a href=\"%(url_gui)s\" target=\"_blank\" rel="
+"\"noreferrer\">user interface</a> and of the <a href="
+"\"%(url_simulation_server)s\" target=\"_blank\" rel=\"noreferrer"
+"\">simulation server</a> are licensed under <a href=\"%(url_license)s\" "
+"target=\"_blank\" rel=\"noreferrer\">MIT license</a></p>"
 msgstr ""
+"Der Quellcode dieser <a href=%(url_gui)s\" target=\"_blank\" rel=\"noreferrer"
+"\">Benutzeroberfläche</a> und des <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Simulationsserver</a> sind lizenziert "
+"unter <a href=\"%(url_license)s\" target=\"_blank\" rel=\"noreferrer\">MIT-"
+"Lizenz</a></p>"
 
 #: templates/legal/privacy.html:5 templates/legal/privacy_DE.html:5
 msgid "Privacy - open_plan"
