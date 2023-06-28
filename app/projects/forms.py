@@ -396,7 +396,7 @@ scenario_widgets = {
             "max": "600",
             "step": "1",
             "data-bs-toggle": "tooltip",
-            "title": _("Length of the time-steps."),
+            "title": _("Length of the time steps"),
         },
         choices=((60, "60 min"),),
     ),
@@ -932,7 +932,7 @@ class AssetCreateForm(OpenPlanModelForm):
             "renewable_asset": forms.Select(choices=TRUE_FALSE_CHOICES),
             "name": forms.TextInput(
                 attrs={
-                    "placeholder": "Asset Name",
+                    "placeholder": _("Asset Name"),
                     # "style": "font-weight:400; font-size:13px;",
                 }
             ),
