@@ -40,7 +40,9 @@ class EconomicData(models.Model):
     discount = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)]
     )
-    tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    tax = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0
+    )
 
 
 class Viewer(models.Model):

@@ -156,8 +156,14 @@ economic_widgets = {
             "title": _("Investment Discount factor."),
         }
     ),
-    "tax": forms.NumberInput(
-        attrs={"placeholder": "eg. 0.3", "min": "0.0", "max": "1.0", "step": "0.0001"}
+    "tax": forms.HiddenInput(
+        attrs={
+            "placeholder": "eg. 0.3",
+            "min": "0.0",
+            "max": "1.0",
+            "step": "0.0001",
+            "value": 0,
+        }
     ),
 }
 
@@ -272,7 +278,7 @@ class ProjectCreateForm(OpenPlanForm):
     )
     tax = forms.FloatField(
         label=_("Tax"),
-        widget=forms.NumberInput(
+        widget=forms.HiddenInput(
             attrs={
                 "placeholder": _("eg. 0.3"),
                 "min": "0.0",
@@ -280,6 +286,7 @@ class ProjectCreateForm(OpenPlanForm):
                 "step": "0.0001",
                 "data-bs-toggle": "tooltip",
                 "title": _("Tax factor"),
+                "value": 0,
             }
         ),
     )
