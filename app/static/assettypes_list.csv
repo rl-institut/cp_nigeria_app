@@ -1,8 +1,8 @@
 asset_type,asset_category,energy_vector,mvs_type,asset_fields,unit
 dso,energy_provider,Electricity,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share,feedin_cap]",
-gas_dso,energy_provider,Gas,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share]",
-h2_dso,energy_provider,H2,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share]",
-heat_dso,energy_provider,Heat,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share]",
+gas_dso,energy_provider,Gas,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share,feedin_cap]",
+h2_dso,energy_provider,H2,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share,feedin_cap]",
+heat_dso,energy_provider,Heat,source,"[name,energy_price,feedin_tariff,peak_demand_pricing,peak_demand_pricing_period,renewable_share,feedin_cap]",
 demand,energy_consumption,Electricity,sink,"[name,input_timeseries]",kWh
 gas_demand,energy_consumption,Gas,sink,"[name,input_timeseries]",
 h2_demand,energy_consumption,H2,sink,"[name,input_timeseries]",
