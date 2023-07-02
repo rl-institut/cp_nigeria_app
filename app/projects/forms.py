@@ -75,10 +75,10 @@ def set_parameter_info(param_name, field, parameters=PARAMETERS):
         unit = PARAMETERS[param_name][":Unit:"]
         verbose = PARAMETERS[param_name]["verbose"]
         default_value = PARAMETERS[param_name][":Default:"]
-        if unit == "None":
+        if unit == "None" or unit == "":
             unit = None
         elif unit == "Factor":
-            unit = ""
+            unit = None
         if verbose == "None":
             verbose = None
         if default_value == "None":
@@ -780,32 +780,19 @@ class AssetCreateForm(OpenPlanModelForm):
                 self.fields[field].label = self.fields[field].label + question_icon
 
                 if "capex_fix" in field:
-                    unit = self.fields[field].label.split(")")[0]
-                    if len(unit.split("(")) > 1:
-                        unit = unit.split("(")[1]
-                    else:
-                        unit = None
-                    self.fields[field].label = self.fields[field].label = _(
-                        "Fixed costs"
+                    self.fields[field].label = (
+                        self.fields[field]
+                        .label.replace("project", "")
+                        .replace("Feste Projektkosten", "Fixkosten")
                     )
-                    if unit is not None:
-                        self.fields[field].label = (
-                            self.fields[field].label + f" ({unit})"
-                        )
 
                 if "€" in self.fields[field].label and currency is not None:
                     self.fields[field].label = self.fields[field].label.replace(
                         "€", currency
                     )
-                if "unit" in self.fields[field].label:
-                    if self.asset_type_name == "capacity":
-                        unit = "kWh"
-                    elif self.asset_type_name == "pv_plant":
-                        unit = "kWp"
-                    else:
-                        unit = "kW"
+                if ":unit:" in self.fields[field].label:
                     self.fields[field].label = self.fields[field].label.replace(
-                        "unit", unit
+                        ":unit:", asset_type.unit
                     )
 
         """ ----------------------------------------------------- """
@@ -1038,8 +1025,6 @@ class StorageForm(AssetCreateForm):
         super(StorageForm, self).__init__(*args, asset_type="capacity", **kwargs)
         self.fields["dispatchable"].widget = forms.HiddenInput()
         self.fields["dispatchable"].initial = True
-        self.fields["installed_capacity"].label = _("Installed capacity") + " (kWh)"
-        self.fields["maximum_capacity"].label = _("Maximum capacity") + " (kWh)"
 
         if asset_type_name != "hess":
             self.fields["fixed_thermal_losses_relative"].widget = forms.HiddenInput()
