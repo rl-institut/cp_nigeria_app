@@ -10,6 +10,9 @@ from projects.models import (
     Project,
     EconomicData,
     COPCalculator,
+    Simulation,
+    ParameterChangeTracker,
+    AssetChangeTracker,
 )
 import json
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
@@ -55,6 +58,11 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
                 f"Failed to set positioning for bus {bus.name} in scenario: {scen_id}."
             )
         bus.save()
+        qs_sim = Simulation.objects.filter(scenario=scenario)
+        if not asset_uuid and qs_sim.exists():
+            AssetChangeTracker.objects.create(
+                simulation=scenario.simulation, name=bus.name, action=1
+            )
         return JsonResponse({"success": True, "asset_id": bus.id}, status=200)
     logger.warning(f"The submitted bus has erroneous field values.")
 
@@ -62,6 +70,57 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
     return JsonResponse(
         {"success": False, "form_html": form_html.render({"form": form})}, status=422
     )
+
+
+def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
+    if hasattr(existing_asset, param):
+        old_value = existing_asset.get_field_value(param)
+        if new_value is None:
+            new_value = form.cleaned_data.get(param)
+        # TODO problem by type of value
+        # if a previous change does not exist, we create one instance
+        # if it does exist, we update its value, or we discard the change
+        # if the assigned value is the same as the old one
+        if old_value != new_value:
+            qs_param = ParameterChangeTracker.objects.filter(
+                simulation=scenario.simulation,
+                name=param,
+                parameter_category="asset",
+                asset=existing_asset,
+            )
+            if not qs_param.exists():
+                if param in (
+                    "efficiency",
+                    "efficiency_multiple",
+                    "energy_price",
+                    "feedin_tariff",
+                ):
+                    kwargs = {"parameter_type": "vector"}
+                else:
+                    kwargs = {}
+                pi = ParameterChangeTracker(
+                    simulation=scenario.simulation,
+                    name=param,
+                    old_value=old_value,
+                    new_value=new_value,
+                    parameter_category="asset",
+                    asset=existing_asset,
+                    **kwargs,
+                )
+                pi.save()
+            elif qs_param.count() == 1:
+                pi = qs_param.get()
+                old_value = pi.old_value
+                if pi.parameter_type == "vector":
+                    old_value = (old_value, None)
+                if new_value == form.fields[pi.name].clean(old_value):
+                    pi.delete()
+                else:
+                    qs_param.update(new_value=new_value)
+            else:
+                raise ValueError(
+                    "There are too many parameters which should be singled out"
+                )
 
 
 def handle_storage_unit_form_post(
@@ -96,47 +155,71 @@ def handle_storage_unit_form_post(
             # First delete all existing associated storage assets from the db
             if asset_uuid:
                 existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
-                existing_asset.delete()  # deletes also automatically all children using models.CASCADE
+                # existing_asset.delete()  # deletes also automatically all children using models.CASCADE
+                ess_asset = existing_asset
+                ess_capacity_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="capacity"
+                )
+                ess_charging_power_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="charging_power"
+                )
+                ess_discharging_power_asset = Asset.objects.get(
+                    parent_asset=ess_asset, asset_type__asset_type="discharging_power"
+                )
+                new_name = form.cleaned_data.pop("name", None)
+                if new_name is not None:
+                    ess_asset.name = new_name
+                    ess_asset.save()
+            else:
+                # Create the ESS Parent Asset
+                ess_asset = Asset.objects.create(
+                    name=form.cleaned_data.pop("name"),
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type=f"{asset_type_name}"
+                    ),
+                    pos_x=float(form.data["pos_x"]),
+                    pos_y=float(form.data["pos_y"]),
+                    unique_id=asset_uuid
+                    or str(
+                        uuid.uuid4()
+                    ),  # if exising asset create an asset with the exact same unique_id else generate a new one
+                    scenario=scenario,
+                )
 
-            # Create the ESS Parent Asset
-            ess_asset = Asset.objects.create(
-                name=form.cleaned_data.pop("name"),
-                asset_type=get_object_or_404(
-                    AssetType, asset_type=f"{asset_type_name}"
-                ),
-                pos_x=float(form.data["pos_x"]),
-                pos_y=float(form.data["pos_y"]),
-                unique_id=asset_uuid
-                or str(
-                    uuid.uuid4()
-                ),  # if exising asset create an asset with the exact same unique_id else generate a new one
-                scenario=scenario,
-            )
+                # Create the ess charging power
+                ess_charging_power_asset = Asset(
+                    name=f"{ess_asset.name} input power",
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type="charging_power"
+                    ),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
+                # Create the ess discharging power
+                ess_discharging_power_asset = Asset(
+                    name=f"{ess_asset.name} output power",
+                    asset_type=get_object_or_404(
+                        AssetType, asset_type="discharging_power"
+                    ),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
+                # Create the ess capacity
+                ess_capacity_asset = Asset(
+                    name=f"{ess_asset.name} capacity",
+                    asset_type=get_object_or_404(AssetType, asset_type="capacity"),
+                    scenario=scenario,
+                    parent_asset=ess_asset,
+                )
 
-            # Create the ess chanrging power
-            ess_charging_power_asset = Asset(
-                name=f"{ess_asset.name} input power",
-                asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
-            # Create the ess dischanrging power
-            ess_discharging_power_asset = Asset(
-                name=f"{ess_asset.name} output power",
-                asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
-            # Create the ess capacity
-            ess_capacity_asset = Asset(
-                name=f"{ess_asset.name} capacity",
-                asset_type=get_object_or_404(AssetType, asset_type="capacity"),
-                scenario=scenario,
-                parent_asset=ess_asset,
-            )
-
+            qs_sim = Simulation.objects.filter(scenario=scenario)
             # Populate all subassets
             for param, value in form.cleaned_data.items():
+
+                if asset_uuid and qs_sim.exists():
+                    track_asset_changes(
+                        scenario, param, form, existing_asset=ess_capacity_asset
+                    )
                 setattr(ess_capacity_asset, param, value)
 
                 # split efficiency between charge and discharge
@@ -152,14 +235,34 @@ def handle_storage_unit_form_post(
                         setattr(ess_charging_power_asset, param, 0)
                 else:
                     if ess_charging_power_asset.has_parameter(param):
+                        if asset_uuid and qs_sim.exists():
+                            track_asset_changes(
+                                scenario,
+                                param,
+                                form,
+                                existing_asset=ess_charging_power_asset,
+                                new_value=value,
+                            )
                         setattr(ess_charging_power_asset, param, value)
 
                 if ess_discharging_power_asset.has_parameter(param):
+                    if asset_uuid and qs_sim.exists():
+                        track_asset_changes(
+                            scenario,
+                            param,
+                            form,
+                            existing_asset=ess_discharging_power_asset,
+                            new_value=value,
+                        )
                     setattr(ess_discharging_power_asset, param, value)
 
             ess_capacity_asset.save()
             ess_charging_power_asset.save()
             ess_discharging_power_asset.save()
+            if not asset_uuid and qs_sim.exists():
+                AssetChangeTracker.objects.create(
+                    simulation=scenario.simulation, name=ess_asset.name, action=1
+                )
             return JsonResponse(
                 {"success": True, "asset_id": ess_asset.unique_id}, status=200
             )
@@ -191,6 +294,7 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
             request.FILES,
             asset_type=asset_type_name,
             instance=existing_asset,
+            scenario_id=scen_id,
             input_output_mapping=input_output_mapping,
         )
     else:
@@ -216,6 +320,14 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
         )
 
     if form.is_valid():
+        qs_sim = Simulation.objects.filter(scenario=scenario)
+        if asset_uuid:
+            existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
+
+            if qs_sim.exists():
+                for param in form.cleaned_data:
+                    track_asset_changes(scenario, param, form, existing_asset)
+
         asset = form.save(commit=False)
         asset.scenario = scenario
         asset.asset_type = asset_type
@@ -227,7 +339,10 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
                 f"Failed to set positioning for asset {asset.name} in scenario: {scen_id}."
             )
         asset.save()
-
+        if not asset_uuid and qs_sim.exists():
+            AssetChangeTracker.objects.create(
+                simulation=scenario.simulation, name=asset.name, action=1
+            )
         # will apply for he
         cop_calculator_id = request.POST.get("copId", "")
         if asset_type_name == "heat_pump" and cop_calculator_id != "":
@@ -594,6 +709,9 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
                 pos_x=node.pos_x, pos_y=node.pos_y
             )
 
+    scenario = get_object_or_404(Scenario, id=scenario_id)
+    qs_sim = Simulation.objects.filter(scenario=scenario)
+
     # deletes asset or bus which DB id is not in the topology anymore (was removed by user)
     for asset_id in scenario_assets_ids_excluding_storage_children:
 
@@ -602,7 +720,14 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             logger.debug(
                 f"Deleting asset {asset_id} of scenario {scenario_id} which was removed from the topology by the user."
             )
+            if qs_sim.exists():
+                for name in qs.values_list("name", flat=True):
+                    # TODO export asset dto to be able to undo the changes
+                    AssetChangeTracker.objects.create(
+                        simulation=scenario.simulation, name=name, action=0
+                    )
             qs.delete()
+
         else:
             qs.update(**asset_node_positions[asset_id])
 
@@ -613,6 +738,12 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             logger.debug(
                 f"Deleting bus {bus_id} of scenario {scenario_id} which was removed from the topology by the user."
             )
+            if qs_sim.exists():
+                for name in qs.values_list("name", flat=True):
+                    # TODO export asset dto to be able to undo the changes
+                    AssetChangeTracker.objects.create(
+                        simulation=scenario.simulation, name=name, action=0
+                    )
             qs.delete()
         else:
             qs.update(**bus_node_positions[bus_id])

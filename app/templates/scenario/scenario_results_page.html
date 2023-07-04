@@ -20,7 +20,7 @@
 <script type="text/javascript" src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <script src="{% static 'js/traceplot.js' %}"></script>
 <script src="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.58.5/plotly.min.js" integrity="sha512-7wMLZxKDFvReIWPUzBfcEKsuOriDUEcWkV2bNHV2/tQUmoZj2eLpkQOF7nBbtwVG8WrSl5rTN87cqnS7ZelhzQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.20.0/plotly.min.js" integrity="sha512-tuzZby9zsxdCMgqKMHo+ObEWrfBTFlKZ7yIHSow5IYbr0JseLNTXm37NSn0rrWVbvKMfvGUCSm5L1sK9QGuLyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tippy.js/2.5.4/tippy.all.min.js" integrity="sha512-9LKXH8DIeFSdiDIWQSOJNZuwLynJNm4x/1eBRpPfRJsEXZWJL+aoH+JNDglF3DcCoQYVBHqXo8sVHOLveoaN0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net/1.10.23/jquery.dataTables.min.js" integrity="sha512-coE8Qg+5Eb8e0xSXkdSJYln78NclTBgX6rducQWvi3NZooVaR1GVcVA5fRPVetzSqh9CEBv7hzwuQsZLLC0e8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
@@ -138,7 +138,7 @@
 						{% csrf_token %}
 						<select name="proj_id" class="form-select" aria-label="Default select example" onchange="this.form.submit()">
 							{% for project in project_list %}
-							<option value="{{ project.id }}" {% if project.id == proj_id %} selected {% endif %}> {{ project.name }}  </option>
+							<option value="{{ project.id }}" {% if project.id == proj_id %} selected {% endif %}> {{ project.label }} </option>
 							{% endfor %}
 						</select>
 					</form>
@@ -221,15 +221,20 @@ const deleteReportItem = (event) => {
 <script src="{% static 'js/report_items.js' %}"></script>
 
 
-
+{% if multiple_scenario_selection %}
+<script> const multipleScenarioSelection = true;  </script>
+{% else %}
+<script>const multipleScenarioSelection = false;</script>
+{% endif %}
 
 
 
 <script>
 
-function update_kpi_table_style(target){
+function update_kpi_table_style(scen_id=""){
+
     $.ajax({
-        url: "{% url 'request_kpi_table' proj_id=proj_id %}" + target.value, // TODO add scenarios in the arguments to provide answers
+        url: "{% url 'request_kpi_table' proj_id=proj_id %}" + "?compare_scenario=" + scen_id,
         type: "GET",
         success: async (table_data) => {
 
@@ -239,7 +244,7 @@ function update_kpi_table_style(target){
 
         /* create KPI table headers */
         const tableHead = document.createElement('thead');
-        const table_headers = ["Indicator", "Scen Value"]; // todo add dynamically more scenarios here
+        const table_headers = table_data.hdrs; // todo add dynamically more scenarios here
         const table_length = table_headers.length;
         const tableHeadContent = document.createElement('tr');
         table_headers.map(hdr =>
@@ -253,7 +258,7 @@ function update_kpi_table_style(target){
         parentDiv.appendChild(tableHead);
 
 
-        for(subBody in table_data) {
+        for(subBody in table_data.data) {
             var tableBody = document.createElement('tbody');
             tableBody.id = subBody;
             /* add subtable title */
@@ -269,7 +274,7 @@ function update_kpi_table_style(target){
 
             /* add subtable lines for each parameter */
             // (param should be a json object) with keys name (type str), unit type (str) and scen_values
-            table_data[subBody].map(param =>{
+            table_data.data[subBody].map(param =>{
                 var tableSubSectionParamRow = document.createElement('tr');
                 var cell = tableSubSectionParamRow.insertCell(0);
                 cell.innerHTML = `{% blocktranslate %}` + param.name +`{% endblocktranslate %}<a data-bs-toggle="tooltip" title="" data-bs-original-title="${param.description}" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a>`;
@@ -289,12 +294,12 @@ function update_kpi_table_style(target){
         $('[data-bs-toggle="tooltip"]').tooltip()
 
         },
-        error: function (xhr, errmsg) {
+        /*error: function (xhr, errmsg) {
             console.log("backend_error!")
             //Show the error message
             $('#message-div').html("<div class='alert-error'>" +
                 "<strong>Success: </strong> We have encountered an error: " + errmsg + "</div>");
-        }
+        }*/
     });
 
 };
@@ -358,7 +363,27 @@ function scenario_visualize_capacities(scen_id=""){
             url: "{% url 'scenario_visualize_capacities' proj_id=proj_id %}" + scen_id,
             type: "GET",
             success: async (parameters) => {
-                await await graph_type_mapping[parameters.type](parameters.id, parameters);;
+                await graph_type_mapping[parameters.type](parameters.id, parameters);;
+            },
+        });
+};
+
+function scenario_visualize_costs(scen_id=""){
+ $.ajax({
+            url: "{% url 'scenario_visualize_costs' proj_id=proj_id %}" + scen_id,
+            type: "GET",
+            success: async (graphs) => {
+								const parentDiv = document.getElementById("costs");
+                await graphs.map(parameters => {
+                    const newGraph = document.createElement('div');
+                    newGraph.id = "costs" + parameters.id;
+                    parentDiv.appendChild(newGraph);
+                    if(parameters.title === "var1" || parameters.title === "var2")
+            				{ graph_type= parameters.type;
+            					parameters.title = "";}
+            				else{ graph_type = parameters.type + "Scenarios";}
+                    graph_type_mapping[graph_type](newGraph.id, parameters);
+                });
             },
         });
 };
@@ -366,11 +391,7 @@ function scenario_visualize_capacities(scen_id=""){
 
 </script>
 
-{% if multiple_scenario_selection %}
-<script> const multipleScenarioSelection = true;  </script>
-{% else %}
-<script>const multipleScenarioSelection = false;</script>
-{% endif %}
+
 <script src="{% static 'js/modal_utils.js' %}"></script>
 
 <script>
@@ -456,7 +477,7 @@ function scenario_visualize_capacities(scen_id=""){
     const createReportItem = (event) => {
         //submit the form to create a new report item
 
-        // get the data of the form
+        // get the data of the form (view report_create_item in )
         const createReportUrl = createReportItemForm.getAttribute("ajax-post-url");
 
         const formData = new FormData(createReportItemForm);

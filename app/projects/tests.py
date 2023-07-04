@@ -73,9 +73,11 @@ class BasicOperationsTest(TestCase):
         )
         self.assertTrue(success)
         self.assertEqual(
-            self.project.viewers.get(user__email=test_email).share_rights, "read"
+            self.project.viewers.filter(
+                user__email=test_email, share_rights="read"
+            ).count(),
+            1,
         )
-        self.assertEqual(self.project.viewers.filter(user__email=test_email).count(), 1)
 
     def test_add_project_user_as_viewer(self):
         test_email = CustomUser.objects.first().email

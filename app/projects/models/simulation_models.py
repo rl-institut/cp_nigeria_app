@@ -1,4 +1,4 @@
-from projects.models.base_models import AbstractSimulation, Scenario
+from projects.models.base_models import AbstractSimulation, Scenario, Asset
 
 
 import json
@@ -13,7 +13,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from datetime import datetime
 
-from projects.constants import USER_RATING, DONE, PENDING, ERROR
+from projects.constants import (
+    USER_RATING,
+    DONE,
+    PENDING,
+    ERROR,
+    PARAM_CATEGORY,
+    PARAM_TYPE,
+)
 from projects.helpers import (
     sensitivity_analysis_payload,
     SA_OUPUT_NAMES_SCHEMA,
@@ -30,6 +37,34 @@ class Simulation(AbstractSimulation):
     scenario = models.OneToOneField(Scenario, on_delete=models.CASCADE, null=False)
     user_rating = models.PositiveSmallIntegerField(
         null=True, choices=USER_RATING, default=None
+    )
+
+
+class ParameterChangeTracker(models.Model):
+    name = models.CharField(max_length=60, null=False, blank=False)
+    simulation = models.ForeignKey(
+        Simulation, on_delete=models.CASCADE, null=False, blank=False
+    )
+    old_value = models.TextField(null=True, blank=False)
+    new_value = models.TextField(null=True, blank=False)
+    parameter_category = models.CharField(max_length=20, choices=PARAM_CATEGORY)
+    parameter_type = models.CharField(
+        null=True, blank=True, max_length=20, choices=PARAM_TYPE
+    )
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} [{self.old_value}, {self.new_value}]"
+
+
+class AssetChangeTracker(models.Model):
+    name = models.CharField(max_length=60, null=False, blank=False)
+    simulation = models.ForeignKey(
+        Simulation, on_delete=models.CASCADE, null=False, blank=False
+    )
+    asset_dto = models.TextField(null=True, blank=True)
+    action = models.SmallIntegerField(
+        null=False, blank=False, choices=((0, "delete"), (0, "create"))
     )
 
 

@@ -63,8 +63,8 @@ urlpatterns = [
         view_asset_parameters,
         name="view_asset_parameters",
     ),
-    re_path(
-        r"^project/(?P<proj_id>\d+)/scenario/results/request_kpi_table/(?P<table_style>\w+)?$",
+    path(
+        "project/<int:proj_id>/scenario/results/request_kpi_table",
         request_kpi_table,
         name="request_kpi_table",
     ),
@@ -97,6 +97,11 @@ urlpatterns = [
         r"^project/(?P<proj_id>\d+)/scenario/results/request-capacities/(?P<scen_id>\d+)?$",
         scenario_visualize_capacities,
         name="scenario_visualize_capacities",
+    ),
+    re_path(
+        r"^project/(?P<proj_id>\d+)/scenario/results/request-costs/(?P<scen_id>\d+)?$",
+        scenario_visualize_costs,
+        name="scenario_visualize_costs",
     ),
     path(
         "scenario/results/download_scalars/<int:scen_id>",

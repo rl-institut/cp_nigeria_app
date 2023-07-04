@@ -94,7 +94,7 @@ function format_trace_name(scenario_name, label, unit, compare=false){
 
 
 function addTimeseriesGraph(graphId, parameters){
-    // prepare traces in ploty format
+    // prepare traces in plotly format
     var data = []
 
     var compare = true;
@@ -105,9 +105,12 @@ function addTimeseriesGraph(graphId, parameters){
 
     parameters.data.forEach(scenario => {
         scenario.timeseries.forEach(timeseries => {
-            // todo provide a function to format the name of the timeseries
+            var y_vals = timeseries.value;
+            if(typeof y_vals === "string"){
+                y_vals = JSON.parse(y_vals)
+            }
             var trace = {x: scenario.timestamps,
-                y: timeseries.value,
+                y: y_vals,
                 name:"",
                 type: 'scatter',
                 line: {shape: 'hv'},
@@ -125,15 +128,15 @@ function addTimeseriesGraph(graphId, parameters){
         yaxis:{
             title: parameters.y_label,
         },
-        showlegend: true
+        showlegend: true,
+        hovermode:'x unified'
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
 };
 
-
 function addStackedTimeseriesGraph(graphId, parameters){
-    // prepare traces in ploty format
+    // prepare stacked traces in plotly format
     var data = []
 
     if(parameters.data.length == 1){
@@ -149,8 +152,9 @@ function addStackedTimeseriesGraph(graphId, parameters){
                 name: '',
                 type: 'scatter',
                 line: {shape: 'hv'},
-                stackgroup: timeseries.asset_type,
-                fill: timeseries.fill
+                stackgroup: timeseries.group,
+                fill: timeseries.fill,
+                mode: timeseries.mode
             };
             trace.name = format_trace_name(scenario.scenario_name, timeseries.label, timeseries.unit, compare=compare);
             data.push(trace);
@@ -164,7 +168,8 @@ function addStackedTimeseriesGraph(graphId, parameters){
         },
         yaxis:{
             title: parameters.y_label,
-        }
+        },
+        hovermode:'x unified'
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
@@ -216,6 +221,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     var traces = [];
     var plot_y_axis = "y";
     for(var i=0; i<ts_data.length;++i){
+        console.log(ts_data[i])
     // change legend layout
         plot_y_axis = (ts_data[i].name.includes("capacity") ? "y2" : "y");
         traces.push({type: "scatter", x: x, y: ts_data[i].value, name: ts_data[i].name + "(" + ts_data[i].unit + ")", yaxis: plot_y_axis});
@@ -259,6 +265,7 @@ function plotTimeseries(x, ts_data, plot_id="",userLayout=null){
     var trace_label = "";
     for(var i=0; i<ts_data.length;++i){
         trace_label = "";
+        console.log(ts_data[i]);
         if(ts_data[i].name){
             trace_label = ts_data[i].name;
             if(ts_data[i].unit){
@@ -278,18 +285,21 @@ function plotTimeseries(x, ts_data, plot_id="",userLayout=null){
 function addCapacitiyGraph(graphId, parameters){
     // prepare traces in ploty format
     var data = []
-    parameters.data.forEach(scenario => {
-        scenario.timeseries.forEach(timeseries => {
+    // source of the palette: https://colorswall.com/palette/171311
+    const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
+    const n_colors = colors.length;
+    parameters.data.forEach((scenario,j) => {
+        scenario.timeseries.forEach((timeseries,i) => {
             // todo provide a function to format the name of the timeseries
-
             data.push({
                 x: scenario.timestamps,
                 y: timeseries.capacity,
                 name:timeseries.name,
                 type: 'bar',
-                // line: {shape: 'hv'},
-                // stackgroup: timeseries.asset_type,
-                // fill: timeseries.fill
+                offsetgroup: scenario.scenario_id,
+                base: i==0 ? null : scenario.timeseries[0].capacity,
+                marker: {color:colors[j%n_colors], pattern:{shape: i==0 ? "x" : ""}}
+
             })
         });
     });
@@ -303,7 +313,96 @@ function addCapacitiyGraph(graphId, parameters){
         yaxis:{
             title: parameters.y_label,
         },
-        barmode: 'stack',
+        showlegend: true,
+        margin: {b: 150}
+    }
+    // create plot
+    Plotly.newPlot(graphId, data, layout);
+};
+
+
+function addCostGraph(graphId, parameters){
+    // prepare traces in ploty format
+    var data = []
+    // source of the palette: https://colorswall.com/palette/171311
+    const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
+    const patterns = ["", ".", "/", "x", "+", "-"]
+    const n_colors = colors.length;
+    parameters.data.forEach((scenario,j) => {
+        scenario.timeseries.forEach((timeseries,i) => {
+            // todo provide a function to format the name of the timeseries
+            data.push({
+                x: scenario.timestamps,
+                y: timeseries.value,
+                name:timeseries.name,
+                text: timeseries.text,
+                type: 'bar',
+                offsetgroup: scenario.scenario_id,
+                base: timeseries.base,
+                marker: {color:colors[j%n_colors], pattern:{shape: patterns[i%6]}},
+                customdata: timeseries.customdata,
+                hovertemplate:timeseries.hover,
+            })
+        });
+    });
+
+    // prepare graph layout in plotly format
+    const layout= {
+        title: parameters.title,
+
+        xaxis:{
+            title: parameters.x_label,
+        },
+        yaxis:{
+            title: parameters.y_label,
+        },
+        showlegend: true,
+        margin: {b: 150}
+    }
+    // create plot
+    Plotly.newPlot(graphId, data, layout);
+};
+
+
+function addCostScenariosGraph(graphId, parameters){
+    // prepare traces in ploty format
+    var data = []
+    // source of the palette: https://colorswall.com/palette/171311
+    const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
+    const patterns = ["", ".", "/", "x", "+", "-"]
+    const n_colors = colors.length;
+    //parameters.data.forEach((scenario,j) => {
+    parameters.data.forEach((timeseries,j) => {
+//    console.log(scenario);
+//        scenario.timeseries.forEach((timeseries,i) => {
+            // todo provide a function to format the name of the timeseries
+            data.push({
+                x: timeseries.timestamps,
+                //y: timeseries.value,
+                y: timeseries.timeseries,
+                //name:timeseries.name,
+                name:timeseries.scenario_name,
+               // text: timeseries.text,
+                type: 'bar',
+               // offsetgroup: scenario.scenario_id,
+              //  base: timeseries.base,
+               // marker: {color:colors[j%n_colors], pattern:{shape: patterns[i%6]}},
+             //   customdata: timeseries.customdata,
+              //  hovertemplate:timeseries.hover,
+            })
+//        });
+    });
+
+    // prepare graph layout in plotly format
+    const layout= {
+        title: parameters.title,
+                barmode:'stack',
+        xaxis:{
+            title: parameters.x_label,
+        },
+        yaxis:{
+            title: parameters.y_label,
+        },
         showlegend: true,
         margin: {b: 150}
     }
@@ -312,9 +411,6 @@ function addCapacitiyGraph(graphId, parameters){
 };
 
 function addSankeyDiagram(graphId, parameters){
-
-
-    console.log(parameters)
     // prepare graph layout in plotly format
     const layout= {
         title: parameters.title,
@@ -325,15 +421,14 @@ function addSankeyDiagram(graphId, parameters){
 
 function addGenericPlotlyFigure(graphId, parameters){
 
-    console.log(parameters)
+    const fig = JSON.parse(parameters.data);
     // prepare graph layout in plotly format
     const layout= {
         title: parameters.title,
-        ... parameters.data.layout
+        ... fig.layout
     }
-    console.log(layout);
     // create plot
-    Plotly.newPlot(graphId, parameters.data.data, layout);
+    Plotly.newPlot(graphId, fig.data, layout);
 };
 
 
@@ -349,7 +444,6 @@ function addSensitivityAnalysisGraph(graphId, parameters){
         }
     }
     // create plot
-    console.log(parameters)
     Plotly.newPlot(graphId, parameters.data, layout);
 };
 
@@ -359,6 +453,8 @@ const graph_type_mapping={
     timeseries: addTimeseriesGraph,
     timeseries_stacked: addStackedTimeseriesGraph,
     capacities: addCapacitiyGraph,
+    costs: addCostGraph,
+    costsScenarios: addCostScenariosGraph,
     sensitivity_analysis: addSensitivityAnalysisGraph,
     sankey: addSankeyDiagram,
     load_duration: addGenericPlotlyFigure

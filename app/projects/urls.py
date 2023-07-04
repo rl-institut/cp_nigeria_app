@@ -154,6 +154,12 @@ urlpatterns = [
         asset_cops_create_or_update,
         name="asset_cops_create_or_update",
     ),
+    # ParameterChangeTracker (track of simulated scenario changes)
+    path(
+        "reset_scenario_changes/<int:scen_id>",
+        reset_scenario_changes,
+        name="reset_scenario_changes",
+    ),
     # MVS Simulation
     path(
         "simulation/cancel/<int:scen_id>", simulation_cancel, name="simulation_cancel"

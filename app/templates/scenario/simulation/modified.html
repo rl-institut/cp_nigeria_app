@@ -1,0 +1,149 @@
+{% extends 'scenario/scenario_progression.html' %}
+{% load i18n %}
+
+{% block progression_content %}
+
+ <main class="simulation simulation--error">
+      <div>
+        <div class="simulation__heading" aria-hidden="true">
+        </div>
+        <div class="simulation__content">
+					{% if simulation_status == "DONE" %}
+          	<h2>{% translate "Simulation existing, but scenario parameter changed" %}</h2>
+					{% elif simulation_status == "ERROR" %}
+						<h2>{% translate "Scenario parameter changed, hopefully your error will be fixed" %}</h2>
+					{% endif %}
+          <div class="simulation__feedback">
+						{% if simulation_status == "DONE" %}
+            <div class="simulation__alert simulation__alert--info">
+              <!--span>To add information</span-->
+							<a class="btn btn--medium" href="{% url 'scenario_visualize_results' scen_id %}">{% translate "Existing simulation's results" %}</a>
+						</div>
+						{% elif simulation_status == "ERROR" %}
+						<div class="simulation__alert simulation__alert--info">
+							<div class="item item--error">
+								<p>{% translate "The following input parameters contain errors" %}:</p>
+								<div>{{ simulation_error_msg }}</div>
+							</div>
+						</div>
+						{% endif %}
+
+
+					  <div class="simulation__alert simulation__alert--warning">
+							<span>{% translate "If you rerun the simulation the previous results will be lost." %}</span>
+            </div>
+						<form action="{% url 'reset_scenario_changes' scen_id %}" method="post">
+            	<div class="simulation__actions">
+              <div>
+								{% csrf_token %}
+                <!--button type="submit" class="btn btn--medium">{% translate "Reset changes" %}</button-->
+              </div>
+              <div>
+                <a class="btn btn--medium btn--hollow" href="{% url 'scenario_duplicate' scen_id %}">{% translate "Copy to a new scenario" %}</a>
+              </div>
+            </div>
+						</form>
+          </div>
+
+          <div class="simulation__changed">
+            <p>{% translate "Changed parameters" %}</p>
+						<div class="simulation__alert simulation__alert--info">
+							<span>{% translate "The following changes displayed for your information" %}</span>
+            </div>
+            <div class="table-changed">
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Project" %}
+                </div>
+								{% for scen_param in project_parameters %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                  <div class="value">{{ scen_param.old_value }} --> {{ scen_param.new_value }}</div>
+                </div>
+								{% endfor %}
+              </div>
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Scenario" %}
+                </div>
+								{% for scen_param in scenario_parameters %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                  <div class="value">{{ scen_param.old_value }} --> {{ scen_param.new_value }}</div>
+                </div>
+								{% endfor %}
+              </div>
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Asset" %}
+                </div>
+								{% for scen_param in asset_parameters %}
+								 <div class="table-changed__content">
+                  <div class="key">{{scen_param.asset.name}}({% translate scen_param.name %})</div>
+                  <div class="value">{{ scen_param.old_value }} --> {{ scen_param.new_value }}</div>
+                </div>
+								{% endfor %}
+              </div>
+            </div>
+          </div>
+
+
+					<div class="simulation__changed">
+						<p>{% translate "Assets creation/deletion" %}</p>
+						<div class="table-changed">
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Created" %}
+                </div>
+								{% for scen_param in asset_create %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+              <div class="table-changed__item">
+                <div class="table-changed__header">
+                  {% translate "Deleted" %}
+                </div>
+								{% for scen_param in asset_delete %}
+								 <div class="table-changed__content">
+                  <div class="key">{% translate scen_param.name %}</div>
+                </div>
+								{% endfor %}
+              </div>
+            </div>
+					</div>
+
+
+
+				</div>
+			</div>
+    </main>
+
+
+{% endblock progression_content %}
+
+{% block footer %}
+
+    <footer class="simulation-footer">
+			<div>
+				<form method="post" action="{% url 'request_mvs_simulation' scen_id %}">
+						 {% csrf_token %}
+					<div class="simulation-footer__btn">
+						<a class="btn btn--medium btn--transparent" href="{% url 'scenario_steps_edit' proj_id scen_id step_id|add:-1 %}" aria-disabled="true">{% translate "Previous" %}</a>
+
+						<button class="btn btn--medium btn--warning" type="submit" > {% translate "Rerun simulation" %}</button>
+						<div class="form-check simulation-footer__check">
+						 <input class="form-check-input" type="checkbox" name="output_lp_file" id="output_lp_file">
+							<label class="form-check-label" for="output_lp_file">
+								{% translate "Include LP file (advanced users)" %}
+							</label>
+						</div>
+
+					</div>
+				</form>
+			</div>
+
+
+    </footer>
+{% endblock footer %}

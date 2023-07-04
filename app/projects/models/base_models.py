@@ -1,15 +1,13 @@
-import uuid
 import json
-from django.conf import settings
-from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
+import uuid
 from datetime import timedelta
+
+import oemof.thermal.compression_heatpumps_and_chillers as cmpr_hp_chiller
+from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-import oemof.thermal.compression_heatpumps_and_chillers as cmpr_hp_chiller
-
-from users.models import CustomUser
 from projects.constants import (
     ASSET_CATEGORY,
     ASSET_TYPE,
@@ -25,6 +23,7 @@ from projects.constants import (
     BOOL_CHOICES,
     USER_RATING,
 )
+from users.models import CustomUser
 
 
 class Feedback(models.Model):
@@ -41,14 +40,16 @@ class EconomicData(models.Model):
     discount = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)]
     )
-    tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    tax = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0
+    )
 
 
 class Viewer(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     share_rights = models.CharField(
         max_length=10, choices=(("edit", _("Edit")), ("read", _("Read")))
     )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.user.email} [{self.share_rights}]"
@@ -112,7 +113,7 @@ class Project(models.Model):
             )
 
         if user is not None:
-            viewers = Viewer.objects.filter(user=user)
+            viewers = Viewer.objects.filter(user=user, share_rights=share_rights)
             if viewers.exists():
                 viewer = viewers.get()
             else:
@@ -438,6 +439,21 @@ class Asset(TopologyNode):
     def fields(self):
         return [f.name for f in self._meta.fields + self._meta.many_to_many]
 
+    def get_field_value(self, field_name):
+        answer = getattr(self, field_name)
+        if field_name in (
+            "efficiency",
+            "efficiency_multiple",
+            "energy_price",
+            "feedin_tariff",
+            "input_timeseries",
+        ):
+            try:
+                answer = float(answer)
+            except ValueError:
+                answer = json.loads(answer)
+        return answer
+
     @property
     def visible_fields(self):
         visible_fields = self.asset_type.visible_fields
@@ -485,7 +501,7 @@ class Asset(TopologyNode):
             answer = []
         return answer
 
-    def export(self):
+    def export(self, connections=False):
         """
         Returns
         -------
@@ -506,6 +522,8 @@ class Asset(TopologyNode):
         # check for parent assets
         if self.parent_asset is not None:
             dm["parent_asset"] = self.parent_asset.name
+
+        # TODO add connections here if True, then one can recreate the asset
 
         return dm
 
@@ -666,6 +684,7 @@ class AbstractSimulation(models.Model):
     end_date = models.DateTimeField(null=True)
     elapsed_seconds = models.FloatField(null=True)
     mvs_token = models.CharField(max_length=200, null=True)
+    mvs_version = models.CharField(max_length=15, null=True)
     status = models.CharField(
         max_length=20, choices=SIMULATION_STATUS, null=False, default=PENDING
     )

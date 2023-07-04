@@ -11,6 +11,7 @@ from projects.dtos import convert_to_dto
 from projects.constants import MAP_MVS_EPA
 from dashboard.helpers import KPIFinder
 
+
 PARAMETERS = {}
 if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:
     with open(
@@ -209,6 +210,8 @@ class DualNumberField(forms.MultiValueField):
             answer = input_timeseries_values
         else:
 
+            if scalar_value is None:
+                scalar_value = ""
             # check the input string is a number or a list
             if scalar_value != "":
                 try:

@@ -40,7 +40,7 @@ LOCALE_PATH = f"locale/{LANG}/LC_MESSAGES/"
 def get_translation_dict_from_po_file(fname, fpath=LOCALE_PATH, hdr_line_num=19):
     """Reads the .po file and collect untranslated msgstr"""
 
-    with open(f"{fpath}/{fname}", "r") as fp:
+    with open(os.path.join(fpath, fname), "r") as fp:
         lines = fp.readlines()
     msgids = []
     msgstrs = []

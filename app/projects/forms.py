@@ -23,7 +23,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings as django_settings
 from projects.models import *
-from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS
+from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS, CURRENCY_SYMBOLS
 
 from dashboard.helpers import KPI_PARAMETERS_ASSETS, KPIFinder
 from projects.helpers import (
@@ -75,14 +75,16 @@ def set_parameter_info(param_name, field, parameters=PARAMETERS):
         unit = PARAMETERS[param_name][":Unit:"]
         verbose = PARAMETERS[param_name]["verbose"]
         default_value = PARAMETERS[param_name][":Default:"]
-        if unit == "None":
+        if unit == "None" or unit == "":
             unit = None
         elif unit == "Factor":
-            unit = ""
+            unit = None
         if verbose == "None":
             verbose = None
         if default_value == "None":
             default_value = None
+    else:
+        print(f"{param_name} not in the parameters file")
 
     if verbose is not None:
         field.label = verbose
@@ -154,8 +156,14 @@ economic_widgets = {
             "title": _("Investment Discount factor."),
         }
     ),
-    "tax": forms.NumberInput(
-        attrs={"placeholder": "eg. 0.3", "min": "0.0", "max": "1.0", "step": "0.0001"}
+    "tax": forms.HiddenInput(
+        attrs={
+            "placeholder": "eg. 0.3",
+            "min": "0.0",
+            "max": "1.0",
+            "step": "0.0001",
+            "value": 0,
+        }
     ),
 }
 
@@ -172,7 +180,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Name"),
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Name...",
+                "placeholder": _("Name..."),
                 "data-bs-toggle": "tooltip",
                 "title": _("A self explanatory name for the project."),
             }
@@ -182,7 +190,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Description"),
         widget=forms.Textarea(
             attrs={
-                "placeholder": "More detailed description here...",
+                "placeholder": _("More detailed description here..."),
                 "data-bs-toggle": "tooltip",
                 "title": _(
                     "A description of what this project objectives or test cases."
@@ -204,7 +212,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Location, longitude"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "click on the map",
+                "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
                 "title": _(
@@ -217,7 +225,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Location, latitude"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "click on the map",
+                "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
                 "title": _(
@@ -230,7 +238,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Project Duration"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "eg. 1",
+                "placeholder": _("eg. 1"),
                 "min": "0",
                 "max": "100",
                 "step": "1",
@@ -257,7 +265,7 @@ class ProjectCreateForm(OpenPlanForm):
         label=_("Discount Factor"),
         widget=forms.NumberInput(
             attrs={
-                "placeholder": "eg. 0.1",
+                "placeholder": _("eg. 0.1"),
                 "min": "0.0",
                 "max": "1.0",
                 "step": "0.0001",
@@ -270,14 +278,15 @@ class ProjectCreateForm(OpenPlanForm):
     )
     tax = forms.FloatField(
         label=_("Tax"),
-        widget=forms.NumberInput(
+        widget=forms.HiddenInput(
             attrs={
-                "placeholder": "eg. 0.3",
+                "placeholder": _("eg. 0.3"),
                 "min": "0.0",
                 "max": "1.0",
                 "step": "0.0001",
                 "data-bs-toggle": "tooltip",
                 "title": _("Tax factor"),
+                "value": 0,
             }
         ),
     )
@@ -357,7 +366,7 @@ class UseCaseForm(forms.Form):
             self.fields["usecase"].label = (
                 _("Select a use case (or")
                 + f"<a href='{usecase_url}'>"
-                + _(" visit use cases page link")
+                + _("visit use cases page")
                 + "</a>)"
             )
 
@@ -387,7 +396,7 @@ scenario_widgets = {
             "max": "600",
             "step": "1",
             "data-bs-toggle": "tooltip",
-            "title": _("Length of the time-steps."),
+            "title": _("Length of the time steps"),
         },
         choices=((60, "60 min"),),
     ),
@@ -466,7 +475,11 @@ class ScenarioSelectProjectForm(OpenPlanModelForm):
         project_queryset = kwargs.pop("project_queryset", None)
         super().__init__(*args, **kwargs)
         if project_queryset is not None:
-            self.fields["project"].queryset = project_queryset
+            self.fields["project"] = forms.ChoiceField(
+                label="Project",
+                choices=[p for p in project_queryset.values_list("id", "label")],
+            )
+
         else:
             self.fields["project"] = forms.ChoiceField(label="Project", choices=())
         for visible in self.visible_fields():
@@ -486,7 +499,11 @@ class ScenarioUpdateForm(OpenPlanModelForm):
         project_queryset = kwargs.pop("project_queryset", None)
         super().__init__(*args, **kwargs)
         if project_queryset is not None:
-            self.fields["project"].queryset = project_queryset
+            self.fields["project"] = forms.ChoiceField(
+                label="Project",
+                choices=[p for p in project_queryset.values_list("id", "label")],
+            )
+
         else:
             self.fields["project"] = forms.ChoiceField(label="Project", choices=())
 
@@ -500,25 +517,35 @@ class ScenarioUpdateForm(OpenPlanModelForm):
 # endregion Scenario
 
 
-class MinRenewableConstraintForm(OpenPlanModelForm):
+class ConstraintForm(OpenPlanModelForm):
+    """Introduces a way to carry i18n strings into template for help texts"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["help_text"] = forms.CharField(
+            widget=forms.HiddenInput(), required=False
+        )
+
+
+class MinRenewableConstraintForm(ConstraintForm):
     class Meta:
         model = MinRenewableConstraint
         exclude = ["scenario"]
 
 
-class MaxEmissionConstraintForm(OpenPlanModelForm):
+class MaxEmissionConstraintForm(ConstraintForm):
     class Meta:
         model = MaxEmissionConstraint
         exclude = ["scenario"]
 
 
-class MinDOAConstraintForm(OpenPlanModelForm):
+class MinDOAConstraintForm(ConstraintForm):
     class Meta:
         model = MinDOAConstraint
         exclude = ["scenario"]
 
 
-class NZEConstraintForm(OpenPlanModelForm):
+class NZEConstraintForm(ConstraintForm):
     class Meta:
         model = NZEConstraint
         exclude = ["scenario", "value"]
@@ -576,7 +603,7 @@ class SensitivityAnalysisForm(ModelForm):
         return data_js
 
 
-class COPCalculatorForm(ModelForm):
+class COPCalculatorForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["temperature_high"] = DualNumberField(
@@ -626,6 +653,7 @@ class BusForm(OpenPlanModelForm):
 class AssetCreateForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         self.asset_type_name = kwargs.pop("asset_type", None)
+        proj_id = kwargs.pop("proj_id", None)
         scenario_id = kwargs.pop("scenario_id", None)
         view_only = kwargs.pop("view_only", False)
         self.existing_asset = kwargs.get("instance", None)
@@ -648,6 +676,16 @@ class AssetCreateForm(OpenPlanModelForm):
             qs = Scenario.objects.filter(id=scenario_id)
             if qs.exists():
                 self.timestamps = qs.get().get_timestamps()
+                if proj_id is None:
+                    proj_id = qs.get().project.id
+
+        currency = None
+        if proj_id is not None:
+            qs = Project.objects.filter(id=proj_id)
+            if qs.exists():
+                currency = qs.values_list("economic_data__currency", flat=True).get()
+                currency = CURRENCY_SYMBOLS[currency]
+                # TODO use mapping to display currency symbol
 
         self.fields["inputs"] = forms.CharField(
             widget=forms.HiddenInput(), required=False
@@ -740,6 +778,22 @@ class AssetCreateForm(OpenPlanModelForm):
                 else:
                     question_icon = ""
                 self.fields[field].label = self.fields[field].label + question_icon
+
+                if "capex_fix" in field:
+                    self.fields[field].label = (
+                        self.fields[field]
+                        .label.replace("project", "")
+                        .replace("Feste Projektkosten", "Fixkosten")
+                    )
+
+                if "€" in self.fields[field].label and currency is not None:
+                    self.fields[field].label = self.fields[field].label.replace(
+                        "€", currency
+                    )
+                if ":unit:" in self.fields[field].label:
+                    self.fields[field].label = self.fields[field].label.replace(
+                        ":unit:", asset_type.unit
+                    )
 
         """ ----------------------------------------------------- """
 
@@ -862,10 +916,10 @@ class AssetCreateForm(OpenPlanModelForm):
         widgets = {
             "optimize_cap": forms.Select(choices=BOOL_CHOICES),
             "dispatchable": forms.Select(choices=TRUE_FALSE_CHOICES),
-            "renewable_asset": forms.Select(choices=TRUE_FALSE_CHOICES),
+            "renewable_asset": forms.Select(choices=BOOL_CHOICES),
             "name": forms.TextInput(
                 attrs={
-                    "placeholder": "Asset Name",
+                    "placeholder": _("Asset Name"),
                     # "style": "font-weight:400; font-size:13px;",
                 }
             ),
@@ -939,13 +993,8 @@ class AssetCreateForm(OpenPlanModelForm):
             "peak_demand_pricing": forms.NumberInput(
                 attrs={"placeholder": "e.g. 60", "min": "0.0", "step": ".01"}
             ),
-            "peak_demand_pricing_period": forms.NumberInput(
-                attrs={
-                    "placeholder": "times per year, e.g. 2",
-                    "min": "1",
-                    "max": "12",
-                    "step": "1",
-                }
+            "peak_demand_pricing_period": forms.Select(
+                choices=((1, 1), (2, 2), (3, 3), (4, 4), (6, 6), (12, 12))
             ),
             "renewable_share": forms.NumberInput(
                 attrs={
@@ -976,7 +1025,7 @@ class StorageForm(AssetCreateForm):
         super(StorageForm, self).__init__(*args, asset_type="capacity", **kwargs)
         self.fields["dispatchable"].widget = forms.HiddenInput()
         self.fields["dispatchable"].initial = True
-        self.fields["installed_capacity"].label = _("Installed capacity (kWh)")
+
         if asset_type_name != "hess":
             self.fields["fixed_thermal_losses_relative"].widget = forms.HiddenInput()
             self.fields["fixed_thermal_losses_relative"].initial = 0
@@ -998,9 +1047,10 @@ class StorageForm(AssetCreateForm):
         "capex_var",
         "opex_fix",
         "opex_var",
-        "installed_capacity",
-        "optimize_cap",
         "lifetime",
+        "maximum_capacity",
+        "optimize_cap",
+        "installed_capacity",
         "age_installed",
         "crate",
         "efficiency",
