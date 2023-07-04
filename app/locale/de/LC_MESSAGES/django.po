@@ -3451,7 +3451,7 @@ msgstr "Abzinsungsfaktor"
 msgid "The factor which accounts for the depreciation in the value of money in the future, compared to the current value of the same money. The common method is to calculate the weighted average cost of capital (WACC) and use it as the discount rate."
 msgstr "Der Faktor, der die Wertminderung des Geldes in der Zukunft im Vergleich zum aktuellen Wert des gleichen Geldes berücksichtigt. Die übliche Methode ist die Berechnung der gewichteten durchschnittlichen Kapitalkosten (WACC) und deren Verwendung als Abzinsungssatz."
 
-msgid "Costs associated with a flow through/from the asset"
+msgid "Costs associated with a flow through/from the asset (OPEX_var or fuel costs)"
 msgstr "Kosten im Zusammenhang mit einem Fluss durch/von der Anlage"
 
 msgid "Stands for Demand Side Management. Currently, not implemented."
