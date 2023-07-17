@@ -10,6 +10,10 @@ This code is based from previous open-source work done building a user interface
 
 This repository contains the code for the user interface. The simulations are performed by [multi-vector-simulator](https://github.com/rl-institut/multi-vector-simulator) on a dedicated server (see the [open-plan-tool/simulation-server](https://github.com/open-plan-tool/simulation-server) repository). Once a simulation is over the results are sent back to the user interface were one can analyse them.
 
+![open-plan structure](https://github.com/open-plan-tool/gui/assets/4399407/89e1ff2a-1dd0-40e6-91a3-465c77426867)
+
+
+
 
 # Getting Started
 
