@@ -16,53 +16,27 @@
 {% endblock %}
 
 {% block progression_content %}
-    <div>
-        </section>
-        <section class="project-setup two-columns">
-            <div class="left">
-                <div>
-                    <div class="text">
-                  <span>
-                    {% translate "Fill in the following parameters:" %}
-                  </span>
-                    </div>
-                    <form method="post" action="submit">
-                        {% csrf_token %}
-                        <div class="input-item">
-                        {{ form.name | as_crispy_field }}
-                        </div>
-                        <div class="input-item optional">
-                        {{ form.description | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.latitude | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.longitude | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.date_start | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.date_end | as_crispy_field }}
-                        </div>
-                        <button class="btn btn--medium" type="submit">{% translate "Save project" %}</button>
-                    </form>
+<div>
+    <section class="project-setup two-columns">
+        <div class="left">
+            <form method="post" action="submit">
+                {% csrf_token %}
+                <div class="form-stretch" id="project_params">
+                    {{ form|crispy }}
                 </div>
+            </form>
+        </div>
+        <div class="right">
+            <!-- Insert map -->
+            <div class="map" id="mapid">
+
             </div>
-            <div class="right">
-                <div>
-                    <!-- Insert map -->
-                    <div class="map" id="mapid">
-
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
+        </div>
+    </section>
+</div>
 
 
-        <script>
+<script>
             /* Map Show and Latitude-Longitude data autofill */
             var mymap = L.map('mapid').setView([8.786469, 7.433806], 6);
 
@@ -107,8 +81,6 @@
             mymap.on('click', onMapClick);
         </script>
 
-    </div>
-</div>
 
 
 {% endblock %}
