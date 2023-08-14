@@ -19,15 +19,11 @@
 
 <form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
 {% csrf_token %}
-
 	{% for field in form %}
 	<td>
 		{{ field | as_crispy_field }}
 	</td>
 	{% endfor %}
-	<td>
-	<input type="submit">
-	</td>
 </form>
 <!-- <div id="plot_div_{{ unique_id }}">
 </div>-->
