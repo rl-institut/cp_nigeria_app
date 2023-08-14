@@ -50,8 +50,9 @@ class FacilityType(models.Model):
 
 
 class UserGroup(models.Model):
-    TIERS = (("Tier 1", "Tier 1"),
-             ("Tier 2", "Tier 2"))
+    TIERS = (("Low", "Low"),
+             ("Middle", "Middle"),
+             ("High", "High"))
 
     user_type = models.ForeignKey(UserType, on_delete=models.CASCADE)
     facility_type = models.ForeignKey(FacilityType, on_delete=models.CASCADE)
