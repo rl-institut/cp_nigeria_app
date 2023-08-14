@@ -104,17 +104,17 @@ class DummyForm(forms.Form):
         choices=(("a","a"), ("b", "b")),
     )
 
+
 class UserGroupForm(OpenPlanModelForm):
     class Meta:
         model = UserGroup
         fields = "__all__"
-        labels = {
-            "user_type": "User type",
-            "tier": "Predicted demand tier",
-            "number_users": "Number of users"
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['facility_type'].queryset = FacilityType.objects.none()
+
+        # Prevent automatic labels from being generated (to avoid issues with table display)
+        for field_name, field in self.fields.items():
+            field.label = ''
 

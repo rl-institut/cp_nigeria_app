@@ -10,12 +10,12 @@
 	const postUrl = `{% url 'ajax_usergroup_form' %}`;
 	const csrfToken = `{{ csrf_token }}`;
     const dropdownUrl = `{% url 'ajax_load_facilities' %}`;
-    // delete item on delete button click
 
+    // delete item on delete button click
     const urlDeleteUserGroup = `{% url 'delete_usergroup' scen_id %}`;
     const deleteUserGroup = (event) => {
         //submit the form to delete a report item
-        const userGroupId = event.target.closest('div').id
+        const userGroupId = event.target.closest('tr').id
         if(confirm("Are you sure ? This action cannot be undone")){
             $.ajax({
                 headers: {'X-CSRFToken': `{{ csrf_token }}` },
@@ -40,7 +40,7 @@
 
 {% block progression_content %}
 <main>
-
+<!--
     <script>
     function displayForm(form_id) {
           const elem = document.getElementById(form_id);
@@ -55,15 +55,22 @@
     });
     </script>
 
-
+-->
     <div class="grid-container">
-        <div class="text">{% translate "Input community demand parameters:" %}</div>
         <button class="btn btn--medium btn--short" type="button" onclick="javascript:adduserGroupDivToDOM();">Add Household Group</button>
     </div>
-		<div id="demand-aggregate">
 
-		</div>
-    <div class="grid-container" id="ug_container">
+    <table class="table" id="ug_container">
+        <thead>
+        <th></th>
+        <th>Consumer type</th>
+        <th>Facility type</th>
+        <th>Demand tier</th>
+        <th>Nr. of consumers</th>
+        </thead>
+
+    </table>
+    <div id="demand-aggregate">
 
     </div>
     <center>

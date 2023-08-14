@@ -8,7 +8,7 @@ function adduserGroupDivToDOM(unique_id, userGroupDOMId="ug_container"){
 
     const ug_next_id = unique_id ? "user-group" + unique_id : "user-group" + (ugContainer.childElementCount + 1) ;
     // generate html elements of a graph area
-    var newUserGroupDOM = ml("div", { id: ug_next_id , class: "user--group", style: "height: fit-content;"});
+    var newUserGroupDOM = ml("tr", { id: ug_next_id , class: "user--group", style: "height: fit-content;"});
 
 ;
     // Note: postUrl and csrfToken are defined in scenario_step2.html
