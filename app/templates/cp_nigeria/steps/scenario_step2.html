@@ -53,6 +53,17 @@
         <th>Demand tier</th>
         <th>Nr. of consumers</th>
         </thead>
+        <tr id="user-group1" class="user--group" style="height: fit-content">
+            <th></th>
+            <form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
+                {% csrf_token %}
+                {% for field in form %}
+                <td>
+                    {{ field | as_crispy_field }}
+                </td>
+                {% endfor %}
+            </form>
+        </tr>
 
     </table>
     <div class="chart">
