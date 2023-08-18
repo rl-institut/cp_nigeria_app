@@ -58,6 +58,8 @@ You need to be able to run docker-compose inside your terminal. If you can't you
    * Define an environment variable `MVS_HOST_API` in `.envs/epa.postgres` and set the url of the simulation server 
    you wish to use for your models (for example `MVS_API_HOST="<url to your favorite simulation server>"`), you can deploy your own [simulation server](https://github.com/open-plan-tool/simulation-server) locally if you need
 
+    * Assign the domain of your website (without `http://` or `https://`) to `TRUSTED_HOST` , see https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins for more information
+
 Next you can either provide the following commands inside a terminal (with ubuntu you might have to prepend `sudo`)
 * `docker-compose --file=docker-compose-postgres.yml up -d --build` (you can replace `postgres` by `mysql` if you want to use mysql)
 * `docker-compose --file=docker-compose-postgres.yml exec -u root app_pg sh initial_setup.sh` (this will also load a default testUser account with sample scenario). 

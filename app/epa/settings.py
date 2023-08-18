@@ -42,6 +42,10 @@ SECRET_KEY = os.getenv(
 
 ALLOWED_HOSTS = ["*"]
 
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{os.getenv('TRUSTED_HOST')}",
+    f"http://{os.getenv('TRUSTED_HOST')}",
+]
 # Application definition
 
 INSTALLED_APPS = [
