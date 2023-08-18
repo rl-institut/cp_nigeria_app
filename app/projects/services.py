@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from django.contrib import messages
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_q.models import Schedule
 from exchangelib import (
     Credentials,

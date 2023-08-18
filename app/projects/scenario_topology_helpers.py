@@ -18,7 +18,7 @@ import json
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from projects.forms import AssetCreateForm, BusForm, StorageForm
 from django.template.loader import get_template
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # region sent db nodes to js
 from django.http import JsonResponse
