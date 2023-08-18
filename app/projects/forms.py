@@ -20,7 +20,7 @@ from crispy_forms.layout import (
 from django import forms
 from django.forms import ModelForm
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings as django_settings
 from projects.models import *
 from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS, CURRENCY_SYMBOLS

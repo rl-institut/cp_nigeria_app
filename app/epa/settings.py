@@ -227,7 +227,7 @@ LOGGING = {
             "formatter": "dtlnm",
         },
         "console": {
-            "level": "DEBUG",
+            "level": "WARNING",
             "class": "logging.StreamHandler",
             "stream": sys.stdout,
         },

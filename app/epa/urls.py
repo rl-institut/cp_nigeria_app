@@ -15,8 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.conf.urls.i18n import i18n_patterns
-from django.urls import path, include
-from django.conf.urls import url
+from django.urls import path, re_path, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .views import imprint, privacy, about, license
@@ -33,6 +32,6 @@ urlpatterns = (
         path("about/", about, name="about"),
         path("license/", license, name="license"),
     )
-    + [url(r"^i18n/", include("django.conf.urls.i18n"))]
+    + [re_path(r"^i18n/", include("django.conf.urls.i18n"))]
     + staticfiles_urlpatterns()
 )
