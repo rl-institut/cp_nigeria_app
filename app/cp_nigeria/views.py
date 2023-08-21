@@ -20,18 +20,19 @@ from projects.constants import DONE, PENDING, ERROR, MODIFIED
 
 logger = logging.getLogger(__name__)
 
-STEP_MAPPING = {
-    "choose_location": 1,
-    "demand_profile": 2,
-    "scenario_setup": 3,
-    "economic_params": 4,
-    "simulation": 5,
-    "business_model": 6,
-    "outputs": 7,
-}
+
+STEP_MAPPING = {"choose_location": 1,
+                "grid_conditions": 2,
+                "demand_profile": 3,
+                "scenario_setup": 4,
+                "economic_params": 5,
+                "simulation": 6,
+                "business_model": 7,
+                "outputs": 8}
 
 CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
+    "grid_conditions": _("Grid conditions"),
     "demand_profile": _("Demand load profile selection"),
     "scenario_setup": _("Scenario setup"),
     "economic_params": _("Economic parameters"),
@@ -49,6 +50,16 @@ CPN_STEP_VERBOSE = [
 @require_http_methods(["GET"])
 def home_cpn(request):
     return render(request, "cp_nigeria/index_cpn.html")
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
+    messages.info(request, "Please include information about your connection to the grid.")
+    return render(request, f"cp_nigeria/steps/business_model_tree.html",
+                  {"proj_id": proj_id,
+                   "step_id": step_id,
+                   "scen_id": scen_id,
+                   "step_list": CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -410,6 +421,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
 # TODO for later create those views instead of simply serving the html templates
 CPN_STEPS = {
     "choose_location": cpn_scenario_create,
+    "grid_conditions": cpn_grid_conditions,
     "demand_profile": cpn_demand_params,
     "scenario_setup": cpn_scenario,
     "economic_params": cpn_constraints,
