@@ -1,0 +1,136 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+
+
+<!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+{% block progression_content %}
+<main>
+
+<script>
+    $(document).ready(function() {
+    var parent;
+    var child;
+
+    // hide parent and show child upon selection
+        $('select').on('change', function() {
+          var selectId = $(this).attr('id');
+          var selectedValue = $(this).val();
+
+          parent = $(this).closest('div');
+          child = $('#' + selectId + '_' + selectedValue);
+
+          parent.hide();
+          child.show();
+          console.log(parent, child);
+
+          });
+
+    //Go back if back button is clicked
+        $('#back').on('click', function(e) {
+        console.log('back button clicked', child);
+
+        parent.show();
+        child.hide();
+        });
+    });
+</script>
+
+    <!-- Starter tree -->
+    <div id="start" style="display:block">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="grid">Is your community connected to the grid?</label>
+            <select id="grid" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes, but the grid does not provide a sufficient level of service</option>
+                <option value="no">No, the area is unserved</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- First level -->
+    <div id="grid_yes" style="display:none">
+        <p>Your community might be
+            suitable for an interconnected mini-grid. Please be aware that an interconnected mini-grid often
+            involves higher tariff payments. Please click "next" to continue with the system design.</p>
+    </div>
+    <div id="grid_no" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="iedno">Has the area been assigned to
+                an Independent Electricity Distribution Network Operator (IEDNO)?</label>
+            <select id="iedno" class="textinput textInput form-control">
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Second level -->
+    <div id="iedno_yes" style="display:none">
+        <p>As the area of your community is already assigned to an IEDNO, ...</p>
+    </div>
+    <div id="iedno_no" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="iedno">Is your community part of a 5-year
+                expansion plan from a distribution company?
+                *Note: if you don’t know, you may click no, to continue the process of this toolbox. However, it is
+                highly recommended to get in touch with the assigned DisCo of your area. Without permission of the
+                respective DisCo, it is not allowed to commission and build a mini-grid system. More information on
+                distribution companies relevant to your area are available here:
+                - https://nerc.gov.ng/index.php/contact/discos
+                - https://www.researchgate.net/figure/Map-of-Nigeria-showing-the-DisCos-with-their-coverage-Source-Nigerian-Electricity_fig2_348717202</label>
+            <select id="expansion" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Third level -->
+    <div id="expansion_yes" style="display:none">
+        <p>As the area of your community is already assigned to an IEDNO, ...</p>
+    </div>
+    <div id="expansion_no" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="iedno">Could you reach an agreement with the
+                DisCo to use this area?</label>
+            <select id="agreement" class="textinput textInput form-control">
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+
+        <!-- Third level -->
+    <div id="agreement_yes" style="display:none">
+        <p>Your community might be suitable for an isolated mini-grid. Please click "next" to continue with the system design.</p>
+    </div>
+    <div id="agreement_no" style="display:none">
+        <p>According to regulations, you are not allowed to install a min-grid system in your area without the
+            permission of the distribution company that is assigned to your area. You can find more information on
+            Nigeria’s mini-grid regulation at the link below. If you still want to continue the process of this toolbox,
+            click “continue”.
+            - NERC Mini-grid Regulation: https://rea.gov.ng/wp-content/uploads/2018/07/NERC-Mini-Grid-Regulation.pdf</p>
+    </div>
+
+    <button id="back">Back</button>
+</main>
+
+{% endblock progression_content %}
+
+
+{% block end_body_scripts %}
+{% endblock end_body_scripts %}
+
+
+
+
+
+
+
