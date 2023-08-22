@@ -9,61 +9,10 @@
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 {% block progression_content %}
 <main>
+<script src="{% static 'js/decision_tree.js' %}"></script>
 <script>
     const csrfToken = '{{ csrf_token }}';
     const postUrl = '{% url 'cpn_business_model' %}';
-    $(document).ready(function() {
-    var parent;
-    var child;
-
-    // hide parent and show child upon selection
-        $('select').on('change', function() {
-          var selectId = $(this).attr('id');
-          var selectedValue = $(this).val();
-
-          parent = $(this).closest('div');
-          child = $('#' + selectId + '_' + selectedValue);
-
-          parent.hide();
-          child.show();
-          console.log(selectId, selectedValue);
-
-          if (child.attr('id') === "grid_yes") {
-            var modelType = "Interconnected";
-            sendAjaxCall(modelType);
-          } else if (child.attr('id') === ("agreement_yes") || child.attr('id') === ("expansion_no")) {
-            var modelType = "Isolated";
-            sendAjaxCall(modelType);
-          }
-
-          // start AJAX call to send variable back to view if end of tree is reached
-          function sendAjaxCall(modelType) {
-          $.ajax({
-            headers: {'X-CSRFToken': csrfToken },
-            type: 'POST',
-            url: postUrl,
-            data: {modelType: modelType},
-            success: function(response) {
-            // Handle the response from the server if needed
-            console.log('Data sent successfully:', response);
-            },
-            error: function(error) {
-                console.error('Error sending data:', error);
-                }
-
-          });
-          }
-
-    //Go back if back button is clicked
-        $('#back').on('click', function(e) {
-        console.log('back button clicked', child);
-
-        parent.show();
-        child.hide();
-        });
-    });
-    });
-
 </script>
 
 <div class="container">
