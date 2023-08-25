@@ -4,6 +4,7 @@ import logging
 import traceback
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http.response import Http404
+from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
@@ -49,31 +50,37 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
     else:
         form = ProjectForm()
 
+
     messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
                            'input geographical data by clicking on the desired project location on the map.')
+
+    # data = []
+    # with open('static/ts_year.txt') as f:
+    #     for line in f.readlines():
+    #         data.append(float(line))
+    x = list(range(0, 8760))
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST})
+                   "step_list": CPN_STEP_LIST,
+                   # "data": json.dumps(data),
+                   "x": json.dumps(x)
+                   })
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
-    if request.POST:
-        form = CPNLoadProfileForm(request.POST)
-        form2 = CPNLoadProfileForm(request.POST)
-    else:
-        form = CPNLoadProfileForm()
-        form2 = CPNLoadProfileForm()
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
                            "survey data or available information about the community.")
+
+    form = UserGroupForm()
+
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"form": form,
-                   "form2": form2,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
@@ -365,3 +372,43 @@ def get_pv_output(request, proj_id):
     plot_div = location.create_pv_graph()
     #HttpResponseRedirect(reverse("home_cpn", args=[project.id]))
     return response
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def ajax_usergroup_form(request, user_group_id=None):
+    if request.is_ajax():
+        form_ug = UserGroupForm()
+        scen_id = 0 # TODO link that to url.py
+        return render(
+            request,
+            "cp_nigeria/steps/usergroup_form.html",
+            context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
+        )
+
+
+@login_required
+@json_view
+@require_http_methods(["GET", "POST"])
+def ajax_load_facilities(request):
+    if request.is_ajax():
+        user_type_id = request.GET.get('user_type')
+        facilities = FacilityType.objects.filter(user_type_id=user_type_id)
+        return render(request, 'cp_nigeria/steps/facility_dropdown_options.html', context={'facilities': facilities})
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def create_usergroup(request, scen_id=None):
+    # todo use redirect or use pure ajax call without redirect like for assets saving
+    return {"status":200}
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def delete_usergroup(request, scen_id=None):
+    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
+    return {"status":200}
