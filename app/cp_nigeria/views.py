@@ -22,13 +22,26 @@ from projects.constants import DONE, PENDING, ERROR, MODIFIED
 
 logger = logging.getLogger(__name__)
 
-CPN_STEP_LIST = [
-    _("Choose location"),
-    _("Demand load profile selection"),
-    _("Scenario setup"),
-    _("Economic parameters"),
-    _("Simulation"),
-]
+STEP_MAPPING = {"choose_location": 1,
+                "demand_profile": 2,
+                "scenario_setup": 3,
+                "economic_params": 4,
+                "simulation": 5,
+                "business_model": 6,
+                "outputs": 7}
+
+CPN_STEP_LIST = {
+    "choose_location": _("Choose location"),
+    "demand_profile": _("Demand load profile selection"),
+    "scenario_setup": _("Scenario setup"),
+    "economic_params": _("Economic parameters"),
+    "simulation": _("Simulation"),
+    "business_model": _("Business Model"),
+    "outputs": _("Outputs")
+}
+
+# sorts the steps based on the order defined in STEP_MAPPING
+SORTED_CPN_STEPS = [CPN_STEP_LIST[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
 
 
 @require_http_methods(["GET"])
@@ -38,7 +51,7 @@ def home_cpn(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
+def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choose_location"]):
     if request.POST:
         form = ProjectForm(request.POST)
         if form.is_valid():
@@ -64,15 +77,19 @@ def cpn_scenario_create(request, proj_id, scen_id=None, step_id=1):
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST,
-                   # "data": json.dumps(data),
-                   "x": json.dumps(x)
-                   })
+                   "step_list": SORTED_CPN_STEPS})
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
+def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]):
+    if request.POST:
+        form = CPNLoadProfileForm(request.POST)
+        form2 = CPNLoadProfileForm(request.POST)
+    else:
+        form = CPNLoadProfileForm()
+        form2 = CPNLoadProfileForm()
+
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
                            "survey data or available information about the community.")
@@ -84,12 +101,12 @@ def cpn_demand_params(request, proj_id, scen_id=None, step_id=2):
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST})
+                   "step_list": SORTED_CPN_STEPS})
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_scenario(request, proj_id, scen_id, step_id=3):
+def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup"]):
     scenario = Scenario.objects.get(id=scen_id)
 
     if request.method == "GET":
@@ -104,7 +121,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=3):
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": scen_id,
-            "step_list": CPN_STEP_LIST,
+            "step_list": SORTED_CPN_STEPS,
             "es_assets": [],
         }
 
@@ -271,18 +288,18 @@ def cpn_scenario(request, proj_id, scen_id, step_id=3):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_constraints(request, proj_id, scen_id, step_id=4):
+def cpn_constraints(request, proj_id, scen_id, step_id=STEP_MAPPING["economic_params"]):
     messages.info(request, "Please include any relevant constraints for the optimization.")
     return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
                   {"proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": CPN_STEP_LIST})
+                   "step_list": SORTED_CPN_STEPS})
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_review(request, proj_id, scen_id=1, step_id=5):
+def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
     if (scenario.project.user != request.user) and (
@@ -298,7 +315,7 @@ def cpn_review(request, proj_id, scen_id=1, step_id=5):
             "proj_id": proj_id,
             "proj_name": scenario.project.name,
             "step_id": step_id,
-            "step_list": CPN_STEP_LIST,
+            "step_list": SORTED_CPN_STEPS,
             "MVS_GET_URL": MVS_GET_URL,
             "MVS_LP_FILE_URL": MVS_LP_FILE_URL,
         }
