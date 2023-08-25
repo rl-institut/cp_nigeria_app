@@ -10,13 +10,13 @@
 	const postUrl = `{% url 'ajax_usergroup_form' %}`;
 	const csrfToken = `{{ csrf_token }}`;
     const dropdownUrl = `{% url 'ajax_load_facilities' %}`;
-    // delete item on delete button click
 
+    // delete item on delete button click
     const urlDeleteUserGroup = `{% url 'delete_usergroup' scen_id %}`;
     const deleteUserGroup = (event) => {
         //submit the form to delete a report item
-        const userGroupId = event.target.closest('div').id
-        if(confirm("Are you sure ? This action cannot be undone")){
+        const userGroupId = event.target.closest('tr').id
+        if(confirm("Are you sure? This action cannot be undone")){
             $.ajax({
                 headers: {'X-CSRFToken': `{{ csrf_token }}` },
                 type: "POST",
@@ -40,36 +40,46 @@
 
 {% block progression_content %}
 <main>
-
-    <script>
-    function displayForm(form_id) {
-          const elem = document.getElementById(form_id);
-          elem.style.display = 'block';
-    }
-    function setImage(select, curve_name){
-      var image = document.getElementsByName(curve_name)[0];
-      image.src = select.options[select.selectedIndex].value;
-    }
-    $( "button" ).click(function() {
-    $( this ).toggleClass( "hidden" );
-    });
-    </script>
-
-
     <div class="grid-container">
-        <div class="text">{% translate "Input community demand parameters:" %}</div>
-        <button class="btn btn--medium btn--short" type="button" onclick="javascript:adduserGroupDivToDOM();">Add Household Group</button>
+        <button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button>
+        <button class="btn btn--medium btn--short" type="button" onclick="javascript:adduserGroupDivToDOM();">Add Consumer Group</button>
     </div>
-		<div id="demand-aggregate">
 
-		</div>
-    <div class="grid-container" id="ug_container">
+    <table class="table" id="ug_container">
+        <thead>
+        <th></th>
+        <th>Consumer type</th>
+        <th>Facility type</th>
+        <th>Demand tier</th>
+        <th>Nr. of consumers</th>
+        </thead>
+        <tr id="user-group1" class="user--group" style="height: fit-content">
+            <th></th>
+            <form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
+                {% csrf_token %}
+                {% for field in form %}
+                <td>
+                    {{ field | as_crispy_field }}
+                </td>
+                {% endfor %}
+            </form>
+        </tr>
 
+    </table>
+    <div class="chart">
+         <div class="chart__header" id="key-params">
+            <p>Avg. daily demand:</p>
+            <p>Peak demand:</p>
+        </div>
+
+    <div id="demand-aggregate">
+    </div>
     </div>
     <center>
-        <button class="btn btn--medium" type="button">{% translate "Generate load profile" %}</button>
-        <button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button>
+        <button class="btn btn--medium" type="button">{% translate "Export load profile" %}</button>
+
     </center>
+
 </main>
 
 {% endblock progression_content %}
@@ -87,7 +97,7 @@ $(document).ready(function () {
     var layout = {
     //xaxis: {range: [0, 8760], title: "Time"},
     //yaxis: {range: [0, 6000], title: "kWh"},
-    title: "Total load profile (sum of user * user profiles)"
+    title: "Total demand"
     };
 
     var plot_div = document.getElementById('demand-aggregate');
