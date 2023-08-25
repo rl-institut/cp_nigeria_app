@@ -41,7 +41,7 @@ CPN_STEP_VERBOSE = {
 }
 
 # sorts the step names based on the order defined in STEP_MAPPING (for ribbon)
-SORTED_CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
+CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
 
 
 @require_http_methods(["GET"])
@@ -72,7 +72,7 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEP_VERBOSE})
+                   "step_list": CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -94,7 +94,7 @@ def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEP_VERBOSE})
+                   "step_list": CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -114,7 +114,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": scen_id,
-            "step_list": SORTED_CPN_STEP_VERBOSE,
+            "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
         }
 
@@ -287,7 +287,7 @@ def cpn_constraints(request, proj_id, scen_id, step_id=STEP_MAPPING["economic_pa
                   {"proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEP_VERBOSE})
+                   "step_list": CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -308,7 +308,7 @@ def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
             "proj_id": proj_id,
             "proj_name": scenario.project.name,
             "step_id": step_id,
-            "step_list": SORTED_CPN_STEP_VERBOSE,
+            "step_list": CPN_STEP_VERBOSE,
             "MVS_GET_URL": MVS_GET_URL,
             "MVS_LP_FILE_URL": MVS_LP_FILE_URL,
         }
@@ -355,7 +355,7 @@ CPN_STEPS = {
 }
 
 # sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
-SORTED_CPN_STEPS = [CPN_STEPS[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1]) if k in CPN_STEPS]
+CPN_STEPS = [CPN_STEPS[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1]) if k in CPN_STEPS]
 
 
 @login_required
@@ -365,7 +365,7 @@ def cpn_steps(request, proj_id, step_id=None, scen_id=1):
         if step_id is None:
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
-        return SORTED_CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
+        return CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
 
 
 @login_required
