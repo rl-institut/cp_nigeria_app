@@ -30,7 +30,7 @@ STEP_MAPPING = {"choose_location": 1,
                 "business_model": 6,
                 "outputs": 7}
 
-CPN_STEP_LIST = {
+CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
     "demand_profile": _("Demand load profile selection"),
     "scenario_setup": _("Scenario setup"),
@@ -40,8 +40,8 @@ CPN_STEP_LIST = {
     "outputs": _("Outputs")
 }
 
-# sorts the steps based on the order defined in STEP_MAPPING
-SORTED_CPN_STEPS = [CPN_STEP_LIST[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
+# sorts the step names based on the order defined in STEP_MAPPING (for ribbon)
+SORTED_CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
 
 
 @require_http_methods(["GET"])
@@ -67,17 +67,12 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
     messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
                            'input geographical data by clicking on the desired project location on the map.')
 
-    # data = []
-    # with open('static/ts_year.txt') as f:
-    #     for line in f.readlines():
-    #         data.append(float(line))
-    x = list(range(0, 8760))
-    return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
+    return render(request, f"cp_nigeria/steps/scenario_create.html",
                   {"form": form,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEPS})
+                   "step_list": SORTED_CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -94,14 +89,12 @@ def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
                            "survey data or available information about the community.")
 
-    form = UserGroupForm()
-
-    return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
+    return render(request, f"cp_nigeria/steps/scenario_demand.html",
                   {"form": form,
                    "proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEPS})
+                   "step_list": SORTED_CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -121,7 +114,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": scen_id,
-            "step_list": SORTED_CPN_STEPS,
+            "step_list": SORTED_CPN_STEP_VERBOSE,
             "es_assets": [],
         }
 
@@ -184,7 +177,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
 
                 context[f"form_{asset_type_name}"] = form()
 
-        return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html", context)
+        return render(request, f"cp_nigeria/steps/scenario_components.html", context)
     if request.method == "POST":
 
         asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
@@ -290,11 +283,11 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, scen_id, step_id=STEP_MAPPING["economic_params"]):
     messages.info(request, "Please include any relevant constraints for the optimization.")
-    return render(request, f"cp_nigeria/steps/scenario_step{step_id}.html",
+    return render(request, f"cp_nigeria/steps/scenario_system_params.html",
                   {"proj_id": proj_id,
                    "step_id": step_id,
                    "scen_id": scen_id,
-                   "step_list": SORTED_CPN_STEPS})
+                   "step_list": SORTED_CPN_STEP_VERBOSE})
 
 
 @login_required
@@ -315,7 +308,7 @@ def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
             "proj_id": proj_id,
             "proj_name": scenario.project.name,
             "step_id": step_id,
-            "step_list": SORTED_CPN_STEPS,
+            "step_list": SORTED_CPN_STEP_VERBOSE,
             "MVS_GET_URL": MVS_GET_URL,
             "MVS_LP_FILE_URL": MVS_LP_FILE_URL,
         }
@@ -353,13 +346,16 @@ def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
 
 
 # TODO for later create those views instead of simply serving the html templates
-CPN_STEPS = [
-    cpn_scenario_create,
-    cpn_demand_params,
-    cpn_scenario,
-    cpn_constraints,
-    cpn_review,
-]
+CPN_STEPS = {
+    "choose_location": cpn_scenario_create,
+    "demand_profile": cpn_demand_params,
+    "scenario_setup": cpn_scenario,
+    "economic_params": cpn_constraints,
+    "simulation": cpn_review
+}
+
+# sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
+SORTED_CPN_STEPS = [CPN_STEPS[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1]) if k in CPN_STEPS]
 
 
 @login_required
@@ -369,7 +365,7 @@ def cpn_steps(request, proj_id, step_id=None, scen_id=1):
         if step_id is None:
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
-        return CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
+        return SORTED_CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
 
 
 @login_required
