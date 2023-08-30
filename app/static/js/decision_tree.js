@@ -1,24 +1,32 @@
     $(document).ready(function() {
-    var parent;
-    var child;
 
-    // hide parent and show child upon selection
+    var selectionHistory = []; // Array to store the selection history
+
+    // hide previousQuestion and show nextQuestion upon selection
         $('select').on('change', function() {
           var selectId = $(this).attr('id');
           var selectedValue = $(this).val();
 
-          parent = $(this).closest('div');
-          child = $('#' + selectId + '_' + selectedValue);
+          var previousQuestion = $(this).closest('div');
+          nextQuestion = $('#' + selectId + '_' + selectedValue);
 
-          parent.hide();
-          child.show();
+    // Save the current selection in the history
+          selectionHistory.push({
+            selectId: selectId,
+            selectedValue: selectedValue,
+        });
+        console.log(selectionHistory)
+
+          
+          previousQuestion.hide();
+          nextQuestion.show();
           console.log(selectId, selectedValue);
 
           // start an AJAX call with the business model if the user gets to the end of a tree path
-          if (child.attr('id') === "grid_yes") {
+          if (nextQuestion.attr('id') === "grid_yes") {
             var modelType = "Interconnected";
             sendAjaxCall(modelType);
-          } else if (child.attr('id') === ("agreement_yes") || child.attr('id') === ("expansion_no")) {
+          } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no")) {
             var modelType = "Isolated";
             sendAjaxCall(modelType);
           }
@@ -39,14 +47,28 @@
 
           });
           }
+          });
+
 
     //Go back to previous question if back button is clicked
-    // TODO: right now this only works for the question immediately before
-        $('#back').on('click', function(e) {
-        console.log('back button clicked', child);
+        $('#back').on('click', function() {
+            if (selectionHistory.length > 0) {
+                // Pop the last selection from the history
+                var previousSelection = selectionHistory.pop();
 
-        parent.show();
-        child.hide();
-        });
+                var previousSelectId = previousSelection.selectId;
+                var previousSelectedValue = previousSelection.selectedValue;
+                var previousQuestion = $('#' + previousSelectId).closest('div');
+
+                //Show the previous question
+                previousQuestion.show();
+                console.log(previousSelection)
+
+                // Hide the current question
+                var currentQuestion = $('#' + previousSelectId + '_' + previousSelectedValue);
+                currentQuestion.hide();
+
+
+        }
     });
     });
