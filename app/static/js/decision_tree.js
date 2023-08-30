@@ -23,10 +23,11 @@
           console.log(selectId, selectedValue);
 
           // start an AJAX call with the business model if the user gets to the end of a tree path
-          if (nextQuestion.attr('id') === "grid_yes") {
+          if (nextQuestion.attr('id') === ("grid_yes") || nextQuestion.attr('id') === ("skip_interconnected")) {
             var modelType = "Interconnected";
             sendAjaxCall(modelType);
-          } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no")) {
+          } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no")
+          || nextQuestion.attr('id') === ("skip_isolated")) {
             var modelType = "Isolated";
             sendAjaxCall(modelType);
           }

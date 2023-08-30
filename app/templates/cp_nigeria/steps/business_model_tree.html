@@ -16,8 +16,32 @@
 </script>
 
 <div class="container">
-    <!-- Starter tree -->
-    <div id="start" style="display:block">
+    <!-- Intro question -->
+        <div id="start" style="display:block">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="grid">What type of mini-grid would your
+                community be able to pursue?</label>
+            <select id="model" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="isolated">Interconnected mini-grid</option>
+                <option value="interconnected">Isolated mini-grid</option>
+                <option value="unknown">Don't know</option>
+            </select>
+        </form>
+    </div>
+
+    <div id="model_interconnected" style="display:none">
+        <p>Thank you for the information. Please be aware that an interconnected mini-grid often
+            involves higher tariff payments. Please click "next" to continue with the system design.</p>
+    </div>
+
+    <div id="model_isolated" style="display:none">
+        <p>Thank you for the information. Please click "next" to continue with the system design.</p>
+    </div>
+
+
+    <!-- Start tree -->
+    <div id="model_unknown" style="display:none">
         <form method="post">
             <label class="col-form-label col-lg-8 requiredField" for="grid">Is your community connected to the grid?</label>
             <select id="grid" class="textinput textInput form-control" >
