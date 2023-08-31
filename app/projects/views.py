@@ -1439,6 +1439,7 @@ def sensitivity_analysis_create(request, scen_id, sa_id=None, step_id=5):
 
 # region timeseries
 
+
 @json_view
 @login_required
 @require_http_methods(["GET", "POST"])
