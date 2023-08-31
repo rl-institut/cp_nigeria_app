@@ -19,11 +19,10 @@
 <script src="{% static 'js/traceplot.js' %}"></script>
 
 <!--
-<link rel="stylesheet" type="text/css" href="{% static 'css/beautiful1.css' %}"/>
-
-
+<link rel="stylesheet" type="text/css" href="{% static 'css/beautiful.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}"/>
 -->
+
 {% endblock start_body_scripts %}
 
 
@@ -42,16 +41,48 @@
           }
     }
     </script>
+	<script>
+	
+	function toggleCollapsibleDiv(toggleId, divId) {
+    	const toggleSwitch = document.getElementById(toggleId);
+    	const collapsibleDiv = document.getElementById(divId);
+
+    	if (toggleSwitch.checked) {
+        	collapsibleDiv.classList.add('show');
+    	} else {
+        	collapsibleDiv.classList.remove('show');
+    	}
+	}
+	</script>
+
+
+
+
 	<section>
-		<form method="POST" action="{% url 'cpn_scenario' proj_id scen_id %}">
-			{% csrf_token %}
+		<div class="header">
 			<center>
 				<!-- TODO move to next step-->
 				<button class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
 			</center>
-    <div class="grid-container" >
-<fieldset style="display: contents;">
-          <div>
+		</div>
+		<div class="container">
+			<p>
+				Show grid options (advanced)
+				<label class="switch">
+					<input type="checkbox" id="toggleSwitch" onclick="toggleCollapsibleDiv('toggleSwitch','collapsibleDiv')">
+					<span class="slider round"></span>
+				</label>
+			</p>
+		</div>
+		<form method="POST" action="{% url 'cpn_scenario' proj_id scen_id %}">
+			{% csrf_token %}
+			<div id="collapsibleDiv" class="collapse container">
+				<p>Here, a main grid component can be chosen to simulate an interconnected mini-grid scenario (not yet implemented).</p>
+			</div>
+
+			<div class="grid-container" >
+				<fieldset style="display: contents;">
+					<div>
 						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" onclick="displayForm('diesel_params');" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="diesel_checkbox">Diesel generator</label>
 						<img class="img" src="{% static 'assets/gui/diesel_generator.svg' %}" alt="diesel_generator">
@@ -68,19 +99,19 @@
 						<label class="form-check-label" for="storage_checkbox">Storage</label>
 						<img class="img" src="{% static 'assets/gui/bess.svg' %}" alt="storage">
 					</div>
-</fieldset>
-    </div>
-    <div class="grid-container">
-        <div class="form-stretch" id="diesel_params" {% if 'diesel_generator' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
-                {{ form_diesel_generator|crispy }}
-        </div>
-				<div class="form-stretch" id="pv_params" {% if 'pv_plant' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
-								{{ form_pv_plant|crispy }}
-				</div>
-				<div class="form-stretch" id="storage_params" {% if 'bess' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
-								{{ form_bess|crispy }}
-				</div>
-    </div>
+				</fieldset>
+			</div>
+			<div class="grid-container">
+				<div class="form-stretch" id="diesel_params" {% if 'diesel_generator' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+				{{ form_diesel_generator|crispy }}
+			</div>
+			<div class="form-stretch" id="pv_params" {% if 'pv_plant' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+			{{ form_pv_plant|crispy }}
+			</div>
+			<div class="form-stretch" id="storage_params" {% if 'bess' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+			{{ form_bess|crispy }}
+			</div>
+			</div>
 		</form>
 
 	</section>
