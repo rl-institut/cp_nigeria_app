@@ -16,6 +16,20 @@
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
 <script src="{% static 'js/update_demand_graph.js' %}"></script>
+<script>
+
+	function toggleCollapsibleDiv(toggleId, divId) {
+    	const toggleSwitch = document.getElementById(toggleId);
+    	const collapsibleDiv = document.getElementById(divId);
+
+    	if (toggleSwitch.checked) {
+        	collapsibleDiv.classList.add('show');
+    	} else {
+        	collapsibleDiv.classList.remove('show');
+    	}
+	}
+</script>
+
 
 {% endblock start_body_scripts %}
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
@@ -23,6 +37,7 @@
 {% block progression_content %}
 <main>
 	<section class="container-lg">
+		<div class="container">
 		<div class="accordion cpn-accordion" id="accordionStep3">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="step3HeadingOne">
@@ -34,6 +49,17 @@
 					<div class="accordion-body">
 						<form method="POST" id="consumer-group-form">
 							{% csrf_token %}
+							<p>
+								Set SHS threshold (advanced)
+								<label class="switch">
+									<input type="checkbox" id="toggleSwitch" onclick="toggleCollapsibleDiv('toggleSwitch','collapsibleDiv')">
+									<span class="slider round"></span>
+								</label>
+							</p>
+							<div id="collapsibleDiv" class="collapse" style="width:300px">
+								{{ shs_form | crispy }}
+							</div>
+
 							{{ formset.management_form | crispy}}
 							<table class="table" id="ug_container" style="margin-bottom: 0">
 								<thead>

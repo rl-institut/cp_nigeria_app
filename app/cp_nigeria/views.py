@@ -234,6 +234,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
         )
 
+        shs_form = SHSTiersForm(request.POST)
+        if shs_form.is_valid():
+            options.shs_threshold = shs_form.cleaned_data["shs_threshold"]
+            options.save()
+
         formset_qs = ConsumerGroup.objects.filter(project=project)
         if options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=options.community)
@@ -250,6 +255,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
         else:
             formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+            total_demand = []
 
             for form in formset:
                 # set timeseries queryset so form doesn't throw a validation error
@@ -300,6 +306,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     elif request.method == "GET":
         options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
+        shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
+
         if options_qs.exists() and options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
             allow_edition = False
@@ -327,6 +335,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "cp_nigeria/steps/scenario_demand.html",
         {
             "formset": formset,
+            "shs_form": shs_form,
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
