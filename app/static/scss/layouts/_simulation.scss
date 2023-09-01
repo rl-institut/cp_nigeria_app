@@ -5,12 +5,12 @@
   @include flex-row-justify-center;
 
   &__heading {
-    height: 16.5rem;
+    height: 8rem;
     width: 100%;
     background-image: url("/static/assets/illustrations/open_plan_hero_hexagon.svg");
-    background-position: center center;
+    background-position: center 75%;
     background-repeat: no-repeat;
-    background-size: 6.125rem;
+    background-size: 3.5rem;
   }
 
   &__content {
@@ -24,6 +24,7 @@
       text-align: center;
       font-size: $font-size-medium;
       font-weight: 600;
+      padding-bottom: 4rem;
     }
   }
 
@@ -123,14 +124,106 @@
   }
 
   &--error {
+    &> div {
+      @include section-width;
+    }
+
     .simulation__heading {
       background-image: url("/static/assets/illustrations/error_hexagon.svg");
+    }
+
+    .simulation__content {
+      width: 100%;
+    }
+
+    .simulation__alert {
+      @include flex-row-justify-center;
+      padding: 0.75rem;
+      border-radius: $button-border-radius;
+
+      &--warning {
+        background-color: $warning-bg-color;
+        color: $warning-text-color;
+      }
+
+      &--info {
+        background-color: $white;
+      }
+
+      &--warning span {
+        position: relative;
+      }
+
+      &--warning span::before {
+        content: "";
+        position: absolute;
+        display: block;
+        background-image: url("static/assets/icons/i_warning_yellow.svg");
+        width: 1.25rem;
+        height: 1.25rem;
+        background-repeat: no-repeat;
+        background-size: cover;
+        left: -1.75rem;
+        top: 0.125rem;
+      }
+    }
+
+    .simulation__actions {
+      @include flex-row-justify-center;
+
+      & > div {
+        padding: 4rem 0.5rem;
+      }
     }
   }
 
   &--successful {
     .simulation__heading {
       background-image: url("/static/assets/illustrations/open_plan_hero_hexagon.svg");
+    }
+  }
+
+  &__changed {
+    border-top: $gray-border;
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+
+    p {
+      text-align: center;
+      font-size: $font-size-medium;
+      font-weight: 600;
+    }
+  }
+
+  .table-changed {
+    @include flex-row;
+    flex-wrap: wrap;
+
+    &__item {
+      width: 100%;
+
+      @media only screen and (min-width: $medium-screen) {
+        flex: 1;
+      }
+
+      &:not(:last-of-type) {
+        padding-right: 1rem;
+      }
+    }
+
+    &__header {
+      background-color: $primary-gray-color-1;
+      padding: 0.25rem 1rem;
+    }
+
+    &__content {
+      @include flex-row;
+      font-size: $font-size-small;
+      padding: 0.25rem 1rem;
+
+      .key {
+        width: 66.6%;
+      }
     }
   }
 }

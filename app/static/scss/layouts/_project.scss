@@ -32,6 +32,15 @@
       font-weight: 700;
     }
 
+    .role {
+      @include user-select-none;
+      margin-right: $space-between-project-elements;
+      font-size: $font-size-small;
+      background-color: $primary-gray-color-1;
+      padding: 0 0.5rem;
+      border-radius: $button-border-radius;
+    }
+
     .location {
       font-size: $font-size-normal;
     }
@@ -41,13 +50,21 @@
       position: absolute;
       display: block;
       background-image: url("/static/assets/icons/i_cell.svg");
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 2rem;
+      height: 2rem;
       background-repeat: no-repeat;
       background-size: contain;
-      top: 0.5rem;
+      top: 0;
       left: 0;
     }
+  }
+
+  &--shared .name::before {
+    background-image: url("/static/assets/icons/i_cell_shared_edit.svg");
+  }
+
+  &--shared-noedit .name::before {
+    background-image: url("/static/assets/icons/i_cell_blue.svg");
   }
 
   &__details {

@@ -16,7 +16,9 @@
 	</section>
 	<section class="standard-layout standard-layout--license">
 		<div>
-			<p style="text-align: center;">The source code of this  <a href="https://github.com/open-plan-tool/gui" target="_blank" rel="noreferrer">user interface</a> and of the <a href="https://github.com/open-plan-tool/simulation-server" target="_blank" rel="noreferrer">simulation server</a> are licensed under <a href="https://github.com/open-plan-tool/gui/blob/main/LICENSE.txt" target="_blank" rel="noreferrer">MIT license</a></p>
+
+			<p style="text-align: center;">
+				{% blocktranslate with url_gui="https://github.com/open-plan-tool/gui" url_simulation_server="https://github.com/open-plan-tool/simulation-server" url_license="https://github.com/open-plan-tool/gui/blob/main/LICENSE.txt" %}The source code of this <a href="{{url_gui}}" target="_blank" rel="noreferrer">user interface</a> and of the <a href="{{url_simulation_server}}" target="_blank" rel="noreferrer">simulation server</a> are licensed under <a href="{{url_license}}" target="_blank" rel="noreferrer">MIT license</a></p>{% endblocktranslate %}
 		</div>
 	</section>
 </main>

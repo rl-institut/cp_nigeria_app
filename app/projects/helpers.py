@@ -6,10 +6,13 @@ from openpyxl import load_workbook
 from django import forms
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+from django.utils.html import html_safe
 from projects.dtos import convert_to_dto
+from projects.models import Timeseries, AssetType
 from projects.constants import MAP_MVS_EPA
 from dashboard.helpers import KPIFinder
+
 
 PARAMETERS = {}
 if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:
@@ -152,9 +155,24 @@ def sa_output_values_schema_generator(output_names):
     }
 
 
+@html_safe
+class JSD3Lib:
+    def __str__(self):
+        return '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha512-M7nHCiNUOwFt6Us3r8alutZLm9qMt4s9951uo8jqO4UwJ1hziseL6O3ndFyigx6+LREfZqnhHxYjKRJ8ZQ69DQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>'
+
+
+@html_safe
+class JSPlotlyLib:
+    def __str__(self):
+        return '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.20.0/plotly.min.js" integrity="sha512-tuzZby9zsxdCMgqKMHo+ObEWrfBTFlKZ7yIHSow5IYbr0JseLNTXm37NSn0rrWVbvKMfvGUCSm5L1sK9QGuLyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>'
+
+
 class DualInputWidget(forms.MultiWidget):
 
     template_name = "asset/dual_input.html"
+
+    class Media:
+        js = [JSPlotlyLib(), JSD3Lib(), "js/traceplot.js"]
 
     def __init__(self, **kwargs):
         """This special input consist of one text field and one upload file button"""
@@ -209,6 +227,8 @@ class DualNumberField(forms.MultiValueField):
             answer = input_timeseries_values
         else:
 
+            if scalar_value is None:
+                scalar_value = ""
             # check the input string is a number or a list
             if scalar_value != "":
                 try:
@@ -232,6 +252,191 @@ class DualNumberField(forms.MultiValueField):
                 )
         self.check_boundaries(answer)
         return answer
+
+    @property
+    def boundaries(self):
+        if self.min is not None:
+            min_val = self.min
+        else:
+            min_val = "-inf"
+
+        if self.max is not None:
+            max_val = self.max
+        else:
+            max_val = "inf"
+
+        return f"[{min_val}, {max_val}]"
+
+    def check_boundaries(self, value):
+
+        boundaries = self.boundaries
+        if isinstance(value, list):
+            for v in value:
+                try:
+                    self.check_boundaries(v)
+                except ValidationError:
+                    self.set_widget_error()
+                    raise ValidationError(
+                        _(
+                            "Some values in the timeseries do not lie within %(boundaries) s, please check your input again."
+                        ),
+                        code="invalid",
+                        params={"boundaries": boundaries},
+                    )
+
+        else:
+            if self.min is not None:
+                if value < self.min:
+                    self.set_widget_error()
+                    raise ValidationError(
+                        _("Please enter a value within %(boundaries) s"),
+                        code="invalid",
+                        params={"boundaries": boundaries},
+                    )
+
+            if self.max is not None:
+                if value > self.max:
+                    self.set_widget_error()
+                    raise ValidationError(
+                        _("Please enter a value within %(boundaries) s"),
+                        code="invalid",
+                        params={"boundaries": boundaries},
+                    )
+
+    def set_widget_error(self):
+        for widget in self.widget.widgets:
+            css = widget.attrs.get("class", None)
+            if css is not None:
+                css = css.split(" ")
+            else:
+                css = []
+            css.append("is-invalid")
+            widget.attrs["class"] = " ".join(css)
+
+
+class TimeseriesInputWidget(forms.MultiWidget):
+
+    template_name = "asset/timeseries_input.html"
+
+    class Media:
+        js = [JSPlotlyLib(), JSD3Lib(), "js/traceplot.js"]
+
+    def __init__(self, select_widget, **kwargs):
+        """This special input consist of one text field, one select field and one upload file button"""
+
+        self.default = kwargs.pop("default", None)
+        self.param_name = kwargs.pop("param_name", None)
+        select_widget.attrs.update(
+            {
+                "class": "form-select",
+                "onchange": f"selectExistingTimeseries(obj=this.value, param_name='{self.param_name}')",
+            }
+        )
+        widgets = {
+            "scalar": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "onchange": f"plotDualInputTrace(obj=this.value, param_name='{self.param_name}')",
+                }
+            ),
+            "select": select_widget,
+            "file": forms.FileInput(
+                attrs={
+                    "class": "form-control",
+                    "onchange": f"uploadDualInputTrace(obj=this.files, param_name='{self.param_name}')",
+                }
+            ),
+        }
+
+        super(TimeseriesInputWidget, self).__init__(widgets=widgets, **kwargs)
+
+    def use_required_attribute(self, initial):
+        # overwrite the method of the Widget class of the django.form.widgets module
+        return False
+
+    def decompress(self, value):
+
+        answer = [self.default, "", None]
+        if value is not None:
+            value = value.replace("'", '"')
+            value = json.loads(value)
+            input_method = value["input_method"]["type"]
+            ts_values = value["values"]
+            if len(ts_values) == 1:
+                ts_values = ts_values[0]
+            if input_method == "select":
+                answer = [ts_values, value["input_method"]["extra_info"], None]
+            else:
+                answer = [ts_values, "", None]
+
+        return answer
+
+
+class TimeseriesField(forms.MultiValueField):
+    def __init__(
+        self, default=None, param_name=None, asset_type=None, qs_ts=None, **kwargs
+    ):
+
+        fields = (
+            forms.DecimalField(required=False),
+            forms.CharField(required=False),
+            forms.ModelChoiceField(
+                queryset=qs_ts, required=False, empty_label="Select a timeseries below"
+            ),
+        )
+        kwargs.pop("max_length", None)
+        self.param_name = param_name
+        self.asset_type = asset_type
+        self.min = kwargs.pop("min", None)
+        self.max = kwargs.pop("max", None)
+        select_widget = fields[2].widget
+        kwargs["widget"] = TimeseriesInputWidget(
+            default=default, param_name=param_name, select_widget=select_widget
+        )
+
+        super().__init__(fields=fields, require_all_fields=False, **kwargs)
+
+    def clean(self, values):
+        """If a file is provided it will be considered over the scalar"""
+        scalar_value, timeseries_id, timeseries_file = values
+
+        if timeseries_file is not None:
+            input_timeseries_values = parse_input_timeseries(timeseries_file)
+            answer = input_timeseries_values
+            input_dict = dict(type="upload", extra_info=timeseries_file.name)
+        elif timeseries_id != "":
+            ts = Timeseries.objects.get(id=timeseries_id)
+            answer = ts.get_values
+            input_dict = dict(type="select", extra_info=timeseries_id)
+        else:
+            if scalar_value is None:
+                scalar_value = ""
+            # check the input string is a number or a list
+            if scalar_value != "":
+                try:
+                    answer = [float(scalar_value)]
+                except ValueError:
+                    try:
+                        answer = json.loads(scalar_value)
+                        if not isinstance(answer, list):
+                            scalar_value = ""
+                    except json.decoder.JSONDecodeError:
+                        scalar_value = ""
+
+            if scalar_value == "":
+                self.set_widget_error()
+                raise ValidationError(
+                    _(
+                        "Please provide either a number within %(boundaries) s or upload a timeseries from a file"
+                    ),
+                    code="required",
+                    params={"boundaries": self.boundaries},
+                )
+            else:
+                input_dict = dict(type="manuel")
+
+        self.check_boundaries(answer)
+        return json.dumps(dict(values=answer, input_method=input_dict))
 
     @property
     def boundaries(self):

@@ -261,7 +261,7 @@
 
     // components images
     @each $component-name, $component-category in $component-categories-mapping {
-              &.#{$component-category} {
+              &.#{$component-name} {
                       border-bottom-color: map-get($component-categories, $component-category);
                     }
 
@@ -283,5 +283,30 @@
 
   .row {
     margin-bottom: 1rem;
+  }
+
+  ul.nav.nav-pills {
+    padding-bottom: 1rem;
+
+    button {
+      border-radius: 0;
+      border: 1px solid $primary-gray-color-2;
+
+      &.active {
+        background-color: $primary-color-1;
+        color: $white !important;
+        border-color: $primary-color-1;
+      }
+    }
+
+    li:first-of-type button {
+      border-top-left-radius: $button-border-radius;
+      border-bottom-left-radius: $button-border-radius;
+    }
+
+    li:last-of-type button {
+      border-top-right-radius: $button-border-radius;
+      border-bottom-right-radius: $button-border-radius;
+    }
   }
 }

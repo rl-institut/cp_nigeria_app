@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
@@ -12,7 +13,7 @@ from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
 
 from projects.services import send_email as send_email_exchange
@@ -51,7 +52,7 @@ def signup(request):
             )
             return redirect("home")
     else:
-        form = CustomUserCreationForm()
+        form = CustomUserCreationForm(privacy_url=reverse("privacy"))
     return render(request, "registration/signup.html", {"form": form})
 
 

@@ -23,7 +23,7 @@
                 <div class="header__left"></div>
                 <h1 class="header__title">{% translate "Project Setup" %}</h1>
                 <div class="header__back">
-                    <a href="{% url 'project_search' %}">{% translate "My projects" %}</a>
+                    <a href="{% url 'project_search' proj_id %}">{% translate "My projects" %}</a>
                 </div>
             </div>
         </section>
@@ -34,7 +34,7 @@
                       <span>
                         {% translate "Fill in the following parameters:" %}
                       </span>
-                        <span>
+                        <span style="display:none;">
                         <button class="btn btn--load" type="button">
                         {% translate "Load parameters from file" %}
                         </button>

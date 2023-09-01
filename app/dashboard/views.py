@@ -1,7 +1,8 @@
 import numpy as np
 from django.core.exceptions import PermissionDenied
 from django.template.loader import get_template
-from django.db.models import Count
+from django.db.models import Count, Value, F, Q, Case, When
+from django.db.models.functions import Concat, Replace
 from django.http.response import Http404, HttpResponse
 from dashboard.helpers import *
 from dashboard.models import (
@@ -39,6 +40,8 @@ from projects.forms import BusForm, AssetCreateForm, StorageForm
 from projects.constants import COMPARE_VIEW
 from dashboard.models import (
     ReportItem,
+    FlowResults,
+    FancyResults,
     SensitivityAnalysisGraph,
     get_project_reportitems,
     get_project_sensitivity_analysis_graphs,
@@ -52,7 +55,7 @@ from dashboard.forms import (
     TimeseriesGraphForm,
     graph_parameters_form_factory,
 )
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from io import BytesIO
 import xlsxwriter
@@ -71,7 +74,8 @@ logger = logging.getLogger(__name__)
 def scenario_available_results(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
@@ -130,7 +134,8 @@ def result_change_project(request):
 @require_http_methods(["POST", "GET"])
 def scenario_visualize_results(request, proj_id=None, scen_id=None):
     request.session[COMPARE_VIEW] = False
-    user_projects = request.user.project_set.all()
+
+    user_projects = fetch_user_projects(request.user)
 
     if proj_id is None:
         if scen_id is not None:
@@ -143,15 +148,25 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
             if request.POST:
                 proj_id = int(request.POST.get("proj_id"))
             else:
-                proj_id = request.user.project_set.first().id
-            # make sure the project id is always visible in url
-            answer = HttpResponseRedirect(
-                reverse("project_visualize_results", args=[proj_id])
-            )
+                if user_projects.exists():
+                    proj_id = user_projects.first().id
+                else:
+                    proj_id = None
+            if proj_id is None:
+                messages.error(
+                    request,
+                    _("You have no projects yet, please create a project first"),
+                )
+                answer = HttpResponseRedirect(reverse("project_search"))
+            else:
+                # make sure the project id is always visible in url
+                answer = HttpResponseRedirect(
+                    reverse("project_visualize_results", args=[proj_id])
+                )
     else:
         project = get_object_or_404(Project, id=proj_id)
         if (project.user != request.user) and (
-            request.user not in project.viewers.all()
+            project.viewers.filter(user__email=request.user.email).exists() is False
         ):
             raise PermissionDenied
 
@@ -193,22 +208,14 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
             # TODO: change this when multi-scenario selection is allowed
 
             if (scenario.project.user != request.user) and (
-                request.user not in scenario.project.viewers.all()
+                scenario.project.viewers.filter(user__email=request.user.email).exists()
+                is False
             ):
                 raise PermissionDenied
 
-            qs = Simulation.objects.filter(scenario=scenario)
-            if qs.exists() and scenario in user_scenarios:
-                kpi_scalar_results_obj = KPIScalarResults.objects.get(
-                    simulation=scenario.simulation
-                )
-                kpi_scalar_values_dict = json.loads(
-                    kpi_scalar_results_obj.scalar_values
-                )
+            qs = FancyResults.objects.filter(simulation=scenario.simulation)
 
-                scalar_kpis_json = kpi_scalars_list(
-                    kpi_scalar_values_dict, KPI_SCALAR_UNITS, KPI_SCALAR_TOOLTIPS
-                )
+            if qs.exists() and scenario in user_scenarios:
 
                 update_selected_scenarios_in_cache(request, proj_id, scen_id)
 
@@ -219,7 +226,6 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
                     "report/single_scenario.html",
                     {
                         "scen_id": scen_id,
-                        "scalar_kpis": scalar_kpis_json,
                         "proj_id": proj_id,
                         "project_list": user_projects,
                         "scenario_list": user_scenarios,
@@ -235,8 +241,10 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
                 messages.error(
                     request,
                     _(
-                        "Your scenario was never simulated, the results are still pending or there is an error in the simulation. Please click on 'Run simulation', 'Update results' or 'Check status' button "
-                    ),
+                        "An error occured. It might be because 1) your scenario was never simulated 2) the results are still pending 3) there is an error in the simulation or 4) the simulation format has been updated and you need to rerun it to benefit from the updated results view. In case of 1), please click on 'Run simulation'. In case of 4) first 'Reset simulation' then on 'Run simulation'. In case of 3) The error message might contain useful information, if you still cannot figure out what was wrong, please contact us using the feedback form"
+                    )
+                    + " "
+                    + request.build_absolute_uri(reverse("user_feedback")),
                 )
                 answer = HttpResponseRedirect(
                     reverse("scenario_review", args=[proj_id, scen_id])
@@ -249,10 +257,12 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
 @require_http_methods(["POST", "GET"])
 def project_compare_results(request, proj_id):
     request.session[COMPARE_VIEW] = True
-    user_projects = request.user.project_set.all()
+    user_projects = fetch_user_projects(request.user)
 
     project = get_object_or_404(Project, id=proj_id)
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email).exists() is False
+    ):
         raise PermissionDenied
 
     user_scenarios = project.get_scenarios_with_results()
@@ -268,10 +278,12 @@ def project_compare_results(request, proj_id):
         request,
         "report/compare_scenario.html",
         {
+            "scen_id": None,
             "proj_id": proj_id,
             "project_list": user_projects,
             "scenario_list": user_scenarios,
             "selected_scenarios": selected_scenarios,
+            "multiple_scenario_selection": len(selected_scenarios) > 1,
             "report_items_data": report_items_data,
             "kpi_list": KPI_PARAMETERS,
             "table_styles": TABLES,
@@ -283,7 +295,7 @@ def project_compare_results(request, proj_id):
 @require_http_methods(["POST", "GET"])
 def project_sensitivity_analysis(request, proj_id, sa_id=None):
     request.session[COMPARE_VIEW] = False
-    user_projects = request.user.project_set.all()
+    user_projects = fetch_user_projects(request.user)
 
     if proj_id is None:
         if sa_id is not None:
@@ -304,8 +316,9 @@ def project_sensitivity_analysis(request, proj_id, sa_id=None):
     else:
 
         project = get_object_or_404(Project, id=proj_id)
-        if (project.user != request.user) and (
-            request.user not in project.viewers.all()
+        if (scenario.project.user != request.user) and (
+            scenario.project.viewers.filter(user__email=request.user.email).exists()
+            is False
         ):
             raise PermissionDenied
 
@@ -612,21 +625,32 @@ def update_selected_multi_scenarios(request, proj_id):
 @login_required
 @json_view
 @require_http_methods(["GET"])
-def request_kpi_table(request, proj_id=None, table_style=None):
+def request_kpi_table(request, proj_id=None):
 
-    # TODO fetch selected scenarios values here
+    compare_scen = request.GET.get("compare_scenario")
+    if compare_scen != "":
+        compare_scen = int(compare_scen)
+    else:
+        compare_scen = None
+
     selected_scenarios = get_selected_scenarios_in_cache(request, proj_id)
 
-    scen_id = selected_scenarios[0]  # TODO: fetch multiple scenarios results
-    scenario = get_object_or_404(Scenario, pk=scen_id)
+    if compare_scen is not None:
+        selected_scenarios = [compare_scen]
+    kpis = {}
+    scen_names = []
+    for scenario_id in selected_scenarios:
+        scenario = get_object_or_404(Scenario, pk=scenario_id)
+        scen_names.append(scenario.name)
+        kpi_scalar_results_obj = KPIScalarResults.objects.get(
+            simulation=scenario.simulation
+        )
+        kpi_scalar_results_dict = json.loads(kpi_scalar_results_obj.scalar_values)
+        kpis[scenario_id] = kpi_scalar_results_dict
 
-    kpi_scalar_results_obj = KPIScalarResults.objects.get(
-        simulation=scenario.simulation
-    )
-    kpi_scalar_results_dict = json.loads(kpi_scalar_results_obj.scalar_values)
     proj = get_object_or_404(Project, id=scenario.project.id)
     unit_conv = {"currency": proj.economic_data.currency, "Faktor": "%"}
-    table = TABLES.get(table_style, None)
+    table = TABLES.get("management", None)
 
     # do some unit substitution
     for l in table.values():
@@ -638,19 +662,22 @@ def request_kpi_table(request, proj_id=None, table_style=None):
     if table is not None:
         for subtable_title, subtable_content in table.items():
             for param in subtable_content:
-                # TODO: provide multiple scenarios results
                 param["scen_values"] = [
                     round_only_numbers(
-                        kpi_scalar_results_dict.get(param["id"], "not implemented yet"),
-                        2,
+                        kpis[scen_id].get(param["id"], "not implemented yet"), 2
                     )
+                    for scen_id in selected_scenarios
                 ]
                 param["description"] = KPI_helper.get_doc_definition(param["id"])
                 if "currency" in param["unit"]:
                     param["unit"] = param["unit"].replace(
                         "currency", scenario.get_currency()
                     )
-        answer = JsonResponse(table, status=200, content_type="application/json")
+        answer = JsonResponse(
+            {"data": table, "hdrs": ["Indicator"] + scen_names},
+            status=200,
+            content_type="application/json",
+        )
 
     else:
         allowed_styles = ", ".join(TABLES.keys())
@@ -670,7 +697,8 @@ def request_kpi_table(request, proj_id=None, table_style=None):
 def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
     """Return a template to view the input parameters and results, if any"""
     scenario = Scenario.objects.get(id=scen_id)
-
+    optimized_cap = False
+    context = {"display_results": False}
     if asset_type_name == "bus":
         template = "asset/bus_create_form.html"
         existing_bus = get_object_or_404(Bus, pk=asset_uuid)
@@ -711,139 +739,142 @@ def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
                 "soc_min": ess_capacity_asset.soc_min,
             },
         )
-
-        context = {"form": form, "display_results": False}
-
-        qs = Simulation.objects.filter(scenario=scenario)
-        if qs.exists():
-            asset_results = AssetsResults.objects.get(simulation=qs.get())
-            flows = []
-            # collect optimized add cap of capacity and flow of all 3 sub assets of storage asset
-            for subasset_name in STORAGE_SUB_CATEGORIES:
-                subasset_results = asset_results.single_asset_results(
-                    asset_name=format_storage_subasset_name(
-                        existing_ess_asset.name, subasset_name
-                    ),
-                    asset_category="energy_storage",
-                )
-                # this parameter will only be present for capacity
-                result_param = "optimized_add_cap"
-                if result_param in subasset_results:
-                    context.update({result_param: subasset_results[result_param]})
-                    context.update({"display_results": True})
-                # flow is a dict with keys "value" and "unit"
-                result_param = "flow"
-                if result_param in subasset_results:
-                    if subasset_name == OUTPUT_POWER:
-
-                        subasset_results[result_param]["value"] = -1 * np.array(
-                            subasset_results[result_param]["value"]
-                        )
-                        subasset_results[result_param]["value"] = subasset_results[
-                            result_param
-                        ]["value"].tolist()
-
-                    subasset_results[result_param].update({"name": subasset_name})
-                    flows.append(subasset_results[result_param])
-            if len(flows) > 0:
-                context.update(
-                    {
-                        "soc_traces": json.dumps(
-                            {
-                                "timestamps": scenario.get_timestamps(json_format=True),
-                                "flows": flows,
-                            }
-                        )
-                    }
-                )
-                context.update({"display_results": True})
+        optimized_cap = ess_capacity_asset.optimize_cap
+        existing_asset = existing_ess_asset
 
     else:  # all other assets
         template = "asset/asset_create_form.html"
         existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
 
         form = AssetCreateForm(
-            asset_type=asset_type_name, instance=existing_asset, view_only=True
+            asset_type=asset_type_name,
+            instance=existing_asset,
+            view_only=True,
+            proj_id=scenario.project.id,
         )
         input_timeseries_data = (
             existing_asset.input_timeseries if existing_asset.input_timeseries else ""
         )
 
-        context = {
-            "form": form,
-            "input_timeseries_data": input_timeseries_data,
-            "input_timeseries_timestamps": json.dumps(
-                scenario.get_timestamps(json_format=True)
-            ),
-            "display_results": False,
-        }
+        context.update(
+            {
+                "input_timeseries_data": input_timeseries_data,
+                "input_timeseries_timestamps": json.dumps(
+                    scenario.get_timestamps(json_format=True)
+                ),
+            }
+        )
 
-        # fetch optimized capacity and flow if they exist
-        qs = Simulation.objects.filter(scenario=scenario)
-        if qs.exists():
-            asset_results = AssetsResults.objects.get(
-                simulation=qs.get()
-            ).single_asset_results(asset_name=existing_asset.name)
+    # fetch optimized capacity and flow if they exist
+    qs = FancyResults.objects.filter(simulation=scenario.simulation)
 
-            result_param = "optimized_add_cap"
-            if result_param in asset_results:
-                context.update({result_param: asset_results[result_param]})
-                context.update({"display_results": True})
-            else:
-                if "optimize_capacity" in asset_results:
-                    if asset_results["optimize_capacity"]["value"] is True:
-
-                        results_dict = json.loads(qs.get().results)
-                        kpi = results_dict["kpi"]["scalar_matrix"]
-                        context.update(
-                            {
-                                result_param: {
-                                    "value": kpi[existing_asset.name][result_param],
-                                    "unit": kpi[existing_asset.name]["unit"],
-                                }
-                            }
-                        )
-                        context.update({"display_results": True})
-
-            # flow is a dict with keys "value" and "unit"
-            result_param = "flow"
-            if result_param in asset_results:
-                # add key "timestamp" to the flow dict
-                asset_results[result_param].update(
-                    {"timestamps": scenario.get_timestamps(json_format=True)}
+    if qs.exists():
+        qs_fine = qs.exclude(asset__contains="@").filter(
+            asset__contains=existing_asset.name
+        )
+        negative_direction = "out"
+        if existing_asset.is_storage is True and optimized_cap is True:
+            for cap in qs_fine.values_list("optimized_capacity", flat=True):
+                context.update(
+                    {"optimized_add_cap": {"value": round(cap, 2), "unit": "kWh"}}
                 )
-                context.update({result_param: json.dumps(asset_results[result_param])})
-                context.update({"display_results": True})
-            else:
-                # provider have their flows under consumption and feedin
-                if existing_asset.is_provider is True:
-                    traces = []
-                    timestamps = scenario.get_timestamps(json_format=True)
-                    for fl, fl_name in zip(
-                        ("connected_consumption_sources", "connected_feedin_sink"),
-                        ("Consumption", "Feedin"),
-                    ):
-                        subasset_name = asset_results[fl]
-                        subasset_results = AssetsResults.objects.get(
-                            simulation=qs.get()
-                        ).single_asset_results(asset_name=subasset_name)
 
-                        subasset_results = subasset_results["flow"]
-                        subasset_results.update({"name": fl_name})
+        elif existing_asset.is_provider is True:
+            negative_direction = "in"
+        else:
+            qs_fine = qs_fine.filter(asset=existing_asset.name)
 
-                        # make consumption values negative
-                        if fl_name == "Consumption":
-                            subasset_results["value"] = -1 * np.array(
-                                subasset_results["value"]
-                            )
-                            subasset_results["value"] = subasset_results[
-                                "value"
-                            ].tolist()
+        traces = []
+        total_flows = []
+        timestamps = scenario.get_timestamps(json_format=True)
 
-                        traces.append(subasset_results)
+        if len(qs_fine) == 1:
+            asset_results = qs_fine.get()
+            total_flows.append(
+                {
+                    "value": round(asset_results.total_flow, 2),
+                    "unit": "kWh",
+                    "label": "",
+                }
+            )
+            if existing_asset.optimize_cap is True:
+                context.update(
+                    {
+                        "optimized_add_cap": {
+                            "value": round(asset_results.optimized_capacity, 2),
+                            "unit": "kW",
+                        }
+                    }
+                )
+            traces.append(
+                {
+                    "value": json.loads(asset_results.flow_data),
+                    "name": existing_asset.name,
+                    "unit": "kW",
+                }
+            )
+        else:
 
-                    # add the possibility to see the cap limit on the feedin on the result graph
-                    feedin_cap = existing_asset.feedin_cap
+            qs_fine = qs_fine.annotate(
+                name=Case(
+                    When(
+                        Q(asset_type__contains="chp") & Q(direction="in"),
+                        then=Concat("asset", Value(" out ("), "bus", Value(")")),
+                    ),
+                    When(
+                        Q(asset_type__contains="chp") & Q(direction="out"),
+                        then=Concat("asset", Value(" in")),
+                    ),
+                    When(
+                        Q(asset_type__contains="ess") & Q(direction="in"),
+                        then=Concat("asset", Value(" " + _("Discharge"))),
+                    ),
+                    When(
+                        Q(asset_type__contains="ess") & Q(direction="out"),
+                        then=Concat("asset", Value(" " + _("Charge"))),
+                    ),
+                    When(
+                        Q(oemof_type="transformer") & Q(direction="out"),
+                        then=Concat("asset", Value(" in")),
+                    ),
+                    When(
+                        Q(oemof_type="transformer") & Q(direction="in"),
+                        then=Concat("asset", Value(" out")),
+                    ),
+                    default=F("asset"),
+                ),
+                unit=Case(
+                    When(Q(asset_type__contains="ess"), then=Value("kWh")),
+                    default=Value("kW"),
+                ),
+                value=F("flow_data"),
+            )
+
+            for y_vals in qs_fine.order_by("direction").values(
+                "name", "value", "unit", "direction", "total_flow"
+            ):
+                # make consumption values negative other wise inflow of asset is negative
+                if y_vals["direction"] == negative_direction:
+                    y_vals["value"] = (
+                        -1 * np.array(json.loads(y_vals["value"]))
+                    ).tolist()
+                else:
+                    y_vals["value"] = json.loads(y_vals["value"])
+
+                traces.append(y_vals)
+
+                total_flows.append(
+                    {
+                        "value": round(y_vals["total_flow"], 2),
+                        "unit": y_vals["unit"],
+                        "label": y_vals["name"],
+                    }
+                )
+
+            if existing_asset.is_provider is True:
+                # add the possibility to see the cap limit on the feedin on the result graph
+                feedin_cap = existing_asset.feedin_cap
+                if feedin_cap is not None:
                     traces.append(
                         {
                             "value": [feedin_cap for t in timestamps],
@@ -853,14 +884,15 @@ def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
                         }
                     )
 
-                    context.update(
-                        {
-                            "flow": json.dumps(
-                                {"timestamps": timestamps, "traces": traces}
-                            )
-                        }
-                    )
-                    context.update({"display_results": True})
+        context.update(
+            {
+                "form": form,
+                "flow": json.dumps({"timestamps": timestamps, "traces": traces}),
+                "total_flow": total_flows,
+                "display_results": True,
+            }
+        )
+
     return render(request, template, context)
 
 
@@ -885,7 +917,8 @@ def scenario_economic_results(request, scen_id=None):
     # if scenario.project.user != request.user:
     #     return HttpResponseForbidden()
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
@@ -968,19 +1001,15 @@ def scenario_visualize_timeseries(request, proj_id=None, scen_id=None):
     for scen_id in selected_scenario:
         scenario = get_object_or_404(Scenario, pk=scen_id)
         if (scenario.project.user != request.user) and (
-            request.user not in scenario.project.viewers.all()
+            scenario.project.viewers.filter(user__email=request.user.email).exists()
+            is False
         ):
             raise PermissionDenied
         simulations.append(scenario.simulation)
 
-    assets_results = AssetsResults.objects.get(simulation__scenario__id=scenario.id)
-    y_variables = [n for n in assets_results.available_timeseries]
-
     results_json = report_item_render_to_json(
         report_item_id="all_timeseries",
-        data=REPORT_GRAPHS[GRAPH_TIMESERIES](
-            simulations=simulations, y_variables=y_variables
-        ),
+        data=REPORT_GRAPHS[GRAPH_TIMESERIES](simulations=simulations),
         title="",
         report_item_type=GRAPH_TIMESERIES,
     )
@@ -993,26 +1022,26 @@ def scenario_visualize_timeseries(request, proj_id=None, scen_id=None):
 def scenario_visualize_stacked_timeseries(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
-    assets_results = AssetsResults.objects.get(simulation__scenario__id=scenario.id)
-    y_variables = [n for n in assets_results.available_timeseries]
+    results_json = []
+    for energy_vector in scenario.energy_vectors:
 
-    results_json = [
-        report_item_render_to_json(
-            report_item_id=energy_vector,
-            data=REPORT_GRAPHS[GRAPH_TIMESERIES_STACKED](
-                simulations=[scenario.simulation],
-                y_variables=y_variables,
-                energy_vector=energy_vector,
-            ),
-            title=energy_vector,
-            report_item_type=GRAPH_TIMESERIES_STACKED,
+        results_json.append(
+            report_item_render_to_json(
+                report_item_id=energy_vector,
+                data=REPORT_GRAPHS[GRAPH_TIMESERIES_STACKED](
+                    simulations=[scenario.simulation],
+                    y_variables=None,
+                    energy_vector=energy_vector,
+                ),
+                title=energy_vector,
+                report_item_type=GRAPH_TIMESERIES_STACKED,
+            )
         )
-        for energy_vector in scenario.energy_vectors
-    ]
 
     return JsonResponse(
         results_json, status=200, content_type="application/json", safe=False
@@ -1029,27 +1058,58 @@ def scenario_visualize_capacities(request, proj_id, scen_id=None):
 
     simulations = []
 
-    common_assets = []  # TODO take intersection of all y_variables sets
-
-    for scen_id in selected_scenario:
-        scenario = get_object_or_404(Scenario, pk=scen_id)
+    qs = Scenario.objects.filter(id__in=selected_scenario).order_by("name")
+    for scenario in qs:
         if (scenario.project.user != request.user) and (
-            request.user not in scenario.project.viewers.all()
+            scenario.project.viewers.filter(user__email=request.user.email).exists()
+            is False
         ):
             raise PermissionDenied
         simulations.append(scenario.simulation)
 
-        assets_results = AssetsResults.objects.get(simulation__scenario__id=scenario.id)
-        y_variables = [n for n in assets_results.available_timeseries]
-
     results_json = report_item_render_to_json(
         report_item_id="capacities",
-        data=REPORT_GRAPHS[GRAPH_CAPACITIES](
-            simulations=simulations, y_variables=y_variables
-        ),
+        data=REPORT_GRAPHS[GRAPH_CAPACITIES](simulations=simulations, y_variables=None),
         title="",
         report_item_type=GRAPH_CAPACITIES,
     )
+
+    return JsonResponse(
+        results_json, status=200, content_type="application/json", safe=False
+    )
+
+
+def scenario_visualize_costs(request, proj_id, scen_id=None):
+
+    if scen_id is None:
+        selected_scenario = get_selected_scenarios_in_cache(request, proj_id)
+    else:
+        selected_scenario = [scen_id]
+
+    simulations = []
+
+    qs = Scenario.objects.filter(id__in=selected_scenario).order_by("name")
+    for scenario in qs:
+        if (scenario.project.user != request.user) and (
+            scenario.project.viewers.filter(user__email=request.user.email).exists()
+            is False
+        ):
+            raise PermissionDenied
+        simulations.append(scenario.simulation)
+
+    results_json = []
+    for arrangement in [COSTS_PER_ASSETS]:
+
+        results_json.append(
+            report_item_render_to_json(
+                report_item_id=arrangement,
+                data=REPORT_GRAPHS[GRAPH_COSTS](
+                    simulations=simulations, y_variables=None, arrangement=arrangement
+                ),
+                title=arrangement,
+                report_item_type=GRAPH_COSTS,
+            )
+        )
 
     return JsonResponse(
         results_json, status=200, content_type="application/json", safe=False
@@ -1060,7 +1120,8 @@ def scenario_visualize_capacities(request, proj_id, scen_id=None):
 def scenario_visualize_sankey(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
@@ -1084,7 +1145,8 @@ def download_scalar_results(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
@@ -1130,7 +1192,8 @@ def download_cost_results(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 
@@ -1175,7 +1238,8 @@ def download_timeseries_results(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
     if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
     ):
         raise PermissionDenied
 

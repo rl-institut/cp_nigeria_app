@@ -133,6 +133,8 @@ urlpatterns = [
     path("scenario/export/<int:proj_id>", scenario_export, name="scenario_export"),
     path("scenario/upload/<int:proj_id>", scenario_upload, name="scenario_upload"),
     # path('scenario/upload/<int:proj_id>', LoadScenarioFromFileView.as_view(), name='scenario_upload'),
+    # Timeseries Model
+    path("upload/timeseries", upload_timeseries, name="upload_timeseries"),
     # Grid Model (Assets Creation)
     re_path(
         r"^asset/get_form/(?P<scen_id>\d+)/(?P<asset_type_name>\w+)?(/(?P<asset_uuid>[0-9a-f-]+))?$",
@@ -153,6 +155,12 @@ urlpatterns = [
         r"^asset/cops_create_or_update/(?P<scen_id>\d+)/(?P<asset_type_name>\w+)?(/(?P<asset_uuid>[0-9a-f-]+))?$",
         asset_cops_create_or_update,
         name="asset_cops_create_or_update",
+    ),
+    # ParameterChangeTracker (track of simulated scenario changes)
+    path(
+        "reset_scenario_changes/<int:scen_id>",
+        reset_scenario_changes,
+        name="reset_scenario_changes",
     ),
     # MVS Simulation
     path(

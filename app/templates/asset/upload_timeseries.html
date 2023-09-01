@@ -1,0 +1,14 @@
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{{ form.media }}
+
+<!-- Note one need to have Django >= 4.x.y to use form.media -->
+
+<div class="modal-body">
+		<form method="POST">
+				{% csrf_token %}
+				{{ form|crispy }}
+				<button style type="submit" id="SubmitBtn">Submit</button>
+		</form>
+</div>

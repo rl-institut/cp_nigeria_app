@@ -2,8 +2,12 @@ import os
 import copy
 import csv
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+from django.db.models import Value, Q, F, Case, When
+from django.db.models.functions import Concat, Replace
 from numbers import Number
+
+from projects.models import Viewer, Project
 import pickle
 from django.conf import settings as django_settings
 
@@ -139,6 +143,31 @@ def update_selected_scenarios_in_cache(request, proj_id, scen_id):
         selected_scenarios = [scen_id]
     selected_scenarios_per_project[proj_id] = selected_scenarios
     request.session["selected_scenarios"] = selected_scenarios_per_project
+
+
+def fetch_user_projects(user):
+    """Given a user return the projects they own as well as the shared ones"""
+    user_project_ids = user.project_set.values_list("id", flat=True).distinct()
+
+    viewer_project_ids = (
+        Viewer.objects.filter(user__email=user.email)
+        .values_list("viewer_projects", flat=True)
+        .distinct()
+    )
+
+    user_projects = Project.objects.filter(
+        Q(id__in=user_project_ids) | Q(id__in=viewer_project_ids)
+    ).annotate(
+        label=Case(
+            When(Q(id__in=viewer_project_ids), then=Concat("name", Value(" (shared)"))),
+            default=F("name"),
+        ),
+        shared=Case(
+            When(Q(id__in=viewer_project_ids), then=Value(True)), default=Value(False)
+        ),
+    )
+
+    return user_projects
 
 
 def kpi_scalars_list(kpi_scalar_values_dict, KPI_SCALAR_UNITS, KPI_SCALAR_TOOLTIPS):
@@ -365,16 +394,23 @@ GRAPH_TIMESERIES = "timeseries"
 GRAPH_TIMESERIES_STACKED = "timeseries_stacked"
 GRAPH_CAPACITIES = "capacities"
 GRAPH_BAR = "bar"
+GRAPH_COSTS = "costs"
 GRAPH_PIE = "pie"
 GRAPH_LOAD_DURATION = "load_duration"
 GRAPH_SANKEY = "sankey"
 GRAPH_SENSITIVITY_ANALYSIS = "sensitivity_analysis"
+
+COSTS_PER_ASSETS = "var1"
+COSTS_PER_CATEGORY = "var2"
+COSTS_PER_CATEGORY_STACKED = "var3"
+COSTS_PER_ASSETS_STACKED = "var4"
 
 REPORT_TYPES = (
     (GRAPH_TIMESERIES, _("Timeseries graph")),
     (GRAPH_TIMESERIES_STACKED, _("Stacked timeseries graph")),
     (GRAPH_CAPACITIES, _("Installed and optimized capacities")),
     (GRAPH_BAR, _("Bar chart")),
+    (GRAPH_COSTS, _("Cost breakdown")),
     (GRAPH_PIE, _("Pie chart")),
     (GRAPH_LOAD_DURATION, _("Load duration curve")),
     (GRAPH_SANKEY, _("Sankey diagram")),
@@ -432,7 +468,12 @@ def report_item_render_to_json(
 
     if report_item_type == GRAPH_CAPACITIES:
         answer["x_label"] = _("Component")
-        answer["y_label"] = _("Capacity")
+        answer["y_label"] = _("Capacity") + "(kW)"
+
+    if report_item_type == GRAPH_COSTS:
+        answer["x_label"] = _("Component")
+        answer["y_label"] = _("Costs") + "(currency)"
+
     return answer
 
 
@@ -527,6 +568,26 @@ GRAPH_PARAMETERS_SCHEMAS = {
         "additionalProperties": False,
     },
     GRAPH_BAR: {},
+    GRAPH_COSTS: {
+        "type": "object",
+        "required": ["y"],
+        "properties": {
+            "y": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "array", "items": {"type": "string"}},
+                ]
+            },
+            "energy_vector": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "array", "items": {"type": "string"}},
+                ]
+            },
+            "arrangement": {"type": "string"},
+        },
+        "additionalProperties": False,
+    },
     GRAPH_PIE: {},
     GRAPH_LOAD_DURATION: {
         "type": "object",

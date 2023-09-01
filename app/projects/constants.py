@@ -1,4 +1,4 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 COUNTRY = (
     ("", "Choose..."),
@@ -249,21 +249,38 @@ COUNTRY = (
     ("ZIMBABWE", "ZIMBABWE"),
 )
 
-CURRENCY = (
-    ("", "Choose..."),
-    ("EUR", "EUR"),
-    ("INR", "INR"),
-    ("NOK", "NOK"),
-    ("USD", "USD"),
-    ("GBP", "GBP"),
+CURRENCY_SYMBOLS = {
+    "EUR": "€",
+    "USD": "$",
+    "NOK": "\u006b\u0072",
+    "INR": "\u20b9",
+    "GBP": "\u00a3",
+}
+# TODO use https://gist.github.com/lokeb/785b3a1ad9c90e984ea4ddb61ced3066 and allow user input currencies
+
+CURRENCY = tuple(
+    [("", "Choose...")] + [(k, f"{k} ({v})") for k, v in CURRENCY_SYMBOLS.items()]
 )
 
-TRUE_FALSE_CHOICES = ((None, "Choose"), (True, "Yes"), (False, "No"))
+TRUE_FALSE_CHOICES = ((None, _("Choose")), (True, _("Yes")), (False, _("No")))
 
-BOOL_CHOICES = ((True, "Yes"), (False, "No"))
+BOOL_CHOICES = ((True, _("Yes")), (False, _("No")))
 
 FLOW_DIRECTION = (("B2A", "Bus_to_Asset"), ("A2B", "Asset_to_Bus"))
 
+TIMESERIES_UNITS = (
+    ("Wh", "Wh"),
+    ("kWh", "kWh"),
+    ("MWh", "MWh"),
+    ("GWh", "GWh"),
+    ("TWh", "TWh"),
+)
+TIMESERIES_CATEGORIES = (
+    ("other", _("Other")),
+    ("demand", _("Demand")),
+    ("supply", _("Supply")),
+)
+TIMESERIES_TYPES = (("scalar", "scalar"), ("vector", "vector"))
 ENERGY_VECTOR = (
     ("", "Choose..."),
     ("Electricity", _("Electricity")),
@@ -273,8 +290,20 @@ ENERGY_VECTOR = (
     # ('Diesel', 'Diesel'),
 )
 
-COP_MODES = (("Heat pump", "heat_pump"), ("Chiller", "chiller"))
+COP_MODES = ((_("Heat pump"), "heat_pump"), (_("Chiller"), "chiller"))
 
+PARAM_CATEGORY = (
+    ("asset", "asset"),
+    ("project", "project"),
+    ("scenario", "scenario"),
+    ("constraint", "constraint"),
+)
+PARAM_TYPE = (
+    ("scalar", "scalar"),
+    ("vector", "vector"),
+    ("string", "string"),
+    ("bool", "bool"),
+)
 
 MVS_TYPE = (
     ("", "Choose..."),

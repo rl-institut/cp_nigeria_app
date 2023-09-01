@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-16 00:12+0100\n"
+"POT-Creation-Date: 2023-06-29 01:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,134 +18,170 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: dashboard/forms.py:29 templates/report/single_scenario.html:59
+#: dashboard/forms.py:30 templates/report/single_scenario.html:59
 #: templates/scenario/scenario_progression.html:17
+#: templates/scenario/simulation/modified.html:67
 msgid "Scenario"
 msgstr "Szenarios"
 
-#: dashboard/forms.py:49
+#: dashboard/forms.py:38 templates/report/compare_scenario.html:17
+msgid "Scenarios"
+msgstr "Szenarien"
+
+#: dashboard/forms.py:55
 msgid "Type of report item"
 msgstr "Typ des Berichtselements"
 
-#: dashboard/forms.py:49
+#: dashboard/forms.py:55
 msgid "Title"
 msgstr "Titel"
 
-#: dashboard/forms.py:56 dashboard/forms.py:82 dashboard/forms.py:108
-#: dashboard/forms.py:137 dashboard/forms.py:147
+#: dashboard/forms.py:62 dashboard/forms.py:88 dashboard/forms.py:114
+#: dashboard/forms.py:143 dashboard/forms.py:153
 msgid "Energy vector"
 msgstr "Energievektor"
 
-#: dashboard/forms.py:58 dashboard/forms.py:84
+#: dashboard/forms.py:64 dashboard/forms.py:90
 msgid "Timeseries variable(s)"
 msgstr "Zeitreihenvariable(n)"
 
-#: dashboard/forms.py:110
+#: dashboard/forms.py:116
 msgid "Component(s)"
 msgstr "Komponente"
 
-#: dashboard/forms.py:170 projects/views.py:1125
+#: dashboard/forms.py:176 projects/views.py:1362
 #: templates/report/sensitivity_analysis.html:8
 msgid "Sensitivity analysis"
 msgstr "Sensitivitätsanalyse"
 
-#: dashboard/forms.py:171
+#: dashboard/forms.py:177
 msgid "Graph title"
 msgstr "Grafiktitel"
 
-#: dashboard/forms.py:172
+#: dashboard/forms.py:178
 msgid "Parameter of interest"
 msgstr "Parameter von Interesse"
 
-#: dashboard/helpers.py:374
+#: dashboard/helpers.py:409
 msgid "Timeseries graph"
 msgstr "Zeitreihen Grafik"
 
-#: dashboard/helpers.py:375
+#: dashboard/helpers.py:410
 msgid "Stacked timeseries graph"
 msgstr "Gestapelte Zeitreihen Grafik"
 
-#: dashboard/helpers.py:376
+#: dashboard/helpers.py:411
 msgid "Installed and optimized capacities"
 msgstr "Installierte und optimierte Leistungen"
 
-#: dashboard/helpers.py:377
+#: dashboard/helpers.py:412
 msgid "Bar chart"
 msgstr "Balkendiagramm"
 
-#: dashboard/helpers.py:378
+#: dashboard/helpers.py:413
+msgid "Cost breakdown"
+msgstr "Kostenaufschlüsselung"
+
+#: dashboard/helpers.py:414
 msgid "Pie chart"
 msgstr "Kreisdiagramm"
 
-#: dashboard/helpers.py:379
+#: dashboard/helpers.py:415
 msgid "Load duration curve"
 msgstr "Lastdauer-Kurve"
 
-#: dashboard/helpers.py:380
+#: dashboard/helpers.py:416
 msgid "Sankey diagram"
 msgstr "Sankey Diagramm"
 
-#: dashboard/helpers.py:426 dashboard/helpers.py:430
+#: dashboard/helpers.py:462 dashboard/helpers.py:466
 msgid "Time"
 msgstr "Zeit"
 
-#: dashboard/helpers.py:427 dashboard/helpers.py:431
+#: dashboard/helpers.py:463 dashboard/helpers.py:467
 msgid "Energy"
 msgstr "Energie"
 
-#: dashboard/helpers.py:434
+#: dashboard/helpers.py:470 dashboard/helpers.py:474
 msgid "Component"
 msgstr "Komponente"
 
-#: dashboard/helpers.py:435
+#: dashboard/helpers.py:471
 msgid "Capacity"
 msgstr "Leistung"
 
-#: dashboard/models.py:668
+#: dashboard/helpers.py:475
+msgid "Costs"
+msgstr "Kosten"
+
+#: dashboard/models.py:1048
 msgid "Installed Capacity"
 msgstr "Installierte Leistung"
 
-#: dashboard/models.py:670
+#: dashboard/models.py:1050
 msgid "Inst. Cap."
 msgstr "Inst. Leis."
 
-#: dashboard/models.py:674
+#: dashboard/models.py:1054
 msgid "Optimized Capacity"
 msgstr "Optimierte Leistung"
 
-#: dashboard/models.py:676
+#: dashboard/models.py:1056
 msgid "Opt. Cap."
 msgstr "Opt. Leis."
 
-#: dashboard/views.py:238
-msgid ""
-"Your scenario was never simulated, the results are still pending or there is "
-"an error in the simulation. Please click on 'Run simulation', 'Update "
-"results' or 'Check status' button "
-msgstr ""
-"Ihr Szenario wurde nie simuliert, die Ergebnisse stehen noch aus oder es "
-"gibt  einen Fehler in der Simulation. Bitte klicken Sie auf 'Simulation "
-"ausführen', 'Ergebnisse aktualisieren' oder 'Status prüfen' "
+#: dashboard/views.py:158
+msgid "You have no projects yet, please create a project first"
+msgstr "Sie haben derzeit keine Projekte, bitte erstellen Sie zuerst eines"
 
-#: dashboard/views.py:559
+#: dashboard/views.py:244
+msgid ""
+"An error occured. It might be because 1) your scenario was never simulated "
+"2) the results are still pending 3) there is an error in the simulation or "
+"4) the simulation format has been updated and you need to rerun it to "
+"benefit from the updated results view. In case of 1), please click on 'Run "
+"simulation'. In case of 4) first 'Reset simulation' then on 'Run "
+"simulation'. In case of 3) The error message might contain useful "
+"information, if you still cannot figure out what was wrong, please contact "
+"us using the feedback form"
+msgstr ""
+"Es ist ein Fehler aufgetreten. Es könnte daran liegen, dass 1) Ihr Szenario "
+"nie simuliert wurde 2) die Ergebnisse noch ausstehen 3) ein Fehler in der "
+"Simulation vorliegt oder 4) das Simulationsformat wurde aktualisiert und Sie "
+"müssen es erneut ausführen, um von der aktualisierten Ergebnisansicht zu "
+"profitieren. Im Falle von 1) klicken Sie bitte auf 'Simulation ausführe'. Im "
+"Fall von 4) klicken Sie zuerst auf 'Simulation zurücksetzen' und dann auf "
+"'Simulation ausführen'.Im Falle von 3) enthält die Fehlermeldung "
+"möglicherweise nützliche Informationen, wenn Sie trotzdem nicht herausfinden "
+"können, was falsch war, kontaktieren Sie bitte uns über das Feedback-Formular"
+
+#: dashboard/views.py:572
 #, python-brace-format
 msgid "Scenario {scen_id} was deselected"
 msgstr "Szenario {scen_id} wurde abgewählt"
 
-#: dashboard/views.py:561
+#: dashboard/views.py:574
 msgid "At least one scenario need to be selected"
 msgstr "Es muss mindestens ein Szenario ausgewählt werden"
 
-#: dashboard/views.py:565
+#: dashboard/views.py:578
 #, python-brace-format
 msgid "Scenario {scen_id} was selected"
 msgstr "Szenario {scen_id} wurde ausgewählt"
 
-#: dashboard/views.py:596
+#: dashboard/views.py:614
 msgid "Scenarios were updated"
 msgstr "Szenarien wurden aktualisiert"
 
-#: dashboard/views.py:1286 projects/views.py:956
+#: dashboard/views.py:835
+msgid "Discharge"
+msgstr "Entladen"
+
+#: dashboard/views.py:839
+msgid "Charge"
+msgstr "Aufladen"
+
+#: dashboard/views.py:1355 projects/views.py:1163
 msgid ""
 "No scenario was available in the cache, try refreshing the page and make "
 "sure one scenario is selected."
@@ -153,75 +189,111 @@ msgstr ""
 "No scenario was available in the cache, try refreshing the page and make "
 "sicherzustellen, dass ein Szenario ausgewählt ist."
 
-#: projects/constants.py:269
+#: projects/constants.py:265
+msgid "Choose"
+msgstr "Wählen Sie aus"
+
+#: projects/constants.py:265 projects/constants.py:267
+msgid "Yes"
+msgstr "Ja"
+
+#: projects/constants.py:265 projects/constants.py:267
+msgid "No"
+msgstr "Nein"
+
+#: projects/constants.py:273
 msgid "Electricity"
 msgstr "Elektrizität"
 
-#: projects/constants.py:270
+#: projects/constants.py:274
 msgid "Heat"
 msgstr "Wärme"
 
-#: projects/constants.py:271
+#: projects/constants.py:275
 msgid "Gas"
 msgstr "Gas"
 
-#: projects/constants.py:272
+#: projects/constants.py:276
 msgid "H2"
 msgstr "H2"
 
-#: projects/forms.py:150 projects/forms.py:699
+#: projects/constants.py:280
+msgid "Heat pump"
+msgstr "Wärmepumpe"
+
+#: projects/constants.py:280
+msgid "Chiller"
+msgstr ""
+
+#: projects/forms.py:152 projects/forms.py:268 projects/forms.py:734
 msgid "eg. 0.1"
 msgstr "z. B. 0.1"
 
-#: projects/forms.py:154
+#: projects/forms.py:156
 msgid "Investment Discount factor."
 msgstr "Investitionsabzinsungsfaktor."
 
-#: projects/forms.py:172
+#: projects/forms.py:180
 msgid "Project Name"
 msgstr "Projektname"
 
-#: projects/forms.py:177
+#: projects/forms.py:183
+msgid "Name..."
+msgstr "Name..."
+
+#: projects/forms.py:185
 msgid "A self explanatory name for the project."
 msgstr "Ein selbsterklärender Name für das Projekt."
 
-#: projects/forms.py:182
+#: projects/forms.py:190
 msgid "Project Description"
 msgstr "Projektbeschreibung"
 
-#: projects/forms.py:188
+#: projects/forms.py:193
+msgid "More detailed description here..."
+msgstr ""
+
+#: projects/forms.py:196
 msgid "A description of what this project objectives or test cases."
 msgstr "Eine Beschreibung der Ziele oder Testfälle dieses Projekts."
 
-#: projects/forms.py:194
+#: projects/forms.py:202
 msgid "Country"
 msgstr "Land"
 
-#: projects/forms.py:199
+#: projects/forms.py:207
 msgid "Name of the country where the project is being deployed"
 msgstr "Name des Landes, in dem das Projekt eingesetzt werden soll"
 
-#: projects/forms.py:204
+#: projects/forms.py:212
 msgid "Location, longitude"
 msgstr "Standort, Längengrad"
 
-#: projects/forms.py:211
+#: projects/forms.py:215 projects/forms.py:228
+msgid "click on the map"
+msgstr ""
+
+#: projects/forms.py:219
 msgid "Longitude coordinate of the project's geographical location."
 msgstr "Längengradkoordinate des geografischen Standorts des Projekts."
 
-#: projects/forms.py:217
+#: projects/forms.py:225
 msgid "Location, latitude"
 msgstr "Standort Breitengrad"
 
-#: projects/forms.py:224
+#: projects/forms.py:232
 msgid "Latitude coordinate of the project's geographical location."
 msgstr "Breitengrad-Koordinate des geografischen Standorts des Projekts."
 
-#: projects/forms.py:230
+#: projects/forms.py:238
 msgid "Project Duration"
 msgstr "Projektdauer"
 
-#: projects/forms.py:239
+#: projects/forms.py:241
+msgid "eg. 1"
+msgstr "z.B. 0.1"
+
+#: projects/forms.py:247
 msgid ""
 "The number of years the project is intended to be operational. The project "
 "duration also sets the installation time of the assets used in the "
@@ -234,19 +306,19 @@ msgstr ""
 "'verkauft' und die Rückerstattung wird mit den ursprünglichen "
 "Investitionskosten verrechnet."
 
-#: projects/forms.py:245
+#: projects/forms.py:253
 msgid "Currency"
 msgstr "Währung"
 
-#: projects/forms.py:251
+#: projects/forms.py:259
 msgid "The currency of the country where the project is implemented."
 msgstr "Die Währung des Landes, in dem das Projekt durchgeführt wird."
 
-#: projects/forms.py:257
+#: projects/forms.py:265
 msgid "Discount Factor"
 msgstr "Abzinsungsfaktor"
 
-#: projects/forms.py:266
+#: projects/forms.py:274
 msgid ""
 "Discount factor is the factor which accounts for the depreciation in the "
 "value of money in the future, compared to the current value of the same "
@@ -259,49 +331,53 @@ msgstr ""
 "durchschnittlichen Kapitalkosten (WACC) und diese als Abzinsungsfaktor zu "
 "verwenden."
 
-#: projects/forms.py:272
+#: projects/forms.py:280
 msgid "Tax"
 msgstr "Steuer"
 
-#: projects/forms.py:280
+#: projects/forms.py:283
+msgid "eg. 0.3"
+msgstr "z.B. 0.1"
+
+#: projects/forms.py:288
 msgid "Tax factor"
 msgstr "Steuerfaktor"
 
-#: projects/forms.py:306
+#: projects/forms.py:315
 msgid "Email address"
 msgstr "E-Mail Adresse"
 
-#: projects/forms.py:320
+#: projects/forms.py:329
 msgid "Select the user(s) for which you want to revoke access rights "
 msgstr ""
 "Wählen Sie den/die Benutzer aus, für den/die Sie die Zugriffsrechte "
 "entziehen möchten."
 
-#: projects/forms.py:323
+#: projects/forms.py:332
 msgid "Users currently having access to the project"
 msgstr "Benutzer, die derzeit Zugriff auf das Projekt haben"
 
-#: projects/forms.py:328
+#: projects/forms.py:337
 msgid "No users have access to this project"
 msgstr "Keine Benutzer haben Zugriff auf dieses Projekt"
 
-#: projects/forms.py:358
+#: projects/forms.py:367
 msgid "Select a use case (or"
 msgstr "Wählen Sie einen Anwendungsfall (oder"
 
-#: projects/forms.py:360
-msgid " visit use cases page link"
-msgstr " visit use cases page link"
+#: projects/forms.py:369
+msgid "visit use cases page"
+msgstr "Seite Anwendungsfälle besuchen"
 
-#: projects/forms.py:390
-msgid "Length of the time-steps."
-msgstr "Länge der Zeitschritte."
+#: projects/forms.py:399
+msgid "Length of the time steps"
+msgstr "Länge der Zeitschritte"
 
-#: projects/forms.py:400
+#: projects/forms.py:409
 msgid "The number of days simulated with the energy system model."
 msgstr "Die Anzahl der Tage, die mit dem Energiesystemmodell simuliert wurden."
 
-#: projects/forms.py:409
+#: projects/forms.py:418
 msgid ""
 "A fixed cost to implement the asset, eg. planning costs which do not depend "
 "on the (optimized) asset capacity."
@@ -309,67 +385,72 @@ msgstr ""
 "Fixe Kosten für die Implementierung der Anlage, z.B. Planungskosten, die "
 "nicht von der (optimierten) Anlagenkapazität abhängen."
 
-#: projects/forms.py:416 templates/scenario/scenario_results_page.html:134
+#: projects/forms.py:425 templates/scenario/scenario_results_page.html:134
+#: templates/scenario/simulation/modified.html:56
 msgid "Project"
 msgstr "Projekt"
 
-#: projects/forms.py:417
+#: projects/forms.py:426
 msgid "Scenario name"
 msgstr "Name des Szenarios"
 
-#: projects/forms.py:418
+#: projects/forms.py:427
 msgid "Scenario description"
 msgstr "Szenariobeschreibung"
 
-#: projects/forms.py:419
+#: projects/forms.py:428
 msgid "Evaluated Period"
 msgstr "Ausgewerteter Zeitraum"
 
-#: projects/forms.py:420
+#: projects/forms.py:429
 msgid "Time Step"
 msgstr "Zeitschritt"
 
-#: projects/forms.py:421
+#: projects/forms.py:430
 msgid "Start Date"
 msgstr "Startdatum"
 
-#: projects/forms.py:422
+#: projects/forms.py:431
 msgid "Development costs"
 msgstr "Entwicklungskosten"
 
-#: projects/forms.py:618
+#: projects/forms.py:645
 msgid "The energy Vector of the connected assets."
 msgstr "Der Energievektor der angeschlossenen Anlagen."
 
-#: projects/forms.py:623 templates/scenario/scenario_results_page.html:65
+#: projects/forms.py:650 templates/scenario/scenario_results_page.html:65
 msgid "Name"
 msgstr "Name"
 
-#: projects/forms.py:623
+#: projects/forms.py:650
 msgid "Energy carrier"
 msgstr "Energieträger"
 
-#: projects/forms.py:672
+#: projects/forms.py:707
 msgid "Electrical efficiency with no heat extraction"
 msgstr "Elektrischer Wirkungsgrad ohne Wärmeauskopplung"
 
-#: projects/forms.py:683
+#: projects/forms.py:718
 msgid "Thermal efficiency with maximal heat extraction"
 msgstr "Thermischer Wirkungsgrad mit maximalem Wärmeentzug"
 
-#: projects/forms.py:686
+#: projects/forms.py:721
 msgid "Stromverlustkenzahl"
 msgstr "Stromverlustkenzahl"
 
-#: projects/forms.py:690
+#: projects/forms.py:725
 msgid "Efficiency gaz to electricity"
 msgstr "Wirkungsgrad gaz auf Strom"
 
-#: projects/forms.py:705
-msgid "Efficiency gas to heat"
-msgstr "Wirkungsgrad gaz-Wärme"
+#: projects/forms.py:740
+msgid "Efficiency gaz to heat"
+msgstr "Wirkungsgrad Gas zu Wärme"
 
-#: projects/forms.py:774
+#: projects/forms.py:789
+msgid "Fixed costs"
+msgstr "Feste Kosten"
+
+#: projects/forms.py:838
 msgid ""
 "File not properly formatted. Please ensure you upload a comma separated "
 "array of values. E.g. [1,2,0.32]"
@@ -377,21 +458,21 @@ msgstr ""
 "Datei nicht korrekt formatiert. Bitte stellen Sie sicher, dass Sie ein "
 "kommagetrenntes Array von Werten hochladen, z. B. [1,2,0.32]"
 
-#: projects/forms.py:780
+#: projects/forms.py:844
 msgid "Could not parse a file. Did you upload one?"
 msgstr "Konnte keine Datei einlesen. Haben Sie eine hochgeladen?"
 
-#: projects/forms.py:806
+#: projects/forms.py:870
 msgid "If you have no installed capacity, age installed should also be 0"
 msgstr ""
 "Wenn Sie keine installierte Leistung haben, sollte auch das installierte "
 "Alter 0 sein"
 
-#: projects/forms.py:822
+#: projects/forms.py:886
 msgid "The sum of the efficiencies should not exceed 1"
 msgstr "Die Summe der Wirkungsgrade sollte 1 nicht überschreiten"
 
-#: projects/forms.py:834
+#: projects/forms.py:898
 msgid ""
 "Feed-in tariff > energy price for some of simulation's timesteps. This would "
 "cause an unbound solution and terminate the optimization. Please reconsider "
@@ -401,15 +482,15 @@ msgstr ""
 "würde eine ungebundene Lösung verursachen und die Optimierung beenden. Bitte "
 "überdenken Sie Ihre Einspeisevergütung und Ihren Energiepreis."
 
-#: projects/forms.py:851
+#: projects/forms.py:915
 msgid "The number of values of the parameter "
 msgstr "Die Anzahl der Werte des Parameters ist in der Tabelle angegeben."
 
-#: projects/forms.py:854
+#: projects/forms.py:918
 msgid " are not equal to the number of simulation timesteps"
 msgstr " ist nicht gleich der Anzahl der Simulationszeitschritte"
 
-#: projects/forms.py:857
+#: projects/forms.py:921
 msgid ""
 ". You can change the number of timesteps in the first step of scenario "
 "creation."
@@ -417,11 +498,15 @@ msgstr ""
 ". Sie können die Anzahl der Zeitschritte im ersten Schritt der "
 "Szenarienerstellung ändern."
 
-#: projects/forms.py:968
+#: projects/forms.py:935
+msgid "Asset Name"
+msgstr "Anlagensname"
+
+#: projects/forms.py:1027
 msgid "Timeseries vector"
 msgstr "Zeitreihenvektor"
 
-#: projects/forms.py:971
+#: projects/forms.py:1030
 msgid ""
 "You can upload your timeseries as xls(x), csv or json format. Either there "
 "is one column with the values of the timeseries matching the scenario "
@@ -441,11 +526,15 @@ msgstr ""
 "berücksichtigt. Die Zeitreihe im csv-Format wird in kommagetrennten Werten "
 "mit Punkt als Dezimaltrennzeichen."
 
-#: projects/forms.py:982
-msgid "Installed capacity (kWh)"
-msgstr "installierte Leistung (kW)"
+#: projects/forms.py:1041
+msgid "Installed capacity"
+msgstr "Installierte Leistung"
 
-#: projects/helpers.py:228
+#: projects/forms.py:1042
+msgid "Maximum capacity"
+msgstr "Maximale Kapazität"
+
+#: projects/helpers.py:231
 #, python-format
 msgid ""
 "Please provide either a number within %(boundaries) s or upload a timeseries "
@@ -454,7 +543,7 @@ msgstr ""
 "Please provide either a number within %(boundaries) s or upload a timeseries "
 "from a file. aus einer Datei"
 
-#: projects/helpers.py:261
+#: projects/helpers.py:264
 #, python-format
 msgid ""
 "Some values in the timeseries do not lie within %(boundaries) s, please "
@@ -463,12 +552,12 @@ msgstr ""
 "Einige Werte in der Zeitreihe liegen nicht innerhalb von %(boundaries) s, "
 "bitte überprüfen Sie Ihre Eingabe erneut."
 
-#: projects/helpers.py:272 projects/helpers.py:281
+#: projects/helpers.py:275 projects/helpers.py:284
 #, python-format
 msgid "Please enter a value within %(boundaries) s"
 msgstr "Bitte geben Sie einen Wert innerhalb von %(boundaries) s ein"
 
-#: projects/helpers.py:359
+#: projects/helpers.py:362
 #, python-brace-format
 msgid ""
 "Input timeseries file type of \"{timeseries_file.name}\" is not supported. "
@@ -478,12 +567,12 @@ msgstr ""
 "unterstützt. Die unterstützten Formate sind \"json\", \"csv\", \"txt\", \"xls"
 "\" und \"xlsx\"."
 
-#: projects/helpers.py:364
+#: projects/helpers.py:367
 #, python-format
 msgid "Input timeseries file \"%(fname)s\" is empty"
 msgstr "Eingabezeitreihen-Datei \"%(fname)s\" ist leer"
 
-#: projects/models/base_models.py:50 templates/project/project_search.html:90
+#: projects/models/base_models.py:50 templates/project/project_search.html:113
 msgid "Edit"
 msgstr "Bearbeiten"
 
@@ -491,7 +580,7 @@ msgstr "Bearbeiten"
 msgid "Read"
 msgstr "Lesen"
 
-#: projects/models/base_models.py:111
+#: projects/models/base_models.py:112
 #, python-brace-format
 msgid ""
 "No email address provided to find the user to share the project '{self."
@@ -500,11 +589,11 @@ msgstr ""
 "Keine E-Mail-Adresse angegeben, um den Benutzer zu finden, der das Projekt "
 "'{self.name}'' mit"
 
-#: projects/models/base_models.py:121
+#: projects/models/base_models.py:122
 msgid "You cannot share a project with yourself"
 msgstr "Sie können ein Projekt nicht mit sich selbst teilen"
 
-#: projects/models/base_models.py:129
+#: projects/models/base_models.py:130
 #, python-brace-format
 msgid ""
 "'{email}' belongs to a valid user, they will be able to {share_rights} the "
@@ -513,7 +602,7 @@ msgstr ""
 "'{email}' gehört zu einem gültigen Benutzer, dieser kann {share_rights} das "
 "Projekt '{self.name}'"
 
-#: projects/models/base_models.py:136
+#: projects/models/base_models.py:137
 #, python-brace-format
 msgid ""
 "The share rights of the user registered under {email} for the project '{self."
@@ -523,7 +612,7 @@ msgstr ""
 "'{self.name}' wurden von '{viewer.share_rights}' auf '{share_rights}' "
 "geändert."
 
-#: projects/models/base_models.py:142
+#: projects/models/base_models.py:143
 #, python-brace-format
 msgid ""
 "The user registered under {email} for the project '{self.name}' already have "
@@ -532,14 +621,14 @@ msgstr ""
 "Der unter {email} registrierte Benutzer für das Projekt '{self.name}' hat "
 "bereits '{share_rights}' access"
 
-#: projects/models/base_models.py:148
+#: projects/models/base_models.py:149
 msgid ""
 "We could not find a user registered under the email address you provided: "
 msgstr ""
 "Wir konnten keinen Benutzer finden, der unter der von Ihnen angegebenen E-"
 "Mail Adresse registriert ist: "
 
-#: projects/models/base_models.py:170
+#: projects/models/base_models.py:171
 msgid ""
 "The user(s) {','.join(existing_viewers.values_list('user__email', "
 "flat=True))} rights to the project '{self.name}' have been revoked"
@@ -547,7 +636,7 @@ msgstr ""
 "Der/die Benutzer {','.join(existing_viewers.values_list('user__email', "
 "flat=True))} wurden die Rechte für das Projekt '{self.name}' entzogen."
 
-#: projects/models/base_models.py:174
+#: projects/models/base_models.py:175
 msgid ""
 "The user(s) {','.join(viewers.values_list('user__email', flat=True))} does "
 "not belong to the viewers of the project '{self.name}'"
@@ -555,14 +644,14 @@ msgstr ""
 "Der/die Benutzer {','.join(viewers.values_list('user__email', flat=True))} "
 "gehören nicht gehört nicht zu den Betrachtern des Projekts '{self.name}'"
 
-#: projects/models/base_models.py:178
+#: projects/models/base_models.py:179
 msgid ""
-"The user(s) you selected seems to not be registered in the open_plan tool"
+"The user(s) you selected seems to not be registered in the open-plan-tool"
 msgstr ""
-"Der/die von Ihnen ausgewählte(n) Benutzer scheint/scheinen nicht im "
-"open_plan-Tool registriert zu sein."
+"Der/die von Ihnen ausgewählte(n) Benutzer scheint/scheinen nicht im open-"
+"plan-tool registriert zu sein."
 
-#: projects/models/simulation_models.py:49
+#: projects/models/simulation_models.py:84
 msgid ""
 "The value of the variable parameter for the reference scenario of the "
 "sensitivity analysis, if is it different than the value of the current "
@@ -579,15 +668,15 @@ msgstr ""
 "das aktuelle Szenario beibehalten, aber den Parameterwert auf den gewählten "
 "Wert ändern"
 
-#: projects/scenario_topology_helpers.py:43
+#: projects/scenario_topology_helpers.py:46
 msgid "There is already a bus with this name in the scenario"
 msgstr "There is already a bus with this name in the scenario"
 
-#: projects/scenario_topology_helpers.py:91
+#: projects/scenario_topology_helpers.py:150
 msgid "There is already a storage with this name in the scenario"
 msgstr "Es gibt bereits einen Speicher mit diesem Namen im Szenario"
 
-#: projects/scenario_topology_helpers.py:215
+#: projects/scenario_topology_helpers.py:319
 msgid "There is already an asset with this name in the scenario"
 msgstr "Es gibt bereits eine Anlage mit diesem Namen im Szenario"
 
@@ -607,231 +696,292 @@ msgstr "Formular - Fehler beim Mailversand:"
 msgid "Select a use case"
 msgstr "Anwendungsfall Auswähl"
 
-#: projects/views.py:401
+#: projects/views.py:101
+msgid ""
+"The file you wanted to upload does not seem to be an exported scenario file. "
+"It might be an exported project file, in that case use the 'From file' "
+"option on the 'Create project' dropdown at the top of the projects view page."
+msgstr ""
+"Die Datei, die Sie hochladen wollten, scheint keine exportierte "
+"Szenariodatei zu sein. Es könnte eine exportierte Projektdatei sein, in "
+"diesem Fall verwenden Sie die Option 'Aus Datei' im Dropdown-Menü 'Projekt "
+"erstellen' oben auf der Projektansichtsseite."
+
+#: projects/views.py:364
+msgid "Project Info updated successfully!"
+msgstr "Projektinfo erfolgreich aktualisiert!"
+
+#: projects/views.py:426
+msgid ""
+"The file you wanted to upload does not seem to be an exported project file. "
+"It might be an exported scenario file, in that case use the 'From file' "
+"option on the 'Create scenario' dropdown of a project in which you want to "
+"import your scenario."
+msgstr ""
+"Die Datei, die Sie hochladen wollten, scheint keine exportierte Projektdatei "
+"zu sein. Es könnte eine exportierte Szenariodatei sein. In diesem Fall "
+"verwenden Sie die Option 'Aus Datei' im Dropdown-Menü 'Szenario erstellen' "
+"eines Projekts, in das Sie Ihr Szenario importieren möchten."
+
+#: projects/views.py:493
 msgid "New scenario name"
 msgstr "Neuer Szenarioname"
 
-#: projects/views.py:401
+#: projects/views.py:493
 msgid "Scenario file"
 msgstr "Szenariosdatei"
 
-#: projects/views.py:404
+#: projects/views.py:496
 msgid "New project name"
 msgstr "Neuer Projektname"
 
-#: projects/views.py:404
+#: projects/views.py:496
 msgid "Project file"
 msgstr "Projektdatei"
 
-#: projects/views.py:425 projects/views.py:464
-#: templates/project/project_search.html:138
+#: projects/views.py:517 projects/views.py:569
+#: templates/project/project_search.html:165
 #: templates/usecase/usecase_search.html:111
 msgid "Show scenarios"
 msgstr "Szenarien anzeigen"
 
-#: projects/views.py:426 projects/views.py:465
+#: projects/views.py:518 projects/views.py:570
 msgid "Hide scenarios"
 msgstr "Szenarien ausblenden"
 
-#: projects/views.py:570
+#: projects/views.py:542
+msgid ""
+"You cannot duplicate a shared project without the owner granting you 'edit' "
+"rights"
+msgstr ""
+"Sie können ein freigegebenes Projekt nicht duplizieren, ohne dass der "
+"Eigentümer Ihnen Bearbeitungsrechtegewährt."
+
+#: projects/views.py:675
 msgid "Scenario Setup"
 msgstr "Szenario-Einstellung"
 
-#: projects/views.py:571
+#: projects/views.py:676
 msgid "Energy system design"
 msgstr "Auslegung des Energiesystems"
 
-#: projects/views.py:572
+#: projects/views.py:677
 msgid "Constraints"
 msgstr "Randbedingungen"
 
-#: projects/views.py:573
+#: projects/views.py:678
 msgid "Simulation"
 msgstr "Simulation"
 
-#: projects/views.py:591
+#: projects/views.py:696
 msgid "Project selection"
 msgstr "Projektauswahl"
 
-#: projects/views.py:597
+#: projects/views.py:702
 msgid "You have currently no projects, please create one first"
 msgstr "Sie haben derzeit keine Projekte, bitte erstellen Sie zuerst eines"
 
-#: projects/views.py:700
+#: projects/views.py:851
 msgid "Electricity DSO"
 msgstr "Elektrizitätsversorger"
 
-#: projects/views.py:701
+#: projects/views.py:852
 msgid "Gas DSO"
 msgstr "Gasversorger"
 
-#: projects/views.py:702
+#: projects/views.py:853
 msgid "H2 DSO"
 msgstr "H2-Versorger"
 
-#: projects/views.py:703
+#: projects/views.py:854
 msgid "Heat DSO"
 msgstr "Wärmeversorger"
 
-#: projects/views.py:706
+#: projects/views.py:857
 msgid "PV Plant"
 msgstr "PV-Anlage"
 
-#: projects/views.py:707
+#: projects/views.py:858
 msgid "Wind Plant"
 msgstr "Windkraftanlage"
 
-#: projects/views.py:708
+#: projects/views.py:859
 msgid "Biogas Plant"
 msgstr "Biogasanlage"
 
-#: projects/views.py:709
+#: projects/views.py:860
 msgid "Geothermal Conversion"
 msgstr "Geothermische Umwandlung"
 
-#: projects/views.py:710
+#: projects/views.py:861
 msgid "Solar Thermal Plant"
 msgstr "Thermische Solaranlage"
 
-#: projects/views.py:713
+#: projects/views.py:864
 msgid "Transformer Station (in)"
 msgstr "Trafostation (in)"
 
-#: projects/views.py:714
+#: projects/views.py:865
 msgid "Transformer Station (out)"
 msgstr "Trafostation (aus)"
 
-#: projects/views.py:715
+#: projects/views.py:866
 msgid "Storage Charge Controller (in)"
 msgstr "Speicherladeregler (in)"
 
-#: projects/views.py:716
+#: projects/views.py:867
 msgid "Storage Charge Controller (out)"
 msgstr "Speicherladeregler (out)"
 
-#: projects/views.py:717
+#: projects/views.py:868
 msgid "Solar Inverter"
 msgstr "Solar-Wechselrichter"
 
-#: projects/views.py:718
+#: projects/views.py:869
 msgid "Diesel Generator"
 msgstr "Diesel-Generator"
 
-#: projects/views.py:719
+#: projects/views.py:870
 msgid " Fuel Cell"
 msgstr " Brennstoffzelle"
 
-#: projects/views.py:720
+#: projects/views.py:871
 msgid "Gas Boiler"
 msgstr "Gasboiler"
 
-#: projects/views.py:721
+#: projects/views.py:872
 msgid "Electrolyzer"
 msgstr "Elektrolyseur"
 
-#: projects/views.py:722
+#: projects/views.py:873
 msgid "Heat Pump"
 msgstr "Wärmepumpe"
 
-#: projects/views.py:723
+#: projects/views.py:874
 msgid "Combined Heat and Power"
 msgstr "Kraft-Wärme-Kopplung"
 
-#: projects/views.py:724
+#: projects/views.py:875
 msgid "CHP fixed ratio"
 msgstr "Kraft-Wärme-Kopplung festes Verhältnis"
 
-#: projects/views.py:727
+#: projects/views.py:878
 msgid "Electricity Storage"
 msgstr "Elektrizitätsspeicher"
 
-#: projects/views.py:730
+#: projects/views.py:880
+msgid "H2 Storage"
+msgstr "Wasserstoffspeicher"
+
+#: projects/views.py:881
 msgid "Heat Storage"
 msgstr "Wärmespeicher"
 
-#: projects/views.py:733
+#: projects/views.py:884
 msgid "Electricity Demand"
 msgstr "Elektrizitätsnachfrage"
 
-#: projects/views.py:736
+#: projects/views.py:886
+msgid "H2 Demand"
+msgstr "Wasserstoffbedarf"
+
+#: projects/views.py:887
 msgid "Heat Demand"
 msgstr "Wärmebedarf"
 
-#: projects/views.py:738
+#: projects/views.py:889
 msgid "Bus"
 msgstr "Bus"
 
-#: projects/views.py:796
+#: projects/views.py:953
 msgid "Minimal degree of autonomy"
-msgstr "Kleinster Autarkiegrad"
+msgstr "Minimal Autarkiegrad"
 
-#: projects/views.py:797
+#: projects/views.py:954
 msgid "Minimal share of renewables"
-msgstr "Kleinster Anteil Erneuerbarer Energien"
+msgstr "Minimal Anteil Erneuerbarer Energien"
 
-#: projects/views.py:798
+#: projects/views.py:955
 msgid "Maximal CO2 emissions"
 msgstr "Maximale CO2-Emissionen"
 
-#: projects/views.py:799
+#: projects/views.py:956
 msgid "Net zero energy system"
 msgstr "Netto-Nullenergie-System"
 
+#: projects/views.py:1113
+msgid ""
+"The simulation was performed with an older MVS version which is not "
+"compatible with the result view anymore, please reset and rerun the "
+"simulation"
+msgstr ""
+"Die Simulation wurde mit einer älteren MVS-Version durchgeführt, die nicht "
+"mehrmit der Ergebnisansicht kompatibel ist.Bitte setzen Sie die Simulation "
+"zurück und führen Sie sie erneut aus."
+
+#: projects/views.py:1320
+msgid "Scenario changes successfully reversed!"
+msgstr "Szenarioänderungen erfolgreich rückgängig gemacht!"
+
+#: projects/views.py:1803
+msgid ""
+"You do not have the permission to reset a simulation on a project shared "
+"with you"
+msgstr ""
+"Sie haben nicht die Berechtigung, eine Simulation in einem gemeinsamen "
+"Projekt zurückzusetzen."
+
 #: templates/asset/asset_create_form.html:13
-#: templates/project/project_search.html:86
-#: templates/project/project_search.html:173
+#: templates/project/project_search.html:108
+#: templates/project/project_search.html:200
 #: templates/scenario/scenario_results_page.html:29
 msgid "Results"
 msgstr "Ergebnisse"
 
 #: templates/asset/asset_create_form.html:17
 msgid "Optimized additional capacity"
-msgstr "Optimierte zusätzliche Kapazität"
+msgstr "Optimierte zusätzliche Leistung"
 
-#: templates/asset/asset_create_form.html:25
-#: templates/asset/storage_asset_create_form.html:26
+#: templates/asset/asset_create_form.html:26
+#: templates/asset/storage_asset_create_form.html:27
+msgid "Aggregated flow"
+msgstr "Aggregierter Fluss"
+
+#: templates/asset/asset_create_form.html:35
+#: templates/asset/storage_asset_create_form.html:36
 msgid "See traces data"
 msgstr "Siehe Trace-Daten"
 
-#: templates/asset/asset_create_form.html:36
+#: templates/asset/asset_create_form.html:46
 msgid "Economical parameters"
 msgstr "Wirtschaftliche Parameter"
 
-#: templates/asset/asset_create_form.html:48
+#: templates/asset/asset_create_form.html:58
 msgid "Technical parameters"
 msgstr "Technische Parameter"
 
-#: templates/asset/asset_create_form.html:56
+#: templates/asset/asset_create_form.html:66
 msgid "Calculate COP from temperature"
 msgstr "COP aus Temperatur berechnen"
 
-#: templates/asset/asset_create_form.html:82
+#: templates/asset/asset_create_form.html:92
 msgid "uploaded data"
 msgstr "hochgeladene Daten"
 
-#: templates/base.html:89 templates/navbar.html:47 templates/navbar.html:109
+#: templates/base.html:89 templates/navbar.html:70
 msgid "Contact"
 msgstr "Kontakt"
 
-#: templates/base.html:90 templates/navbar.html:40 templates/navbar.html:50
-msgid "Documentation"
-msgstr "Dokumentation"
-
-#: templates/base.html:91 templates/navbar.html:53 templates/navbar.html:107
-#: templates/usecase/usecase_search.html:25
-msgid "Use cases"
-msgstr "Anwendungsbeispiele"
-
-#: templates/base.html:92 templates/legal/license.html:13
-#: templates/navbar.html:56 templates/navbar.html:108
+#: templates/base.html:90 templates/legal/license.html:13
+#: templates/navbar.html:69
 msgid "License"
 msgstr "Lizenz"
 
-#: templates/base.html:93 templates/legal/imprint.html:12
+#: templates/base.html:91 templates/legal/imprint.html:12
 msgid "Imprint"
 msgstr "Impressum"
 
-#: templates/base.html:94
+#: templates/base.html:92
 msgid "Privacy"
 msgstr "Datenschutz"
 
@@ -866,6 +1016,22 @@ msgstr ""
 msgid "Refresh Page"
 msgstr "Seite aktualisieren"
 
+#: templates/feedback.html:50 templates/navbar.html:33
+msgid "Feedback"
+msgstr "Rückmeldung"
+
+#: templates/feedback.html:65
+msgid "Should you face any issue, let us know or share your feedback with us!"
+msgstr ""
+
+#: templates/feedback.html:76
+msgid "How much you like it?"
+msgstr ""
+
+#: templates/feedback.html:204
+msgid "Submit"
+msgstr ""
+
 #: templates/index.html:12
 msgid "Model your local energy system"
 msgstr "Modellieren Sie Ihr lokales Energiesystem"
@@ -887,90 +1053,200 @@ msgstr "Ausprobieren"
 msgid "About - open_plan"
 msgstr "Über - open_plan"
 
+#: templates/legal/about.html:13
+msgid "About"
+msgstr ""
+
 #: templates/legal/about.html:20
 msgid "open_plan project consortium"
 msgstr "open_plan Projektkonsortium"
 
-#: templates/legal/about.html:24
+#: templates/legal/about.html:21
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t<p>The open_plan project consortium is composed of the <a href="
+"\"%(url_rli)s\" target=\"_blank\" rel=\"noreferrer\">Reiner Lemoine "
+"Institut</a> (RLI), <a href=\"%(url_dgs)s\" target=\"_blank\" rel="
+"\"noreferrer\">Deutsche Gesellschaft für Sonnenenergie</a> (DGS) and the <a "
+"href=\"%(url_pik)s\" target=\"_blank\" rel=\"noreferrer\">Potsdam Institut "
+"für Klimafolgenforschung</a> (PIK). It is funded within the framework of the "
+"\"Technology-oriented systems analysis\" funding area of the BMWi's 7th "
+"Energy Research Programme \"Innovation for the energy transition\".</p>\n"
+"\t\t\t\t"
+msgstr ""
+"\n"
+"\t\t\t\t<p>Das open_plan Projektkonsortium besteht aus dem <a href="
+"\"%(url_rli)s\" target=\"_blank\" rel=\"noreferrer\">Reiner Lemoine "
+"Institut</a> (RLI), <a href=\"%(url_dgs)s\" target=\"_blank\" rel="
+"\"noreferrer\">Deutsche Gesellschaft für Sonnenenergie</a> (DGS) und die <a "
+"href=\"%(url_pik)s\" target=\"_blank\" rel=\"noreferrer\">Potsdam Institut "
+"für Klimafolgenforschung</a> (PIK). Gefördert wird es im Rahmen des "
+"Programms \"Technologieorientierte Systemanalyse\" des 7. "
+"Energieforschungsprogramms \"Innovation für die Energiewende\" des BMWi "
+"gefördert.</p>\n"
+"\t\t\t\t"
+
+#: templates/legal/about.html:26
 msgid "open_plan project website"
 msgstr "open_plan Projekt Webseite"
 
-#: templates/legal/about.html:28
+#: templates/legal/about.html:27
+#, python-format
+msgid ""
+"<p>You can visit the open_plan <a href=\"%(url_op)s\" target=\"_blank\" rel="
+"\"noreferrer\">website</a> to know more about the cellular approach and the "
+"open_plan project </p>"
+msgstr ""
+"<p>Sie können die open_plan <a href=\"%(url_op)s\" target=\"_blank\" rel="
+"\"noreferrer\">Website</a>, um mehr über den zellulären Ansatz und das "
+"open_plan project </p>"
+
+#: templates/legal/about.html:30
 msgid "Feedback or question?"
 msgstr "Feedback oder Frage?"
 
-#: templates/legal/about.html:36
+#: templates/legal/about.html:32
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t<p>You can always <a href=\"%(url_feedback)s\">leave us a comment or "
+"feedback</a> on things you would improve. You can also visit <a href="
+"\"%(url_github)s\" target=\"_blank\" rel=\"noreferrer\">our github project "
+"page</a> to see which bugs are being fixed and which new features are being "
+"developed.</p>\n"
+"\t\t\t\t"
+msgstr ""
+"\n"
+"\t\t\t\t<p>Sie können uns jederzeit <a href=\"%(url_feedback)s\">einen "
+"Kommentar oder Feedback</a> zu Dingen, die Sie verbessern würden. Sie können "
+"auch auf <a href=\"%(url_github)s\" target=\"_blank\" rel=\"noreferrer"
+"\">unser Github-Projekt Seite</a>, um zu sehen, welche Bugs behoben und "
+"welche neuen Features entwickelt werden.</p>\n"
+"\t\t\t\t"
+
+#: templates/legal/about.html:38
+#, python-format
+msgid ""
+"\n"
+"\t\t\t\t<p>You can follow the development of this <a href=\"%(url_github)s\" "
+"target=\"_blank\" rel=\"noreferrer\">user interface</a>, or deploy your own "
+"open-plan tool (including <a href=\"%(url_simulation_server)s\" target="
+"\"_blank\" rel=\"noreferrer\">simulation server</a> and user interface) by "
+"visiting our <a href=\"%(url_gui)s\" target=\"_blank\" rel=\"noreferrer"
+"\">github page</a></p>\n"
+"\t\t\t\t"
+msgstr ""
+"\n"
+"\t\t\t\t<p>Sie können die Entwicklung dieser <a href=\"%(url_github)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Benutzeroberfläche</a>, oder Ihr "
+"eigenes open-plan-tool (einschließlich <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Simulationsserver</a> und "
+"Benutzeroberfläche), indem Sie Besuchen Sie unsere <a href=\"%(url_gui)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Github-Seite</a></p>\n"
+"\t\t\t\t"
+
+#: templates/legal/about.html:43
 msgid "Simulation server"
 msgstr "Simulationserver"
 
-#: templates/legal/about.html:38
+#: templates/legal/about.html:45
+#, python-format
 msgid ""
-"Our simulations run on a server hosted at RLI, the code to setup the "
-"simulation server is licenced under MIT License and publicly available on"
+"\n"
+"\t\t\t\t\tOur simulations run on a server hosted at RLI, the code to setup "
+"the simulation server is licenced under MIT License and publicly available "
+"on <a href=\"%(url_simulation_server)s\" target=\"_blank\" rel=\"noreferrer"
+"\">our github page</a>.\n"
+"\t\t\t\t\tThe simulation are perfomed with <a href=\"%(url_mvs)s\" target="
+"\"_blank\" rel=\"noreferrer\">multi-vector-simulator</a>, a code using <a "
+"href=\"%(url_oemof)s\" target=\"_blank\" rel=\"noreferrer\">oemof-solph</a> "
+"to simulate energy system model from techno-economic parameters.\n"
+"\t\t\t\t\t"
 msgstr ""
-"Unsere Simulationen laufen auf einem Server, der bei RLI gehostet wird, der "
-"Code zur Einrichtung des Simulationsserver ist unter MIT-Lizenz lizensiert "
-"und öffentlich zugänglich auf"
+"\n"
+"\t\t\t\t\tUnsere Simulationen laufen auf einem Server, der bei RLI gehostet "
+"wird, der Code zur Einrichtung der Simulationsserver steht unter MIT-Lizenz "
+"und ist öffentlich verfügbar auf <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">unserer Github-Seite</a>.\n"
+"\t\t\t\t\tDie Simulationen werden mit <a href=\"%(url_mvs)s\" target=\"_blank"
+"\" rel=\"noreferrer\">multi-vector-simulator</a>, ein Code mit <a href="
+"%(url_oemof)s\" target=\"_blank\" rel=\"noreferrer\">oemof-solph</a> , um "
+"ein Energiesystemmodell aus technisch-ökonomischen Parametern zu "
+"simulieren.\n"
+"\t\t\t\t\t"
 
-#: templates/legal/about.html:43
+#: templates/legal/about.html:52
 msgid "This webapp design"
 msgstr "Auslegegung des Webapps"
 
-#: templates/legal/about.html:44
-msgid "Bryan Lancien from Reiner Lemoine Institut"
-msgstr ""
+#: templates/legal/about.html:53
+msgid "Bryan Lancien from "
+msgstr "Bryan Lancien vom "
 
 #: templates/legal/imprint.html:4
 msgid "Imprint - open_plan"
-msgstr ""
+msgstr "Impressum - open_plan"
 
 #: templates/legal/imprint.html:22
-msgid "Herausgegeben von:"
-msgstr ""
+msgid "Published by:"
+msgstr "Herausgegeben von:"
 
 #: templates/legal/imprint.html:23
-msgid ""
-"Diese Internetseite wird betrieben von der Reiner Lemoine Institut gGmbH"
+msgid "This website is operated by the Reiner Lemoine Institute gGmbH"
 msgstr ""
+"Diese Internetseite wird betrieben von der Reiner Lemoine Institut gGmbH"
 
 #: templates/legal/imprint.html:25
-msgid "Geschäftsführung:"
-msgstr ""
+msgid "Managing Director:"
+msgstr "Geschäftsführung:"
 
 #: templates/legal/imprint.html:28
-msgid "Postanschrift:"
-msgstr ""
+msgid "Postal address:"
+msgstr "Postanschrift"
 
-#: templates/legal/imprint.html:29
-msgid "Reiner Lemoine Institut gGmbH"
-msgstr ""
+#: templates/legal/imprint.html:29 templates/legal/privacy.html:25
+msgid "Reiner Lemoine Institute gGmbH"
+msgstr "Reiner Lemoine Institut gGmbH"
 
 #: templates/legal/imprint.html:33
-msgid "Telefon"
-msgstr ""
+msgid "Telephone"
+msgstr "Telefon"
 
 #: templates/legal/imprint.html:36
-msgid "Handelsregister"
-msgstr ""
+msgid "Trade Register"
+msgstr "Handelsregister"
 
 #: templates/legal/imprint.html:38
-msgid "Steuernummer"
-msgstr ""
+msgid "Tax Number"
+msgstr "Steuernummer"
 
 #: templates/legal/imprint.html:40
-msgid "USt-IdNr."
-msgstr ""
+msgid "Tax IdNr."
+msgstr "USt-IdNr."
 
 #: templates/legal/imprint.html:42
 msgid "Disclaimer"
-msgstr ""
+msgstr "Haftungsausschluss"
 
 #: templates/legal/imprint.html:44
-msgid "Haftungshinweis"
-msgstr ""
+msgid "Liability notice"
+msgstr "Haftungshinweis"
 
 #: templates/legal/imprint.html:45
 msgid ""
+"The contents have been researched with the greatest care. Nevertheless, the "
+"authors do not assume any liability for the topicality, correctness, "
+"completeness or quality of the information provided. Liability claims "
+"against the authors, which refer to material or non-material damage caused "
+"by the use or non-use of the information provided or by the use of incorrect "
+"or incomplete information, are generally excluded, provided that there is no "
+"demonstrable intentional or grossly negligent fault on the part of the "
+"authors. All offers are subject to change and non-binding. The authors "
+"expressly reserve the right to change, supplement or delete parts of the "
+"pages or the entire offer without prior notice or to cease publication "
+"temporarily or permanently."
+msgstr ""
 "Die Inhalte sind mit größter Sorgfalt recherchiert. Dennoch übernehmen die "
 "Autor*innen keinerlei Gewähr für die Aktualität, Korrektheit, "
 "Vollständigkeit oder Qualität der bereitgestellten Informationen. "
@@ -984,14 +1260,28 @@ msgid ""
 "ausdrücklich vor, Teile der Seiten oder das gesamte Angebot ohne gesonderte "
 "Ankündigung zu verändern, zu ergänzen, zu löschen oder die Veröffentlichung "
 "zeitweise oder endgültig einzustellen."
-msgstr ""
 
 #: templates/legal/imprint.html:47
-msgid "Verweise und Links"
-msgstr ""
+msgid "References and links"
+msgstr "Verweise und Links"
 
 #: templates/legal/imprint.html:48
 msgid ""
+"The authors are not responsible for any contents linked or referred to from "
+"their pages - unless they have full knowledge of illegal contents and would "
+"be able to prevent the visitors of their site from viewing those pages. The "
+"authors therefore expressly declare that the linked pages were free of "
+"illegal content at the time the links were created. The authors have no "
+"influence on the current and future design and content of the linked pages. "
+"Therefore, they hereby expressly distance themselves from all contents of "
+"all linked pages that were changed after the link was set. This statement "
+"applies to all links and references set within the own internet offer as "
+"well as to external entries in guest books, discussion forums and mailing "
+"lists set up by the authors. For illegal, incorrect or incomplete contents "
+"and especially for damages resulting from the use or non-use of such "
+"information, only the provider of the linked page is liable, not the one who "
+"has linked to the respective publication."
+msgstr ""
 "Bei direkten oder indirekten Verweisen auf fremde Internetseiten („Links”), "
 "die außerhalb des Verantwortungsbereiches der Autor*innen liegen, würde eine "
 "Haftungsverpflichtung ausschließlich in dem Fall in Kraft treten, in dem die "
@@ -1011,14 +1301,27 @@ msgid ""
 "Informationen entstehen, haften allein die Anbieter*innen der Seite, auf "
 "welche verwiesen wurde, nicht der- oder diejenige, der/die über Links auf "
 "die jeweilige Veröffentlichung lediglich verweist."
-msgstr ""
 
 #: templates/legal/imprint.html:50
-msgid "Urheber- und Kennzeichenrecht"
-msgstr ""
+msgid "Copyright and trademark law"
+msgstr "Urheber- und Kennzeichenrecht"
 
 #: templates/legal/imprint.html:51
 msgid ""
+"The authors endeavor to observe the copyrights of the graphics, sound "
+"documents, video sequences and texts used in all publications, to use "
+"graphics, sound documents, video sequences and texts created by themselves "
+"or to use license-free graphics, sound documents, video sequences and texts. "
+"All brand names and trademarks mentioned on the website and possibly "
+"protected by third parties are subject without restriction to the provisions "
+"of the applicable trademark law and the ownership rights of the respective "
+"registered owners. The mere mention of a trademark does not imply that it is "
+"not protected by the rights of third parties! The copyright for published "
+"objects created by the authors themselves remains solely with the authors of "
+"the pages. Any duplication or use of objects such as diagrams, sounds or "
+"texts in other electronic or printed publications is not permitted without "
+"the authors' agreement."
+msgstr ""
 "Die Autor*innen sind bestrebt, in allen Publikationen die Urheberrechte der "
 "verwendeten Grafiken, Tondokumente, Videosequenzen und Texte zu beachten, "
 "von ihnen selbst erstellte Grafiken, Tondokumente, Videosequenzen und Texte "
@@ -1034,28 +1337,1029 @@ msgid ""
 "Grafiken, Tondokumente, Videosequenzen und Texte in anderen elektronischen "
 "oder gedruckten Publikationen ist ohne ausdrückliche Zustimmung der "
 "Autor*innen nicht gestattet."
-msgstr ""
 
 #: templates/legal/imprint.html:53
-msgid "Rechtswirksamkeit dieses Haftungsausschlusses"
-msgstr ""
+msgid "Legal validity of this disclaimer"
+msgstr "Rechtswirksamkeit dieses Haftungsausschlusses"
 
 #: templates/legal/imprint.html:54
 msgid ""
+"This disclaimer is to be regarded as part of the internet publication which "
+"you were referred from. If sections or individual terms of this statement do "
+"not correspond, no longer correspond or do not completely correspond to the "
+"applicable legal situation, the content and validity of the other parts of "
+"the document remain unaffected."
+msgstr ""
 "Dieser Haftungsausschluss ist als Teil des Internetangebotes zu betrachten, "
 "von dem aus auf diese Seite verwiesen wurde. Sofern Teile oder einzelne "
 "Formulierungen dieses Textes der geltenden Rechtslage nicht, nicht mehr oder "
 "nicht vollständig entsprechen sollten, bleiben die übrigen Teile des "
 "Dokumentes in ihrem Inhalt und ihrer Gültigkeit davon unberührt."
-msgstr ""
 
 #: templates/legal/license.html:5
 msgid "License - open_plan"
 msgstr "Lizenz - open_plan"
 
-#: templates/legal/privacy.html:5
+#: templates/legal/license.html:21
+#, python-format
+msgid ""
+"The source code of this <a href=\"%(url_gui)s\" target=\"_blank\" rel="
+"\"noreferrer\">user interface</a> and of the <a href="
+"\"%(url_simulation_server)s\" target=\"_blank\" rel=\"noreferrer"
+"\">simulation server</a> are licensed under <a href=\"%(url_license)s\" "
+"target=\"_blank\" rel=\"noreferrer\">MIT license</a></p>"
+msgstr ""
+"Der Quellcode dieser <a href=%(url_gui)s\" target=\"_blank\" rel=\"noreferrer"
+"\">Benutzeroberfläche</a> und des <a href=\"%(url_simulation_server)s\" "
+"target=\"_blank\" rel=\"noreferrer\">Simulationsserver</a> sind lizenziert "
+"unter <a href=\"%(url_license)s\" target=\"_blank\" rel=\"noreferrer\">MIT-"
+"Lizenz</a></p>"
+
+#: templates/legal/privacy.html:5 templates/legal/privacy_DE.html:5
 msgid "Privacy - open_plan"
 msgstr "Datenschutz - open_plan"
+
+#: templates/legal/privacy.html:13
+msgid "Privacy (Stand"
+msgstr "Datenschutz (Zustand"
+
+#: templates/legal/privacy.html:21
+msgid "I. Name and address of the responsible person"
+msgstr "I. Name und Anschrift des Verantwortlichen"
+
+#: templates/legal/privacy.html:22
+msgid ""
+"The responsible party within the meaning of the General Data Protection "
+"Regulation and other national data protection laws of the member states as "
+"well as other data protection provisions is the:"
+msgstr ""
+"Der Verantwortliche im Sinne der Datenschutz-Grundverordnung und anderer "
+"nationaler Datenschutzgesetze der Mitgliedsstaaten sowie sonstiger "
+"datenschutzrechtlicher Bestimmungen ist die:"
+
+#: templates/legal/privacy.html:27
+msgid "Entrance D"
+msgstr "Aufgang D"
+
+#: templates/legal/privacy.html:29
+msgid "Telephone: +49 (0)30 1208 434 0"
+msgstr "Telefon: +49 (0)30 1208 434 0"
+
+#: templates/legal/privacy.html:31
+msgid "Website"
+msgstr "Webseite"
+
+#: templates/legal/privacy.html:34
+msgid "II. Data Protection Officer"
+msgstr "II. Datenschutzbeauftragter"
+
+#: templates/legal/privacy.html:35
+msgid ""
+"Since the type and scope of data processing at RLI do not meet the criteria "
+"set out in Article 37 (1) of the GDPR and Section 38 (1) sentence 1 of the "
+"new BDSG, no data protection officer has been appointed."
+msgstr ""
+"Da Art und Umfang der Datenverarbeitung am RLI die Kriterien nach Art. 37 "
+"Abs. 1 DSGVO sowie § 38 Abs. 1 S. 1 BDSG-neu nicht erfüllen, wurde kein "
+"Datenschutzbeauftragter bestellt."
+
+#: templates/legal/privacy.html:37
+msgid "III. General information on data processing"
+msgstr "III. Allgemeines zur Datenverarbeitung"
+
+#: templates/legal/privacy.html:38
+msgid "1. Scope of the processing of personal data"
+msgstr "1. Umfang der Verarbeitung personenbezogener Daten"
+
+#: templates/legal/privacy.html:39
+msgid ""
+"We process personal data of our users only insofar as this is necessary for "
+"the provision of a functional website and our content and services. The "
+"processing of personal data of our users takes place regularly only after "
+"consent of the user. An exception applies in those cases where it is not "
+"possible to obtain prior consent for technical reasons and the processing of "
+"the data is permitted by legal regulations. "
+msgstr ""
+"Wir verarbeiten personenbezogene Daten unserer Nutzer grundsätzlich nur, "
+"soweit dies zur Bereitstellung einer funktionsfähigen Website sowie unserer "
+"Inhalte und Leistungen erforderlich ist. Die Verarbeitung personenbezogener "
+"Daten unserer Nutzer erfolgt regelmäßig nur nach Einwilligung des Nutzers. "
+"Eine Ausnahme gilt in solchen Fällen, in denen eine vorherige Einholung "
+"einer Einwilligung aus technischen Gründen nicht möglich ist und die "
+"Verarbeitung der Daten durch gesetzliche Vorschriften gestattet ist."
+
+#: templates/legal/privacy.html:41
+msgid "2. Legal basis for the processing of personal data"
+msgstr "2. Rechtsgrundlage für die Verarbeitung personenbezogener Daten"
+
+#: templates/legal/privacy.html:42
+msgid ""
+"Insofar as we obtain the consent of the data subject for processing "
+"operations involving personal data, Art. 6 (1) lit. a of the EU General Data "
+"Protection Regulation (GDPR) serves as the legal basis.\n"
+"                        When processing personal data that is necessary for "
+"the performance of a contract to which the data subject is a party, Art. 6 "
+"(1) lit. b of the GDPR serves as the legal basis. This also applies to "
+"processing operations that are necessary for the performance of pre-"
+"contractual measures.\n"
+"                        In the event that vital interests of the data "
+"subject or another natural person make it necessary to process personal "
+"data, Art. 6 (1) lit. d GDPR serves as the legal basis.\n"
+"                        If the processing is necessary to protect a "
+"legitimate interest of our company or a third party and the interests, "
+"fundamental rights and freedoms of the data subject do not override the "
+"former interest, Art. 6 (1) lit. f DSGVO serves as the legal basis for the "
+"processing."
+msgstr ""
+"Soweit wir für Verarbeitungsvorgänge personenbezogener Daten eine "
+"Einwilligung der betroffenen Person einholen, dient Art. 6 Abs. 1 lit. a EU-"
+"Datenschutzgrundverordnung (DSGVO) als Rechtsgrundlage.\n"
+"Bei der Verarbeitung von personenbezogenen Daten, die zur Erfüllung eines "
+"Vertrages, dessen Vertragspartei die betroffene Person ist, erforderlich "
+"ist, dient Art. 6 Abs. 1 lit. b DSGVO als Rechtsgrundlage. Dies gilt auch "
+"für Verarbeitungsvorgänge, die zur Durchführung vorvertraglicher Maßnahmen "
+"erforderlich sind.\n"
+"Soweit eine Verarbeitung personenbezogener Daten zur Erfüllung einer "
+"rechtlichen Verpflichtung erforderlich ist, der unser Unternehmen "
+"unterliegt, dient Art. 6 Abs. 1 lit. c DSGVO als Rechtsgrundlage.\n"
+"Für den Fall, dass lebenswichtige Interessen der betroffenen Personoder "
+"einer anderen natürlichen Person eine Verarbeitung personenbezogener Daten "
+"erforderlich machen, dient Art. 6 Abs. 1 lit. d DSGVO als Rechtsgrundlage.\n"
+"Ist die Verarbeitung zur Wahrung eines berechtigten Interesses "
+"unseresUnternehmens oder eines Dritten erforderlich und überwiegen die "
+"Interessen, Grundrechte und Grundfreiheiten des Betroffenen das erstgenannte "
+"Interesse nicht, so dient Art. 6 Abs. 1 lit. f DSGVO als Rechtsgrundlage für "
+"die Verarbeitung."
+
+#: templates/legal/privacy.html:47
+msgid "3. Data deletion and storage duration"
+msgstr "3. Datenlöschung und Speicherdauer"
+
+#: templates/legal/privacy.html:48
+msgid ""
+"The personal data of the data subject shall be deleted or blocked as soon as "
+"the purpose of storage ceases to apply. Storage may also take place if this "
+"has been provided for by the European or national legislator in Union "
+"regulations, laws or other provisions to which the responsible party is "
+"subject. Data will also be blocked or deleted if a storage period prescribed "
+"by the aforementioned standards expires, unless there is a need for further "
+"storage of the data for the conclusion or performance of a contract."
+msgstr ""
+"Die personenbezogenen Daten der betroffenen Person werden gelöscht oder "
+"gesperrt, sobald der Zweck der Speicherung entfällt. Eine Speicherung kann "
+"darüber hinaus erfolgen, wenn dies durch den europäischen oder nationalen "
+"Gesetzgeber in unionsrechtlichen Verordnungen, Gesetzen oder sonstigen "
+"Vorschriften, denen der Verantwortliche unterliegt, vorgesehen wurde. Eine "
+"Sperrung oder Löschung der Daten erfolgt auch dann, wenn eine durch die "
+"genannten Normen vorgeschriebene Speicherfrist abläuft, es sei denn, dass "
+"eine Erforderlichkeit zur weiteren Speicherung der Daten für einen "
+"Vertragsabschluss oder eine Vertragserfüllung besteht."
+
+#: templates/legal/privacy.html:50
+msgid "IV. Provision of the website and creation of log files"
+msgstr "IV. Bereitstellung der Website und Erstellung von Logfiles"
+
+#: templates/legal/privacy.html:51 templates/legal/privacy.html:82
+msgid "1. Description and scope of data processing"
+msgstr "1. Beschreibung und Umfang der Datenverarbeitung"
+
+#: templates/legal/privacy.html:52
+msgid ""
+"Each time our website is accessed, our system automatically collects data "
+"and information from the computer system of the accessing computer. The "
+"following data is collected: "
+msgstr ""
+"Bei jedem Aufruf unserer Internetseite erfasst unser System automatisiert "
+"Daten und Informationen vom Computersystem des aufrufenden Rechners. "
+"Folgende Daten werden hierbei erhoben:"
+
+#: templates/legal/privacy.html:55
+msgid "Information about the browser type and version used"
+msgstr "Informationen über den Browsertyp und die verwendete Version"
+
+#: templates/legal/privacy.html:56
+msgid "The operating system of the user"
+msgstr "Das Betriebssystem des Nutzers"
+
+#: templates/legal/privacy.html:57
+msgid "The Internet service provider of the user"
+msgstr "Den Internet-Service-Provider des Nutzers"
+
+#: templates/legal/privacy.html:58
+msgid "The IP address of the user"
+msgstr "Die IP-Adresse des Nutzers"
+
+#: templates/legal/privacy.html:59
+msgid "Date and time of access"
+msgstr "Datum und Uhrzeit des Zugriffs"
+
+#: templates/legal/privacy.html:60
+msgid "Websites from which the user's system accesses our Internet site"
+msgstr ""
+"Websites, von denen das System des Nutzers auf unsere Internetseite gelangt"
+
+#: templates/legal/privacy.html:61
+msgid "Websites that are called up by the user's system via our website"
+msgstr ""
+"Websites, die vom System des Nutzers über unsere Website aufgerufen werden"
+
+#: templates/legal/privacy.html:64
+msgid ""
+"The data is also stored in the log files of our system. A storage of this "
+"data together with other personal data of the user does not take place."
+msgstr ""
+"Die Daten werden ebenfalls in den Logfiles unseres Systems gespeichert. Eine "
+"Speicherung dieser Daten zusammen mit anderen personenbezogenen Daten des "
+"Nutzers findet nicht statt. "
+
+#: templates/legal/privacy.html:66 templates/legal/privacy.html:86
+msgid "2. Legal basis for data processing"
+msgstr "2. Rechtsgrundlage für die Datenverarbeitung"
+
+#: templates/legal/privacy.html:67
+msgid ""
+"The legal basis for the temporary storage of the data and the log files is "
+"Art. 6 para. 1 lit. f GDPR."
+msgstr ""
+"Rechtsgrundlage für die vorübergehende Speicherung der Daten und der "
+"Logfiles ist Art. 6 Abs. 1 lit. f DSGVO."
+
+#: templates/legal/privacy.html:69 templates/legal/privacy.html:90
+msgid "3. Purpose of data processing"
+msgstr "3. Zweck der Datenverarbeitung"
+
+#: templates/legal/privacy.html:70
+msgid ""
+"The temporary storage of the IP address by the system is necessary to enable "
+"delivery of the website to the user's computer. For this purpose, the user's "
+"IP address must remain stored for the duration of the session.\n"
+"                        The storage in log files is done to ensure the "
+"functionality of the website. In addition, we use the data to optimize the "
+"website and to ensure the security of our information technology systems. An "
+"evaluation of the data for marketing purposes does not take place in this "
+"context.\n"
+"                        These purposes are also our legitimate interest in "
+"data processing according to Art. 6 para. 1 lit. f GDPR."
+msgstr ""
+"Die vorübergehende Speicherung der IP-Adresse durch das System ist "
+"notwendig, um eine Auslieferung der Website an den Rechner des Nutzers zu "
+"ermöglichen. Hierfür muss die IP-Adresse des Nutzers für die Dauer der "
+"Sitzung gespeichert bleiben.\n"
+"Die Speicherung in Logfiles erfolgt, um die Funktionsfähigkeit der Website "
+"sicherzustellen. Zudem dienen uns die Daten zur Optimierung der Website und "
+"zur Sicherstellung der Sicherheit unserer informationstechnischen Systeme. "
+"Eine Auswertung der Daten zu Marketingzwecken findet in diesem Zusammenhang "
+"nicht statt.\n"
+"In diesen Zwecken liegt auch unser berechtigtes Interesse an der "
+"Datenverarbeitung nach Art. 6 Abs. 1 lit. f DSGVO."
+
+#: templates/legal/privacy.html:74 templates/legal/privacy.html:93
+msgid "4. Duration of storage"
+msgstr "4. Dauer der Speicherung"
+
+#: templates/legal/privacy.html:75
+msgid ""
+"The data is deleted as soon as it is no longer required to achieve the "
+"purpose for which it was collected. In the case of the collection of data "
+"for the provision of the website, this is the case,when the respective "
+"session is finished.\n"
+"                        In the case of storage of data in log files, this is "
+"the case after seven days at the latest. Storage beyond this period is "
+"possible. In this case, the IP addresses of the users are deleted or "
+"alienated, so that an assignment of the calling client is no longer possible."
+msgstr ""
+"Die Daten werden gelöscht, sobald sie für die Erreichung des Zweckes ihrer "
+"Erhebung nicht mehr erforderlich sind. Im Falle der Erfassung der Daten zur "
+"Bereitstellung der Website ist dies der Fall, wenn die jeweilige Sitzung "
+"beendet ist.\n"
+"Im Falle der Speicherung der Daten in Logfiles ist dies nach spätestens "
+"sieben Tagen der Fall. Eine darüberhinausgehende Speicherung ist möglich. In "
+"diesem Fall werden die IP-Adressen der Nutzer gelöscht oder verfremdet, "
+"sodass eine Zuordnung des aufrufenden Clients nicht mehr möglich ist."
+
+#: templates/legal/privacy.html:78 templates/legal/privacy.html:96
+msgid "5. Possibility of objection and removal"
+msgstr "5. Widerspruchs- und Beseitigungsmöglichkeit"
+
+#: templates/legal/privacy.html:79
+msgid ""
+"The collection of data for the provision of the website and the storage of "
+"the data in log files is absolutely necessary for the operation of the "
+"website. Consequently, there is no possibility of objection on the part of "
+"the user."
+msgstr ""
+"Die Erfassung der Daten zur Bereitstellung der Website und die Speicherung "
+"der Daten in Logfiles ist für den Betrieb der Internetseite zwingend "
+"erforderlich. Es besteht folglich seitens des Nutzers keine "
+"Widerspruchsmöglichkeit. "
+
+#: templates/legal/privacy.html:81
+msgid "VI. E-mail contact"
+msgstr "VI. E-Mail-Kontakt"
+
+#: templates/legal/privacy.html:83
+msgid ""
+"If a user wants to leave a feedback, the feedback formular requires a "
+"contact email from the user. If a user makes use of this option, the "
+"personal data of the user transmitted with the e-mail will be stored.\n"
+"                        In this context, the data will not be passed on to "
+"third parties. The data is used exclusively for the processing of the "
+"conversation."
+msgstr ""
+"Wenn ein NutzerInnen ein Feedback hinterlassen möchte, benötigt das Feedback-"
+"Formular eine Kontakt-E-Mail des BenutzerInnen. Nimmt ein Nutzer diese "
+"Möglichkeit wahr, so werden die mit der E-Mail übermittelten "
+"personenbezogenen Daten des Nutzers gespeichert.\n"
+"Es erfolgt in diesem Zusammenhang keine Weitergabe der Daten an Dritte. Die "
+"Daten werden ausschließlich für die Verarbeitung der Konversation verwendet. "
+
+#: templates/legal/privacy.html:87
+msgid ""
+"The legal basis for the processing of the data is Art. 6 para. 1 lit. a GDPR "
+"if the user has given his consent.\n"
+"                        The legal basis for the processing of data "
+"transmitted in the course of sending an e-mail is Art. 6 (1) lit. f GDPR. If "
+"the e-mail contact aims at the conclusion of a contract, the additional "
+"legal basis for the processing is Art. 6 (1) lit. b GDPR"
+msgstr ""
+"Rechtsgrundlage für die Verarbeitung der Daten ist bei Vorliegen einer "
+"Einwilligung des Nutzers Art. 6 Abs. 1 lit. a DSGVO.\n"
+"Rechtsgrundlage für die Verarbeitung der Daten, die im Zuge einer "
+"Übersendung einer E-Mail übermittelt werden, ist Art. 6 Abs. 1 lit. f DSGVO. "
+"Zielt der E-Mail-Kontakt auf den Abschluss eines Vertrages ab, so ist "
+"zusätzliche Rechtsgrundlage für die Verarbeitung Art. 6 Abs. 1 lit. b DSGVO."
+
+#: templates/legal/privacy.html:91
+msgid ""
+"In the case of contact by e-mail, this also constitutes the necessary "
+"legitimate interest in processing the data."
+msgstr ""
+"Im Falle einer Kontaktaufnahme per E-Mail liegt hieran auch das "
+"erforderliche berechtigte Interesse an der Verarbeitung der Daten."
+
+#: templates/legal/privacy.html:94
+msgid ""
+"The data is deleted as soon as it is no longer required to achieve the "
+"purpose for which it was collected. For personal data sent by e-mail, this "
+"is the case when the respective conversation with the user has ended. The "
+"conversation is ended when it is clear from the circumstances that the "
+"matter in question has been conclusively clarified."
+msgstr ""
+"Die Daten werden gelöscht, sobald sie für die Erreichung des Zweckes ihrer "
+"Erhebung nicht mehr erforderlich sind. Für die personenbezogenen Daten, die "
+"per E-Mail übersandt wurden, ist dies dann der Fall, wenn die jeweilige "
+"Konversation mit dem Nutzer beendet ist. Beendet ist die Konversation dann, "
+"wenn sich aus den Umständen entnehmen lässt, dass der betroffene Sachverhalt "
+"abschließend geklärt ist. "
+
+#: templates/legal/privacy.html:97
+msgid ""
+"The user has the option to revoke his consent to the processing of personal "
+"data at any time. If the user contacts us by e-mail, he can object to the "
+"storage of his personal data at any time. In such a case, the conversation "
+"cannot be continued.\n"
+"                        The revocation of consent can be made informally by "
+"e-mail or in writing.\n"
+"                        In this case, all personal data stored in the course "
+"of contacting us will be deleted within 10 working days."
+msgstr ""
+"Der Nutzer hat jederzeit die Möglichkeit, seine Einwilligung zur "
+"Verarbeitung der personenbezogenen Daten zu widerrufen. Nimmt der Nutzer per "
+"E-Mail Kontakt mit uns auf, so kann er der Speicherung seiner "
+"personenbezogenen Daten jederzeit widersprechen. In einem solchen Fall kann "
+"die Konversation nicht fortgeführt werden.\n"
+"Der Widerruf der Einwilligung kann formlos per E-Mail oder schriftlich "
+"erfolgen.\n"
+"Alle personenbezogenen Daten, die im Zuge der Kontaktaufnahme gespeichert "
+"wurden, werden in diesem Fall binnen von 10 Werktagen gelöscht."
+
+#: templates/legal/privacy.html:101
+msgid "VIII. Rights of the data subject"
+msgstr "VIII. Rechte der betroffenen Person"
+
+#: templates/legal/privacy.html:102
+msgid "1. Right to information"
+msgstr "1. Auskunftsrecht"
+
+#: templates/legal/privacy.html:103
+msgid ""
+"You may request confirmation from the party responsible as to whether "
+"personal data concerning you is being processed by us.\n"
+"                        If there is such processing, you may request "
+"information from the responsible party about the following: "
+msgstr ""
+"Sie können von dem Verantwortlichen eine Bestätigung darüber verlangen, ob "
+"personenbezogene Daten, die Sie betreffen, von uns verarbeitet werden.\n"
+"Liegt eine solche Verarbeitung vor, können Sie von dem Verantwortlichen über "
+"folgende Informationen Auskunft verlangen: "
+
+#: templates/legal/privacy.html:107
+msgid "the purposes for which the personal data are processed;"
+msgstr "die Zwecke, zu denen die personenbezogenen Daten verarbeitet werden;"
+
+#: templates/legal/privacy.html:108
+msgid "the categories of personal data which are processed;"
+msgstr "die Kategorien von personenbezogenen Daten, welche verarbeitet werden;"
+
+#: templates/legal/privacy.html:109
+msgid ""
+"the recipients or categories of recipients to whom the personal data "
+"concerning you have been or will be disclosed;"
+msgstr ""
+"die Empfänger bzw. die Kategorien von Empfängern, gegenüber denen die Sie "
+"betreffenden personenbezogenen Daten offengelegt wurden oder noch "
+"offengelegt werden;"
+
+#: templates/legal/privacy.html:110
+msgid ""
+"the planned duration of the storage of the personal data concerning you or, "
+"if specific information on this is not possible, criteria for determining "
+"the storage duration;"
+msgstr ""
+"die geplante Dauer der Speicherung der Sie betreffenden personenbezogenen "
+"Daten oder, falls konkrete Angaben hierzu nicht möglich sind, Kriterien für "
+"die Festlegung der Speicherdauer;"
+
+#: templates/legal/privacy.html:111
+msgid ""
+"the existence of a right to rectification or erasure of personal data "
+"concerning you, a right to restriction of processing by the responsible "
+"party or a right to object to such processing;"
+msgstr ""
+"das Bestehen eines Rechts auf Berichtigung oder Löschung der Sie "
+"betreffenden personenbezogenen Daten, eines Rechts auf Einschränkung der "
+"Verarbeitung durch den Verantwortlichen oder eines Widerspruchsrechts gegen "
+"diese Verarbeitung;"
+
+#: templates/legal/privacy.html:112
+msgid "the existence of a right of appeal to a supervisory authority;"
+msgstr "das Bestehen eines Beschwerderechts bei einer Aufsichtsbehörde;"
+
+#: templates/legal/privacy.html:113
+msgid ""
+"any available information on the origin of the data, if the personal data "
+"are not collected from the data subject;"
+msgstr ""
+"alle verfügbaren Informationen über die Herkunft der Daten, wenn die "
+"personenbezogenen Daten nicht bei der betroffenen Person erhoben werden;"
+
+#: templates/legal/privacy.html:114
+msgid ""
+"the existence of automated decision-making, including profiling, pursuant to "
+"Article 22(1) and (4) of the GDPR and, at least in these cases, meaningful "
+"information about the logic involved and the scope and intended effects of "
+"such processing for the data subject."
+msgstr ""
+"das Bestehen einer automatisierten Entscheidungsfindung einschließlich "
+"Profiling gemäß Art. 22 Abs. 1 und 4 DSGVO und – zumindest in diesen Fällen "
+"– aussagekräftige Informationen über die involvierte Logik sowie die "
+"Tragweite und die angestrebten Auswirkungen einer derartigen Verarbeitung "
+"für die betroffene Person."
+
+#: templates/legal/privacy.html:117
+msgid ""
+"You have the right to request information about whether the personal data "
+"concerning you is transferred to a third country or to an international "
+"organization. In this context, you may request to be informed about the "
+"appropriate safeguards pursuant to Art. 46 GDPR in connection with the "
+"transfer.\n"
+"                        This right to information may be restricted to the "
+"extent that it is likely to make it impossible or seriously impair the "
+"realization of research purposes and the restriction is necessary for the "
+"fulfillment of the research purposes."
+msgstr ""
+"Ihnen steht das Recht zu, Auskunft darüber zu verlangen, ob die Sie "
+"betreffenden personenbezogenen Daten in ein Drittland oder an eine "
+"internationale Organisation übermittelt werden. In diesem Zusammenhang "
+"können Sie verlangen, über die geeigneten Garantien gem. Art. 46 DSGVO im "
+"Zusammenhang mit der Übermittlung unterrichtet zu werden.\n"
+"Dieses Auskunftsrecht kann insoweit beschränkt werden, als es "
+"voraussichtlich die Verwirklichung von Forschungszwecken unmöglich macht "
+"oder ernsthaft beeinträchtigt und die Beschränkung für die Erfüllung der "
+"Forschungswecke notwendig ist. "
+
+#: templates/legal/privacy.html:120
+msgid "2. Right to rectification"
+msgstr "2. Recht auf Berichtigung"
+
+#: templates/legal/privacy.html:121
+msgid ""
+"You have a right to rectification and/or completion vis-à-vis the "
+"responsible party, insofar as the processed personal data concerning you are "
+"inaccurate or incomplete. The responsible party shall carry out the "
+"rectification immediately.\n"
+"                        Your right to rectification may be limited to the "
+"extent that it is likely to make impossible or seriously impair the "
+"achievement of research purposes and the limitation is necessary for the "
+"fulfillment of the research purposes."
+msgstr ""
+"Sie haben ein Recht auf Berichtigung und/oder Vervollständigung gegenüber "
+"dem Verantwortlichen, sofern die verarbeiteten personenbezogenen Daten, die "
+"Sie betreffen, unrichtig oder unvollständig sind. Der Verantwortliche hat "
+"die Berichtigung unverzüglich vorzunehmen.\n"
+"Ihr Recht auf Berichtigung kann insoweit beschränkt werden, als es "
+"voraussichtlich die Verwirklichung von Forschungszwecken unmöglich macht "
+"oder ernsthaft beeinträchtigt und die Beschränkung für die Erfüllung der "
+"Forschungszwecke notwendig ist."
+
+#: templates/legal/privacy.html:124
+msgid "3. Right to restriction of processing"
+msgstr "3. Recht auf Einschränkung der Verarbeitung"
+
+#: templates/legal/privacy.html:125
+msgid ""
+"Under the following conditions, you may request the restriction of the "
+"processing of personal data concerning you: "
+msgstr ""
+"Unter den folgenden Voraussetzungen können Sie die Einschränkung der "
+"Verarbeitung der Sie betreffenden personenbezogenen Daten verlangen: "
+
+#: templates/legal/privacy.html:127
+msgid ""
+"if you contest the accuracy of the personal data concerning you for a period "
+"enabling the resposible party to verify the accuracy of the personal data;"
+msgstr ""
+"wenn Sie die Richtigkeit der Sie betreffenden personenbezogenen für eine "
+"Dauer bestreiten, die es dem Verantwortlichen ermöglicht, die Richtigkeit "
+"der personenbezogenen Daten zu überprüfen;"
+
+#: templates/legal/privacy.html:128
+msgid ""
+"the processing is unlawful and you object to the erasure of the personal "
+"data and request instead the restriction of the use of the personal data;"
+msgstr ""
+"die Verarbeitung unrechtmäßig ist und Sie die Löschung der personenbezogenen "
+"Daten ablehnen und stattdessen die Einschränkung der Nutzung der "
+"personenbezogenen Daten verlangen;"
+
+#: templates/legal/privacy.html:129
+msgid ""
+"the resposible party no longer needs the personal data for the purposes of "
+"processing, but you need them for the assertion, exercise or defense of "
+"legal claims, or"
+msgstr ""
+"der Verantwortliche die personenbezogenen Daten für die Zwecke der "
+"Verarbeitung nicht länger benötigt, Sie diese jedoch zur Geltendmachung, "
+"Ausübung oder Verteidigung von Rechtsansprüchen benötigen, oder"
+
+#: templates/legal/privacy.html:130
+msgid ""
+"if you have objected to the processing pursuant to Art. 21 (1) GDPR and it "
+"has not yet been determined whether the responsible party's legitimate "
+"grounds override your grounds."
+msgstr ""
+"wenn Sie Widerspruch gegen die Verarbeitung gemäß Art. 21 Abs. 1 DSGVO "
+"eingelegt haben und noch nicht feststeht, ob die berechtigten Gründe des "
+"Verantwortlichen gegenüber Ihren Gründen überwiegen."
+
+#: templates/legal/privacy.html:133
+msgid ""
+"Where the processing of personal data concerning you has been restricted, "
+"such data may be processed, with the exception of their storage, only with "
+"your consent or for the establishment, exercise or defense of legal claims "
+"or for the protection of the rights of another natural or legal person or "
+"for reasons of important public interest of the Union or a Member State."
+msgstr ""
+"Wurde die Verarbeitung der Sie betreffenden personenbezogenen Daten "
+"eingeschränkt, dürfen diese Daten - von ihrer Speicherung abgesehen -nur mit "
+"Ihrer Einwilligung oder zur Geltendmachung, Ausübung oder Verteidigung von "
+"Rechtsansprüchen oder zum Schutz der Rechte einer anderen natürlichen oder "
+"juristischen Person oder aus Gründen eines wichtigen öffentlichen Interesses "
+"der Union oder eines Mitgliedstaats verarbeitet werden."
+
+#: templates/legal/privacy.html:134
+msgid ""
+"If the restriction of processing has been restricted in accordance with the "
+"above conditions, you will be informed by the controller before the "
+"restriction is lifted.\n"
+"                        Your right to restrict processing may be limited to "
+"the extent that it is likely to render impossible or seriously impair the "
+"achievement of research purposes and the restriction is necessary for the "
+"fulfillment of the research purposes."
+msgstr ""
+"Wurde die Einschränkung der Verarbeitung nach den o.g. Voraussetzungen "
+"eingeschränkt, werden Sie von dem Verantwortlichen unterrichtet bevor die "
+"Einschränkung aufgehoben wird.\n"
+"Ihr Recht auf Einschränkung der Verarbeitung kann insoweit beschränkt "
+"werden, als es voraussichtlich die Verwirklichung von Forschungszwecken "
+"unmöglich macht oder ernsthaft beeinträchtigt und die Beschränkung für die "
+"Erfüllung der Forschungszwecke notwendig ist."
+
+#: templates/legal/privacy.html:137
+msgid "4. Right to deletion"
+msgstr "4. Recht auf Löschung"
+
+#: templates/legal/privacy.html:138
+msgid "a) Obligation to delete"
+msgstr "a) Löschungspflicht"
+
+#: templates/legal/privacy.html:139
+msgid ""
+"You may request the controller to delete the personal data concerning you "
+"without undue delay, and the responsible party is obliged to delete such "
+"data without undue delay, if one of the following reasons applies:"
+msgstr ""
+"Sie können von dem Verantwortlichen verlangen, dass die Sie betreffenden "
+"personenbezogenen Daten unverzüglich gelöscht werden, und der "
+"Verantwortliche ist verpflichtet, diese Daten unverzüglich zu löschen, "
+"sofern einer der folgenden Gründe zutrifft: "
+
+#: templates/legal/privacy.html:141
+msgid ""
+"The personal data concerning you are no longer necessary for the purposes "
+"for which they were collected or otherwise processed.."
+msgstr ""
+"Die Sie betreffenden personenbezogenen Daten sind für die Zwecke, für die "
+"sie erhoben oder auf sonstige Weise verarbeitet wurden, nicht mehr notwendig."
+
+#: templates/legal/privacy.html:142
+msgid ""
+"You revoke your consent on which the processing was based pursuant to Art. 6 "
+"para. 1 lit. a or Art. 9 para. 2 lit. a GDPR and there is no other legal "
+"basis for the processing."
+msgstr ""
+"Sie widerrufen Ihre Einwilligung, auf die sich die Verarbeitung gem. Art. 6 "
+"Abs. 1 lit. a oder Art. 9 Abs. 2 lit. a DSGVO stützte, und es fehlt an einer "
+"anderweitigen Rechtsgrundlage für die Verarbeitung."
+
+#: templates/legal/privacy.html:143
+msgid ""
+"You object to the processing pursuant to Art. 21 (1) GDPR and there are no "
+"overriding legitimate grounds for the processing, or you object to the "
+"processing pursuant to Art. 21 para. 2 GDPR. You object to the processing "
+"pursuant to Art. 21 para. 1 GDPR and there are no overriding legitimate "
+"grounds for the processing, or you object to the processing pursuant to Art. "
+"21 para. 2 GDPR."
+msgstr ""
+"Sie legen gem. Art. 21 Abs. 1 DSGVO Widerspruch gegen die Verarbeitung ein "
+"und es liegen keine vorrangigen berechtigten Gründe für die Verarbeitung "
+"vor, oder Sie legen gem. Art. 21 Abs. 2 DSGVO Widerspruch gegen die "
+"Verarbeitung ein."
+
+#: templates/legal/privacy.html:144
+msgid "The personal data concerning you has been processed unlawfully."
+msgstr ""
+"Die Sie betreffenden personenbezogenen Daten wurden unrechtmäßig verarbeitet."
+
+#: templates/legal/privacy.html:145
+msgid ""
+"The deletion of the personal data concerning you is necessary for compliance "
+"with a legal obligation under Union or Member State law to which the "
+"controller is subject."
+msgstr ""
+"Die Löschung der Sie betreffenden personenbezogenen Daten ist zur Erfüllung "
+"einer rechtlichen Verpflichtung nach dem Unionsrecht oder dem Recht der "
+"Mitgliedstaaten erforderlich, dem der Verantwortliche unterliegt."
+
+#: templates/legal/privacy.html:146
+msgid ""
+"The personal data concerning you has been collected in relation to "
+"information society services offered pursuant to Article 8 para. 1 GDPR."
+msgstr ""
+"Die Sie betreffenden personenbezogenen Daten wurden in Bezug auf angebotene "
+"Dienste der Informationsgesellschaft gemäß Art. 8 Abs. 1 DSGVO erhoben."
+
+#: templates/legal/privacy.html:149
+msgid "b) Information to third parties"
+msgstr "b) Information an Dritte"
+
+#: templates/legal/privacy.html:150
+msgid ""
+"If the responsible party has made the personal data concerning you public "
+"and is obliged to erase it pursuant to Article 17(1) of the GDPR, it shall "
+"take reasonable steps, including technical measures, having regard to the "
+"available technology and the cost of implementation, to inform the party "
+"responsible for  processing the personal data that you, as the data subject, "
+"have requested that they erase all links to or copies or replications of "
+"such personal data."
+msgstr ""
+"Hat der Verantwortliche die Sie betreffenden personenbezogenen Daten "
+"öffentlich gemacht und ist er gem. Art. 17 Abs. 1 DSGVO zu deren Löschung "
+"verpflichtet, so trifft er unter Berücksichtigung der verfügbaren "
+"Technologie und der Implementierungskosten angemessene Maßnahmen, auch "
+"technischer Art, um für die Datenverarbeitung Verantwortliche, die die "
+"personenbezogenen Daten verarbeiten, darüber zu informieren, dass Sie als "
+"betroffene Person von ihnen die Löschung aller Links zu diesen "
+"personenbezogenen Daten oder von Kopien oder Replikationen dieser "
+"personenbezogenen Daten verlangt haben."
+
+#: templates/legal/privacy.html:152
+msgid "c) Exceptions"
+msgstr "c) Ausnahmen"
+
+#: templates/legal/privacy.html:153
+msgid ""
+"The right to erasure does not exist insofar as the processing is necessary to"
+msgstr ""
+"Das Recht auf Löschung besteht nicht, soweit die Verarbeitung erforderlich "
+"ist"
+
+#: templates/legal/privacy.html:155
+msgid "to exercise the right to freedom of expression and information;"
+msgstr "zur Ausübung des Rechts auf freie Meinungsäußerung und Information;"
+
+#: templates/legal/privacy.html:156
+msgid ""
+"for compliance with a legal obligation which requires processing under Union "
+"or Member State law to which the controller is subject, or for the "
+"performance of a task carried out in the public interest or in the exercise "
+"of official authority vested in the resposible party;"
+msgstr ""
+"zur Erfüllung einer rechtlichen Verpflichtung, die die Verarbeitung nach dem "
+"Recht der Union oder der Mitgliedstaaten, dem der Verantwortliche "
+"unterliegt, erfordert, oder zur Wahrnehmung einer Aufgabe, die im "
+"öffentlichen Interesse liegt oder in Ausübung öffentlicher Gewalt erfolgt, "
+"die dem Verantwortlichen übertragen wurde;"
+
+#: templates/legal/privacy.html:157
+msgid ""
+"or reasons of public interest in the area of public health pursuant to Art. "
+"9(2)(h) and (i) and Art. 9(3) DSGVO;"
+msgstr ""
+"aus Gründen des öffentlichen Interesses im Bereich der öffentlichen "
+"Gesundheit gemäß Art. 9 Abs. 2 lit. h und i sowie Art. 9 Abs. 3 DSGVO;"
+
+#: templates/legal/privacy.html:158
+msgid ""
+" for archiving purposes in the public interest, scientific or historical "
+"research purposes, or statistical purposes pursuant to Article 89 para. 1 "
+"GDPR, insofar as the right referred to in section a) is likely to render "
+"impossible or seriously prejudice the achievement of the purposes of such "
+"processing, or"
+msgstr ""
+"für im öffentlichen Interesse liegende Archivzwecke, wissenschaftliche oder "
+"historische Forschungszwecke oder für statistische Zwecke gem. Art. 89 Abs. "
+"1 DSGVO, soweit das unter Abschnitt a) genannte Recht voraussichtlich die "
+"Verwirklichung der Ziele dieser Verarbeitung unmöglich macht oder ernsthaft "
+"beeinträchtigt, oder"
+
+#: templates/legal/privacy.html:159
+msgid "for the assertion, exercise or defense of legal claims."
+msgstr "zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen."
+
+#: templates/legal/privacy.html:162
+msgid "5. Right to information"
+msgstr "5. Recht auf Unterrichtung"
+
+#: templates/legal/privacy.html:163
+msgid ""
+"If you have asserted the right to rectification, erasure or restriction of "
+"processing against the responsible party, the latter is obliged to inform "
+"all recipients to whom the personal data concerning you have been disclosed "
+"of this rectification or erasure of the data or restriction of processing, "
+"unless this proves impossible or involves a disproportionate effort.\n"
+"                        You have the right to be informed about these "
+"recipients by the responsible party. "
+msgstr ""
+"Haben Sie das Recht auf Berichtigung, Löschung oder Einschränkung der "
+"Verarbeitung gegenüber dem Verantwortlichen geltend gemacht, ist dieser "
+"verpflichtet, allen Empfängern, denen die Sie betreffenden personenbezogenen "
+"Daten offengelegt wurden, diese Berichtigung oder Löschung der Daten oder "
+"Einschränkung der Verarbeitung mitzuteilen, es sei denn, dies erweist sich "
+"als unmöglich oder ist mit einem unverhältnismäßigen Aufwand verbunden.\n"
+"Ihnen steht gegenüber dem Verantwortlichen das Recht zu, über diese "
+"Empfänger unterrichtet zu werden. "
+
+#: templates/legal/privacy.html:166
+msgid "6. Right to data portability"
+msgstr "6. Recht auf Datenübertragbarkeit"
+
+#: templates/legal/privacy.html:167
+msgid ""
+" You have the right to receive the personal data concerning you that you "
+"have provided to the responsible party in a structured, common and machine-"
+"readable format. In addition, you have the right to transmit this data to "
+"another responsible party without hindrance by the responsible party to whom "
+"the personal data has been provided, provided that"
+msgstr ""
+"Sie haben das Recht, die Sie betreffenden personenbezogenen Daten, die Sie "
+"dem Verantwortlichen bereitgestellt haben, in einem strukturierten, gängigen "
+"und maschinenlesbaren Format zu erhalten. Außerdem haben Sie das Recht diese "
+"Daten einem anderen Verantwortlichen ohne Behinderung durch den "
+"Verantwortlichen, dem die personenbezogenen Daten bereitgestellt wurden, zu "
+"übermitteln, sofern"
+
+#: templates/legal/privacy.html:169
+msgid ""
+"the processing is based on consent pursuant to Art. 6 para. 1 lit. a GDPR or "
+"Art. 9 para. 2 lit. a GDPR or on a contract pursuant to Art. 6 para. 1 lit. "
+"b GDPR and"
+msgstr ""
+"die Verarbeitung auf einer Einwilligung gem. Art. 6 Abs. 1 lit. a DSGVO oder "
+"Art. 9 Abs. 2 lit. a DSGVO oder auf einem Vertrag gem. Art. 6 Abs. 1 lit. b "
+"DSGVO beruht und"
+
+#: templates/legal/privacy.html:170
+msgid "the processing is carried out with the help of automated procedures."
+msgstr "die Verarbeitung mithilfe automatisierter Verfahren erfolgt."
+
+#: templates/legal/privacy.html:173
+msgid ""
+" In exercising this right, you also have the right to have the personal data "
+"concerning you transferred directly from one responsible party to another "
+"responsible party, insofar as this is technically feasible. The freedoms and "
+"rights of other persons must not be affected by this.\n"
+"                        The right to data portability does not apply to "
+"processing of personal data necessary for the performance of a task carried "
+"out in the public interest or in the exercise of official authority vested "
+"in the responsible party. "
+msgstr ""
+"In Ausübung dieses Rechts haben Sie ferner das Recht, zu erwirken, dass die "
+"Sie betreffenden personenbezogenen Daten direkt von einem Verantwortlichen "
+"einem anderen Verantwortlichen übermittelt werden, soweit dies technisch "
+"machbar ist. Freiheiten und Rechte anderer Personen dürfen hierdurch nicht "
+"beeinträchtigt werden.\n"
+"Das Recht auf Datenübertragbarkeit gilt nicht für eine Verarbeitung "
+"personenbezogener Daten, die für die Wahrnehmung einer Aufgabe erforderlich "
+"ist, die im öffentlichen Interesse liegt oder in Ausübung öffentlicher "
+"Gewalt erfolgt, die dem Verantwortlichen übertragen wurde."
+
+#: templates/legal/privacy.html:176
+msgid "7. Right of objection"
+msgstr "7. Widerspruchsrecht"
+
+#: templates/legal/privacy.html:177
+msgid ""
+"You have the right to object at any time, on grounds relating to your "
+"particular situation, to the processing of personal data concerning you "
+"which is carried out on the basis of Article 6 para. 1 lit. e or f of the "
+"GDPR; this also applies to profiling based on these provisions.\n"
+"                         The responsible party shall no longer process the "
+"personal data concerning you unless it can demonstrate compelling legitimate "
+"grounds for the processing which override your interests, rights and "
+"freedoms, or the processing serves the purpose of asserting, exercising or "
+"defending legal claims.\n"
+"                         If the personal data concerning you is processed "
+"for the purposes of direct marketing, you have the right to object at any "
+"time to the processing of personal data concerning you for the purposes of "
+"such marketing; this also applies to profiling, insofar as it is related to "
+"such direct marketing.\n"
+"                         If you object to the processing for direct "
+"marketing purposes, the personal data concerning you will no longer be "
+"processed for these purposes.\n"
+"                         You have the possibility, in connection with the "
+"use of information society services, notwithstanding Directive 2002/58/EC, "
+"to exercise your right to object by means of automated procedures using "
+"technical specifications.\n"
+"                         You also have the right to object, on grounds "
+"relating to your particular situation, to the processing of personal data "
+"concerning you which is carried out for scientific or historical research "
+"purposes or for statistical purposes pursuant to Article 89 para. 1 GDPR.\n"
+"                         Your right to object may be limited to the extent "
+"that it is likely to make impossible or seriously impair the achievement of "
+"the research or statistical purposes and the limitation is necessary for the "
+"fulfillment of the research or statistical purposes."
+msgstr ""
+"Sie haben das Recht, aus Gründen, die sich aus ihrer besonderen Situation "
+"ergeben, jederzeit gegen die Verarbeitung der Sie betreffenden "
+"personenbezogenen Daten, die aufgrund von Art. 6 Abs. 1 lit. e oder f DSGVO "
+"erfolgt, Widerspruch einzulegen; dies gilt auch für ein auf diese "
+"Bestimmungen gestütztes Profiling.\n"
+"Der Verantwortliche verarbeitet die Sie betreffenden personenbezogenen Daten "
+"nicht mehr, es sei denn, er kann zwingende schutzwürdige Gründe für die "
+"Verarbeitung nachweisen, die Ihre Interessen, Rechte und Freiheiten "
+"überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder "
+"Verteidigung von Rechtsansprüchen.\n"
+"Werden die Sie betreffenden personenbezogenen Daten verarbeitet, um "
+"Direktwerbung zu betreiben, haben Sie das Recht, jederzeit Widerspruch gegen "
+"die Verarbeitung der Sie betreffenden personenbezogenen Daten zum Zwecke "
+"derartiger Werbung einzulegen; dies gilt auch für das Profiling, soweit es "
+"mit solcher Direktwerbung in Verbindung steht.\n"
+"Widersprechen Sie der Verarbeitung für Zwecke der Direktwerbung, so werden "
+"die Sie betreffenden personenbezogenen Daten nicht mehr für diese Zwecke "
+"verarbeitet.\n"
+"Sie haben die Möglichkeit, im Zusammenhang mit der Nutzung von Diensten der "
+"Informationsgesellschaft – ungeachtet der Richtlinie 2002/58/EG – Ihr "
+"Widerspruchsrecht mittels automatisierter Verfahren auszuüben, bei denen "
+"technische Spezifikationen verwendet werden.\n"
+"Sie haben auch das Recht, aus Gründen, die sich aus Ihrer besonderen "
+"Situation ergeben, bei der Verarbeitung Sie betreffender personenbezogener "
+"Daten, die zu wissenschaftlichen oder historischen Forschungszwecken oder zu "
+"statistischen Zwecken gem. Art. 89 Abs. 1 DSGVO erfolgt, dieser zu "
+"widersprechen.\n"
+"Ihr Widerspruchsrecht kann insoweit beschränkt werden, als es "
+"voraussichtlich die Verwirklichung der Forschungs- oder Statistikzwecke "
+"unmöglich macht oder ernsthaft beeinträchtigt und die Beschränkung für die "
+"Erfüllung der Forschungs- oder Statistikzwecke notwendig ist."
+
+#: templates/legal/privacy.html:185
+msgid "8. Right to revoke the declaration of consent under data protection law"
+msgstr ""
+"8. Recht auf Widerruf der datenschutzrechtlichen Einwilligungserklärung"
+
+#: templates/legal/privacy.html:186
+msgid ""
+"You have the right to revoke your declaration of consent under data "
+"protection law at any time. The revocation of consent does not affect the "
+"lawfulness of the processing carried out on the basis of the consent before "
+"the revocation."
+msgstr ""
+"Sie haben das Recht, Ihre datenschutzrechtliche Einwilligungserklärung "
+"jederzeit zu widerrufen. Durch den Widerruf der Einwilligung wird die "
+"Rechtmäßigkeit der aufgrund der Einwilligung bis zum Widerruf erfolgten "
+"Verarbeitung nicht berührt."
+
+#: templates/legal/privacy.html:188
+msgid "9. Automated decision in individual cases including profiling"
+msgstr "9. Automatisierte Entscheidung im Einzelfall einschließlich Profiling"
+
+#: templates/legal/privacy.html:189
+msgid ""
+"You have the right not to be subject to a decision based solely on automated "
+"processing - including profiling - which produces legal effects concerning "
+"you or similarly significantly affects you. This does not apply if the "
+"decision"
+msgstr ""
+"Sie haben das Recht, nicht einer ausschließlich auf einer automatisierten "
+"Verarbeitung – einschließlich Profiling – beruhenden Entscheidung "
+"unterworfen zu werden, die Ihnen gegenüber rechtliche Wirkung entfaltet oder "
+"Sie in ähnlicher Weise erheblich beeinträchtigt. Dies gilt nicht, wenn die "
+"Entscheidung"
+
+#: templates/legal/privacy.html:191
+msgid ""
+"is necessary for the conclusion or performance of a contract between you and "
+"the responsible party,"
+msgstr ""
+"für den Abschluss oder die Erfüllung eines Vertrags zwischen Ihnen und dem "
+"Verantwortlichen erforderlich ist,"
+
+#: templates/legal/privacy.html:192
+msgid ""
+"is permitted by legislation of the Union or the Member States to which the "
+"responsible party is subject and that legislation contains appropriate "
+"measures to safeguard your rights and freedoms and your legitimate "
+"interests, or"
+msgstr ""
+"aufgrund von Rechtsvorschriften der Union oder der Mitgliedstaaten, denen "
+"der Verantwortliche unterliegt, zulässig ist und diese Rechtsvorschriften "
+"angemessene Maßnahmen zur Wahrung Ihrer Rechte und Freiheiten sowie Ihrer "
+"berechtigten Interessen enthalten oder"
+
+#: templates/legal/privacy.html:193
+msgid "is done with your express consent."
+msgstr "mit Ihrer ausdrücklichen Einwilligung erfolgt."
+
+#: templates/legal/privacy.html:196
+msgid ""
+"However, these decisions may not be based on special categories of personal "
+"data pursuant to Art. 9 para. 1 GDPR, unless Art. 9 para. 2 lit. a or g GDPR "
+"applies and appropriate measures have been taken to protect the rights and "
+"freedoms, as well as your legitimate interests.\n"
+"                        With regard to the cases mentioned in (1) and (3), "
+"the responsible party shall take reasonable measures to safeguard the rights "
+"and freedoms as well as your legitimate interests, including at least the "
+"right to obtain the intervention of a person on the part of the responsible "
+"party, to express his or her point of view and to contest the decision."
+msgstr ""
+"Allerdings dürfen diese Entscheidungen nicht auf besonderen Kategorien "
+"personenbezogener Daten nach Art. 9 Abs. 1 DSGVO beruhen, sofern nicht Art. "
+"9 Abs. 2 lit. a oder g DSGVO gilt und angemessene Maßnahmen zum Schutz der "
+"Rechte und Freiheiten sowie Ihrer berechtigten Interessen getroffen wurden.\n"
+"Hinsichtlich der in (1) und (3) genannten Fälle trifft der Verantwortliche "
+"angemessene Maßnahmen, um die Rechte und Freiheiten sowie Ihre berechtigten "
+"Interessen zu wahren, wozu mindestens das Recht auf Erwirkung des "
+"Eingreifens einer Person seitens des Verantwortlichen, auf Darlegung des "
+"eigenen Standpunkts und auf Anfechtung der Entscheidung gehört."
+
+#: templates/legal/privacy.html:199
+msgid "10. Right to complain to a supervisory authority"
+msgstr "10. Recht auf Beschwerde bei einer Aufsichtsbehörde"
+
+#: templates/legal/privacy.html:200
+msgid ""
+"Without prejudice to any other administrative or judicial remedy, you have "
+"the right to lodge a complaint with a supervisory authority, in particular "
+"in the Member State of your residence, place of work or the place of the "
+"alleged infringement, if you consider that the processing of personal data "
+"relating to you infringes the GDPR.\n"
+"                       The supervisory authority to which the complaint has "
+"been submitted shall inform the complainant of the status and outcome of the "
+"complaint, including the possibility of a judicial remedy under Article 78 "
+"of the GDPR."
+msgstr ""
+"Unbeschadet eines anderweitigen verwaltungsrechtlichen oder gerichtlichen "
+"Rechtsbehelfs steht Ihnen das Recht auf Beschwerde bei einer "
+"Aufsichtsbehörde, insbesondere in dem Mitgliedstaat ihres Aufenthaltsorts, "
+"ihres Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes, zu, wenn Sie "
+"der Ansicht sind, dass die Verarbeitung der Sie betreffenden "
+"personenbezogenen Daten gegen die DSGVO verstößt.\n"
+"Die Aufsichtsbehörde, bei der die Beschwerde eingereicht wurde, unterrichtet "
+"den Beschwerdeführer über den Stand und die Ergebnisse der Beschwerde "
+"einschließlich der Möglichkeit eines gerichtlichen Rechtsbehelfs nach Art. "
+"78 DSGVO. "
+
+#: templates/legal/privacy.html:203
+msgid "Validity of the privacy policy"
+msgstr "Gültigkeit der Datenschutzerklärung"
+
+#: templates/legal/privacy.html:204
+msgid ""
+"We reserve the right to change or adapt this privacy statement from time to "
+"time. This statement was last modified on"
+msgstr ""
+"Wir behalten uns vor, diese Datenschutzerklärung von Zeit zu Zeit zu "
+"verändern oder anzupassen. Diese Erklärung wurde zuletzt geändert am"
 
 #: templates/modal_template.html:41
 #: templates/scenario/scenario_results_page.html:48
@@ -1064,54 +2368,30 @@ msgstr "Datenschutz - open_plan"
 msgid "Close"
 msgstr "Schließen"
 
-#: templates/navbar.html:29 templates/scenario/scenario_results_page.html:124
-msgid "Simulation results"
-msgstr "Simulationsergebnisse"
+#: templates/navbar.html:26
+msgid "Documentation"
+msgstr "Dokumentation"
 
-#: templates/navbar.html:33 templates/project/project_search.html:225
-#: templates/scenario/scenario_step0.html:19
-msgid "New scenario"
-msgstr "Neues Szenario"
+#: templates/navbar.html:29 templates/usecase/usecase_search.html:25
+msgid "Use cases"
+msgstr "Anwendungsbeispiele"
 
-#: templates/navbar.html:37 templates/project/project_create.html:25
-#: templates/project/project_update.html:26
-#: templates/scenario/scenario_progression.html:40
-#: templates/scenario/scenario_step0.html:26
-msgid "My projects"
-msgstr "Meine Projekte"
-
-#: templates/navbar.html:93
-msgid "User Info"
-msgstr "Benutzerinfo"
-
-#: templates/navbar.html:94
-msgid "Change Password"
-msgstr "Passwort ändern"
-
-#: templates/navbar.html:99
-msgid "Project List"
-msgstr "Projektliste"
-
-#: templates/navbar.html:110
-msgid "Feedback"
-msgstr "Rückmeldung"
-
-#: templates/navbar.html:111
+#: templates/navbar.html:68
 msgid "Account"
 msgstr "Konto"
 
-#: templates/navbar.html:113
+#: templates/navbar.html:72
 msgid "Log out"
 msgstr "Abmelden"
 
-#: templates/navbar.html:121
+#: templates/navbar.html:80
 #: templates/registration/password_reset_complete.html:10
-#: templates/registration/signup.html:25
+#: templates/registration/signup.html:23
 msgid "Log in"
 msgstr "Anmelden"
 
-#: templates/navbar.html:125 templates/registration/login.html:23
-#: templates/registration/signup.html:36
+#: templates/navbar.html:84 templates/registration/login.html:23
+#: templates/registration/signup.html:28
 msgid "Sign up"
 msgstr "Registrieren"
 
@@ -1119,6 +2399,13 @@ msgstr "Registrieren"
 #: templates/project/project_update.html:24
 msgid "Project Setup"
 msgstr "Projekt einrichten"
+
+#: templates/project/project_create.html:25
+#: templates/project/project_update.html:26
+#: templates/scenario/scenario_progression.html:40
+#: templates/scenario/scenario_step0.html:26
+msgid "My projects"
+msgstr "Meine Projekte"
 
 #: templates/project/project_create.html:34
 #: templates/project/project_update.html:35
@@ -1147,93 +2434,103 @@ msgstr "Sind Sie sicher, dass Sie löschen wollen"
 msgid "Confirm"
 msgstr "Bestätigen"
 
-#: templates/project/project_search.html:19
+#: templates/project/project_search.html:20
 msgid "Projects"
 msgstr "Projekte"
 
-#: templates/project/project_search.html:36
+#: templates/project/project_search.html:37
 msgid "My Projects"
 msgstr "Meine Projekte"
 
-#: templates/project/project_search.html:44
+#: templates/project/project_search.html:45
 msgid "Create project"
 msgstr "Projekt erstellen"
 
-#: templates/project/project_search.html:47
+#: templates/project/project_search.html:48
 msgid "Empty project"
 msgstr "Leeres Projekt"
 
-#: templates/project/project_search.html:48
-#: templates/project/project_search.html:226
+#: templates/project/project_search.html:49
+#: templates/project/project_search.html:255
 msgid "From file"
 msgstr "Aus Datei"
 
-#: templates/project/project_search.html:49
+#: templates/project/project_search.html:50
 msgid "From use case"
 msgstr "Aus Anwendungsfall"
 
-#: templates/project/project_search.html:71
-#: templates/project/project_search.html:156
+#: templates/project/project_search.html:87
+#: templates/project/project_search.html:183
+#: templates/scenario/simulation/modified.html:96
 msgid "Created"
 msgstr "Erstellt"
 
-#: templates/project/project_search.html:79
+#: templates/project/project_search.html:95
 msgid "Lifetime"
 msgstr "Lebenszeit"
 
-#: templates/project/project_search.html:80
+#: templates/project/project_search.html:96
 #: templates/usecase/usecase_search.html:59
 msgid "years"
 msgstr "Jahre"
 
-#: templates/project/project_search.html:98
+#: templates/project/project_search.html:100
+msgid "Shared by"
+msgstr "Geteilt durch"
+
+#: templates/project/project_search.html:121
 msgid "Duplicate"
 msgstr "Duplizieren"
 
-#: templates/project/project_search.html:107
+#: templates/project/project_search.html:130
 msgid "Delete"
 msgstr "Löschen"
 
-#: templates/project/project_search.html:115
+#: templates/project/project_search.html:139
 msgid "Share project"
 msgstr "Projekt teilen"
 
-#: templates/project/project_search.html:116
+#: templates/project/project_search.html:140
 msgid "Unshare project"
 msgstr "Projektfreigabe aufheben"
 
-#: templates/project/project_search.html:117
+#: templates/project/project_search.html:142
 msgid "Export project"
 msgstr "Projekt exportieren"
 
-#: templates/project/project_search.html:164
+#: templates/project/project_search.html:191
 msgid "Pending..."
 msgstr "Anhängig..."
 
-#: templates/project/project_search.html:168
+#: templates/project/project_search.html:195
 msgid "Error"
 msgstr "Fehler"
 
-#: templates/project/project_search.html:177
-#: templates/project/project_search.html:182
+#: templates/project/project_search.html:204
+#: templates/project/project_search.html:209
 msgid "No simulation"
 msgstr "Keine Simulation"
 
-#: templates/project/project_search.html:200
+#: templates/project/project_search.html:227
 #: templates/usecase/usecase_search.html:132
 msgid "There are no scenarios"
 msgstr "Es gibt keine Szenarien"
 
-#: templates/project/project_search.html:212
+#: templates/project/project_search.html:239
 #: templates/usecase/usecase_search.html:144
 msgid "Export selected"
 msgstr "Export ausgewählt"
 
-#: templates/project/project_search.html:220
+#: templates/project/project_search.html:248
 msgid "Create scenario"
 msgstr "Szenario erstellen"
 
-#: templates/project/project_search.html:246
+#: templates/project/project_search.html:254
+#: templates/scenario/scenario_step0.html:19
+msgid "New scenario"
+msgstr "Neues Szenario"
+
+#: templates/project/project_search.html:275
 msgid "There are no projects yet"
 msgstr "Es sind noch keine Projekte vorhanden"
 
@@ -1258,9 +2555,13 @@ msgstr ""
 msgid "Log In"
 msgstr "Anmelden"
 
-#: templates/registration/login.html:19 templates/registration/signup.html:22
-msgid "Welcome to the open_plan tool"
-msgstr "Willkommen im open_plan-Tool"
+#: templates/registration/login.html:19 templates/registration/signup.html:20
+msgid "Welcome to the open-plan-tool"
+msgstr "Willkommen im open-plan-tool"
+
+#: templates/registration/login.html:22
+msgid "Do you not have an account yet?"
+msgstr "Besitzen Sie bereits kein Konto?"
 
 #: templates/registration/login.html:26
 msgid "Forgot your password?"
@@ -1330,19 +2631,9 @@ msgstr ""
 msgid "Send email"
 msgstr "E-Mail senden"
 
-#: templates/registration/signup.html:25
+#: templates/registration/signup.html:23
 msgid "Do you already have an account?"
 msgstr "Besitzen Sie bereits ein Konto?"
-
-#: templates/registration/signup.html:33
-#, python-format
-msgid ""
-"I have read and accept the <a href=\"%(registration_url)s\">registration</a> "
-"and <a href=\"%(privacy_url)s\">privacy statements</a> from open_plan."
-msgstr ""
-"Ich habe die <a href=\"%(registration_url)s\">Registrierungs </a> und <a "
-"href=\"%(privacy_url)s\">Datenschutzbestimmungen</a> von open_plan gelesen "
-"und akzeptiert."
 
 #: templates/registration/user_info.html:22
 #: templates/registration/user_info.html:41
@@ -1373,14 +2664,26 @@ msgid "Add chart"
 msgstr "Diagramm hinzufügen"
 
 #: templates/report/graph_template.html:27
-#: templates/report/single_scenario.html:105
+#: templates/report/kpis_template.html:38
 msgid "Export as .xls"
 msgstr "Als .xls speichern"
 
 #: templates/report/graph_template.html:28
-#: templates/report/single_scenario.html:106
+#: templates/report/kpis_template.html:39
 msgid "Export as PDF"
 msgstr "Als PDF speichern"
+
+#: templates/report/kpis_template.html:22
+msgid "KPI table"
+msgstr "KPI-Tabelle"
+
+#: templates/report/kpis_template.html:30
+msgid "View KPIs"
+msgstr "KPIs Zeigen"
+
+#: templates/report/kpis_template.html:48
+msgid "Add KPI"
+msgstr "KPI hinzufügen"
 
 #: templates/report/sensitivity_analysis.html:29
 msgid ""
@@ -1411,26 +2714,14 @@ msgid "Download Component Costs"
 msgstr "Kosten herunterladen"
 
 #: templates/report/single_scenario.html:90
-msgid "Choose KPI table display"
-msgstr "KPI Tabelledarstellung auswählen"
-
-#: templates/report/single_scenario.html:97
-msgid "View KPIs"
-msgstr "KPIs Zeigen"
-
-#: templates/report/single_scenario.html:115
-msgid "Add KPI"
-msgstr "KPI hinzufügen"
-
-#: templates/report/single_scenario.html:127
 msgid "Energy system"
 msgstr "Auslegung des Energiesystems"
 
-#: templates/report/single_scenario.html:134
+#: templates/report/single_scenario.html:97
 msgid "some option A"
 msgstr "some option A"
 
-#: templates/report/single_scenario.html:135
+#: templates/report/single_scenario.html:98
 msgid "some option B"
 msgstr "irgendeine Option B"
 
@@ -1440,18 +2731,22 @@ msgid "Scenario step"
 msgstr "Schritt des Szenarios"
 
 #: templates/scenario/scenario_progression.html:56
-#: templates/scenario/scenario_step2.html:272
-#: templates/scenario/scenario_step3.html:74
+#: templates/scenario/scenario_step2.html:280
+#: templates/scenario/scenario_step3.html:77
 #: templates/scenario/sensitivity_analysis.html:81
-#: templates/scenario/simulation/no-status.html:38
+#: templates/scenario/simulation/modified.html:133
+#: templates/scenario/simulation/no-status.html:34
 msgid "Previous"
-msgstr "Vorherige"
+msgstr "Zurück"
 
 #: templates/scenario/scenario_progression.html:59
 #: templates/scenario/scenario_step0.html:68
-#: templates/scenario/scenario_step1.html:72
-#: templates/scenario/scenario_step2.html:276
-#: templates/scenario/scenario_step3.html:75
+#: templates/scenario/scenario_step1.html:74
+#: templates/scenario/scenario_step1.html:81
+#: templates/scenario/scenario_step2.html:283
+#: templates/scenario/scenario_step2.html:285
+#: templates/scenario/scenario_step3.html:80
+#: templates/scenario/scenario_step3.html:83
 msgid "Next"
 msgstr "Weiter"
 
@@ -1479,6 +2774,10 @@ msgstr "Sensitivitätsanalyse Grafik hinzufügen"
 msgid "Create"
 msgstr "Erstellen"
 
+#: templates/scenario/scenario_results_page.html:124
+msgid "Simulation results"
+msgstr "Simulationsergebnisse"
+
 #: templates/scenario/scenario_results_page.html:126
 msgid "To scenario"
 msgstr "Zum Szenario"
@@ -1495,11 +2794,11 @@ msgstr "Szenarienvergleich"
 msgid "Sensitivity Analysis"
 msgstr "Sensitivitätsanalyse"
 
-#: templates/scenario/scenario_results_page.html:248
+#: templates/scenario/scenario_results_page.html:253
 msgid "` + hdr + `"
 msgstr "` + hdr + `"
 
-#: templates/scenario/scenario_results_page.html:275
+#: templates/scenario/scenario_results_page.html:280
 msgid "` + param.name +`"
 msgstr "` + param.name +`"
 
@@ -1507,18 +2806,22 @@ msgstr "` + param.name +`"
 msgid "Please select a project first"
 msgstr "Bitte wählen Sie zuerst ein Projekt aus"
 
-#: templates/scenario/scenario_step1.html:76
-#: templates/scenario/scenario_step2.html:281
-#: templates/scenario/scenario_step3.html:80
+#: templates/scenario/scenario_step0.html:42
+msgid "Send form"
+msgstr "Formular abschicken"
+
+#: templates/scenario/scenario_step1.html:86
+#: templates/scenario/scenario_step2.html:292
+#: templates/scenario/scenario_step3.html:88
 msgid "Go to simulation"
-msgstr "Zum Simulation"
+msgstr "Zur Simulation"
 
 #: templates/scenario/scenario_step2.html:60
 msgid "compute COP"
 msgstr "COP berechnen"
 
 #: templates/scenario/scenario_step2.html:74
-#: templates/scenario/scenario_step2.html:274
+#: templates/scenario/scenario_step2.html:282
 msgid "Save"
 msgstr "Speichern"
 
@@ -1539,7 +2842,7 @@ msgid "Drag and drop components to build your energy system"
 msgstr "Ziehen und Ablegen von Komponenten zum Aufbau Ihres Energiesystems"
 
 #: templates/scenario/sensitivity_analysis.html:32
-#: templates/scenario/simulation/success.html:32
+#: templates/scenario/simulation/success.html:34
 msgid "Check results dashboard"
 msgstr "Zum Ergebnisse Dashboard"
 
@@ -1555,22 +2858,78 @@ msgstr "Sensitivitätsanalyse durchführen"
 msgid "Simulation error"
 msgstr "Simulationsfehler"
 
-#: templates/scenario/simulation/error.html:18
+#: templates/scenario/simulation/error.html:19
+#: templates/scenario/simulation/modified.html:25
 msgid "The following input parameters contain errors"
 msgstr "Die folgenden Eingabeparameter enthalten Fehler"
 
-#: templates/scenario/simulation/error.html:35
-#: templates/scenario/simulation/success.html:34
+#: templates/scenario/simulation/error.html:36
+#: templates/scenario/simulation/success.html:36
 msgid "Reset simulation"
 msgstr "Simulation zurücksetzen"
 
-#: templates/scenario/simulation/error.html:36
+#: templates/scenario/simulation/error.html:37
 msgid "Proof parameters JSON file"
 msgstr "Prüfe Parameter JSON Datei "
 
-#: templates/scenario/simulation/error.html:37
+#: templates/scenario/simulation/error.html:38
 msgid "Link to send bug report automatically"
 msgstr "Link zum automatischen Senden eines Fehlerberichts"
+
+#: templates/scenario/simulation/modified.html:12
+msgid "Simulation existing, but scenario parameter changed"
+msgstr "Simulation vorhanden, aber Szenarioparameter geändert"
+
+#: templates/scenario/simulation/modified.html:14
+msgid "Scenario parameter changed, hopefully your error will be fixed"
+msgstr "Szenarioparameter geändert, hoffentlich wird Ihr Fehler behoben"
+
+#: templates/scenario/simulation/modified.html:20
+msgid "Existing simulation's results"
+msgstr "Vorhandene Ergebnisse der Simulation"
+
+#: templates/scenario/simulation/modified.html:33
+msgid "If you rerun the simulation the previous results will be lost."
+msgstr ""
+"Wenn Sie die Simulation erneut ausführen, gehen die vorherigen Ergebnisse "
+"verloren."
+
+#: templates/scenario/simulation/modified.html:39
+msgid "Reset changes"
+msgstr "Änderungen zurücksetzen"
+
+#: templates/scenario/simulation/modified.html:42
+msgid "Copy to a new scenario"
+msgstr "In ein neues Szenario kopieren"
+
+#: templates/scenario/simulation/modified.html:49
+msgid "Changed parameters"
+msgstr "Geänderte Parameter"
+
+#: templates/scenario/simulation/modified.html:51
+msgid "The following changes displayed for your information"
+msgstr "Die folgenden Änderungen werden zu Ihrer Information angezeigt"
+
+#: templates/scenario/simulation/modified.html:78
+msgid "Asset"
+msgstr "Anlage"
+
+#: templates/scenario/simulation/modified.html:92
+msgid "Assets creation/deletion"
+msgstr "Erstellung/Löschung von Anlagen"
+
+#: templates/scenario/simulation/modified.html:106
+msgid "Deleted"
+msgstr "Gelöscht"
+
+#: templates/scenario/simulation/modified.html:135
+msgid "Rerun simulation"
+msgstr "Simulation neu starten"
+
+#: templates/scenario/simulation/modified.html:139
+#: templates/scenario/simulation/no-status.html:40
+msgid "Include LP file (advanced users)"
+msgstr "LP-Datei einbeziehen (fortgeschrittene Benutzer)"
 
 #: templates/scenario/simulation/no-status.html:11
 msgid "No simulation conducted"
@@ -1584,11 +2943,11 @@ msgstr "Ihr Energiesystem ist vollständig"
 msgid "Typically 1 year simulation will last a few minutes"
 msgstr "Normalerweise dauert eine 1-Jahres-Simulation nur wenige Minuten"
 
-#: templates/scenario/simulation/no-status.html:33
+#: templates/scenario/simulation/no-status.html:36
 msgid "Run simulation"
 msgstr "Simulation ausführen"
 
-#: templates/scenario/simulation/no-status.html:39
+#: templates/scenario/simulation/no-status.html:43
 msgid "Perform a sensitivity analysis"
 msgstr "Durchführung einer Sensitivitätsanalyse"
 
@@ -1612,11 +2971,11 @@ msgstr "Simulation abbrechen"
 msgid "Simulation successful"
 msgstr "Simulation erfolgreich"
 
-#: templates/scenario/simulation/success.html:17
+#: templates/scenario/simulation/success.html:18
 msgid "Your simulation is complete."
 msgstr "Ihre Simulation ist erfolgreich beendet."
 
-#: templates/scenario/simulation/success.html:33
+#: templates/scenario/simulation/success.html:35
 msgid "Download LP files"
 msgstr "LP files speichern"
 
@@ -1640,34 +2999,43 @@ msgstr "Verwendung als Projektvorlage"
 msgid "There are no usecase yet"
 msgstr "Es sind noch keine usecase vorhanden"
 
-#: users/views.py:34
+#: users/forms.py:20
+#, python-format
+msgid ""
+"I have read and accept the <a target='_blank' href='%(privacy_url)s'>privacy "
+"statement</a> from open_plan"
+msgstr ""
+"Ich habe die <a target='_blank' href=\"%(privacy_url)s"
+"\">Datenschutzbestimmungen</a> von open_plan gelesen und akzeptiert."
+
+#: users/views.py:35
 msgid "Activate your account."
 msgstr "Aktivieren Sie Ihr Konto."
 
-#: users/views.py:50
+#: users/views.py:51
 msgid "Please confirm your email address to complete the registration"
 msgstr ""
 "Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Registrierung abzuschließen"
 
-#: users/views.py:70
+#: users/views.py:71
 msgid "Thank you for your email confirmation. Now you can log in your account."
 msgstr ""
 "Vielen Dank für Ihre E-Mail-Bestätigung. Sie können sich jetzt in Ihrem "
 "Konto anmelden."
 
-#: users/views.py:86
+#: users/views.py:87
 msgid "User info successfully updated!"
 msgstr "Benutzerdaten erfolgreich aktualisiert!"
 
-#: users/views.py:89 users/views.py:106
+#: users/views.py:90 users/views.py:107
 msgid "Please check errors and resubmit!"
 msgstr "Bitte Fehler prüfen und erneut senden!"
 
-#: users/views.py:103
+#: users/views.py:104
 msgid "Your password was successfully updated!"
 msgstr "Ihr Passwort wurde erfolgreich aktualisiert!"
 
-#: users/views.py:146
+#: users/views.py:147
 msgid "Your user account has been deleted."
 msgstr "Ihr Benutzerkonto wurde gelöscht."
 
@@ -1692,14 +3060,14 @@ msgstr "Status prüfen"
 msgid " Actual CAPEX of the asset, i.e., specific investment costs"
 msgstr " Tatsächliche CAPEX der Anlage, d.h. spezifische Investitionskosten"
 
-msgid "Specific costs"
-msgstr "Spezifische Kosten"
+msgid "Investment costs"
+msgstr "Investitionskosten"
 
-msgid "Specific OM costs"
-msgstr "Spezifische OM-Kosten"
+msgid "Fixed operational costs"
+msgstr ""
 
-msgid "Dispatch price"
-msgstr "Versandpreis"
+msgid "Variable operational costs"
+msgstr ""
 
 msgid ""
 "The share of renewables in the generation mix of the energy supplied by "
@@ -1732,26 +3100,26 @@ msgstr "SoC max"
 msgid "SoC min"
 msgstr "SoC min"
 
-msgid "Maximum capacity"
-msgstr "Maximale Kapazität"
-
 msgid "Energy price"
 msgstr "Energiepreis"
 
 msgid "Feedin tariff"
 msgstr "Einspeisetarif"
 
-msgid "Peak demand pricing"
+msgid "Peak demand price"
 msgstr "Spitzenlasttarif"
 
-msgid "Peak demand pricing period (times/year)"
-msgstr "Zeitraum der Spitzenlastbepreisung (Zeiten/Jahr)"
+msgid "Period of peak demand pricing"
+msgstr "Zeitraum der Spitzenlastbepreisung"
 
-msgid "Renewable share"
-msgstr "Erneuerbarer Anteil"
+msgid "Renewable share electricity mix"
+msgstr "Anteil erneuerbarer Energien im Strommix"
 
-msgid "Age installed"
-msgstr "Alter der Anlage"
+msgid "Age of the installed plant"
+msgstr "Alter der installierten Anlage"
+
+msgid "Efficiency"
+msgstr "Wirkungsgrad"
 
 msgid "ESS Name"
 msgstr "ESS Name"
@@ -1762,14 +3130,8 @@ msgstr "Ein mnemonischer Name für die ESS Einheit."
 msgid "Gas Storage"
 msgstr "Gasspeicher"
 
-msgid "H2 Storage"
-msgstr "Wasserstoffspeicher"
-
 msgid "Gas Demand"
 msgstr "Gasnachfrage"
-
-msgid "H2 Demand"
-msgstr "Wasserstoffbedarf"
 
 msgid "Year"
 msgstr "Jahr"
@@ -2080,7 +3442,7 @@ msgstr "Die Währung des Landes, in dem das Projekt umgesetzt wird"
 msgid "€"
 msgstr "€"
 
-msgid "Fixed project costs"
+msgid "Fix project costs"
 msgstr "Feste Projektkosten"
 
 msgid "Discount factor"
@@ -2089,7 +3451,7 @@ msgstr "Abzinsungsfaktor"
 msgid "The factor which accounts for the depreciation in the value of money in the future, compared to the current value of the same money. The common method is to calculate the weighted average cost of capital (WACC) and use it as the discount rate."
 msgstr "Der Faktor, der die Wertminderung des Geldes in der Zukunft im Vergleich zum aktuellen Wert des gleichen Geldes berücksichtigt. Die übliche Methode ist die Berechnung der gewichteten durchschnittlichen Kapitalkosten (WACC) und deren Verwendung als Abzinsungssatz."
 
-msgid "Costs associated with a flow through/from the asset"
+msgid "Costs associated with a flow through/from the asset (OPEX_var or fuel costs)"
 msgstr "Kosten im Zusammenhang mit einem Fluss durch/von der Anlage"
 
 msgid "Stands for Demand Side Management. Currently, not implemented."
@@ -2107,7 +3469,7 @@ msgstr "Preis des Energieträgers, der aus dem Versorgungsnetz bezogen wird."
 msgid "The number of days for which the simulation is to be run"
 msgstr "Die Anzahl der Tage, für die die Simulation durchgeführt werden soll"
 
-msgid "Feedin maximum cap"
+msgid "Maximum feedin capacity"
 msgstr "Einspeisungshöchstgrenze"
 
 msgid "kW"
@@ -2118,9 +3480,6 @@ msgstr "Maximale Kapazität zur Einspeisung von Strom ins Netz"
 
 msgid "Price received for feeding electricity into the grid"
 msgstr "Erhaltener Preis für die Einspeisung von Strom ins Netz"
-
-msgid "Installed capacity"
-msgstr "Installierte Leistung"
 
 msgid "The already existing installed capacity in-place"
 msgstr "Die bereits vorhandene installierte Leistung an Ort und Stelle"
@@ -2157,6 +3516,47 @@ msgstr "Das Mindestmaß an Autonomie, das durch die Optimierung erreicht werden 
 
 msgid "The minimum share of energy supplied by renewable generation that needs to be met by the optimization"
 msgstr "Der Mindestanteil an Energie aus erneuerbarer Erzeugung, der durch die Optimierung erfüllt werden muss"
+
+msgid "Temperature high"
+msgstr "Vorlauftemperatur"
+
+msgid "Temperature low"
+msgstr "Verdampfungstemperatur"
+
+msgid "Factor icing"
+msgstr "Vereisungsfaktor"
+
+msgid "Temp threshold icing"
+msgstr "Temperaturschwelle der Vereisung"
+
+msgid "Quality grade"
+msgstr "Gütegrad"
+
+
+msgid ""
+"This constraint defines a lower bound on the "
+"<a href='https://open-plan-documentation.readthedocs.io/en/latest/model/simulation_outputs.html#degree-of-autonomy'>"
+"degree of autonomy</a> of the energy system. Note that constraint is applied to the the whole,"
+" sector-coupled energy system, but not to specific sectors individually."
+msgstr ""
+"Diese Einschränkung definiert eine Untergrenze für den "
+"<a href='https://open-plan-documentation.readthedocs.io/en/latest/model/simulation_outputs.html#degree-of-autonomy'>"
+"Autonomiegrad</a> des Energiesystems. Es ist zu beachten, dass die Beschränkung auf das gesamte,"
+" sektorgekoppelte Energiesystem angewendet wird, nicht aber auf einzelne Sektoren."
+
+msgid ""
+"This constraint defines a lower bound on the "
+"<a href='https://open-plan-documentation.readthedocs.io/en/latest/model/simulation_outputs.html#renewable-factor'>"
+"renewable share</a> of the system, which takes into account both local generation as well as the "
+"renewable share of energy providers. Note that constraint is applied to the renewable share of the "
+"whole, sector-coupled energy system, but not to specific sectors individually."
+msgstr ""
+"Diese Bedingung definiert eine Untergrenze für den "
+"<a href='https://open-plan-documentation.readthedocs.io/en/latest/model/simulation_outputs.html#renewable-factor'>"
+"erneuerbaren Anteil</a> des Systems, die sowohl die lokale Erzeugung als auch den erneuerbaren Anteil "
+"der Energieversorger berücksichtigt. Es ist zu beachten, dass diese Bedingung auf den Anteil "
+"der erneuerbaren Energien des gesamten, sektorgekoppelten Energiesystems angewendet wird, nicht aber "
+"auf einzelne Sektoren."
 
 msgid "Specifies whether optimization needs to result into a net zero energy system (True) or not (False)"
 msgstr "Gibt an, ob die Optimierung zu einem Netto-Nullenergie-System führen muss (True) oder nicht (False)"
@@ -2209,9 +3609,14 @@ msgstr "Der minimal zulässige Ladezustand des Akkus als Faktor der Nennkapazit�
 msgid "Operation and management costs"
 msgstr "Betriebs- und Verwaltungskosten"
 
+msgid "Maximum state of charge"
+msgstr "Maximaler Ladezustand"
 
-msgid "The date and time on which the simulation starts at the first step."
-msgstr "Das Datum und die Uhrzeit, zu der die Simulation mit dem ersten Schritt beginnt."
+msgid "Minimum state of charge"
+msgstr "Minimaler Ladezustand"
+
+msgid "Date and time when the simulation starts with the first step"
+msgstr "Datum und Uhrzeit, zu der die Simulation mit dem ersten Schritt beginnt"
 
 msgid "Name of a csv file containing the properties of a storage component"
 msgstr "Name einer csv-Datei, die die Eigenschaften einer Speicherkomponente enthält"
@@ -2439,3 +3844,4 @@ msgstr "Optimierung mit BHWK"
 
 msgid "Create project from usecase"
 msgstr "Projekt aus Anwendungsfall erstellen"
+

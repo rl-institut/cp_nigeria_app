@@ -10,6 +10,10 @@ This code is based from previous open-source work done building a user interface
 
 This repository contains the code for the user interface. The simulations are performed by [multi-vector-simulator](https://github.com/rl-institut/multi-vector-simulator) on a dedicated server (see the [open-plan-tool/simulation-server](https://github.com/open-plan-tool/simulation-server) repository). Once a simulation is over the results are sent back to the user interface were one can analyse them.
 
+![open-plan structure](https://github.com/open-plan-tool/gui/assets/4399407/89e1ff2a-1dd0-40e6-91a3-465c77426867)
+
+
+
 
 # Getting Started
 
@@ -53,6 +57,8 @@ You need to be able to run docker-compose inside your terminal. If you can't you
 
    * Define an environment variable `MVS_HOST_API` in `.envs/epa.postgres` and set the url of the simulation server 
    you wish to use for your models (for example `MVS_API_HOST="<url to your favorite simulation server>"`), you can deploy your own [simulation server](https://github.com/open-plan-tool/simulation-server) locally if you need
+
+    * Assign the domain of your website (without `http://` or `https://`) to `TRUSTED_HOST` , see https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins for more information
 
 Next you can either provide the following commands inside a terminal (with ubuntu you might have to prepend `sudo`)
 * `docker-compose --file=docker-compose-postgres.yml up -d --build` (you can replace `postgres` by `mysql` if you want to use mysql)

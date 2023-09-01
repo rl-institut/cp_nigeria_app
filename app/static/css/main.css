@@ -911,6 +911,28 @@ footer button.btn {
     footer a.btn--success:focus,
     footer button.btn--success:focus {
       box-shadow: 0 0 0 0.25rem rgba(9, 188, 138, 0.25); }
+  a.btn--warning,
+  button.btn--warning,
+  footer a.btn--warning,
+  footer button.btn--warning {
+    background-color: #FDC534;
+    color: #553F06; }
+    a.btn--warning:hover, a.btn--warning:focus, a.btn--warning:active,
+    button.btn--warning:hover,
+    button.btn--warning:focus,
+    button.btn--warning:active,
+    footer a.btn--warning:hover,
+    footer a.btn--warning:focus,
+    footer a.btn--warning:active,
+    footer button.btn--warning:hover,
+    footer button.btn--warning:focus,
+    footer button.btn--warning:active {
+      background-color: #fcb602 !important; }
+    a.btn--warning:focus,
+    button.btn--warning:focus,
+    footer a.btn--warning:focus,
+    footer button.btn--warning:focus {
+      box-shadow: 0 0 0 0.25rem rgba(253, 197, 52, 0.25); }
   a.btn--error,
   button.btn--error,
   footer a.btn--error,
@@ -1045,12 +1067,25 @@ a.dropdown-item:active {
   align-items: center;
   flex-shrink: 0; }
   .simulation-footer > div {
+    width: 100%;
+    max-width: 82rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    position: relative; }
+  .simulation-footer__btn {
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    width: 100%; }
-  .simulation-footer .btn {
-    margin: 0 0.25rem; }
+    justify-content: center; }
+    .simulation-footer__btn .btn {
+      margin: 0 0.25rem; }
+    .simulation-footer__btn--absolute {
+      position: absolute;
+      right: 0;
+      top: 0; }
+  .simulation-footer__check {
+    max-width: 8rem;
+    font-size: 0.875rem;
+    margin-left: 1rem; }
 
 @use 'variables' as *;
 form .form-control:focus {
@@ -1753,6 +1788,8 @@ nav.navbar {
     font-size: 1.563rem; }
   .standard-layout h3 {
     font-size: 1.25rem; }
+  .standard-layout h4 {
+    font-size: 1rem; }
   .standard-layout__paragraph {
     padding-bottom: 1rem; }
     .standard-layout__paragraph--foreground {
@@ -1995,7 +2032,7 @@ nav.navbar {
       height: 4.5rem;
       background-color: #fff;
       border-radius: 100%; }
-    .system-design .drawflow .drawflow-node.providers {
+    .system-design .drawflow .drawflow-node.dso {
       border-bottom-color: #A4ADFB; }
     .system-design .drawflow .drawflow-node.dso .img::before {
       content: '';
@@ -2007,7 +2044,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.providers {
+    .system-design .drawflow .drawflow-node.gas_dso {
       border-bottom-color: #A4ADFB; }
     .system-design .drawflow .drawflow-node.gas_dso .img::before {
       content: '';
@@ -2019,7 +2056,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.providers {
+    .system-design .drawflow .drawflow-node.h2_dso {
       border-bottom-color: #A4ADFB; }
     .system-design .drawflow .drawflow-node.h2_dso .img::before {
       content: '';
@@ -2031,7 +2068,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.providers {
+    .system-design .drawflow .drawflow-node.heat_dso {
       border-bottom-color: #A4ADFB; }
     .system-design .drawflow .drawflow-node.heat_dso .img::before {
       content: '';
@@ -2043,7 +2080,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.production {
+    .system-design .drawflow .drawflow-node.pv_plant {
       border-bottom-color: #FFEF9F; }
     .system-design .drawflow .drawflow-node.pv_plant .img::before {
       content: '';
@@ -2055,7 +2092,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.production {
+    .system-design .drawflow .drawflow-node.wind_plant {
       border-bottom-color: #FFEF9F; }
     .system-design .drawflow .drawflow-node.wind_plant .img::before {
       content: '';
@@ -2067,7 +2104,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.production {
+    .system-design .drawflow .drawflow-node.biogas_plant {
       border-bottom-color: #FFEF9F; }
     .system-design .drawflow .drawflow-node.biogas_plant .img::before {
       content: '';
@@ -2079,7 +2116,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.production {
+    .system-design .drawflow .drawflow-node.geothermal_conversion {
       border-bottom-color: #FFEF9F; }
     .system-design .drawflow .drawflow-node.geothermal_conversion .img::before {
       content: '';
@@ -2091,7 +2128,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.production {
+    .system-design .drawflow .drawflow-node.solar_thermal_plant {
       border-bottom-color: #FFEF9F; }
     .system-design .drawflow .drawflow-node.solar_thermal_plant .img::before {
       content: '';
@@ -2103,7 +2140,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.transformer_station_in {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.transformer_station_in .img::before {
       content: '';
@@ -2115,7 +2152,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.transformer_station_out {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.transformer_station_out .img::before {
       content: '';
@@ -2127,7 +2164,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.storage_charge_controller_in {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.storage_charge_controller_in .img::before {
       content: '';
@@ -2139,7 +2176,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.storage_charge_controller_out {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.storage_charge_controller_out .img::before {
       content: '';
@@ -2151,7 +2188,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.solar_inverter {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.solar_inverter .img::before {
       content: '';
@@ -2163,7 +2200,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.diesel_generator {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.diesel_generator .img::before {
       content: '';
@@ -2175,7 +2212,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.fuel_cell {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.fuel_cell .img::before {
       content: '';
@@ -2187,7 +2224,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.gas_boiler {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.gas_boiler .img::before {
       content: '';
@@ -2199,7 +2236,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.electrolyzer {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.electrolyzer .img::before {
       content: '';
@@ -2211,7 +2248,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.heat_pump {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.heat_pump .img::before {
       content: '';
@@ -2223,7 +2260,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.chp {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.chp .img::before {
       content: '';
@@ -2235,7 +2272,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.conversion {
+    .system-design .drawflow .drawflow-node.chp_fixed_ratio {
       border-bottom-color: #7BF1A8; }
     .system-design .drawflow .drawflow-node.chp_fixed_ratio .img::before {
       content: '';
@@ -2247,7 +2284,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.storage {
+    .system-design .drawflow .drawflow-node.bess {
       border-bottom-color: #90F1EF; }
     .system-design .drawflow .drawflow-node.bess .img::before {
       content: '';
@@ -2259,7 +2296,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.storage {
+    .system-design .drawflow .drawflow-node.gess {
       border-bottom-color: #90F1EF; }
     .system-design .drawflow .drawflow-node.gess .img::before {
       content: '';
@@ -2271,7 +2308,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.storage {
+    .system-design .drawflow .drawflow-node.h2ess {
       border-bottom-color: #90F1EF; }
     .system-design .drawflow .drawflow-node.h2ess .img::before {
       content: '';
@@ -2283,7 +2320,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.storage {
+    .system-design .drawflow .drawflow-node.hess {
       border-bottom-color: #90F1EF; }
     .system-design .drawflow .drawflow-node.hess .img::before {
       content: '';
@@ -2307,7 +2344,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.demand {
+    .system-design .drawflow .drawflow-node.gas_demand {
       border-bottom-color: #FFD6E0; }
     .system-design .drawflow .drawflow-node.gas_demand .img::before {
       content: '';
@@ -2319,7 +2356,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.demand {
+    .system-design .drawflow .drawflow-node.h2_demand {
       border-bottom-color: #FFD6E0; }
     .system-design .drawflow .drawflow-node.h2_demand .img::before {
       content: '';
@@ -2331,7 +2368,7 @@ nav.navbar {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
-    .system-design .drawflow .drawflow-node.demand {
+    .system-design .drawflow .drawflow-node.heat_demand {
       border-bottom-color: #FFD6E0; }
     .system-design .drawflow .drawflow-node.heat_demand .img::before {
       content: '';
@@ -2431,6 +2468,16 @@ nav.navbar {
       padding-left: 1.5rem;
       font-size: 1.563rem;
       font-weight: 700; }
+    .project__top .role {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      margin-right: 1.5rem;
+      font-size: 0.875rem;
+      background-color: #F4F7F9;
+      padding: 0 0.5rem;
+      border-radius: 8px; }
     .project__top .location {
       font-size: 1rem; }
     .project__top .name::before {
@@ -2438,12 +2485,16 @@ nav.navbar {
       position: absolute;
       display: block;
       background-image: url("/static/assets/icons/i_cell.svg");
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 2rem;
+      height: 2rem;
       background-repeat: no-repeat;
       background-size: contain;
-      top: 0.5rem;
+      top: 0;
       left: 0; }
+  .project--shared .name::before {
+    background-image: url("/static/assets/icons/i_cell_shared_edit.svg"); }
+  .project--shared-noedit .name::before {
+    background-image: url("/static/assets/icons/i_cell_blue.svg"); }
   .project__details {
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -2700,12 +2751,12 @@ nav.navbar {
   flex-direction: row;
   justify-content: center; }
   .simulation__heading {
-    height: 16.5rem;
+    height: 8rem;
     width: 100%;
     background-image: url("/static/assets/illustrations/open_plan_hero_hexagon.svg");
-    background-position: center center;
+    background-position: center 75%;
     background-repeat: no-repeat;
-    background-size: 6.125rem; }
+    background-size: 3.5rem; }
   .simulation__content {
     width: 100%; }
     @media only screen and (min-width: 992px) {
@@ -2714,7 +2765,8 @@ nav.navbar {
     .simulation__content h2 {
       text-align: center;
       font-size: 1.25rem;
-      font-weight: 600; }
+      font-weight: 600;
+      padding-bottom: 4rem; }
   .simulation__id {
     text-align: center;
     font-size: 0.875rem; }
@@ -2777,10 +2829,76 @@ nav.navbar {
     border-top-color: #1F567D;
     border-bottom-color: #1F567D;
     border-left-color: #1F567D; }
+  .simulation--error > div {
+    width: 100%;
+    max-width: 82rem;
+    padding-left: 1rem;
+    padding-right: 1rem; }
   .simulation--error .simulation__heading {
     background-image: url("/static/assets/illustrations/error_hexagon.svg"); }
+  .simulation--error .simulation__content {
+    width: 100%; }
+  .simulation--error .simulation__alert {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 8px; }
+    .simulation--error .simulation__alert--warning {
+      background-color: #FFF3D4;
+      color: #825F08; }
+    .simulation--error .simulation__alert--info {
+      background-color: #fff; }
+    .simulation--error .simulation__alert--warning span {
+      position: relative; }
+    .simulation--error .simulation__alert--warning span::before {
+      content: "";
+      position: absolute;
+      display: block;
+      background-image: url("static/assets/icons/i_warning_yellow.svg");
+      width: 1.25rem;
+      height: 1.25rem;
+      background-repeat: no-repeat;
+      background-size: cover;
+      left: -1.75rem;
+      top: 0.125rem; }
+  .simulation--error .simulation__actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center; }
+    .simulation--error .simulation__actions > div {
+      padding: 4rem 0.5rem; }
   .simulation--successful .simulation__heading {
     background-image: url("/static/assets/illustrations/open_plan_hero_hexagon.svg"); }
+  .simulation__changed {
+    border-top: 2px solid #F4F7F9;
+    padding-top: 4rem;
+    padding-bottom: 4rem; }
+    .simulation__changed p {
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600; }
+  .simulation .table-changed {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap; }
+    .simulation .table-changed__item {
+      width: 100%; }
+      @media only screen and (min-width: 992px) {
+        .simulation .table-changed__item {
+          flex: 1; } }
+      .simulation .table-changed__item:not(:last-of-type) {
+        padding-right: 1rem; }
+    .simulation .table-changed__header {
+      background-color: #F4F7F9;
+      padding: 0.25rem 1rem; }
+    .simulation .table-changed__content {
+      display: flex;
+      flex-direction: row;
+      font-size: 0.875rem;
+      padding: 0.25rem 1rem; }
+      .simulation .table-changed__content .key {
+        width: 66.6%; }
 
 @use 'variables' as *;
 .project-setup.two-columns {

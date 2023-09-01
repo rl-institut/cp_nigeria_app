@@ -3,6 +3,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% load i18n %}
+{% load custom_template_tags %}
 
 {% block head_block %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" crossorigin=""
@@ -54,12 +55,27 @@
 
         {% for project in project_list %}
 
-            <section class="project" id="project-{{ project.id }}">
+						{% if project.user.email == request.user.email %}
+							{% setvar "project" as project_css %}
+							{% setvar "Author" as project_role %}
+						{% elif project.id|has_viewer_edit_rights:user %}
+							{% setvar "project project--shared" as project_css %}
+							{% setvar "Edit" as project_role %}
+						{% else %}
+							{% setvar "project project--shared-noedit" as project_css %}
+							{% setvar "Read" as project_role %}
+						{% endif %}
+
+
+            <section class="{{ project_css }}" id="project-{{ project.id }}">
                 <div>
                     <div class="project__top">
                         <a  href="{% url 'project_update' project.id %}">
                             <h2 class= "name"> {% translate project.name %} </h2>
                         </a>
+												<span class="role">
+													{{ project_role}}
+												</span>
                         <a href="{% url 'not_implemented' %}?url={{ request.get_full_path }}" class="location">
                             <span class="icon-pin" aria-hidden="true"></span>
                             {{ project.country }}
@@ -79,13 +95,20 @@
                                 <span class="detail__property">{% translate "Lifetime" %}</span>
                                 <span class="detail__value">{{ project.economic_data.duration }} {% translate "years" %}</span>
                             </div>
+														{% if project.user.email != request.user.email%}
+													  <div class="detail">
+                                <span class="detail__property">{% translate "Shared by" %}</span>
+                                <span class="detail__value">{{ project.user.email }}</span>
+                            </div>
+													{% endif %}
                         </div>
                         <div class="actions">
                             <a class="btn btn--action btn--hollow action" href="{% url 'project_visualize_results' proj_id=project.id %}">
                                 <span class="icon icon-results" aria-hidden="true"></span>
                                 {% translate "Results" %}
                             </a>
-                            <a class="btn btn--action action" href="{% url 'project_update' project.pk %}">
+														{% if project.id|has_viewer_edit_rights:request.user %}
+														<a class="btn btn--action action" href="{% url 'project_update' project.pk %}">
                                 <span class="icon icon-edit" aria-hidden="true"></span>
                                 {% translate "Edit" %}
                             </a>
@@ -112,11 +135,15 @@
                                   <span class="icon icon-more"></span>
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="shareProject-{{ project.id }}">
+																	{% if project.user.email == request.user.email %}
                                   <li><a class="dropdown-item" onclick="javascript:showModal(event, modalId='shareProjectModal', attrs={'action': `{% url 'project_share' project.id %}`})">{% translate "Share project" %}</a></li>
                                   <li><a class="dropdown-item" onclick="javascript:showRevokeProjectModal(event, `{{ project.id }}`)">{% translate "Unshare project" %}</a></li>
-                                  <li><a class="dropdown-item" href="{% url 'project_export' project.id %}">{% translate "Export project" %}</a></li>
+                                  {% endif %}
+																	<li><a class="dropdown-item" href="{% url 'project_export' project.id %}">{% translate "Export project" %}</a></li>
                                 </ul>
                             </div>
+
+														{% endif %}
 
 
                         </div>
@@ -215,10 +242,12 @@
                         </div>
                         <div class="add-scenario">
                             <div class="dropdown">
+															{% if project.id|has_viewer_edit_rights:request.user %}
                                 <button class="btn dropdown-toggle" type="button" id="dropdownCreateScenario{{ project.id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                     <span class="icon icon-add" aria-hidden="true"></span>
                                     {% translate "Create scenario" %}
                                 </button>
+															{% endif %}
                                 <ul class="dropdown-menu" aria-labelledby="dropdownCreateScenario{{ project.id }}">
 
                                     {% if project.user == request.user %}

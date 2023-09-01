@@ -1,15 +1,14 @@
-import uuid
 import json
-from django.conf import settings
-from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
+import uuid
 from datetime import timedelta
-from django.forms.models import model_to_dict
-from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-import oemof.thermal.compression_heatpumps_and_chillers as cmpr_hp_chiller
 
-from users.models import CustomUser
+import oemof.thermal.compression_heatpumps_and_chillers as cmpr_hp_chiller
+from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.forms.models import model_to_dict
+from django.contrib.postgres.fields import ArrayField
+from django.utils.translation import gettext_lazy as _
 from projects.constants import (
     ASSET_CATEGORY,
     ASSET_TYPE,
@@ -24,7 +23,11 @@ from projects.constants import (
     TRUE_FALSE_CHOICES,
     BOOL_CHOICES,
     USER_RATING,
+    TIMESERIES_UNITS,
+    TIMESERIES_CATEGORIES,
+    TIMESERIES_TYPES,
 )
+from users.models import CustomUser
 
 
 class Feedback(models.Model):
@@ -41,14 +44,16 @@ class EconomicData(models.Model):
     discount = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)]
     )
-    tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    tax = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0
+    )
 
 
 class Viewer(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     share_rights = models.CharField(
         max_length=10, choices=(("edit", _("Edit")), ("read", _("Read")))
     )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.user.email} [{self.share_rights}]"
@@ -112,7 +117,7 @@ class Project(models.Model):
             )
 
         if user is not None:
-            viewers = Viewer.objects.filter(user=user)
+            viewers = Viewer.objects.filter(user=user, share_rights=share_rights)
             if viewers.exists():
                 viewer = viewers.get()
             else:
@@ -175,7 +180,7 @@ class Project(models.Model):
                 )
         else:
             message = _(
-                "The user(s) you selected seems to not be registered in the open_plan tool"
+                "The user(s) you selected seems to not be registered in the open-plan-tool"
             )
         return success, message
 
@@ -284,6 +289,69 @@ class Scenario(models.Model):
             busses.append(bus_data)
         dm["busses"] = busses
         return dm
+
+
+def get_default_timeseries():
+    return list([])
+
+
+class Timeseries(models.Model):
+    name = models.CharField(max_length=120, blank=True, default="")
+    values = ArrayField(
+        models.FloatField(), blank=False, default=get_default_timeseries
+    )
+    units = models.CharField(
+        max_length=50, choices=TIMESERIES_UNITS, blank=True, null=True
+    )
+    category = models.CharField(
+        max_length=6, choices=TIMESERIES_CATEGORIES, blank=True, null=True
+    )
+
+    # TODO user or scenario can be both null only if open_source attribute is True --> by way of saving
+    # TODO if the timeseries is open_source and the user is deleted, the timeseries user should just be set to null,
+    # otherwise the timeseries should be deleted
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True
+    )
+    # TODO check that if both a user and scenario are provided the scenario belongs to the user
+    scenario = models.ForeignKey(
+        Scenario, on_delete=models.CASCADE, null=True, blank=True
+    )
+    ts_type = models.CharField(max_length=12, choices=MVS_TYPE, blank=True, null=True)
+
+    open_source = models.BooleanField(
+        null=False, blank=False, choices=BOOL_CHOICES, default=False
+    )
+
+    # get this from the scenario
+    # TODO rename with _date instead of _time
+    start_time = models.DateTimeField(blank=True, default=None, null=True)
+    end_time = models.DateTimeField(blank=True, default=None, null=True)
+    time_step = models.IntegerField(
+        blank=True, default=None, null=True, validators=[MinValueValidator(1)]
+    )
+
+    def save(self, *args, **kwargs):
+        n = len(self.values)
+        if n == 1:
+            self.ts_type = "scalar"
+        elif n > 1:
+            self.ts_type = "vector"
+        super().save(*args, **kwargs)
+
+    @property
+    def get_values(self):
+        if self.ts_type == "scalar":
+            answer = self.values[0]
+        else:
+            answer = self.values
+        return answer
+
+    def compute_time_attribute_from_timestamps(self, timestamps):
+        pass
+
+    def compute_end_time_from_duration(self, duration):
+        pass
 
 
 class AssetType(models.Model):
@@ -438,6 +506,21 @@ class Asset(TopologyNode):
     def fields(self):
         return [f.name for f in self._meta.fields + self._meta.many_to_many]
 
+    def get_field_value(self, field_name):
+        answer = getattr(self, field_name)
+        if field_name in (
+            "efficiency",
+            "efficiency_multiple",
+            "energy_price",
+            "feedin_tariff",
+            "input_timeseries",
+        ):
+            try:
+                answer = float(answer)
+            except ValueError:
+                answer = json.loads(answer)
+        return answer
+
     @property
     def visible_fields(self):
         visible_fields = self.asset_type.visible_fields
@@ -485,7 +568,7 @@ class Asset(TopologyNode):
             answer = []
         return answer
 
-    def export(self):
+    def export(self, connections=False):
         """
         Returns
         -------
@@ -499,9 +582,15 @@ class Asset(TopologyNode):
         dm = model_to_dict(self, fields=fields)
         dm["asset_info"] = self.asset_type.export()
 
+        cop_parameters = COPCalculator.objects.filter(asset=self)
+        if cop_parameters.exists():
+            dm["COP_parameters"] = cop_parameters.get().export()
+
         # check for parent assets
         if self.parent_asset is not None:
             dm["parent_asset"] = self.parent_asset.name
+
+        # TODO add connections here if True, then one can recreate the asset
 
         return dm
 
@@ -568,6 +657,10 @@ class COPCalculator(models.Model):
         if len(cops) == 1:
             cops = cops[0]
         return cops
+
+    def export(self):
+        dm = model_to_dict(self, exclude=["id", "scenario", "asset"])
+        return dm
 
 
 class Bus(TopologyNode):
@@ -658,6 +751,7 @@ class AbstractSimulation(models.Model):
     end_date = models.DateTimeField(null=True)
     elapsed_seconds = models.FloatField(null=True)
     mvs_token = models.CharField(max_length=200, null=True)
+    mvs_version = models.CharField(max_length=15, null=True)
     status = models.CharField(
         max_length=20, choices=SIMULATION_STATUS, null=False, default=PENDING
     )

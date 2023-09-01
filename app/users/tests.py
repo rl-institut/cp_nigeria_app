@@ -51,6 +51,7 @@ class UserModelTest(TestCase):
                 "username": "someUser",
                 "password1": "ASas12,.",
                 "password2": "ASas12,.",
+                "accept_privacy": True,
             }
         )
         self.assertTrue(form.is_valid())
