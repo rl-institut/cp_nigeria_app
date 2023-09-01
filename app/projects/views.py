@@ -1437,6 +1437,38 @@ def sensitivity_analysis_create(request, scen_id, sa_id=None, step_id=5):
     return answer
 
 
+# region timeseries
+
+
+@json_view
+@login_required
+@require_http_methods(["GET", "POST"])
+def upload_timeseries(request):
+    if request.method == "GET":
+        n = Timeseries.objects.count()
+        form = UploadTimeseriesForm(
+            initial={
+                "name": f"test_timeserie{n}",
+                "ts_type": "source",
+                "start_time": "2023-01-01",
+                "end_time": "2023-01-31",
+                "open_source": True,
+                "units": "kWh",
+            }
+        )
+        context = {"form": form}
+
+        return render(request, "asset/upload_timeseries.html", context)
+
+    elif request.method == "POST":
+        qs = request.POST
+        form = UploadTimeseriesForm(qs)
+
+        if form.is_valid():
+            ts = form.save(commit=False)
+            ts.user = request.user
+
+
 # region Asset
 
 

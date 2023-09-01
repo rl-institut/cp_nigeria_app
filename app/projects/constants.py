@@ -268,6 +268,19 @@ BOOL_CHOICES = ((True, _("Yes")), (False, _("No")))
 
 FLOW_DIRECTION = (("B2A", "Bus_to_Asset"), ("A2B", "Asset_to_Bus"))
 
+TIMESERIES_UNITS = (
+    ("Wh", "Wh"),
+    ("kWh", "kWh"),
+    ("MWh", "MWh"),
+    ("GWh", "GWh"),
+    ("TWh", "TWh"),
+)
+TIMESERIES_CATEGORIES = (
+    ("other", _("Other")),
+    ("demand", _("Demand")),
+    ("supply", _("Supply")),
+)
+TIMESERIES_TYPES = (("scalar", "scalar"), ("vector", "vector"))
 ENERGY_VECTOR = (
     ("", "Choose..."),
     ("Electricity", _("Electricity")),

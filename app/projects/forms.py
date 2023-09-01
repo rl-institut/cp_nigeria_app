@@ -1059,3 +1059,23 @@ class StorageForm(AssetCreateForm):
         "soc_min",
         "dispatchable",
     ]
+
+
+class UploadTimeseriesForm(OpenPlanModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["values"] = DualNumberField(default=0, param_name="values")
+
+    class Meta:
+        model = Timeseries
+        exclude = ["id", "user"]
+        widgets = {
+            "start_date": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={
+                    "class": "TestDateClass",
+                    "placeholder": "Select a start date",
+                    "type": "date",
+                },
+            )
+        }
