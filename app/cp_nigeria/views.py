@@ -78,12 +78,7 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]):
-    if request.POST:
-        form = CPNLoadProfileForm(request.POST)
-        form2 = CPNLoadProfileForm(request.POST)
-    else:
-        form = CPNLoadProfileForm()
-        form2 = CPNLoadProfileForm()
+    form = UserGroupForm()
 
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
