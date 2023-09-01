@@ -491,7 +491,7 @@ h3 {
 
 a {
   font-weight: 700;
-  color: #1F567D !important;
+  color: #006400 !important;
   text-decoration: none !important;
   cursor: pointer; }
 
@@ -596,7 +596,7 @@ button.btn,
 footer a.btn,
 footer button.btn {
   display: inline-block;
-  background-color: #1F567D;
+  background-color: #006400;
   color: #fff;
   border-radius: 8px;
   letter-spacing: 0.03rem;
@@ -638,7 +638,7 @@ footer button.btn {
   footer button.btn:hover,
   footer button.btn:focus,
   footer button.btn:active {
-    background-color: #17405C !important; }
+    background-color: #228b22 !important; }
   a.btn--large,
   button.btn--large,
   footer a.btn--large,
@@ -677,7 +677,7 @@ footer button.btn {
   footer button.btn--transparent,
   footer button.btn--action {
     background-color: transparent;
-    color: #1F567D !important; }
+    color: #006400 !important; }
     a.btn--hollow:link, a.btn--hollow:hover, a.btn--hollow:focus, a.btn--hollow:visited, a.btn--hollow:active, a.btn--transparent:link, a.btn--transparent:hover, a.btn--transparent:focus, a.btn--transparent:visited, a.btn--transparent:active, a.btn--action:link, a.btn--action:hover, a.btn--action:focus, a.btn--action:visited, a.btn--action:active,
     button.btn--hollow:link,
     button.btn--hollow:hover,
@@ -724,7 +724,7 @@ footer button.btn {
     footer button.btn--action:focus,
     footer button.btn--action:visited,
     footer button.btn--action:active {
-      color: #1F567D !important; }
+      color: #006400 !important; }
     a.btn--hollow:hover, a.btn--hollow:focus, a.btn--hollow:active, a.btn--transparent:hover, a.btn--transparent:focus, a.btn--transparent:active, a.btn--action:hover, a.btn--action:focus, a.btn--action:active,
     button.btn--hollow:hover,
     button.btn--hollow:focus,
@@ -787,7 +787,7 @@ footer button.btn {
   button.btn--hollow,
   footer a.btn--hollow,
   footer button.btn--hollow {
-    border: 1px solid #1F567D; }
+    border: 1px solid #006400; }
   a.btn--transparent,
   button.btn--transparent,
   footer a.btn--transparent,
@@ -829,8 +829,8 @@ footer button.btn {
   button.btn--hollow.btn--action,
   footer a.btn--hollow.btn--action,
   footer button.btn--hollow.btn--action {
-    border-color: #1F567D;
-    color: #1F567D !important;
+    border-color: #006400;
+    color: #006400 !important;
     font-weight: 700 !important; }
   a.btn--load,
   button.btn--load,
@@ -838,7 +838,7 @@ footer button.btn {
   footer button.btn--load {
     font-weight: 700;
     background-color: transparent;
-    color: #1F567D;
+    color: #006400;
     width: auto;
     padding: 0; }
     a.btn--load:link, a.btn--load:visited,
@@ -848,7 +848,7 @@ footer button.btn {
     footer a.btn--load:visited,
     footer button.btn--load:link,
     footer button.btn--load:visited {
-      color: #1F567D !important;
+      color: #006400 !important;
       background-color: transparent !important; }
     a.btn--load:hover, a.btn--load:focus, a.btn--load:active,
     button.btn--load:hover,
@@ -860,7 +860,7 @@ footer button.btn {
     footer button.btn--load:hover,
     footer button.btn--load:focus,
     footer button.btn--load:active {
-      color: #17405C !important;
+      color: #228b22 !important;
       background-color: transparent !important; }
   a.btn--disabled,
   button.btn--disabled,
@@ -1024,7 +1024,7 @@ a.dropdown-item:active {
     padding-left: 1rem;
     padding-right: 1rem; }
   .footer__logo img {
-    height: 2rem; }
+    height: 5rem; }
   .footer__links {
     display: flex;
     flex-direction: column;
@@ -1089,7 +1089,7 @@ a.dropdown-item:active {
 
 @use 'variables' as *;
 form .form-control:focus {
-  border-color: #1F567D;
+  border-color: #006400;
   box-shadow: 0 0 0 0.25rem rgba(31, 86, 125, 0.1); }
 
 form .asteriskField {
@@ -1099,7 +1099,7 @@ form .form-check-input:focus {
   box-shadow: 0 0 0 0.25rem rgba(31, 86, 125, 0.1); }
 
 form .form-check-input:checked {
-  background-color: #1F567D; }
+  background-color: #006400; }
 
 form .form-group {
   margin-bottom: 1rem;
@@ -1199,8 +1199,8 @@ form .btn {
     background-color: #fff; }
   .choices .choices__list--multiple .choices__item {
     background-color: #fff;
-    border-color: #1F567D;
-    color: #1F567D;
+    border-color: #006400;
+    color: #006400;
     margin-bottom: 0; }
   .choices[data-type*=select-multiple] .choices__inner .choices__button, .choices[data-type*=text] .choices__inner.choices__button {
     background-image: url("/static/assets/icons/i_close.svg"); }
@@ -1285,7 +1285,7 @@ form .btn {
   cursor: pointer;
   padding-left: 0.35rem;
   vertical-align: middle;
-  color: #1F567D; }
+  color: #006400; }
 
 .actions .btn--action .icon:not(.icon-results)::before {
   color: #343434; }
@@ -1365,14 +1365,13 @@ table.table {
 
 @use 'variables' as *;
 nav.navbar {
-  position: fixed;
   width: 100%;
   background-color: #fff;
   z-index: 9; }
   nav.navbar.navbar-light {
     background-color: #fff !important; }
   nav.navbar .navbar-brand img {
-    height: 2rem; }
+    height: 5rem; }
   nav.navbar .dropdown-menu[data-bs-popper] {
     left: auto;
     right: 0; }
@@ -1418,7 +1417,7 @@ nav.navbar {
       border: none;
       margin: 0.6rem 0 0 1.25rem;
       padding-right: 0.25rem;
-      color: #1F567D;
+      color: #006400;
       background-color: #fff; }
   .navbar .nav-item .btn {
     margin-left: 1rem; }
@@ -1430,7 +1429,7 @@ nav.navbar {
   .navbar .nav-item.dropdown.profile a::after {
     vertical-align: -3px; }
   .navbar .nav-item.dropdown.profile img {
-    height: 2rem;
+    height: 3rem;
     width: 2rem;
     transform: translateY(3px);
     -webkit-transform: translateY(3px);
@@ -1447,8 +1446,8 @@ nav.navbar {
 .wizard {
   position: relative;
   background-color: #F4F7F9;
-  height: 8.5rem;
-  min-height: 8.5rem;
+  height: 8rem;
+  min-height: 8rem;
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -1498,6 +1497,7 @@ nav.navbar {
     flex-direction: row;
     justify-content: center;
     padding-bottom: .5rem;
+    padding-top: 1rem;
     font-size: 0.875rem; }
     .wizard__name .project {
       font-weight: 700; }
@@ -1518,6 +1518,9 @@ nav.navbar {
       position: relative;
       font-weight: 700;
       font-size: 0.875rem; }
+      @media only screen and (max-width: 600px) {
+        .wizard__steps li {
+          display: none; } }
       .wizard__steps li:not(:last-of-type) {
         padding-right: 2rem; }
       .wizard__steps li::before {
@@ -1544,9 +1547,12 @@ nav.navbar {
       .wizard__steps li:nth-child(7)::before {
         content: "7"; }
       .wizard__steps li.active {
-        color: #1F567D; }
+        color: #006400; }
+        @media only screen and (max-width: 600px) {
+          .wizard__steps li.active {
+            display: flex; } }
         .wizard__steps li.active::before {
-          background-color: #1F567D; }
+          background-color: #006400; }
     @media only screen and (max-width: 1300px) {
       .wizard__steps li::before {
         font-size: 0.75rem;
@@ -1641,9 +1647,9 @@ nav.navbar {
       cursor: pointer;
       font-size: 0.875rem; }
       .dashboard .scenario-select__item.selected {
-        border: 1px solid #1F567D;
+        border: 1px solid #006400;
         background-color: #fff;
-        color: #1F567D;
+        color: #006400;
         transform: translateY(-3px);
         box-shadow: 0px 4px 8px rgba(31, 86, 125, 0.16); }
   .dashboard .chart {
@@ -1660,7 +1666,7 @@ nav.navbar {
       .dashboard .chart__header .view {
         padding-left: 1.5rem;
         font-weight: 700;
-        color: #1F567D;
+        color: #006400;
         text-decoration: none;
         cursor: pointer; }
         .dashboard .chart__header .view .icon {
@@ -1668,7 +1674,7 @@ nav.navbar {
     .dashboard .chart__plot .table-add {
       display: inline-block;
       padding: 0.75rem 1rem;
-      color: #1F567D; }
+      color: #006400; }
       .dashboard .chart__plot .table-add__text {
         padding-left: 0.25rem; }
     .dashboard .chart .dropdown .dropdown-toggle {
@@ -1826,7 +1832,7 @@ nav.navbar {
 .system-design {
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 4.5rem - 5.5rem - 4rem);
+  height: calc(100vh - 4.5rem - 8rem - 4rem);
   border-top: 2px solid #F4F7F9; }
   .system-design .components {
     width: 22rem;
@@ -2426,7 +2432,7 @@ nav.navbar {
     padding-right: 12rem; }
     .hero__text h1 {
       text-align: left;
-      font-size: 1.5rem;
+      font-size: 2.5rem;
       color: #343434;
       margin-bottom: 1rem; }
     .hero__text span {
@@ -2535,9 +2541,9 @@ nav.navbar {
       .project__details .actions .btn--hollow {
         font-weight: 700;
         padding: 0.25rem 0.5rem;
-        color: #1F567D; }
+        color: #006400; }
         .project__details .actions .btn--hollow:hover, .project__details .actions .btn--hollow:focus, .project__details .actions .btn--hollow:active {
-          color: #17405C !important; }
+          color: #228b22 !important; }
       .project__details .actions a.btn--action {
         padding-top: 0.25rem;
         font-weight: 700 !important; }
@@ -2635,7 +2641,7 @@ nav.navbar {
     .project__img > span {
       font-size: 0.75rem;
       font-weight: 700;
-      color: #1F567D;
+      color: #006400;
       cursor: pointer; }
     .project__img .icon {
       vertical-align: middle;
@@ -2952,7 +2958,5 @@ nav.navbar {
       width: calc(100% - 1.5rem);
       height: 100%;
       background-color: #E3EAEE; }
-
-
 
 /*# sourceMappingURL=main.css.map */
