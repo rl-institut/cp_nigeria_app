@@ -2,7 +2,7 @@
 
     var selectionHistory = []; // Array to store the selection history
 
-    // hide previousQuestion and show nextQuestion upon selection
+    // grey out previous select and show nextQuestion upon selection
         $('select').on('change', function() {
           var selectId = $(this).attr('id');
           var selectedValue = $(this).val();
@@ -17,8 +17,9 @@
         });
         console.log(selectionHistory)
 
-          
-          previousQuestion.hide();
+          // grey out previous select
+          $(this).prop('disabled', true)
+
           nextQuestion.show();
           console.log(selectId, selectedValue);
 
@@ -55,18 +56,16 @@
         $('#back').on('click', function() {
             if (selectionHistory.length > 0) {
                 // Pop the last selection from the history
-                var previousSelection = selectionHistory.pop();
+                var lastSelection = selectionHistory.pop();
 
-                var previousSelectId = previousSelection.selectId;
-                var previousSelectedValue = previousSelection.selectedValue;
-                var previousQuestion = $('#' + previousSelectId).closest('div');
+                var lastSelectId = lastSelection.selectId;
+                var lastSelectedValue = lastSelection.selectedValue;
 
-                //Show the previous question
-                previousQuestion.show();
-                console.log(previousSelection)
+                // enable select from previous question
+                $('#' + lastSelectId).prop('disabled', false)
 
                 // Hide the current question
-                var currentQuestion = $('#' + previousSelectId + '_' + previousSelectedValue);
+                var currentQuestion = $('#' + lastSelectId + '_' + lastSelectedValue);
                 currentQuestion.hide();
 
 
