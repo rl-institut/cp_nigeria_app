@@ -4,22 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-
-USER_TYPES = (("Household", "Household"),
-              ("Food", "Enterprise: Food"),
-              ("Retail", "Enterprise: Retail"),
-              ("Trades", "Enterprise: Trades"),
-              ("Digital", "Enterprise: Digital"),
-              ("Agricultural", "Enterprise: Agricultural"),
-              ("School", "Public facility: School"),
-              ("Mosque", "Public facility: Mosque"),
-              ("Church", "Public facility: Church"),
-              ("Government building", "Public facility: Government building"),
-              ("Town Hall", "Public facility: Town Hall"),
-              ("Health Center", "Health facility: Health Center"),
-              ("Dispensary/Pharmacy", "Health facility: Dispensary/Pharmacy"),
-              ("Clinic", "Health facility: Clinic"),
-              ("Hospital", "Health facility: Hospital"))
+from projects.models.base_models import Timeseries
 
 
 class Project(models.Model):
@@ -34,29 +19,18 @@ class Project(models.Model):
         return self.name
 
 
-class UserType(models.Model):
-    user_type = models.CharField(max_length=50)
+class ConsumerType(models.Model):
+    consumer_type = models.CharField(max_length=50)
 
     def __str__(self):
-        return self.user_type
+        return self.consumer_type
 
 
-class FacilityType(models.Model):
-    user_type = models.ForeignKey(UserType, on_delete=models.CASCADE)
-    facility_type = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.facility_type
+class DemandTimeseries(Timeseries):
+    consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
 
 
-class UserGroup(models.Model):
-    TIERS = (("Low", "Low"),
-             ("Middle", "Middle"),
-             ("High", "High"))
-
-    user_type = models.ForeignKey(UserType, on_delete=models.CASCADE)
-    facility_type = models.ForeignKey(FacilityType, on_delete=models.CASCADE)
-    tier = models.CharField(max_length=30, choices=TIERS)
-    number_users = models.IntegerField()
-
-
+class ConsumerGroup(models.Model):
+    consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
+    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.CASCADE, null=True)
+    number_consumers = models.IntegerField()

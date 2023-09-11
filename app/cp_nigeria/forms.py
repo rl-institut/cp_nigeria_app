@@ -105,14 +105,14 @@ class DummyForm(forms.Form):
     )
 
 
-class UserGroupForm(OpenPlanModelForm):
+class ConsumerGroupForm(OpenPlanModelForm):
     class Meta:
-        model = UserGroup
+        model = ConsumerGroup
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['facility_type'].queryset = FacilityType.objects.none()
+        self.fields['timeseries'].queryset = DemandTimeseries.objects.none()
 
         # Prevent automatic labels from being generated (to avoid issues with table display)
         for field_name, field in self.fields.items():

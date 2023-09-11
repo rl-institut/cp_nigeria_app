@@ -78,7 +78,7 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]):
-    form = UserGroupForm()
+    form = ConsumerGroupForm()
 
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
@@ -385,13 +385,13 @@ def get_pv_output(request, proj_id):
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def ajax_usergroup_form(request, user_group_id=None):
-    if request.is_ajax():
-        form_ug = UserGroupForm()
+def ajax_consumergroup_form(request, user_group_id=None):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        form_ug = ConsumerGroupForm()
         scen_id = 0 # TODO link that to url.py
         return render(
             request,
-            "cp_nigeria/steps/usergroup_form.html",
+            "cp_nigeria/steps/consumergroup_form.html",
             context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
         )
 
@@ -409,7 +409,7 @@ def ajax_load_facilities(request):
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def create_usergroup(request, scen_id=None):
+def create_consumergroup(request, scen_id=None):
     # todo use redirect or use pure ajax call without redirect like for assets saving
     return {"status":200}
 
@@ -417,6 +417,6 @@ def create_usergroup(request, scen_id=None):
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def delete_usergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
+def delete_consumergroup(request, scen_id=None):
+    """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options"""
     return {"status":200}
