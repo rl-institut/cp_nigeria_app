@@ -2,7 +2,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from projects.forms import OpenPlanModelForm, ProjectCreateForm
 
-from projects.forms import StorageForm, AssetCreateForm
+from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 
 from .models import *
 
@@ -47,6 +47,20 @@ class CPNLoadProfileForm(ProjectCreateForm):
             }
         ),
     )
+class UploadDemandForm(UploadTimeseriesForm):
+    class Meta:
+        model = DemandTimeseries
+        exclude = ["id", "user", "scenario", "ts_type"]
+        widgets = {
+            "start_date": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={
+                    "class": "TestDateClass",
+                    "placeholder": "Select a start date",
+                    "type": "date",
+                },
+            )
+        }
 
 
 class PVForm(AssetCreateForm):

@@ -420,3 +420,30 @@ def create_consumergroup(request, scen_id=None):
 def delete_consumergroup(request, scen_id=None):
     """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options"""
     return {"status":200}
+@json_view
+@login_required
+@require_http_methods(["GET", "POST"])
+def upload_demand_timeseries(request):
+    if request.method == "GET":
+        n = DemandTimeseries.objects.count()
+        form = UploadDemandForm(
+            initial={
+                "name": f"test_timeserie{n}",
+                "ts_type": "source",
+                "start_time": "2023-01-01",
+                "end_time": "2023-01-31",
+                "open_source": True,
+                "units": "kWh",
+            }
+        )
+        context = {"form": form}
+
+        return render(request, "asset/upload_timeseries.html", context)
+
+    elif request.method == "POST":
+        qs = request.POST
+        form = UploadDemandForm(qs)
+
+        if form.is_valid():
+            ts = form.save(commit=True)
+            ts.user = request.user

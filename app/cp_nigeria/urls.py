@@ -24,4 +24,6 @@ urlpatterns = [
     path("ajax/consumergroup/form", ajax_consumergroup_form, name="ajax_consumergroup_form"),
     path("consumergroup/create/<int:scen_id>", create_consumergroup, name="create_consumergroup"),
     path("consumergroup/delete/<int:scen_id>", delete_consumergroup, name="delete_consumergroup"),
+    path("upload/timeseries", upload_demand_timeseries, name="upload_demand_timeseries"),
+
 ]
