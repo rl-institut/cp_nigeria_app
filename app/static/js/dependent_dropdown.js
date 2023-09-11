@@ -7,7 +7,7 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
       var consumer_typeId = $(this).val();  // get the selected consumer_type ID from the HTML input
       var parentTr = $(this).closest('tr'); // Get the parent table row of the changed input
       // Find the corresponding timeseries input within the same div
-      var timeseriesInput = parentTr.find('#id_timeseries');
+      var timeseriesInput = parentTr.find('select[name*="timeseries"]');
 
 
       $.ajax({                       // initialize an AJAX request
