@@ -1,6 +1,6 @@
 from django import forms
-from django.utils.translation import ugettext_lazy as _
 from projects.forms import OpenPlanModelForm, ProjectCreateForm
+from django.utils.translation import gettext_lazy as _
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 
