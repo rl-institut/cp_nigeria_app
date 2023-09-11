@@ -1,0 +1,5 @@
+
+<option value="">---------</option>
+{% for timeseries in timeseries_qs %}
+<option value="{{ timeseries.pk }}">{{ timeseries.name }}</option>
+{% endfor %}

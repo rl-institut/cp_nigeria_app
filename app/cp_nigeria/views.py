@@ -399,11 +399,11 @@ def ajax_consumergroup_form(request, user_group_id=None):
 @login_required
 @json_view
 @require_http_methods(["GET", "POST"])
-def ajax_load_facilities(request):
-    if request.is_ajax():
-        user_type_id = request.GET.get('user_type')
-        facilities = FacilityType.objects.filter(user_type_id=user_type_id)
-        return render(request, 'cp_nigeria/steps/facility_dropdown_options.html', context={'facilities': facilities})
+def ajax_load_timeseries(request):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        consumer_type_id = request.GET.get('consumer_type')
+        timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+        return render(request, 'cp_nigeria/steps/timeseries_dropdown_options.html', context={'timeseries_qs': timeseries_qs})
 
 
 @login_required
@@ -420,6 +420,34 @@ def create_consumergroup(request, scen_id=None):
 def delete_consumergroup(request, scen_id=None):
     """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options"""
     return {"status":200}
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def ajax_update_graph(request):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        timeseries_id = request.POST.get('timeseries')
+        timeseries = DemandTimeseries.objects.get(id=timeseries_id)
+
+        if timeseries.units == 'Wh':
+            timeseries_values = timeseries.values
+        elif timeseries.units == 'kWh':
+            timeseries_values = [value / 1000 for value in timeseries.values]
+        else:
+            return JsonResponse({'error': 'timeseries has unsupported unit'}, status=403)
+
+        return JsonResponse({'timeseries_values': timeseries_values})
+
+    return JsonResponse({'error': request})
+
+
+def save_demand(request):
+    # TODO save either aggregated demand profile to database or full demand data (with all consumer groups) when the
+    #  user is finished
+    return {"status": 200}
+
+
 @json_view
 @login_required
 @require_http_methods(["GET", "POST"])
