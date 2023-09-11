@@ -78,7 +78,8 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]):
-    form = ConsumerGroupForm()
+    # TODO change DB default value to 1
+    form = ConsumerGroupForm(initial={"number_consumers": 1})
 
     messages.info(request, "Please input user group data. This includes user type information about "
                            "households, enterprises and facilities and predicted energy demand tiers as collected from "
@@ -387,7 +388,8 @@ def get_pv_output(request, proj_id):
 @require_http_methods(["POST"])
 def ajax_consumergroup_form(request, user_group_id=None):
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        form_ug = ConsumerGroupForm()
+        # TODO change DB default value to 1
+        form_ug = ConsumerGroupForm(initial={"number_consumers": 1})
         scen_id = 0 # TODO link that to url.py
         return render(
             request,

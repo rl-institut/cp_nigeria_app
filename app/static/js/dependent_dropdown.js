@@ -16,7 +16,8 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
           'consumer_type': consumer_typeId       // add the consumer_type id to the GET parameters
         },
         success: function (data) {   // `data` is the return of the `load_facilities` view function
-          timeseriesInput.html(data);  // replace the contents of the facility_type input with the data that came from the server
+          timeseriesInput.html(data);// replace the contents of the facility_type input with the data that came from the server
+          timeseriesInput.change(); //trigger programatic change of the selection to update the graph
         }
       });
 
