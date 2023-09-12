@@ -13,22 +13,22 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
-from projects.requests import (
-    fetch_mvs_simulation_results,
-)
+from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR, MODIFIED
 
 logger = logging.getLogger(__name__)
 
-STEP_MAPPING = {"choose_location": 1,
-                "demand_profile": 2,
-                "scenario_setup": 3,
-                "economic_params": 4,
-                "simulation": 5,
-                "business_model": 6,
-                "outputs": 7}
+STEP_MAPPING = {
+    "choose_location": 1,
+    "demand_profile": 2,
+    "scenario_setup": 3,
+    "economic_params": 4,
+    "simulation": 5,
+    "business_model": 6,
+    "outputs": 7,
+}
 
 CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
@@ -37,11 +37,13 @@ CPN_STEP_VERBOSE = {
     "economic_params": _("Economic parameters"),
     "simulation": _("Simulation"),
     "business_model": _("Business Model"),
-    "outputs": _("Outputs")
+    "outputs": _("Outputs"),
 }
 
 # sorts the step names based on the order defined in STEP_MAPPING (for ribbon)
-CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
+CPN_STEP_VERBOSE = [
+    CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])
+]
 
 
 @require_http_methods(["GET"])
@@ -51,7 +53,9 @@ def home_cpn(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choose_location"]):
+def cpn_scenario_create(
+    request, proj_id, scen_id=1, step_id=STEP_MAPPING["choose_location"]
+):
     if request.POST:
         form = ProjectForm(request.POST)
         if form.is_valid():
@@ -63,33 +67,51 @@ def cpn_scenario_create(request, proj_id, scen_id=1, step_id=STEP_MAPPING["choos
     else:
         form = ProjectForm()
 
+    messages.info(
+        request,
+        "Please input basic project information, such as name, location and duration. You can "
+        "input geographical data by clicking on the desired project location on the map.",
+    )
 
-    messages.info(request, 'Please input basic project information, such as name, location and duration. You can '
-                           'input geographical data by clicking on the desired project location on the map.')
-
-    return render(request, f"cp_nigeria/steps/scenario_create.html",
-                  {"form": form,
-                   "proj_id": proj_id,
-                   "step_id": step_id,
-                   "scen_id": scen_id,
-                   "step_list": CPN_STEP_VERBOSE})
+    return render(
+        request,
+        f"cp_nigeria/steps/scenario_create.html",
+        {
+            "form": form,
+            "proj_id": proj_id,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_VERBOSE,
+        },
+    )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_demand_params(request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]):
-    form = UserGroupForm()
+def cpn_demand_params(
+    request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]
+):
+    # TODO change DB default value to 1
+    form = ConsumerGroupForm(initial={"number_consumers": 1})
 
-    messages.info(request, "Please input user group data. This includes user type information about "
-                           "households, enterprises and facilities and predicted energy demand tiers as collected from "
-                           "survey data or available information about the community.")
+    messages.info(
+        request,
+        "Please input user group data. This includes user type information about "
+        "households, enterprises and facilities and predicted energy demand tiers as collected from "
+        "survey data or available information about the community.",
+    )
 
-    return render(request, f"cp_nigeria/steps/scenario_demand.html",
-                  {"form": form,
-                   "proj_id": proj_id,
-                   "step_id": step_id,
-                   "scen_id": scen_id,
-                   "step_list": CPN_STEP_VERBOSE})
+    return render(
+        request,
+        f"cp_nigeria/steps/scenario_demand.html",
+        {
+            "form": form,
+            "proj_id": proj_id,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_VERBOSE,
+        },
+    )
 
 
 @login_required
@@ -277,12 +299,19 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, scen_id, step_id=STEP_MAPPING["economic_params"]):
-    messages.info(request, "Please include any relevant constraints for the optimization.")
-    return render(request, f"cp_nigeria/steps/scenario_system_params.html",
-                  {"proj_id": proj_id,
-                   "step_id": step_id,
-                   "scen_id": scen_id,
-                   "step_list": CPN_STEP_VERBOSE})
+    messages.info(
+        request, "Please include any relevant constraints for the optimization."
+    )
+    return render(
+        request,
+        f"cp_nigeria/steps/scenario_system_params.html",
+        {
+            "proj_id": proj_id,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_VERBOSE,
+        },
+    )
 
 
 @login_required
@@ -291,7 +320,7 @@ def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
     if (scenario.project.user != request.user) and (
-            request.user not in scenario.project.viewers.all()
+        request.user not in scenario.project.viewers.all()
     ):
         raise PermissionDenied
 
@@ -346,11 +375,15 @@ CPN_STEPS = {
     "demand_profile": cpn_demand_params,
     "scenario_setup": cpn_scenario,
     "economic_params": cpn_constraints,
-    "simulation": cpn_review
+    "simulation": cpn_review,
 }
 
 # sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
-CPN_STEPS = [CPN_STEPS[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1]) if k in CPN_STEPS]
+CPN_STEPS = [
+    CPN_STEPS[k]
+    for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])
+    if k in CPN_STEPS
+]
 
 
 @login_required
@@ -368,55 +401,122 @@ def cpn_steps(request, proj_id, step_id=None, scen_id=1):
 # TODO: make this view work with dynamic coordinates (from map)
 def get_pv_output(request, proj_id):
     project = Project.objects.get(id=proj_id)
-    coordinates = {'lat': project.latitude,
-                   'lon': project.longitude}
+    coordinates = {"lat": project.latitude, "lon": project.longitude}
     location = RenewableNinjas()
     location.get_pv_output(coordinates)
     response = HttpResponse(
-        content_type='text/csv',
-        headers={'Content-Disposition': 'attachment; filename="pv_output.csv"'},
+        content_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'},
     )
-    location.data.to_csv(response, index=False, sep=';')
+    location.data.to_csv(response, index=False, sep=";")
     plot_div = location.create_pv_graph()
-    #HttpResponseRedirect(reverse("home_cpn", args=[project.id]))
+    # HttpResponseRedirect(reverse("home_cpn", args=[project.id]))
     return response
 
 
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def ajax_usergroup_form(request, user_group_id=None):
-    if request.is_ajax():
-        form_ug = UserGroupForm()
-        scen_id = 0 # TODO link that to url.py
+def ajax_consumergroup_form(request, user_group_id=None):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        # TODO change DB default value to 1
+        form_ug = ConsumerGroupForm(initial={"number_consumers": 1})
+        scen_id = 0  # TODO link that to url.py
         return render(
             request,
-            "cp_nigeria/steps/usergroup_form.html",
-            context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
+            "cp_nigeria/steps/consumergroup_form.html",
+            context={
+                "form": form_ug,
+                "scen_id": scen_id,
+                "unique_id": request.POST.get("ug_id"),
+            },
         )
 
 
 @login_required
 @json_view
 @require_http_methods(["GET", "POST"])
-def ajax_load_facilities(request):
-    if request.is_ajax():
-        user_type_id = request.GET.get('user_type')
-        facilities = FacilityType.objects.filter(user_type_id=user_type_id)
-        return render(request, 'cp_nigeria/steps/facility_dropdown_options.html', context={'facilities': facilities})
+def ajax_load_timeseries(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        consumer_type_id = request.GET.get("consumer_type")
+        timeseries_qs = DemandTimeseries.objects.filter(
+            consumer_type_id=consumer_type_id
+        )
+        return render(
+            request,
+            "cp_nigeria/steps/timeseries_dropdown_options.html",
+            context={"timeseries_qs": timeseries_qs},
+        )
 
 
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def create_usergroup(request, scen_id=None):
+def create_consumergroup(request, scen_id=None):
     # todo use redirect or use pure ajax call without redirect like for assets saving
-    return {"status":200}
+    return {"status": 200}
 
 
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def delete_usergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
-    return {"status":200}
+def delete_consumergroup(request, scen_id=None):
+    """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options"""
+    return {"status": 200}
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def ajax_update_graph(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        timeseries_id = request.POST.get("timeseries")
+        timeseries = DemandTimeseries.objects.get(id=timeseries_id)
+
+        if timeseries.units == "Wh":
+            timeseries_values = timeseries.values
+        elif timeseries.units == "kWh":
+            timeseries_values = [value / 1000 for value in timeseries.values]
+        else:
+            return JsonResponse(
+                {"error": "timeseries has unsupported unit"}, status=403
+            )
+
+        return JsonResponse({"timeseries_values": timeseries_values})
+
+    return JsonResponse({"error": request})
+
+
+def save_demand(request):
+    # TODO save either aggregated demand profile to database or full demand data (with all consumer groups) when the
+    #  user is finished
+    return {"status": 200}
+
+
+@json_view
+@login_required
+@require_http_methods(["GET", "POST"])
+def upload_demand_timeseries(request):
+    if request.method == "GET":
+        n = DemandTimeseries.objects.count()
+        form = UploadDemandForm(
+            initial={
+                "name": f"test_timeserie{n}",
+                "ts_type": "source",
+                "start_time": "2023-01-01",
+                "end_time": "2023-01-31",
+                "open_source": True,
+                "units": "kWh",
+            }
+        )
+        context = {"form": form}
+
+        return render(request, "asset/upload_timeseries.html", context)
+
+    elif request.method == "POST":
+        qs = request.POST
+        form = UploadDemandForm(qs)
+
+        if form.is_valid():
+            ts = form.save(commit=True)
+            ts.user = request.user

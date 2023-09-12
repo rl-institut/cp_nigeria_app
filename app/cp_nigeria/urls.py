@@ -20,8 +20,24 @@ urlpatterns = [
     ),
     path("<int:proj_id>/review/<int:scen_id>", cpn_review, name="cpn_review"),
     # path("<int:proj_id>/update/energy/system/<int:scen_id>", update_energy_system, name="update_energy_system"),
-    path("ajax/usergroup/form", ajax_usergroup_form, name="ajax_usergroup_form"),
-    path("ajax/load-facilities", ajax_load_facilities, name="ajax_load_facilities"),
-    path("usergroup/create/<int:scen_id>", create_usergroup, name="create_usergroup"),
-    path("usergroup/delete/<int:scen_id>", delete_usergroup, name="delete_usergroup"),
+    path(
+        "ajax/consumergroup/form",
+        ajax_consumergroup_form,
+        name="ajax_consumergroup_form",
+    ),
+    path("ajax/load-timeseries", ajax_load_timeseries, name="ajax_load_timeseries"),
+    path("ajax/update-graph", ajax_update_graph, name="ajax_update_graph"),
+    path(
+        "consumergroup/create/<int:scen_id>",
+        create_consumergroup,
+        name="create_consumergroup",
+    ),
+    path(
+        "consumergroup/delete/<int:scen_id>",
+        delete_consumergroup,
+        name="delete_consumergroup",
+    ),
+    path(
+        "upload/timeseries", upload_demand_timeseries, name="upload_demand_timeseries"
+    ),
 ]

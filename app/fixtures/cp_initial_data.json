@@ -1,142 +1,37 @@
 [
 {
-    "model": "cp_nigeria.usertype",
-    "pk": 9,
+    "model": "cp_nigeria.consumertype",
+    "pk": 1,
     "fields": {
-        "user_type": "Household"
+        "consumer_type": "Household"
     }
 },
 {
-    "model": "cp_nigeria.usertype",
-    "pk": 10,
+    "model": "cp_nigeria.consumertype",
+    "pk": 2,
     "fields": {
-        "user_type": "Enterprise"
+        "consumer_type": "Enterprise"
     }
 },
 {
-    "model": "cp_nigeria.usertype",
-    "pk": 11,
+    "model": "cp_nigeria.consumertype",
+    "pk": 3,
     "fields": {
-        "user_type": "Public facility"
+        "consumer_type": "Public facility"
     }
 },
 {
-    "model": "cp_nigeria.usertype",
-    "pk": 12,
+    "model": "cp_nigeria.consumertype",
+    "pk": 4,
     "fields": {
-        "user_type": "Health facility"
+        "consumer_type": "Health facility"
     }
 },
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 29,
+    {
+    "model": "cp_nigeria.consumertype",
+    "pk": 5,
     "fields": {
-        "user_type": 10,
-        "facility_type": "Food"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 30,
-    "fields": {
-        "user_type": 10,
-        "facility_type": "Retail"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 31,
-    "fields": {
-        "user_type": 10,
-        "facility_type": "Trades"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 32,
-    "fields": {
-        "user_type": 10,
-        "facility_type": "Digital"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 33,
-    "fields": {
-        "user_type": 10,
-        "facility_type": "Agricultural"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 34,
-    "fields": {
-        "user_type": 11,
-        "facility_type": "School"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 35,
-    "fields": {
-        "user_type": 11,
-        "facility_type": "Mosque"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 36,
-    "fields": {
-        "user_type": 11,
-        "facility_type": "Church"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 37,
-    "fields": {
-        "user_type": 11,
-        "facility_type": "Government building"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 38,
-    "fields": {
-        "user_type": 11,
-        "facility_type": "Town Hall"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 39,
-    "fields": {
-        "user_type": 12,
-        "facility_type": "Health Center"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 40,
-    "fields": {
-        "user_type": 12,
-        "facility_type": "Dispensary/Pharmacy"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 41,
-    "fields": {
-        "user_type": 12,
-        "facility_type": "Clinic"
-    }
-},
-{
-    "model": "cp_nigeria.facilitytype",
-    "pk": 42,
-    "fields": {
-        "user_type": 12,
-        "facility_type": "Hospital"
+        "consumer_type": "Machinery"
     }
 }
 ]

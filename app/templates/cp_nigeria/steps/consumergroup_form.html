@@ -2,23 +2,26 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-<script src="{% static 'js/dependent_dropdown.js' %}"></script>
-<script src="{% static 'js/user_groups.js' %}"></script>
-<script>
-	const dropdownUrl = `{% url 'ajax_load_facilities' %}`;
-</script>
+
+{% comment %}
+This form is based on ConsumerGroupForm and this is linked to the view cp_nigeria/views.py::ajax_consumergroup_form()
+{% endcomment %}
+
+
 
 <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
 	<span class="icon icon-more"></span>
 </button>
 <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
-	<li><a class="dropdown-item" onclick="javascript:deleteUserGroup(event)">{% translate 'Delete user group' %}</a></li>
+	<li><a class="dropdown-item" onclick="javascript:deleteConsumerGroup(event)">{% translate 'Delete user group' %}</a></li>
 	<li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
 </ul>
 
 
-<form method="POST" id="UserGroupForm" action="{% url 'create_usergroup' scen_id %}">
-{% csrf_token %}
+
+<form method="POST" id="ConsumerGroupForm" action="{% url 'ajax_update_graph' %}">
+	{% csrf_token %}
+
 	{% for field in form %}
 	<td>
 		{{ field | as_crispy_field }}

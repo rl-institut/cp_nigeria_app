@@ -2,15 +2,13 @@
 
 
 /* create a new div in the user groups container upon button click*/
-function adduserGroupDivToDOM(unique_id, userGroupDOMId="ug_container"){
+function addConsumerGroupDivToDOM(unique_id, consumerGroupDOMId="ug_container"){
+    console.log('add new consumer group')
+    var ugContainer = document.getElementById(consumerGroupDOMId)
 
-    var ugContainer = document.getElementById(userGroupDOMId)
-
-    const ug_next_id = unique_id ? "user-group" + unique_id : "user-group" + (ugContainer.childElementCount + 1) ;
+    const ug_next_id = unique_id ? "consumer-group" + unique_id : "consumer-group" + (ugContainer.childElementCount + 1) ;
     // generate html elements of a graph area
-    var newUserGroupDOM = ml("tr", { id: ug_next_id , class: "user--group", style: "height: fit-content;"});
-
-;
+    var newConsumerGroupDOM = ml("tr", { id: ug_next_id , class: "consumer--group", style: "height: fit-content;"});
     // Note: postUrl and csrfToken are defined in scenario_step2.html
     console.log(postUrl)
     $.ajax({
@@ -21,25 +19,8 @@ function adduserGroupDivToDOM(unique_id, userGroupDOMId="ug_container"){
               'ug_id': ug_next_id
             },
             success: function (formContent) {
-                newUserGroupDOM.innerHTML = formContent;
-                ugContainer.appendChild(newUserGroupDOM);
-
-                var plot_div = ugContainer.querySelector('#plot_div_' + ug_next_id );console.log(plot_div);
-
-              var data = [{
-                x: [1,2,3,4], //TODO not use dummy data
-                y: [1.5,1.5,1.5,1.5],
-                mode: "lines",
-                type: "scatter"
-                }];
-
-                var layout = {
-                //xaxis: {range: [0, 8760], title: "Time"},
-                //yaxis: {range: [0, 6000], title: "kWh"},
-                title: "Load profile (Year)"
-                };
-                Plotly.newPlot(plot_div, data, layout);
-
+                newConsumerGroupDOM.innerHTML = formContent;
+                ugContainer.appendChild(newConsumerGroupDOM);
             }
         });
 
@@ -106,3 +87,4 @@ function addDummyPlot(x, timeseries) {
     Plotly.newPlot("Dummy", data, layout)
 
 }
+
