@@ -32,5 +32,7 @@ class DemandTimeseries(Timeseries):
 
 class ConsumerGroup(models.Model):
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
-    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.CASCADE, null=True)
+    timeseries = models.ForeignKey(
+        DemandTimeseries, on_delete=models.CASCADE, null=True
+    )
     number_consumers = models.IntegerField()

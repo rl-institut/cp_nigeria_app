@@ -247,12 +247,12 @@ def get_selected_scenarios_in_cache(request, proj_id):
 
 class RenewableNinjas:
     token = os.environ["RN_API_TOKEN"]
-    api_base = 'https://www.renewables.ninja/api/'
+    api_base = "https://www.renewables.ninja/api/"
 
     def __init__(self):
         self.s = requests.session()
         # Send token header with each request
-        self.s.headers = {'Authorization': 'Token ' + self.token}
+        self.s.headers = {"Authorization": "Token " + self.token}
         self.data = []
 
     def get_pv_output(self, coordinates):
@@ -260,20 +260,20 @@ class RenewableNinjas:
         # Get PV data
         ##
 
-        url = self.api_base + 'data/pv'
+        url = self.api_base + "data/pv"
 
         args = {
-            'lat': coordinates['lat'],
-            'lon': coordinates['lon'],
-            'date_from': '2019-01-01',
-            'date_to': '2019-12-31',
-            'dataset': 'merra2',
-            'capacity': 1.0,
-            'system_loss': 0.1,
-            'tracking': 0,
-            'tilt': 35,
-            'azim': 180,
-            'format': 'json'
+            "lat": coordinates["lat"],
+            "lon": coordinates["lon"],
+            "date_from": "2019-01-01",
+            "date_to": "2019-12-31",
+            "dataset": "merra2",
+            "capacity": 1.0,
+            "system_loss": 0.1,
+            "tracking": 0,
+            "tilt": 35,
+            "azim": 180,
+            "format": "json",
         }
 
         r = self.s.get(url, params=args)
@@ -281,15 +281,18 @@ class RenewableNinjas:
         # Parse JSON to get a pandas.DataFrame of data and dict of metadata
         parsed_response = json.loads(r.text)
 
-        pv_data = pd.read_json(json.dumps(parsed_response['data']), orient='index')
-        metadata = parsed_response['metadata']
+        pv_data = pd.read_json(json.dumps(parsed_response["data"]), orient="index")
+        metadata = parsed_response["metadata"]
 
         self.data = pv_data
         return
 
     def create_pv_graph(self):
-        date_range = pd.Series(pd.date_range('2019-01-01', '2019-12-31'))
-        daily_avg = [np.mean(self.data.loc[day.strftime('%Y-%m-%d')]) for day in date_range]
-        plot_div = plot([Scatter(x=date_range, y=daily_avg, mode='lines')], output_type='div')
+        date_range = pd.Series(pd.date_range("2019-01-01", "2019-12-31"))
+        daily_avg = [
+            np.mean(self.data.loc[day.strftime("%Y-%m-%d")]) for day in date_range
+        ]
+        plot_div = plot(
+            [Scatter(x=date_range, y=daily_avg, mode="lines")], output_type="div"
+        )
         return plot_div
-

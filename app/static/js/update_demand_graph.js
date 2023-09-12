@@ -16,7 +16,7 @@ $(document).on('change', '#id_timeseries', function(event) {
 
             $.ajax({
             headers: {'X-CSRFToken': csrfToken },
-            url: updateGraphUrl,
+            url: updateGraphUrl, //cp_nigeria/views.py::ajax_update_graph
             method: 'POST',
             data: { 'timeseries': timeseriesId },
             dataType: 'json',

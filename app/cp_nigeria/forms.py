@@ -6,8 +6,7 @@ from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 
 from .models import *
 
-CURVES = (("Evening Peak", "Evening Peak"),
-          ("Midday Peak", "Midday Peak"))
+CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
@@ -17,10 +16,7 @@ class ProjectForm(OpenPlanModelForm):
 
 
 class CPNLocationForm(ProjectCreateForm):
-    weather = forms.FileField(
-        label=_("Upload weather data"),
-        required=False
-    )
+    weather = forms.FileField(label=_("Upload weather data"), required=False)
 
 
 class DemandProfileForm(OpenPlanForm):
@@ -30,15 +26,10 @@ class DemandProfileForm(OpenPlanForm):
         label=_("Load curve"),
         choices=CURVES,
         widget=forms.Select(
-            attrs={
-                "data-bs-toggle": "tooltip",
-                "title": _("Load curve"),
-            }
+            attrs={"data-bs-toggle": "tooltip", "title": _("Load curve")}
         ),
     )
-    households = forms.IntegerField(
-        label=_("Number of households"),
-    )
+    households = forms.IntegerField(label=_("Number of households"))
 
 
 class UploadDemandForm(UploadTimeseriesForm):
@@ -108,8 +99,7 @@ class BessForm(StorageForm):
 
 class DummyForm(forms.Form):
     some_input = forms.ChoiceField(
-        label=_("Some INput"),
-        choices=(("a","a"), ("b", "b")),
+        label=_("Some INput"), choices=(("a", "a"), ("b", "b"))
     )
 
 
@@ -120,9 +110,8 @@ class ConsumerGroupForm(OpenPlanModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['timeseries'].queryset = DemandTimeseries.objects.none()
+        self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
 
         # Prevent automatic labels from being generated (to avoid issues with table display)
         for field_name, field in self.fields.items():
-            field.label = ''
-
+            field.label = ""
