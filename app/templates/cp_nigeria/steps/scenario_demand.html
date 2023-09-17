@@ -7,7 +7,7 @@
 {% block start_body_scripts %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-	const postUrl = `{% url 'ajax_consumergroup_form' %}`;
+	const postUrl = `{% url 'ajax_consumergroup_form' scen_id %}`;
 	const csrfToken = `{{ csrf_token }}`;
     const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
     const updateGraphUrl = '{% url 'ajax_update_graph' %}';

@@ -419,10 +419,9 @@ def get_pv_output(request, proj_id):
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def ajax_consumergroup_form(request, user_group_id=None):
+def ajax_consumergroup_form(request, scen_id=0, user_group_id=None):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         # TODO change DB default value to 1
-        scen_id = 0  # TODO link that to url.py
         # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
         # with option advanced_view set by user choice
         form_ug = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
