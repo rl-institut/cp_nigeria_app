@@ -333,8 +333,8 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         form = EconomicDataForm(request.POST, instance=project.economic_data)
 
         if form.is_valid():
-            project = form.save()
-            return HttpResponseRedirect(reverse("cpn_review", args=[proj_id]))
+            form.save()
+            return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
     elif request.method == "GET":
 
         form = EconomicDataForm(
