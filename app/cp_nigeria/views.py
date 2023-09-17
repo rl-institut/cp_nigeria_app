@@ -92,7 +92,9 @@ def cpn_demand_params(
     request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]
 ):
     # TODO change DB default value to 1
-    form = ConsumerGroupForm(initial={"number_consumers": 1})
+    # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
+    # with option advanced_view set by user choice
+    form = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
 
     messages.info(
         request,
@@ -420,8 +422,10 @@ def get_pv_output(request, proj_id):
 def ajax_consumergroup_form(request, user_group_id=None):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         # TODO change DB default value to 1
-        form_ug = ConsumerGroupForm(initial={"number_consumers": 1})
         scen_id = 0  # TODO link that to url.py
+        # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
+        # with option advanced_view set by user choice
+        form_ug = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
         return render(
             request,
             "cp_nigeria/steps/consumergroup_form.html",

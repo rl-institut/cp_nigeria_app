@@ -109,8 +109,14 @@ class ConsumerGroupForm(OpenPlanModelForm):
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
+
+        advanced_opt = kwargs.pop("advanced_view", False)
         super().__init__(*args, **kwargs)
         self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
+
+        if advanced_opt is False:
+            for field in ["expected_consumer_increase", "expected_demand_increase"]:
+                self.fields[field].widget = forms.HiddenInput()
 
         # Prevent automatic labels from being generated (to avoid issues with table display)
         for field_name, field in self.fields.items():

@@ -36,3 +36,5 @@ class ConsumerGroup(models.Model):
         DemandTimeseries, on_delete=models.CASCADE, null=True
     )
     number_consumers = models.IntegerField()
+    expected_consumer_increase = models.FloatField(default=0, blank=True)
+    expected_demand_increase = models.FloatField(default=0, blank=True)
