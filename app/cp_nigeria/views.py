@@ -103,6 +103,8 @@ def cpn_demand_params(
         "survey data or available information about the community.",
     )
 
+    # TODO@Paula use a FormSet for the consumer groups instead of a custom made table structure
+
     return render(
         request,
         f"cp_nigeria/steps/scenario_demand.html",
