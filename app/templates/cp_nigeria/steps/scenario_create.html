@@ -26,27 +26,16 @@
                     {% translate "Fill in the following parameters:" %}
                   </span>
                     </div>
-                    <form method="post" action="submit">
+                    <form method="post">
                         {% csrf_token %}
-                        <div class="input-item">
-                        {{ form.name | as_crispy_field }}
-                        </div>
-                        <div class="input-item optional">
-                        {{ form.description | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.latitude | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.longitude | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.date_start | as_crispy_field }}
-                        </div>
-                        <div class="input-item">
-                        {{ form.date_end | as_crispy_field }}
-                        </div>
-                        <button class="btn btn--medium" type="submit">{% translate "Save project" %}</button>
+											  {{form |crispy }}
+											  <button class="btn btn--medium" type="submit">
+													{% if proj_id %}
+														{% translate "Update project" %}
+													{% else %}
+														{% translate "Create project" %}
+													{% endif %}
+												</button>
                     </form>
                 </div>
             </div>

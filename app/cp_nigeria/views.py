@@ -54,19 +54,41 @@ def home_cpn(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_scenario_create(
-    request, proj_id, scen_id=1, step_id=STEP_MAPPING["choose_location"]
+    request, proj_id=None, scen_id=None, step_id=STEP_MAPPING["choose_location"]
 ):
-    if request.POST:
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            logger.info(f"Creating new project.")
+    qs_project = Project.objects.filter(id=proj_id)
+    if qs_project.exists():
+        project = qs_project.get()
+        if (project.user != request.user) and (
+            project.viewers.filter(
+                user__email=request.user.email, share_rights="edit"
+            ).exists()
+            is False
+        ):
+            raise PermissionDenied
 
-            # TODO Process input data
-
-            return HttpResponseRedirect(reverse("cpn_scenario_create", args=[proj_id]))
     else:
-        form = ProjectForm()
+        project = None
 
+    if request.method == "POST":
+        if project is not None:
+            form = ProjectForm(request.POST, instance=project)
+        else:
+            form = ProjectForm(request.POST)
+
+        if form.is_valid():
+            project = form.save(user=request.user)
+            return HttpResponseRedirect(
+                reverse("cpn_scenario_demand", args=[project.id])
+            )
+    elif request.method == "GET":
+        if project is not None:
+            scenario = Scenario.objects.get(project=project)
+            form = ProjectForm(
+                instance=project, initial={"start_date": scenario.start_date}
+            )
+        else:
+            form = ProjectForm()
     messages.info(
         request,
         "Please input basic project information, such as name, location and duration. You can "
@@ -391,13 +413,12 @@ CPN_STEPS = [
 
 
 @login_required
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def cpn_steps(request, proj_id, step_id=None, scen_id=1):
-    if request.method == "GET":
-        if step_id is None:
-            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
+    if step_id is None:
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
-        return CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
+    return CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
 
 
 @login_required
@@ -426,7 +447,9 @@ def ajax_consumergroup_form(request, scen_id=0, user_group_id=None):
         # TODO change DB default value to 1
         # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
         # with option advanced_view set by user choice
-        form_ug = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
+        form_ug = ConsumerGroupForm(
+            initial={"number_consumers": 1}, advanced_view=False
+        )
         return render(
             request,
             "cp_nigeria/steps/consumergroup_form.html",
