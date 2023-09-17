@@ -1,18 +1,84 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
-
+from projects.models import Project, EconomicData, Scenario
 from .models import *
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
+
+    start_date = forms.DateField(
+        label=_("Simulation start"),
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={
+                "class": "TestDateClass",
+                "placeholder": "Select a start date",
+                "type": "date",
+            },
+        ),
+    )
+    duration = forms.IntegerField(label=_("Project lifetime"))
+
     class Meta:
         model = Project
-        fields = "__all__"
+        exclude = ("country", "user", "viewers", "economic_data")
+
+    def save(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        kwargs["commit"] = False
+        pr = super().save(*args, **kwargs)
+
+        # The project does not exist yet so we created it as well as a scenario
+        if pr.id is None:
+            economic_data = EconomicData.objects.create(
+                duration=self.cleaned_data["duration"],
+                currency="NGN",
+                discount=0,
+                tax=0,
+            )
+            pr.economic_data = economic_data
+            pr.user = user
+            pr.country = "NIGERIA"
+            pr.save()
+            Scenario.objects.create(
+                name=f'{self.cleaned_data["name"]}_scenario',
+                start_date=self.cleaned_data["start_date"],
+                time_step=60,
+                evaluated_period=365,  # TODO this depends on the year
+                project=pr,
+            )
+        # The project does exist and we update simply its values
+        else:
+            economic_data = EconomicData.objects.filter(id=pr.economic_data.id)
+            economic_data.update(duration=self.cleaned_data["duration"])
+
+            scenario = Scenario.objects.filter(project=pr)
+            scenario.update(start_date=self.cleaned_data["start_date"])
+            pr.save()
+
+        return pr
+
+
+class EconomicDataForm(OpenPlanModelForm):
+
+    capex_fix = forms.FloatField(
+        label=_("Fix project costs"), validators=[MinValueValidator(0.0)]
+    )
+
+    class Meta:
+        model = EconomicData
+        exclude = ("tax",)
+
+    def save(self, *args, **kwargs):
+        ed = super().save(*args, **kwargs)
+        scenario = Scenario.objects.filter(project__economic_data=ed)
+        scenario.update(capex_fix=self.cleaned_data["capex_fix"])
 
 
 class CPNLocationForm(ProjectCreateForm):
@@ -109,8 +175,14 @@ class ConsumerGroupForm(OpenPlanModelForm):
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
+
+        advanced_opt = kwargs.pop("advanced_view", False)
         super().__init__(*args, **kwargs)
         self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
+
+        if advanced_opt is False:
+            for field in ["expected_consumer_increase", "expected_demand_increase"]:
+                self.fields[field].widget = forms.HiddenInput()
 
         # Prevent automatic labels from being generated (to avoid issues with table display)
         for field_name, field in self.fields.items():

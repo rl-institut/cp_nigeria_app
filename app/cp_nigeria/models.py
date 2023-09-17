@@ -4,19 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from projects.models.base_models import Timeseries
-
-
-class Project(models.Model):
-    name = models.CharField(max_length=120)
-    description = models.TextField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    date_start = models.DateTimeField()
-    date_end = models.DateTimeField()
-
-    def __str__(self):
-        return self.name
+from projects.models.base_models import Timeseries, Scenario
 
 
 class ConsumerType(models.Model):
@@ -36,3 +24,5 @@ class ConsumerGroup(models.Model):
         DemandTimeseries, on_delete=models.CASCADE, null=True
     )
     number_consumers = models.IntegerField()
+    expected_consumer_increase = models.FloatField(default=0, blank=True)
+    expected_demand_increase = models.FloatField(default=0, blank=True)

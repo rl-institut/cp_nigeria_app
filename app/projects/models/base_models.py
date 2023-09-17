@@ -8,6 +8,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.forms.models import model_to_dict
 from django.contrib.postgres.fields import ArrayField
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from projects.constants import (
     ASSET_CATEGORY,
@@ -77,6 +78,10 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+    @cached_property
+    def scenario(self):
+        return self.scenario_set.last()
 
     def get_scenarios_with_results(self):
         return self.scenario_set.filter(simulation__isnull=False).filter(

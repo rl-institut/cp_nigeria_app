@@ -53,20 +53,40 @@ def home_cpn(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_scenario_create(
-    request, proj_id, scen_id=1, step_id=STEP_MAPPING["choose_location"]
-):
-    if request.POST:
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            logger.info(f"Creating new project.")
+def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_location"]):
+    qs_project = Project.objects.filter(id=proj_id)
+    if qs_project.exists():
+        project = qs_project.get()
+        if (project.user != request.user) and (
+            project.viewers.filter(
+                user__email=request.user.email, share_rights="edit"
+            ).exists()
+            is False
+        ):
+            raise PermissionDenied
 
-            # TODO Process input data
-
-            return HttpResponseRedirect(reverse("cpn_scenario_create", args=[proj_id]))
     else:
-        form = ProjectForm()
+        project = None
 
+    if request.method == "POST":
+        if project is not None:
+            form = ProjectForm(request.POST, instance=project)
+        else:
+            form = ProjectForm(request.POST)
+
+        if form.is_valid():
+            project = form.save(user=request.user)
+            return HttpResponseRedirect(
+                reverse("cpn_scenario_demand", args=[project.id])
+            )
+    elif request.method == "GET":
+        if project is not None:
+            scenario = Scenario.objects.get(project=project)
+            form = ProjectForm(
+                instance=project, initial={"start_date": scenario.start_date}
+            )
+        else:
+            form = ProjectForm()
     messages.info(
         request,
         "Please input basic project information, such as name, location and duration. You can "
@@ -80,7 +100,6 @@ def cpn_scenario_create(
             "form": form,
             "proj_id": proj_id,
             "step_id": step_id,
-            "scen_id": scen_id,
             "step_list": CPN_STEP_VERBOSE,
         },
     )
@@ -88,11 +107,13 @@ def cpn_scenario_create(
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_demand_params(
-    request, proj_id, scen_id=1, step_id=STEP_MAPPING["demand_profile"]
-):
+def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
+    project = get_object_or_404(Project, id=proj_id)
+
     # TODO change DB default value to 1
-    form = ConsumerGroupForm(initial={"number_consumers": 1})
+    # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
+    # with option advanced_view set by user choice
+    form = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
 
     messages.info(
         request,
@@ -101,6 +122,8 @@ def cpn_demand_params(
         "survey data or available information about the community.",
     )
 
+    # TODO@Paula use a FormSet for the consumer groups instead of a custom made table structure
+
     return render(
         request,
         f"cp_nigeria/steps/scenario_demand.html",
@@ -108,7 +131,7 @@ def cpn_demand_params(
             "form": form,
             "proj_id": proj_id,
             "step_id": step_id,
-            "scen_id": scen_id,
+            "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
         },
     )
@@ -116,8 +139,9 @@ def cpn_demand_params(
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup"]):
-    scenario = Scenario.objects.get(id=scen_id)
+def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
+    project = get_object_or_404(Project, id=proj_id)
+    scenario = project.scenario
 
     if request.method == "GET":
         messages.info(
@@ -130,7 +154,7 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
         context = {
             "proj_id": proj_id,
             "step_id": step_id,
-            "scen_id": scen_id,
+            "scen_id": scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
         }
@@ -291,53 +315,67 @@ def cpn_scenario(request, proj_id, scen_id, step_id=STEP_MAPPING["scenario_setup
         #
         #         constraint_instance.save()
         #
-        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, scen_id, 4]))
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
 
         # import pdb;pdb.set_trace()
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_constraints(request, proj_id, scen_id, step_id=STEP_MAPPING["economic_params"]):
+def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
+    project = get_object_or_404(Project, id=proj_id)
+    scenario = project.scenario
     messages.info(
         request, "Please include any relevant constraints for the optimization."
     )
-    return render(
-        request,
-        f"cp_nigeria/steps/scenario_system_params.html",
-        {
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "scen_id": scen_id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
-    )
+
+    if request.method == "POST":
+        form = EconomicDataForm(request.POST, instance=project.economic_data)
+
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
+    elif request.method == "GET":
+
+        form = EconomicDataForm(
+            instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}
+        )
+
+        return render(
+            request,
+            f"cp_nigeria/steps/scenario_system_params.html",
+            {
+                "proj_id": proj_id,
+                "step_id": step_id,
+                "scen_id": scenario.id,
+                "form": form,
+                "step_list": CPN_STEP_VERBOSE,
+            },
+        )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_review(request, proj_id, scen_id=1, step_id=STEP_MAPPING["simulation"]):
-    scenario = get_object_or_404(Scenario, pk=scen_id)
+def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
+    project = get_object_or_404(Project, id=proj_id)
 
-    if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
-    ):
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
 
     if request.method == "GET":
         html_template = f"cp_nigeria/steps/simulation/no-status.html"
         context = {
-            "scenario": scenario,
-            "scen_id": scen_id,
+            "scenario": project.scenario,
+            "scen_id": project.scenario.id,
             "proj_id": proj_id,
-            "proj_name": scenario.project.name,
+            "proj_name": project.name,
             "step_id": step_id,
             "step_list": CPN_STEP_VERBOSE,
             "MVS_GET_URL": MVS_GET_URL,
             "MVS_LP_FILE_URL": MVS_LP_FILE_URL,
         }
 
-        qs = Simulation.objects.filter(scenario_id=scen_id)
+        qs = Simulation.objects.filter(scenario=project.scenario)
 
         if qs.exists():
             simulation = qs.first()
@@ -387,13 +425,12 @@ CPN_STEPS = [
 
 
 @login_required
-@require_http_methods(["GET"])
-def cpn_steps(request, proj_id, step_id=None, scen_id=1):
-    if request.method == "GET":
-        if step_id is None:
-            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
+@require_http_methods(["GET", "POST"])
+def cpn_steps(request, proj_id, step_id=None):
+    if step_id is None:
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
-        return CPN_STEPS[step_id - 1](request, proj_id, scen_id, step_id)
+    return CPN_STEPS[step_id - 1](request, proj_id, step_id)
 
 
 @login_required
@@ -417,11 +454,14 @@ def get_pv_output(request, proj_id):
 @login_required
 @json_view
 @require_http_methods(["POST"])
-def ajax_consumergroup_form(request, user_group_id=None):
+def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         # TODO change DB default value to 1
-        form_ug = ConsumerGroupForm(initial={"number_consumers": 1})
-        scen_id = 0  # TODO link that to url.py
+        # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
+        # with option advanced_view set by user choice
+        form_ug = ConsumerGroupForm(
+            initial={"number_consumers": 1}, advanced_view=False
+        )
         return render(
             request,
             "cp_nigeria/steps/consumergroup_form.html",
