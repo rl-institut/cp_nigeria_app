@@ -16,17 +16,19 @@
             <span class="project">{{ proj_name }}</span>
             <span class="scenario">{% translate "Scenario" %} {{ scenario.name }}</span>
         </h1>
+        {% if proj_id %}
         <div class="wizard__back">
             <div>
                 <a href="{% url 'project_search' proj_id %}">{% translate "My projects" %}</a>
             </div>
         </div>
+        {% endif %}
         <div class="wizard__steps">
             <ul>
                 {% for step in step_list %}
                 <li {% if step_id == forloop.counter %} class="active" {% endif %}>
-                    {% if scen_id %}
-                    <a href="{% url 'cpn_steps' proj_id scen_id forloop.counter %}" >{% translate step %}</a>
+                    {% if proj_id %}
+                    <a href="{% url 'cpn_steps' proj_id forloop.counter %}" >{% translate step %}</a>
                     {% else %}
                     {% translate step %}
                     {% endif %}
@@ -61,15 +63,16 @@
 
 {% block step_footer %}
 <div class="step-footer">
-    <div>
-
-        {% if step_id > 1 %}
-        <a class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
-        {% endif %}
-        {% if step_id < step_list|length %}
-        <a class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
-        {% endif %}
-    </div>
+	<div>
+		{% if proj_id %}
+		{% if step_id > 1 %}
+		<a class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+		{% endif %}
+		{% if step_id < step_list|length %}
+		<a class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
+		{% endif %}
+		{% endif %}
+	</div>
 </div>
 {% endblock step_footer %}
 
