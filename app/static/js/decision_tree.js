@@ -23,13 +23,15 @@
           nextQuestion.show();
           console.log(selectId, selectedValue);
 
-          // start an AJAX call with the business model if the user gets to the end of a tree path
+          // start an AJAX call with the business model and display next button if the user gets to the end of a tree path
           if (nextQuestion.attr('id') === ("grid_yes") || nextQuestion.attr('id') === ("model_interconnected")) {
             var modelType = "Interconnected";
+            $('#next').show();
             sendAjaxCall(modelType);
           } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no")
           || nextQuestion.attr('id') === ("model_isolated")) {
             var modelType = "Isolated";
+            $('#next').show();
             sendAjaxCall(modelType);
           }
 
@@ -62,13 +64,19 @@
                 var lastSelectedValue = lastSelection.selectedValue;
 
                 // enable select from previous question
-                $('#' + lastSelectId).prop('disabled', false)
+                $('#' + lastSelectId).prop('disabled', false);
 
-                // Hide the current question
+                // Hide the current question and the next button if visible
                 var currentQuestion = $('#' + lastSelectId + '_' + lastSelectedValue);
                 currentQuestion.hide();
+                $('#next').hide();
 
 
         }
+    });
+    //Redirect to next button below if next is clicked
+        $('#next').on('click', function() {
+            $("#next-button")[0].click();
+            console.log($("#next-button"))
     });
     });
