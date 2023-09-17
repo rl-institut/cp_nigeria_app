@@ -572,3 +572,15 @@ def upload_demand_timeseries(request):
         if form.is_valid():
             ts = form.save(commit=True)
             ts.user = request.user
+def delete_usergroup(request, scen_id=None):
+    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
+    return {"status":200}
+
+def cpn_business_model(request):
+    # TODO process this data
+    if request.method == 'POST':
+        model_type = request.POST.get('modelType')
+
+        return JsonResponse({'message': f'{model_type} model type'})
+
+    return JsonResponse({'message': 'Invalid request method'})

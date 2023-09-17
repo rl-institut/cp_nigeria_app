@@ -9,8 +9,9 @@
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 {% block progression_content %}
 <main>
-
 <script>
+    const csrfToken = '{{ csrf_token }}';
+    const postUrl = '{% url 'cpn_business_model' %}';
     $(document).ready(function() {
     var parent;
     var child;
@@ -25,9 +26,33 @@
 
           parent.hide();
           child.show();
-          console.log(parent, child);
+          console.log(selectId, selectedValue);
+
+          if (child.attr('id') === "grid_yes") {
+            var modelType = "Interconnected";
+            sendAjaxCall(modelType);
+          } else if (child.attr('id') === ("agreement_yes") || child.attr('id') === ("expansion_no")) {
+            var modelType = "Isolated";
+            sendAjaxCall(modelType);
+          }
+
+          // start AJAX call to send variable back to view if end of tree is reached
+          function sendAjaxCall(modelType) {
+          $.ajax({
+            headers: {'X-CSRFToken': csrfToken },
+            type: 'POST',
+            url: postUrl,
+            data: {modelType: modelType},
+            success: function(response) {
+            // Handle the response from the server if needed
+            console.log('Data sent successfully:', response);
+            },
+            error: function(error) {
+                console.error('Error sending data:', error);
+                }
 
           });
+          }
 
     //Go back if back button is clicked
         $('#back').on('click', function(e) {
@@ -37,6 +62,8 @@
         child.hide();
         });
     });
+    });
+
 </script>
 
 <div class="container">
@@ -110,7 +137,7 @@
         <p>Your community might be suitable for an isolated mini-grid. Please click "next" to continue with the system design.</p>
     </div>
 
-        <!-- Third level -->
+    <!-- Third level -->
     <div id="agreement_yes" style="display:none">
         <p>Your community might be suitable for an isolated mini-grid. Please click "next" to continue with the system design.</p>
     </div>
@@ -119,7 +146,7 @@
             permission of the distribution company that is assigned to your area. Here you can find
             <a target="_blank" href="https://rea.gov.ng/wp-content/uploads/2018/07/NERC-Mini-Grid-Regulation.pdf">more information</a>
             on Nigeria’s mini-grid regulation. If you still want to continue the process of this toolbox,
-            click “continue”.
+            click “next”.
         </p>
     </div>
 
@@ -132,8 +159,6 @@
 
 {% block end_body_scripts %}
 {% endblock end_body_scripts %}
-
-
 
 
 
