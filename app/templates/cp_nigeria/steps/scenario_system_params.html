@@ -12,16 +12,29 @@
 
 <main>
 
-    <section class="scenario-create">
-		<div>Here we can see and select different simulation constraints, such as minimum renewable share, cap on maximum emissions
-            <p>This section can also include economic parameters like max. investment</p>
-            <p>The parameters about maintenance costs which are gathered on the other page could also be layed out here instead as option.</p>
+	<section class="project-setup two-columns">
+		<div class="left">
+			<div>
+			<form method="post">
+			{% csrf_token %}
+			{{form |crispy }}
+			<button class="btn btn--medium" type="submit">
+				{% translate "Save parameters" %}
+			</button>
+		</form>
+				</div>
+		</div>
+		<div class="right">
+			<div>
+			<p>Shortly explain dispatch hierarchy: prioritize solar > main grid > batt > diesel</p>
+			<p>The parameters about maintenance costs which are gathered on the other page could also be layed out here instead as option.</p>
+			<p><span>total daily demand</span> : XXXX</p>
+			<p><span>daily peak demand</span> : XXXX</p>
+			<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es">
+		  </div>
+		</div>
 
-						<p>This section will include an icon of the chosen combinaison of components something like: </p>
-						<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es">
-        </div>
-
-    </section>
+	</section>
 
 
 </main>

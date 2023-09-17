@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
@@ -62,6 +63,22 @@ class ProjectForm(OpenPlanModelForm):
             pr.save()
 
         return pr
+
+
+class EconomicDataForm(OpenPlanModelForm):
+
+    capex_fix = forms.FloatField(
+        label=_("Fix project costs"), validators=[MinValueValidator(0.0)]
+    )
+
+    class Meta:
+        model = EconomicData
+        exclude = ("tax",)
+
+    def save(self, *args, **kwargs):
+        ed = super().save(*args, **kwargs)
+        scenario = Scenario.objects.filter(project__economic_data=ed)
+        scenario.update(capex_fix=self.cleaned_data["capex_fix"])
 
 
 class CPNLocationForm(ProjectCreateForm):

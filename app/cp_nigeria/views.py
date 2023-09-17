@@ -324,19 +324,34 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     project = get_object_or_404(Project, id=proj_id)
+    scenario = project.scenario
     messages.info(
         request, "Please include any relevant constraints for the optimization."
     )
-    return render(
-        request,
-        f"cp_nigeria/steps/scenario_system_params.html",
-        {
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "scen_id": project.scenario.id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
-    )
+
+    if request.method == "POST":
+        form = EconomicDataForm(request.POST, instance=project.economic_data)
+
+        if form.is_valid():
+            project = form.save()
+            return HttpResponseRedirect(reverse("cpn_review", args=[proj_id]))
+    elif request.method == "GET":
+
+        form = EconomicDataForm(
+            instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}
+        )
+
+        return render(
+            request,
+            f"cp_nigeria/steps/scenario_system_params.html",
+            {
+                "proj_id": proj_id,
+                "step_id": step_id,
+                "scen_id": scenario.id,
+                "form": form,
+                "step_list": CPN_STEP_VERBOSE,
+            },
+        )
 
 
 @login_required
