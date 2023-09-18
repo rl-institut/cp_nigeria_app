@@ -66,10 +66,10 @@
 	<div>
 		{% if proj_id %}
 		{% if step_id > 1 %}
-		<a class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+		<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
 		{% endif %}
 		{% if step_id < step_list|length %}
-		<a class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
+		<a id="next-button" class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
 		{% endif %}
 		{% endif %}
 	</div>

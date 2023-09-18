@@ -1,0 +1,140 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+
+
+<!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+{% block progression_content %}
+<main>
+<script src="{% static 'js/decision_tree.js' %}"></script>
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const postUrl = '{% url 'cpn_business_model' %}';
+</script>
+
+<div class="container">
+    <!-- Intro question -->
+        <div id="start" style="display:block">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="grid">What type of mini-grid would your
+                community be able to pursue?</label>
+            <select id="model" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="interconnected">Interconnected mini-grid</option>
+                <option value="isolated">Isolated mini-grid</option>
+                <option value="unknown">Don't know</option>
+            </select>
+        </form>
+    </div>
+
+    <div id="model_interconnected" style="display:none">
+        <p>Thank you for the information. Please be aware that an interconnected mini-grid often
+            involves higher tariff payments. Please click "next" to continue with the system design.</p>
+    </div>
+
+    <div id="model_isolated" style="display:none">
+        <p>Thank you for the information. Please click "next" to continue with the system design.</p>
+    </div>
+
+
+    <!-- Start tree -->
+    <div id="model_unknown" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="grid">Is your community connected to the grid?</label>
+            <select id="grid" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes, but the grid does not provide a sufficient level of service</option>
+                <option value="no">No, the area is unserved</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- First level -->
+    <div id="grid_yes" style="display:none">
+        <p>Your community might be
+            suitable for an interconnected mini-grid. Please be aware that an interconnected mini-grid often
+            involves higher tariff payments. Please click "next" to continue with the system design.</p>
+    </div>
+    <div id="grid_no" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="iedno">Has the area been assigned to
+                an Independent Electricity Distribution Network Operator (IEDNO)?</label>
+            <select id="iedno" class="textinput textInput form-control">
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Second level -->
+    <div id="iedno_yes" style="display:none">
+        <p>As the area of your community is already assigned to an IEDNO, ...</p>
+    </div>
+    <div id="iedno_no" style="display:none">
+        <form method="post">
+            <div>Is your community part of a 5-year
+                expansion plan from a distribution company?
+                <div style="font-size: 10pt; color: #5A5A5A">
+                    *Note: if you don’t know, you may click no, to continue the process of this toolbox. However, it is
+                    highly recommended to get in touch with the assigned DisCo of your area. Without permission of the
+                    respective DisCo, it is not allowed to commission and build a mini-grid system. <a style="font-size: 10.5pt" target="_blank" href="https://nerc.gov.ng/index.php/contact/discos">More information</a> on
+                    distribution companies relevant to your area is provided by the Nigerian Electricity Regulatory Commission (NERC)
+                    and <a style="font-size: 10.5pt" target="_blank" href="https://www.researchgate.net/figure/Map-of-Nigeria-showing-the-DisCos-with-their-coverage-Source-Nigerian-Electricity_fig2_348717202">conducted research</a>.
+                </div>
+            </div>
+            <select id="expansion" class="textinput textInput form-control" >
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Third level -->
+    <div id="expansion_yes" style="display:none">
+        <form method="post">
+            <label class="col-form-label col-lg-8 requiredField" for="iedno">Could you reach an agreement with the
+                DisCo to use this area?</label>
+            <select id="agreement" class="textinput textInput form-control">
+                <option value="">--Please choose an option--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </form>
+    </div>
+    <div id="expansion_no" style="display:none">
+        <p>Your community might be suitable for an isolated mini-grid. Please click "next" to continue with the system design.</p>
+    </div>
+
+    <!-- Third level -->
+    <div id="agreement_yes" style="display:none">
+        <p>Your community might be suitable for an isolated mini-grid. Please click "next" to continue with the system design.</p>
+    </div>
+    <div id="agreement_no" style="display:none">
+        <p>According to regulations, you are not allowed to install a mini-grid system in your area without the
+            permission of the distribution company that is assigned to your area. Here you can find
+            <a target="_blank" href="https://rea.gov.ng/wp-content/uploads/2018/07/NERC-Mini-Grid-Regulation.pdf">more information</a>
+            on Nigeria’s mini-grid regulation. If you still want to continue the process of this toolbox,
+            click “next”.
+        </p>
+    </div>
+
+    <button id="back">Back</button>
+    <button id="next" style="display:none">Next</button>
+    </div>
+</main>
+
+{% endblock progression_content %}
+
+
+{% block end_body_scripts %}
+{% endblock end_body_scripts %}
+
+
+
+
+
