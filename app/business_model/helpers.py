@@ -1,5 +1,3 @@
-
-
 def model_score_mapping(score):
     if 0.3 > score >= 0:
         answer = "Operator led"

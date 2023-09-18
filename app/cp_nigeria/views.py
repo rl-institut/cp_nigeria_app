@@ -23,15 +23,16 @@ from business_model.helpers import model_score_mapping
 
 logger = logging.getLogger(__name__)
 
-
-STEP_MAPPING = {"choose_location": 1,
-                "grid_conditions": 2,
-                "demand_profile": 3,
-                "scenario_setup": 4,
-                "economic_params": 5,
-                "simulation": 6,
-                "business_model": 7,
-                "outputs": 8}
+STEP_MAPPING = {
+    "choose_location": 1,
+    "grid_conditions": 2,
+    "demand_profile": 3,
+    "scenario_setup": 4,
+    "economic_params": 5,
+    "simulation": 6,
+    "business_model": 7,
+    "outputs": 8,
+}
 
 CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
@@ -54,15 +55,25 @@ CPN_STEP_VERBOSE = [
 def home_cpn(request):
     return render(request, "cp_nigeria/index_cpn.html")
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
-    messages.info(request, "Please include information about your connection to the grid.")
-    return render(request, f"cp_nigeria/steps/business_model_tree.html",
-                  {"proj_id": proj_id,
-                   "step_id": step_id,
-                   "scen_id": scen_id,
-                   "step_list": CPN_STEP_VERBOSE})
+def cpn_grid_conditions(
+    request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]
+):
+    messages.info(
+        request, "Please include information about your connection to the grid."
+    )
+    return render(
+        request,
+        f"cp_nigeria/steps/business_model_tree.html",
+        {
+            "proj_id": proj_id,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_VERBOSE,
+        },
+    )
 
 
 @login_required
@@ -464,6 +475,7 @@ def cpn_model_suggestion(request, bm_id):
     proj_id = bm.scenario.project.id
     return HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id, scen_id]))
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_outputs(request, proj_id, scen_id=1, step_id=6):
@@ -485,8 +497,8 @@ def cpn_outputs(request, proj_id, scen_id=1, step_id=6):
         "step_list": CPN_STEP_LIST,
     }
 
-
     return render(request, html_template, context)
+
 
 # TODO for later create those views instead of simply serving the html templates
 CPN_STEPS = {
@@ -498,7 +510,6 @@ CPN_STEPS = {
     "simulation": cpn_review,
     # "?": cpn_model_choice,
     "outputs": cpn_outputs,
-
 }
 
 # sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
@@ -645,15 +656,18 @@ def upload_demand_timeseries(request):
         if form.is_valid():
             ts = form.save(commit=True)
             ts.user = request.user
+
+
 def delete_usergroup(request, scen_id=None):
     """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
-    return {"status":200}
+    return {"status": 200}
+
 
 def cpn_business_model(request):
     # TODO process this data
-    if request.method == 'POST':
-        model_type = request.POST.get('modelType')
+    if request.method == "POST":
+        model_type = request.POST.get("modelType")
 
-        return JsonResponse({'message': f'{model_type} model type'})
+        return JsonResponse({"message": f"{model_type} model type"})
 
-    return JsonResponse({'message': 'Invalid request method'})
+    return JsonResponse({"message": "Invalid request method"})

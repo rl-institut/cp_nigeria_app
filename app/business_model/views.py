@@ -41,7 +41,9 @@ def index(request, scen_id, bm_id=None):
     else:
         bm = get_object_or_404(BusinessModel, id=bm_id)
         form = GridQuestionForm(instance=bm)
-        answer = render(request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form})
+        answer = render(
+            request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form}
+        )
     return answer
 
 
@@ -55,7 +57,9 @@ def grid_question(request, bm_id):
 
         form = GridQuestionForm(instance=bm)
 
-        answer = render(request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form})
+        answer = render(
+            request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form}
+        )
 
     if request.method == "POST":
         form = GridQuestionForm(request.POST, instance=bm)
@@ -88,7 +92,9 @@ def edisco_question(request, bm_id):
         form = EdiscoQuestionForm(instance=bm)
 
         answer = render(
-            request, "cp_nigeria/business_model/edisco_question.html", {"bm": bm, "form": form}
+            request,
+            "cp_nigeria/business_model/edisco_question.html",
+            {"bm": bm, "form": form},
         )
 
     if request.method == "POST":
@@ -102,7 +108,9 @@ def edisco_question(request, bm_id):
             edisco = form.cleaned_data["regional_active_disco"]
             if edisco is True:
                 answer = render(
-                    request, "cp_nigeria/business_model/edisco.html", {"bm": bm, "form": form}
+                    request,
+                    "cp_nigeria/business_model/edisco.html",
+                    {"bm": bm, "form": form},
                 )
             else:
                 answer = HttpResponseRedirect(
@@ -123,7 +131,9 @@ def regulation_question(request, bm_id):
         form = RegulationQuestionForm()
 
         answer = render(
-            request, "cp_nigeria/business_model/regulation_question.html", {"bm": bm, "form": form}
+            request,
+            "cp_nigeria/business_model/regulation_question.html",
+            {"bm": bm, "form": form},
         )
 
     if request.method == "POST":
@@ -168,7 +178,9 @@ def capacities_question(request, bm_id):
         form = CapacitiesForm(qs=CapacitiesAnswer.objects.filter(business_model=bm))
 
         answer = render(
-            request, "cp_nigeria/business_model/capacities_question.html", {"bm": bm, "form": form}
+            request,
+            "cp_nigeria/business_model/capacities_question.html",
+            {"bm": bm, "form": form},
         )
 
     if request.method == "POST":
