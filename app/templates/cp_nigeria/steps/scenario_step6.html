@@ -1,0 +1,34 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+{% block head_block %}
+<style>
+.highlight {
+  background-color: blue;
+}
+</style>
+{% endblock head_block %}
+
+<!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+{% block progression_content %}
+
+<a href="{% url 'business_model' scen_id %}"> help preselect the most appropriate model</a>
+
+<form action="{% url 'cpn_model_choice' proj_id scen_id %}" method="POST">
+		{{ form }}
+	 {% csrf_token %}
+	<!--button type="submit"> next</button-->
+	</form>
+
+<div>
+	(for information at the moment, score of the business model questions): {{ score }}
+</div>
+
+{% endblock progression_content %}
+
+
+{% block end_body_scripts %}
+{% endblock end_body_scripts %}

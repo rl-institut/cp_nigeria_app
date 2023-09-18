@@ -15,6 +15,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
+from projects.models import Scenario
 import logging
 import traceback
 from django.contrib.auth.decorators import login_required
@@ -27,17 +28,21 @@ logger = logging.getLogger(__name__)
 
 @login_required
 @require_http_methods(["GET"])
-def index(request, bm_id=None):
+def index(request, scen_id, bm_id=None):
+
+    scenario = get_object_or_404(Scenario, id=scen_id)
+    qs_bm = BusinessModel.objects.filter(scenario=scenario)
+    if qs_bm.exists():
+        bm_id = qs_bm.get().id
     if bm_id is None:
         bm = BusinessModel()
+        bm.scenario = scenario
         bm.save()
-        answer = HttpResponseRedirect(reverse("business_model", args=[bm.id]))
+        answer = HttpResponseRedirect(reverse("business_model", args=[scen_id, bm.id]))
     else:
         bm = get_object_or_404(BusinessModel, id=bm_id)
         form = GridQuestionForm(instance=bm)
-        answer = render(
-            request, "business_model/index.html", {"bm_id": bm.id, "form": form}
-        )
+        answer = render(request, "business_model/index.html", {"bm": bm, "form": form})
     return answer
 
 
@@ -89,9 +94,7 @@ def edisco_question(request, bm_id):
 
     if request.method == "POST":
         form = EdiscoQuestionForm(request.POST, instance=bm)
-        import pdb
 
-        pdb.set_trace()
         if form.is_valid():
 
             bm = form.save(commit=False)
@@ -182,7 +185,7 @@ def capacities_question(request, bm_id):
                 crit.score = score
                 crit.save(update_fields=["score"])
             # regulation = form.cleaned_data["capacities"]
-            answer = HttpResponseRedirect(reverse("model_suggestion", args=[bm.id]))
+            answer = HttpResponseRedirect(reverse("cpn_model_suggestion", args=[bm.id]))
 
     return answer
 
