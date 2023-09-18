@@ -13,14 +13,13 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
-from projects.requests import (
-    fetch_mvs_simulation_results,
-)
 from business_model.forms import *
+from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from business_model.models import *
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR, MODIFIED
+from business_model.helpers import model_score_mapping
 
 logger = logging.getLogger(__name__)
 
@@ -465,6 +464,29 @@ def cpn_model_suggestion(request, bm_id):
     proj_id = bm.scenario.project.id
     return HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id, scen_id]))
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def cpn_outputs(request, proj_id, scen_id=1, step_id=6):
+
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    if (scenario.project.user != request.user) and (
+        request.user not in scenario.project.viewers.all()
+    ):
+        raise PermissionDenied
+
+    html_template = "cp_nigeria/steps/scenario_step7.html"
+    context = {
+        "scenario": scenario,
+        "scen_id": scen_id,
+        "proj_id": proj_id,
+        "proj_name": scenario.project.name,
+        "step_id": step_id,
+        "step_list": CPN_STEP_LIST,
+    }
+
+
+    return render(request, html_template, context)
 
 # TODO for later create those views instead of simply serving the html templates
 CPN_STEPS = {
@@ -474,7 +496,9 @@ CPN_STEPS = {
     "scenario_setup": cpn_scenario,
     "economic_params": cpn_constraints,
     "simulation": cpn_review,
-    # "?": cpn_model_choice
+    # "?": cpn_model_choice,
+    "outputs": cpn_outputs,
+
 }
 
 # sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
