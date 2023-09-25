@@ -20,6 +20,8 @@ from business_model.models import *
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR, MODIFIED
 from business_model.helpers import model_score_mapping
+from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
+from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +108,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
             )
     elif request.method == "GET":
         if project is not None:
-            scenario = Scenario.objects.get(project=project)
+            scenario = Scenario.objects.filter(project=project).last()
             form = ProjectForm(
                 instance=project, initial={"start_date": scenario.start_date}
             )
@@ -476,23 +478,40 @@ def cpn_model_suggestion(request, bm_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_outputs(request, proj_id, scen_id=1, step_id=6):
+def cpn_outputs(request, proj_id, step_id=6):
 
-    scenario = get_object_or_404(Scenario, pk=scen_id)
+    project = get_object_or_404(Project, id=proj_id)
 
-    if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
-    ):
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
+    user_scenarios = [project.scenario]
 
-    html_template = "cp_nigeria/steps/scenario_step7.html"
+    # TODO here workout the results of the scenario and base diesel scenario
+
+    qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
+    opt_caps = qs_res.filter(optimized_capacity__gt=0)
+    unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
+    unused_diesel = (
+        qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+    )
+
+    # TODO make this depend on the previous step user choice
+    model = list(B_MODELS.keys())[3]
+    html_template = "cp_nigeria/steps/scenario_outputs.html"
+
     context = {
-        "scenario": scenario,
-        "scen_id": scen_id,
         "proj_id": proj_id,
-        "proj_name": scenario.project.name,
+        "capacities": opt_caps,
+        "pv_excess": round(unused_pv, 2),
+        "scen_id": project.scenario.id,
+        "scenario_list": user_scenarios,
+        "model_description": B_MODELS[model]["Description"],
+        "model_name": B_MODELS[model]["Name"],
+        "model_image": B_MODELS[model]["Graph"],
+        "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "proj_name": project.name,
         "step_id": step_id,
-        "step_list": CPN_STEP_LIST,
+        "step_list": CPN_STEP_VERBOSE,
     }
 
     return render(request, html_template, context)
@@ -506,7 +525,7 @@ CPN_STEPS = {
     "scenario_setup": cpn_scenario,
     "economic_params": cpn_constraints,
     "simulation": cpn_review,
-    # "?": cpn_model_choice,
+    "business_model": cpn_model_choice,
     "outputs": cpn_outputs,
 }
 
@@ -578,13 +597,13 @@ def ajax_bmodel_infos(request):
             request,
             "cp_nigeria/steps/b_models.html",
             context={
-        "model_description": B_MODELS[model]["Description"],
-        "model_name": B_MODELS[model]["Name"],
-        "model_image": B_MODELS[model]["Graph"],
-        "model_image_resp": B_MODELS[model]["Responsibilities"],
-
+                "model_description": B_MODELS[model]["Description"],
+                "model_name": B_MODELS[model]["Name"],
+                "model_image": B_MODELS[model]["Graph"],
+                "model_image_resp": B_MODELS[model]["Responsibilities"],
             },
         )
+
 
 @login_required
 @json_view
@@ -638,6 +657,96 @@ def ajax_update_graph(request):
         return JsonResponse({"timeseries_values": timeseries_values})
 
     return JsonResponse({"error": request})
+
+
+@login_required
+@json_view
+@require_http_methods(["GET"])
+def cpn_kpi_results(request, proj_id=None):
+    project = get_object_or_404(Project, id=proj_id)
+    unit_conv = {"currency": project.economic_data.currency, "Factor": "%"}
+
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
+        raise PermissionDenied
+    # 65 230 D
+    # 65 232 DBPV
+    # TODO get the 2 scenarios
+    qs = Simulation.objects.filter(scenario=project.scenario)
+    if qs.exists():
+        sim = qs.get()
+        kpi_scalar_results_obj = KPIScalarResults.objects.get(simulation=sim)
+        kpi_scalar_values_dict = json.loads(kpi_scalar_results_obj.scalar_values)
+        kpi_cost_results_obj = KPICostsMatrixResults.objects.get(simulation=sim)
+        kpi_cost_values_dict = json.loads(kpi_cost_results_obj.cost_values)
+
+        qs_res = FancyResults.objects.filter(simulation=sim)
+        opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list(
+            "asset", "asset_type", "optimized_capacity"
+        )
+        unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
+        unused_diesel = (
+            qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+        )
+
+        kpis_of_interest = [
+            "costs_total",
+            "levelized_costs_of_electricity_equivalent",
+            "total_emissions",
+            "renewable_factor",
+        ]
+        kpis_of_comparison_diesel = [
+            "costs_total",
+            "levelized_costs_of_electricity_equivalent",
+            "total_emissions",
+        ]
+
+        # import pdb;pdb.set_trace()
+        diesel_results = json.loads(
+            KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values
+        )
+        scenario_results = json.loads(
+            KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values
+        )
+
+        kpis = []
+        for kpi in kpis_of_interest:
+
+            unit = KPI_PARAMETERS[kpi]["unit"].replace(
+                "currency", project.economic_data.currency_symbol
+            )
+            if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
+                factor = 100.0
+                unit = "%"
+            else:
+                factor = 1.0
+
+            scen_values = [
+                round(scenario_results[kpi] * factor, 2),
+                round(diesel_results[kpi] * factor, 2),
+            ]
+            if kpi not in kpis_of_comparison_diesel:
+                scen_values[1] = ""
+
+            kpis.append(
+                {
+                    "name": KPI_PARAMETERS[kpi]["verbose"],
+                    "id": kpi,
+                    "unit": unit,
+                    "scen_values": scen_values,
+                    "description": KPI_PARAMETERS[kpi]["definition"],
+                }
+            )
+        table = {"General": kpis}
+        print(table)
+        # import pdb;pdb.set_trace()
+
+        answer = JsonResponse(
+            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]},
+            status=200,
+            content_type="application/json",
+        )
+
+    return answer
 
 
 def save_demand(request):
