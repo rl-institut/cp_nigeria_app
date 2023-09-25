@@ -22,7 +22,7 @@ urlpatterns = [
     ),
     path("<int:proj_id>/review", cpn_review, name="cpn_review"),
     path(
-        "<int:proj_id>/scenario/<int:scen_id>/model/choice",
+        "<int:proj_id>/scenario/model/choice",
         cpn_model_choice,
         name="cpn_model_choice",
     ),
@@ -36,6 +36,7 @@ urlpatterns = [
     ),
     path("ajax/load-timeseries", ajax_load_timeseries, name="ajax_load_timeseries"),
     path("ajax/update-graph", ajax_update_graph, name="ajax_update_graph"),
+    path("ajax/bmodel/infos", ajax_bmodel_infos, name="ajax_bmodel_infos"),
     path(
         "consumergroup/create/<int:scen_id>",
         create_consumergroup,
@@ -49,4 +50,5 @@ urlpatterns = [
     path(
         "upload/timeseries", upload_demand_timeseries, name="upload_demand_timeseries"
     ),
+    path("ajax/<int:proj_id>/cpn_kpi_results", cpn_kpi_results, name="cpn_kpi_results"),
 ]

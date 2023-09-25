@@ -31,6 +31,8 @@ EMPTY_SUBCAT = "none"
 KPI_PARAMETERS = {}
 KPI_PARAMETERS_ASSETS = {}
 
+B_MODELS = {}
+
 if os.path.exists(staticfiles_storage.path("MVS_kpis_list.csv")) is True:
     with open(
         staticfiles_storage.path("MVS_kpis_list.csv"), encoding="utf-8"
@@ -106,8 +108,26 @@ if os.path.exists(staticfiles_storage.path("MVS_kpis_list.csv")) is True:
                             for k, v in zip(hdr, row)
                         }
 
+if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
+    with open(
+        staticfiles_storage.path("business_model_list.csv"), encoding="utf-8"
+    ) as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
+        for i, row in enumerate(csvreader):
+            if i == 0:
+                hdr = row
+                # Name,Category,Description,Graph,Responsibilities
+                label_idx = hdr.index("Name")
+                graph_idx = hdr.index("Graph")
+                description_idx = hdr.index("Description")
+                cat_idx = hdr.index("Category")
+                resp_idx = hdr.index("Responsibilities")
+            else:
+                label = row[label_idx]
 
-#### FUNCTIONS ####
+                B_MODELS[label] = {k: v for k, v in zip(hdr, row)}
+
+                #### FUNCTIONS ####
 
 
 def storage_asset_to_list(assets_results_json):

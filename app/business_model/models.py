@@ -8,13 +8,13 @@ import plotly.graph_objects as go
 import pandas as pd
 
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
 from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
-
+from dashboard.helpers import B_MODELS
 
 class BusinessModel(models.Model):
     # def save(self, *args, **kwargs):
@@ -35,14 +35,10 @@ class BusinessModel(models.Model):
         max_length=60,
         null=True,
         blank=False,
-        choices=(
-            ("Operator led", "Operator led"),
-            ("Cooperative Model", "Cooperative Model"),
-            (
-                "Co-op / Project Developer hybrid model",
-                "Co-op / Project Developer hybrid model",
-            ),
-        ),
+        choices=[
+            (k, k.replace("_", " "))
+            for k in B_MODELS
+        ],
     )
 
     @property
