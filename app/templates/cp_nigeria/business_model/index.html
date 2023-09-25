@@ -1,4 +1,4 @@
-{% extends 'cp_nigeria/base_cpn.html' %}
+{% extends 'cp_nigeria/business_model/base.html' %}
 {% load custom_filters %}
 {% load crispy_forms_tags %}
 {% load static %}
@@ -12,6 +12,10 @@
 {% endblock %}
 
 {% block title %}{% translate "Business Model" %}{% endblock title %}
+
+{% block navbar %}
+    No nav bar
+{% endblock navbar %}
 
 {% block content %}
 <main>
@@ -39,7 +43,7 @@
 <!--    </div>-->
 <!--  </div>-->
 <!--</div>-->
-
+HEllo
 <form action="{% url 'grid_question' bm.id %}" method="POST">
 		{{ form }}
 	 {% csrf_token %}
