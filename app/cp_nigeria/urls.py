@@ -22,9 +22,7 @@ urlpatterns = [
     ),
     path("<int:proj_id>/review", cpn_review, name="cpn_review"),
     path(
-        "<int:proj_id>/scenario/model/choice",
-        cpn_model_choice,
-        name="cpn_model_choice",
+        "<int:proj_id>/scenario/model/choice", cpn_model_choice, name="cpn_model_choice"
     ),
     path("<int:bm_id>/model/choice", cpn_model_suggestion, name="cpn_model_suggestion"),
     path("<int:proj_id>/outputs/<int:scen_id>", cpn_outputs, name="cpn_outputs"),

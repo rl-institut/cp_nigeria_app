@@ -16,6 +16,7 @@ from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
 from dashboard.helpers import B_MODELS
 
+
 class BusinessModel(models.Model):
     # def save(self, *args, **kwargs):
     #     super().save(*args, **kwargs)
@@ -35,10 +36,7 @@ class BusinessModel(models.Model):
         max_length=60,
         null=True,
         blank=False,
-        choices=[
-            (k, k.replace("_", " "))
-            for k in B_MODELS
-        ],
+        choices=[(k, k.replace("_", " ")) for k in B_MODELS],
     )
 
     @property
