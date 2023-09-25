@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "projects.apps.ProjectsConfig",
     "dashboard.apps.DashboardConfig",
     "cp_nigeria.apps.CPNigeriaConfig",
+    "business_model.apps.BusinessModelConfig",
     # 3rd Party
     "crispy_forms",
     "django_q",

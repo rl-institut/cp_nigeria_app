@@ -15,6 +15,7 @@ from projects.constants import (
     ASSET_TYPE,
     COUNTRY,
     CURRENCY,
+    CURRENCY_SYMBOLS,
     ENERGY_VECTOR,
     COP_MODES,
     FLOW_DIRECTION,
@@ -48,6 +49,10 @@ class EconomicData(models.Model):
     tax = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0
     )
+
+    @property
+    def currency_symbol(self):
+        return CURRENCY_SYMBOLS.get(self.currency, self.currency)
 
 
 class Viewer(models.Model):

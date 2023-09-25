@@ -1,0 +1,44 @@
+{% extends 'cp_nigeria/business_model/base.html' %}
+{% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load i18n %}
+{% load custom_template_tags %}
+
+{% block head_block %}
+{% endblock head_block %}
+
+{% block start_body_scripts %}
+{% endblock %}
+
+{% block title %}{% translate "Business Model" %}{% endblock title %}
+
+{% block content %}
+<main>
+
+	<section>
+	Recommendation to talk to disco about future availability of grid, potential utility role, and regulations
+		<a href="{% url 'edisco_question' bm.id %}">Return</a>
+	</section>
+
+</main>
+
+{% endblock content %}
+
+
+{% block end_body_scripts %}
+<!--<script>-->
+<!--	$(document).ready(function() {-->
+
+
+<!--		const elem = document.getElementById("id_grid_connection");-->
+<!--		elem.addEventListener("change", function() {-->
+<!--			console.log("here " + this.value);-->
+<!--			$('.collapse').collapse()-->
+
+<!--		})-->
+<!--		// $('.collapse').collapse()-->
+<!--	})-->
+
+<!--</script>-->
+{% endblock end_body_scripts %}

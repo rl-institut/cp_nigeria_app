@@ -1037,6 +1037,13 @@ def graph_capacities(simulations, y_variables):
             .distinct()
             .values_list("label", flat=True)
         )
+    # TODO quickfix here
+    temp = []
+    for y_var in y_variables:
+        temp.append(y_var)
+        if "Battery" in y_var:
+            temp.append(y_var.lower())
+
     for simulation in simulations:
         y_values = (
             []
@@ -1086,25 +1093,27 @@ def graph_capacities(simulations, y_variables):
             )
             .annotate(label=Case(default="asset"))
             .filter(
-                label__in=qs1.values_list("label", flat=True),
+                # label__in=qs1.values_list("label", flat=True),
+                label__in=temp,
                 optimized_capacity__isnull=False,
             )
             .order_by("label")
         )
+
         ic = {
             item[0]: item[1]
-            for item in qs1.filter(label__in=y_variables).values_list(
+            for item in qs1.filter(label__in=temp).values_list(
                 "label", "installed_capacity"
             )
         }
         oc = {
             item[0]: item[1]
-            for item in qs2.filter(label__in=y_variables).values_list(
+            for item in qs2.filter(label__in=temp).values_list(
                 "label", "optimized_capacity"
             )
         }
 
-        for asset_name in y_variables:
+        for asset_name in temp:
 
             if asset_name in ic:
                 installed_cap = ic[asset_name]
@@ -1208,7 +1217,7 @@ def graph_costs(
 
         records = []
         for el in qs1:
-            qs_asset_results = qs2.filter(label=el["label"])
+            qs_asset_results = qs2.filter(label=el["label"].lower())
             if qs_asset_results.count() == 1:
                 el.update(
                     qs_asset_results.values(
