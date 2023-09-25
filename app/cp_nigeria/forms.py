@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
+from django.forms.models import modelformset_factory
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
@@ -172,13 +173,19 @@ class DummyForm(forms.Form):
 class ConsumerGroupForm(OpenPlanModelForm):
     class Meta:
         model = ConsumerGroup
-        fields = "__all__"
+        exclude = ["project", "group_id"]
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         advanced_opt = kwargs.pop("advanced_view", False)
-        super().__init__(*args, **kwargs)
-        self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
+        instance = kwargs.pop("instance", None)
+
+        if instance is None:
+            self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
+        else:
+            consumer_type_id = instance.consumer_type_id
+            self.fields['timeseries'].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
 
         if advanced_opt is False:
             for field in ["expected_consumer_increase", "expected_demand_increase"]:
@@ -187,3 +194,6 @@ class ConsumerGroupForm(OpenPlanModelForm):
         # Prevent automatic labels from being generated (to avoid issues with table display)
         for field_name, field in self.fields.items():
             field.label = ""
+
+
+ConsumerGroupFormSet = modelformset_factory(ConsumerGroup, form=ConsumerGroupForm, extra=1)
