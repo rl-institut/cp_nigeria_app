@@ -140,7 +140,51 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
     # with option advanced_view set by user choice
-    form = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
+    # TODO@Paula handle form deletion
+    # TODO when page is reloaded, empty extra form is generated (can be deleted but is annoying)
+    if request.method == "POST":
+        if project is not None:
+            formset_qs = ConsumerGroup.objects.filter(project=project)
+            formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs)
+
+        else:
+            formset = ConsumerGroupFormSet(request.POST)
+
+        for form in formset:
+            import pdb; pdb.set_trace()
+            prefix = form.prefix
+            group_id = int(form.prefix[-1:])
+            # set timeseries queryset so form doesn't throw a validation error
+            if f'{prefix}-consumer_type' in form.data:
+                try:
+                    consumer_type_id = int(form.data.get(f'{prefix}-consumer_type'))
+                    form.fields['timeseries'].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+                except (ValueError, TypeError):
+                    pass
+
+            if form.is_valid():
+                # update consumer group if already in database and create new entry if not
+                try:
+                    consumer_group = ConsumerGroup.objects.get(group_id=group_id, project=project)
+
+                    for field_name, field_value in form.cleaned_data.items():
+                        if field_name == "id":
+                            continue
+                        setattr(consumer_group, field_name, field_value)
+
+                except ConsumerGroup.DoesNotExist:
+                    consumer_group = form.save(commit=False)
+                    consumer_group.project = project
+                    consumer_group.group_id = group_id
+
+                consumer_group.save()
+
+    elif request.method == "GET":
+        if project is not None:
+            formset_qs = ConsumerGroup.objects.filter(project=project)
+            formset = ConsumerGroupFormSet(queryset=formset_qs)
+        else:
+            formset = ConsumerGroupFormSet(initial=[{"number_consumers": 1}])
 
     messages.info(
         request,
@@ -155,7 +199,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         request,
         f"cp_nigeria/steps/scenario_demand.html",
         {
-            "form": form,
+            "formset": formset,
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": project.scenario.id,

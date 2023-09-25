@@ -7,31 +7,10 @@
 {% block start_body_scripts %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-	const postUrl = `{% url 'ajax_consumergroup_form' scen_id %}`;
-	const csrfToken = `{{ csrf_token }}`;
-    const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
+    const csrfToken = `{{ csrf_token }}`;
+	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
     const updateGraphUrl = '{% url 'ajax_update_graph' %}';
-
-    // delete item on delete button click
     const urlDeleteConsumerGroup = `{% url 'delete_consumergroup' scen_id %}`;
-    const deleteConsumerGroup = (event) => {
-        //submit the form to delete a report item
-        const consumerGroupId = event.target.closest('tr').id
-        if(confirm("Are you sure? This action cannot be undone")){
-            $.ajax({
-                headers: {'X-CSRFToken': `{{ csrf_token }}` },
-                type: "POST",
-                url: urlDeleteConsumerGroup,
-                data: {consuer_group_id: consumerGroupId},
-                success: function (jsonRes) {
-                    document.getElementById(consumerGroupId).remove();
-                },
-                error: function (err) {
-                    console.log(err);
-                },
-            })
-        }
-    };
 </script>
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
@@ -44,43 +23,61 @@
 <main>
     <div class="grid-container">
         <button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button>
-        <button class="btn btn--medium btn--short" type="button" onclick="javascript:addConsumerGroupDivToDOM();">Add Consumer Group</button>
+        <button class="btn btn--medium btn--short" type="button" id="add-consumer-group">Add Consumer Group</button>
     </div>
 
-    <table class="table" id="ug_container">
-        <thead>
-        <th></th>
-        <th>Consumer type</th>
-        <th>Demand profile</th>
-        <th>Nr. of consumers</th>
-        </thead>
-        <tr id="consumer-group1" class="consumer--group" style="height: fit-content">
+    <form method="POST" id="consumer-group-form">
+        {% csrf_token %}
+        {{ formset.management_form | crispy}}
+        <table class="table" id="ug_container">
+            <thead>
             <th></th>
-            <form method="POST" id="ConsumerGroupForm" action="{% url 'ajax_update_graph' %}">
-                {% csrf_token %}
-                {% for field in form %}
+            <th>Consumer type</th>
+            <th>Demand profile</th>
+            <th>Nr. of consumers</th>
+            </thead>
+            <tbody>
+            {% for form in formset %}
+            <tr id="consumer-group0" class="consumer--group" style="height: fit-content">
                 <td>
-                    {{ field | as_crispy_field }}
+                <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="icon icon-more"></span>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
+                    <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
+                </ul>
                 </td>
-                {% endfor %}
-            </form>
-        </tr>
+                    {% for field in form %}
+                    <td>
+                        {{ field | as_crispy_field }}
+                    </td>
+                    {% endfor %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
 
-    </table>
-    <div class="container">
-        <div>
-            <p>Avg. daily demand: <b id="avg_daily"></b> Wh</p>
-            <p>Peak demand: <b id="peak_demand"></b> Wh</p>
+        </table>
+        <div class="container">
+            <div>
+                <p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
+                <p>Peak demand: <b id="peak_demand"></b> kW</p>
+            </div>
+
+            <div id="demand-aggregate">
+            </div>
         </div>
-
-        <div id="demand-aggregate">
-        </div>
-    </div>
-    <center>
-        <button class="btn btn--medium" type="button">{% translate "Export load profile" %}</button>
-
-    </center>
-
+        <center>
+            <button class="btn btn--medium" type="submit">
+                {% if proj_id %}
+                    {% translate "Update load profile" %}
+                {% else %}
+                    {% translate "Save load profile" %}
+                {% endif %}
+            </button>
+        </center>
+    </form>
 </main>
 
 {% endblock progression_content %}
