@@ -91,7 +91,7 @@ nav.navbar {
       }
 
       img {
-        height: 2rem;
+        height: 3rem;
         width: 2rem;
         @include translateY(3px);
       }
@@ -155,6 +155,7 @@ nav.navbar {
   &__name {
     @include flex-row-justify-center;
     padding-bottom: .5rem;
+    padding-top: 1rem;
     font-size: $font-size-small;
 
     .project {
@@ -194,8 +195,7 @@ nav.navbar {
         width: 2rem;
         border-radius: 100px;
       }
-  
-      @for $i from 1 through 4 {
+      @for $i from 1 through 10 {
         &:nth-child(#{$i})::before {
           content: "#{$i}";
         }

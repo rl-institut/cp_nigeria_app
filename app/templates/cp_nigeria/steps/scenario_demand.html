@@ -1,0 +1,100 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+
+{% block start_body_scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+	const postUrl = `{% url 'ajax_consumergroup_form' scen_id %}`;
+	const csrfToken = `{{ csrf_token }}`;
+    const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
+    const updateGraphUrl = '{% url 'ajax_update_graph' %}';
+
+    // delete item on delete button click
+    const urlDeleteConsumerGroup = `{% url 'delete_consumergroup' scen_id %}`;
+    const deleteConsumerGroup = (event) => {
+        //submit the form to delete a report item
+        const consumerGroupId = event.target.closest('tr').id
+        if(confirm("Are you sure? This action cannot be undone")){
+            $.ajax({
+                headers: {'X-CSRFToken': `{{ csrf_token }}` },
+                type: "POST",
+                url: urlDeleteConsumerGroup,
+                data: {consuer_group_id: consumerGroupId},
+                success: function (jsonRes) {
+                    document.getElementById(consumerGroupId).remove();
+                },
+                error: function (err) {
+                    console.log(err);
+                },
+            })
+        }
+    };
+</script>
+<script src="{% static 'js/consumer_groups.js' %}"></script>
+<script src="{% static 'js/dependent_dropdown.js' %}"></script>
+<script src="{% static 'js/update_demand_graph.js' %}"></script>
+
+{% endblock start_body_scripts %}
+<!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+
+{% block progression_content %}
+<main>
+    <div class="grid-container">
+        <button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button>
+        <button class="btn btn--medium btn--short" type="button" onclick="javascript:addConsumerGroupDivToDOM();">Add Consumer Group</button>
+    </div>
+
+    <table class="table" id="ug_container">
+        <thead>
+        <th></th>
+        <th>Consumer type</th>
+        <th>Demand profile</th>
+        <th>Nr. of consumers</th>
+        </thead>
+        <tr id="consumer-group1" class="consumer--group" style="height: fit-content">
+            <th></th>
+            <form method="POST" id="ConsumerGroupForm" action="{% url 'ajax_update_graph' %}">
+                {% csrf_token %}
+                {% for field in form %}
+                <td>
+                    {{ field | as_crispy_field }}
+                </td>
+                {% endfor %}
+            </form>
+        </tr>
+
+    </table>
+    <div class="container">
+        <div>
+            <p>Avg. daily demand: <b id="avg_daily"></b> Wh</p>
+            <p>Peak demand: <b id="peak_demand"></b> Wh</p>
+        </div>
+
+        <div id="demand-aggregate">
+        </div>
+    </div>
+    <center>
+        <button class="btn btn--medium" type="button">{% translate "Export load profile" %}</button>
+
+    </center>
+
+</main>
+
+{% endblock progression_content %}
+
+{% block end_body_scripts %}
+<script>
+initialPlot();
+</script>
+{% endblock end_body_scripts %}
+
+
+
+
+
+
+
+

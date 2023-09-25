@@ -1,6 +1,14 @@
 import logging
 import traceback
+
 from concurrent.futures import ThreadPoolExecutor
+
+import os
+import requests
+import pandas as pd
+import numpy as np
+import json
+from django_q.models import Schedule
 
 from django.contrib import messages
 from django.urls import reverse
@@ -26,11 +34,23 @@ from epa.settings import (
     TIME_ZONE,
     USE_EXCHANGE_EMAIL_BACKEND,
 )
+from plotly.offline import plot
+from plotly.graph_objs import Scatter
+
 from projects.constants import PENDING
 from projects.models import Simulation
 from projects.requests import fetch_mvs_simulation_results
 
 logger = logging.getLogger(__name__)
+
+
+# email account which will send the feedback emails
+EXCHANGE_ACCOUNT = os.getenv("EXCHANGE_ACCOUNT", "dummy@dummy.com")
+EXCHANGE_PW = os.getenv("EXCHANGE_PW", "dummypw")
+EXCHANGE_EMAIL = os.getenv("EXCHANGE_EMAIL", "dummy@dummy.com")
+EXCHANGE_SERVER = os.getenv("EXCHANGE_SERVER", "dummy.com")
+# email addresses to which the feedback emails will be sent
+RECIPIENTS = os.getenv("RECIPIENTS", "dummy@dummy.com,dummy2@dummy.com").split(",")
 
 r"""Functions meant to be powered by Django-Q.
 
@@ -223,3 +243,56 @@ def get_selected_scenarios_in_cache(request, proj_id):
     selected_scenarios_per_project = request.session.get("selected_scenarios", {})
     selected_scenario = selected_scenarios_per_project.get(proj_id, [])
     return [int(scen_id) for scen_id in selected_scenario]
+
+
+class RenewableNinjas:
+    token = os.environ["RN_API_TOKEN"]
+    api_base = "https://www.renewables.ninja/api/"
+
+    def __init__(self):
+        self.s = requests.session()
+        # Send token header with each request
+        self.s.headers = {"Authorization": "Token " + self.token}
+        self.data = []
+
+    def get_pv_output(self, coordinates):
+        ##
+        # Get PV data
+        ##
+
+        url = self.api_base + "data/pv"
+
+        args = {
+            "lat": coordinates["lat"],
+            "lon": coordinates["lon"],
+            "date_from": "2019-01-01",
+            "date_to": "2019-12-31",
+            "dataset": "merra2",
+            "capacity": 1.0,
+            "system_loss": 0.1,
+            "tracking": 0,
+            "tilt": 35,
+            "azim": 180,
+            "format": "json",
+        }
+
+        r = self.s.get(url, params=args)
+
+        # Parse JSON to get a pandas.DataFrame of data and dict of metadata
+        parsed_response = json.loads(r.text)
+
+        pv_data = pd.read_json(json.dumps(parsed_response["data"]), orient="index")
+        metadata = parsed_response["metadata"]
+
+        self.data = pv_data
+        return
+
+    def create_pv_graph(self):
+        date_range = pd.Series(pd.date_range("2019-01-01", "2019-12-31"))
+        daily_avg = [
+            np.mean(self.data.loc[day.strftime("%Y-%m-%d")]) for day in date_range
+        ]
+        plot_div = plot(
+            [Scatter(x=date_range, y=daily_avg, mode="lines")], output_type="div"
+        )
+        return plot_div

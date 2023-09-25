@@ -221,7 +221,7 @@ def project_revoke_access(request, proj_id=None):
 @require_http_methods(["POST"])
 def ajax_project_viewers_form(request):
 
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
 
@@ -488,6 +488,9 @@ def project_search(request, proj_id=None, scen_id=None):
         .order_by("date_created")
         .reverse()
     )
+    # combined_projects_list = Project.objects.filter(
+    #     (Q(user=request.user) | Q(viewers__user=request.user)) & Q(country="NIGERIA")
+    # ).distinct()
 
     scenario_upload_form = UploadFileForm(
         labels=dict(name=_("New scenario name"), file=_("Scenario file"))
@@ -733,7 +736,7 @@ def scenario_create_parameters(request, proj_id, scen_id=None, step_id=1, max_st
         if scen_id is not None:
             scenario = get_object_or_404(Scenario, id=scen_id)
 
-            if (scenario.project.user != request.user) and (
+            if (scenario.project.user.email != request.user.email) and (
                 scenario.project.viewers.filter(user__email=request.user.email).exists()
                 is False
             ):

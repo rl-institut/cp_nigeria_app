@@ -1,6 +1,6 @@
 // Colors
-$primary-color-1: #1F567D;
-$primary-color-1-dark: #17405C;
+$primary-color-1: #006400;
+$primary-color-1-dark: #228b22;
 $primary-color-2: #343434;
 $primary-color-2-light: #8c8c8c;
 
@@ -63,7 +63,7 @@ $top-nav-padding-small: 2rem;
 $top-nav-padding-large: 2rem;
 $top-nav-height: 4.5rem;
 $top-nav-button-height: calc(#{$top-nav-height} - (2 * 1rem));
-$wizard-height: 5.5rem;
+$wizard-height: 8rem;
 $header-scenario-height: 3rem;
 
 // Footer
@@ -71,7 +71,7 @@ $footer-scenario-height: 4rem;
 $footer-height: $top-nav-height;
 
 // Logo
-$logo-height: 2rem;
+$logo-height: 5rem;
 
 // Buttons
 $button-border-radius: 8px;
