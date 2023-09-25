@@ -434,25 +434,23 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_model_choice(request, proj_id, scen_id=1, step_id=6):
-    scenario = get_object_or_404(Scenario, pk=scen_id)
+def cpn_model_choice(request, proj_id, step_id=6):
+    project = get_object_or_404(Project, id=proj_id)
 
-    if (scenario.project.user != request.user) and (
-        request.user not in scenario.project.viewers.all()
-    ):
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
     context = {
-        "scenario": scenario,
-        "scen_id": scen_id,
+        "scenario": project.scenario,
+        "scen_id": project.scenario.id,
         "proj_id": proj_id,
-        "proj_name": scenario.project.name,
+        "proj_name": project.name,
         "step_id": step_id,
-        "step_list": CPN_STEP_LIST,
+        "step_list": CPN_STEP_VERBOSE,
     }
 
     html_template = "cp_nigeria/steps/scenario_step6.html"
 
-    qs_bm = BusinessModel.objects.filter(scenario=scenario)
+    qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
     if request.method == "GET":
         # html_template = "cp_nigeria/steps/scenario_step6.html"
@@ -473,7 +471,7 @@ def cpn_model_suggestion(request, bm_id):
     bm = get_object_or_404(BusinessModel, pk=bm_id)
     scen_id = bm.scenario.id
     proj_id = bm.scenario.project.id
-    return HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id, scen_id]))
+    return HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id]))
 
 
 @login_required
@@ -568,6 +566,25 @@ def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
             },
         )
 
+
+@login_required
+@json_view
+@require_http_methods(["GET", "POST"])
+def ajax_bmodel_infos(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        model = request.GET.get("consumer_type")
+
+        return render(
+            request,
+            "cp_nigeria/steps/b_models.html",
+            context={
+        "model_description": B_MODELS[model]["Description"],
+        "model_name": B_MODELS[model]["Name"],
+        "model_image": B_MODELS[model]["Graph"],
+        "model_image_resp": B_MODELS[model]["Responsibilities"],
+
+            },
+        )
 
 @login_required
 @json_view
