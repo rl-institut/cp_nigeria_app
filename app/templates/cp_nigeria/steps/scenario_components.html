@@ -70,7 +70,12 @@
 					</div>
 </fieldset>
     </div>
+		<div style="display:flex;justify-content:center;align-content:center;">
+			<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es" style="width:400px;">
+
+		</div>
     <div class="grid-container">
+
         <div class="form-stretch" id="diesel_params" {% if 'diesel_generator' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
                 {{ form_diesel_generator|crispy }}
         </div>
@@ -82,6 +87,8 @@
 				</div>
     </div>
 		</form>
+
+
 
 	</section>
 </main>
