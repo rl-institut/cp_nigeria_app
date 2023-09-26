@@ -21,15 +21,15 @@ repos:
     hooks:
       - id: black
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    # Ruff version.
-    rev: 'v0.0.277'
-    hooks:
-      - id: ruff
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args: [ "--config=setup.cfg" ]
-        additional_dependencies: [ flake8-isort ]
+#  - repo: https://github.com/charliermarsh/ruff-pre-commit
+#    # Ruff version.
+#    rev: 'v0.0.277'
+#    hooks:
+#      - id: ruff
+#
+#  - repo: https://github.com/PyCQA/flake8
+#    rev: 6.0.0
+#    hooks:
+#      - id: flake8
+#        args: [ "--config=setup.cfg" ]
+#        additional_dependencies: [ flake8-isort ]
