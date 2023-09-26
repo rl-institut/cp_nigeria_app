@@ -26,177 +26,49 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
-@require_http_methods(["GET"])
-def index(request, scen_id, bm_id=None):
+@require_http_methods(["GET", "POST"])
+def help_select_questions(request, bm_id):
+    bm = get_object_or_404(BusinessModel, id=bm_id)
+    if request.method == "POST":
+        form = BMQuestionForm(request.POST, qs=BMAnswer.objects.filter(business_model=bm))
 
-    scenario = get_object_or_404(Scenario, id=scen_id)
-    qs_bm = BusinessModel.objects.filter(scenario=scenario)
-    if qs_bm.exists():
-        bm_id = qs_bm.get().id
-    if bm_id is None:
-        bm = BusinessModel()
-        bm.scenario = scenario
-        bm.save()
-        answer = HttpResponseRedirect(reverse("business_model", args=[scen_id, bm.id]))
+        if form.is_valid():
+            qs = BMAnswer.objects.filter(business_model=bm)
+
+            for criteria_num, score in form.cleaned_data.items():
+                crit = qs.get(question__id=int(criteria_num.replace("criteria_", "")))
+                crit.score = score
+                crit.save(update_fields=["score"])
+            answer = HttpResponseRedirect(reverse("cpn_model_suggestion", args=[bm.id]))
     else:
-        bm = get_object_or_404(BusinessModel, id=bm_id)
-        form = GridQuestionForm(instance=bm)
-        answer = render(
-            request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form}
-        )
-    return answer
+        qs = BMAnswer.objects.filter(business_model=bm)
 
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def grid_question(request, bm_id):
-
-    bm = get_object_or_404(BusinessModel, id=bm_id)
-
-    if request.method == "GET":
-
-        form = GridQuestionForm(instance=bm)
-
-        answer = render(
-            request, "cp_nigeria/business_model/index.html", {"bm": bm, "form": form}
-        )
-
-    if request.method == "POST":
-        form = GridQuestionForm(request.POST, instance=bm)
-        if form.is_valid():
-
-            bm = form.save(commit=False)
-            bm.save(update_fields=["grid_connection"])
-
-            grid_connection = form.cleaned_data["grid_connection"]
-            if grid_connection is True:
-                answer = render(
-                    request,
-                    "cp_nigeria/business_model/grid_connection.html",
-                    {"bm": bm, "form": form},
-                )
-            else:
-                answer = HttpResponseRedirect(reverse("edisco_question", args=[bm.id]))
-
-    return answer
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def edisco_question(request, bm_id):
-
-    bm = get_object_or_404(BusinessModel, id=bm_id)
-
-    if request.method == "GET":
-
-        form = EdiscoQuestionForm(instance=bm)
-
-        answer = render(
-            request,
-            "cp_nigeria/business_model/edisco_question.html",
-            {"bm": bm, "form": form},
-        )
-
-    if request.method == "POST":
-        form = EdiscoQuestionForm(request.POST, instance=bm)
-
-        if form.is_valid():
-
-            bm = form.save(commit=False)
-            bm.save(update_fields=["regional_active_disco"])
-
-            edisco = form.cleaned_data["regional_active_disco"]
-            if edisco is True:
-                answer = render(
-                    request,
-                    "cp_nigeria/business_model/edisco.html",
-                    {"bm": bm, "form": form},
-                )
-            else:
-                answer = HttpResponseRedirect(
-                    reverse("regulation_question", args=[bm.id])
-                )
-
-    return answer
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def regulation_question(request, bm_id):
-
-    bm = get_object_or_404(BusinessModel, id=bm_id)
-
-    if request.method == "GET":
-
-        form = RegulationQuestionForm()
-
-        answer = render(
-            request,
-            "cp_nigeria/business_model/regulation_question.html",
-            {"bm": bm, "form": form},
-        )
-
-    if request.method == "POST":
-        form = RegulationQuestionForm(request.POST)  # , instance=bm)
-        if form.is_valid():
-
-            # bm = form.save(commit=False)
-            # bm.save(update_fields=["regulation"])
-
-            # regulation = form.cleaned_data["regulation"]
-            answer = HttpResponseRedirect(reverse("capacities_question", args=[bm.id]))
-
-    return answer
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def capacities_question(request, bm_id):
-
-    bm = get_object_or_404(BusinessModel, id=bm_id)
-
-    if request.method == "GET":
-
-        qs = CapacitiesAnswer.objects.filter(business_model=bm)
-        print(qs.exists())
-        print(qs)
+        criterias = BMQuestion.objects.all()
         if qs.exists() is False:
-            criterias = Capacities.objects.all()
             for criteria in criterias:
                 criteria_params = {}
 
                 criteria_params["business_model"] = bm
-                criteria_params["criteria"] = criteria
+                criteria_params["question"] = criteria
 
                 # if qs.exists() is False:
 
-                new_criteria = CapacitiesAnswer(**criteria_params)
+                new_criteria = BMAnswer(**criteria_params)
                 new_criteria.save()
                 # else:
                 #     if update_assets is True:
                 #         qs.update(**criteria_params)
-        form = CapacitiesForm(qs=CapacitiesAnswer.objects.filter(business_model=bm))
 
-        answer = render(
-            request,
-            "cp_nigeria/business_model/capacities_question.html",
-            {"bm": bm, "form": form},
-        )
+        categories_map = [cat for cat in criterias.values_list("category", flat=True)]
+        categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
+        form = BMQuestionForm(qs=BMAnswer.objects.filter(business_model=bm))
 
-    if request.method == "POST":
-        form = CapacitiesForm(
-            request.POST, qs=CapacitiesAnswer.objects.filter(business_model=bm)
-        )  # , instance=bm)
-
-        if form.is_valid():
-            qs = CapacitiesAnswer.objects.filter(business_model=bm)
-
-            for criteria_num, score in form.cleaned_data.items():
-                crit = qs.get(criteria__id=int(criteria_num.replace("criteria_", "")))
-                crit.score = score
-                crit.save(update_fields=["score"])
-            # regulation = form.cleaned_data["capacities"]
-            answer = HttpResponseRedirect(reverse("cpn_model_suggestion", args=[bm.id]))
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            answer = render(
+                request,
+                "cp_nigeria/business_model/help_select_questions.html",
+                {"form": form, "categories_map": categories_map, "categories": categories},
+            )
 
     return answer
 
@@ -204,15 +76,12 @@ def capacities_question(request, bm_id):
 @login_required
 @require_http_methods(["GET", "POST"])
 def model_suggestion(request, bm_id):
-
     bm = get_object_or_404(BusinessModel, id=bm_id)
 
     if request.method == "GET":
         form = ModelSuggestionForm(score=bm.total_score)
 
-        answer = render(
-            request, "business_model/model_choice.html", {"bm": bm, "form": form}
-        )
+        answer = render(request, "business_model/model_choice.html", {"bm": bm, "form": form})
     if request.method == "POST":
         pass
 

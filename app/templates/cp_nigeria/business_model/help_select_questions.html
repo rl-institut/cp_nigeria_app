@@ -1,0 +1,21 @@
+{% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load i18n %}
+{% load custom_template_tags %}
+
+<div class="container">
+	{% for cat in categories %}
+	<div class="row align-items-start">
+		<h3>{% translate cat %}</h3>
+		{% for field in form %}
+		{% if field.name|get_category:categories_map|is_current_category:cat %}
+		<div class="form-group{% if field.errors %} invalid{% endif %}">
+			{{ field|as_crispy_field }}
+		</div>
+		{% endif %}
+		{% endfor %}
+	</div>
+	{% endfor %}
+
+</div>
