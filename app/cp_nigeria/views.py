@@ -410,7 +410,7 @@ def cpn_model_choice(request, proj_id, step_id=6):
         "step_list": CPN_STEP_VERBOSE,
     }
 
-    html_template = "cp_nigeria/steps/scenario_step6.html"
+    html_template = "cp_nigeria/steps/scenario_model_choice.html"
 
     if request.method == "GET":
         bm, created = BusinessModel.objects.get_or_create(
