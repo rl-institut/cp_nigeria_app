@@ -2,6 +2,7 @@ from crispy_forms.helper import FormHelper
 import json
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import ModelForm
 from .models import *
@@ -16,6 +17,12 @@ class ModelSuggestionForm(ModelForm):
     def __init__(self, *args, **kwargs):
         score = kwargs.pop("score", None)
         grid_condition = kwargs.pop("grid_condition", None)
+
+        if "instance" in kwargs:
+            if grid_condition is None:
+                grid_condition = kwargs["instance"].grid_condition
+            if score is None:
+                score = kwargs["instance"].total_score
         super().__init__(*args, **kwargs)
         choices = self.fields["model_name"].choices
 
@@ -34,14 +41,13 @@ class BMQuestionForm(forms.Form):
         super().__init__(*args, **kwargs)
         for criteria in qs:
             alv = criteria.question.score_allowed_values
-            opts = {"required": True, "label": criteria.question.question_for_user}
-
+            opts = {"label": criteria.question.question_for_user}
             if criteria.score is not None:
                 opts["initial"] = criteria.score
 
             if alv is not None:
                 try:
-                    opts["choices"] = json.loads(alv)
+                    opts["choices"] = [["", "----------"]] + json.loads(alv)
 
                     self.fields[f"criteria_{criteria.question.id}"] = forms.ChoiceField(**opts)
                 except json.decoder.JSONDecodeError:
@@ -52,7 +58,12 @@ class BMQuestionForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
 
-        for record in cleaned_data:
-            cleaned_data[record] = float(cleaned_data[record])
-
+        if cleaned_data:
+            for record in cleaned_data:
+                if cleaned_data[record] != "":
+                    cleaned_data[record] = float(cleaned_data[record])
+                else:
+                    raise ValidationError("This field cannot be blank")
+        else:
+            raise ValidationError("This form cannot be blank")
         return cleaned_data

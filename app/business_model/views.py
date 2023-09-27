@@ -17,6 +17,7 @@ from django.contrib import messages
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from projects.models import Scenario
+from cp_nigeria.views import STEP_MAPPING
 import logging
 import traceback
 from django.contrib.auth.decorators import login_required
@@ -46,16 +47,10 @@ def help_select_questions(request, bm_id):
             criterias = BMQuestion.objects.all()
             categories_map = [cat for cat in criterias.values_list("category", flat=True)]
             categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
-            form_html = get_template("cp_nigeria/business_model/help_select_questions.html")
-            answer = JsonResponse(
-                {
-                    "success": False,
-                    "form_html": form_html.render(
-                        {"form": form, "categories_map": categories_map, "categories": categories}
-                    ),
-                },
-                status=422,
-            )
+            # form_html = get_template("cp_nigeria/business_model/help_select_questions.html")
+            # import pdb;pdb.set_trace()
+            proj_id = bm.scenario.project.id
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"]]))
     else:
         qs = BMAnswer.objects.filter(business_model=bm)
 

@@ -416,23 +416,25 @@ def cpn_model_choice(request, proj_id, step_id=6):
         bm, created = BusinessModel.objects.get_or_create(
             scenario=project.scenario, defaults={"scenario": project.scenario}
         )
-        score = bm.total_score
-        context["form"] = ModelSuggestionForm(score=score, grid_condition=bm.grid_condition)
+        context["form"] = ModelSuggestionForm(instance=bm)
         context["bm"] = bm
+        context["score"] = bm.total_score
 
         recommended = context["form"].fields["model_name"].initial
-        print(recommended)
-        import pdb
-
-        pdb.set_trace()
         if recommended is not None:
             context["recommanded_model"] = recommended
-    if request.method == "POST":
-        # TODO fill here and move to next step
-        import pdb
+        answer = render(request, html_template, context)
 
-        pdb.set_trace()
-    return render(request, html_template, context)
+    if request.method == "POST":
+        bm = BusinessModel.objects.get(scenario=project.scenario)
+        form = ModelSuggestionForm(request.POST, instance=bm)
+        if form.is_valid():
+            form.save()
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"] + 1]))
+        else:
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"] + 1]))
+
+    return answer
 
 
 @login_required

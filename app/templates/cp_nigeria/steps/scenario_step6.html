@@ -5,11 +5,6 @@
 {% load i18n %}
 
 {% block head_block %}
-<style>
-.highlight {
-  background-color: blue;
-}
-</style>
 {% endblock head_block %}
 
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
@@ -17,24 +12,61 @@
 
 {% include "modal_template.html" with id="helpSelectBMModal" modal_style_class="modal--gui" submit_btn_label="Save" title="Assess suitability for a community-led approach" custom_submit_function="suggestBusinessModel(event)"%}
 
+<section class="project-setup two-columns">
+	<div class="left">
+		<div style="padding-right:4rem;">
+			<div class="text">
+				<span>
+					{% translate "Choose your model amongst the selection:" %}
+				</span>
+			</div>
+			<form id="businessModelForm" action="{% url 'cpn_model_choice' proj_id %}" method="POST">
+				{{ form }}
+				{% csrf_token %}
+			</form>
+			{% if recommanded_model %}
+			<div class="text">
+				<span>
+					{% translate "Recommanded model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>: <strong>{{ recommanded_model }}</strong>
+				</span>
 
-<form action="{% url 'cpn_model_choice' proj_id %}" method="POST">
-		{{ form }}
-	 {% csrf_token %}
-	<!--button type="submit"> next</button-->
-	</form>
+			</div>
+			<div class="text">
+				<span><button class="btn btn--medium">{% translate "Reset the questionnaire" %}</button></span>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+	<div class="right" style="background-color: #f4f7f9;padding-left:1.5rem">
+		<div>
+			<div id="selected_model">
 
-<div id="selected_model">
+			</div>
+		</div>
+	</div>
+</section>
 
-</div>
 
-{% if recommanded_model %}
-<p>
-	Recommanded model: {{ recommanded_model }}
-	<span>Text explaning why this model was choosen</span>
-</p>
-{% endif %}
+
+
+
+
 {% endblock progression_content %}
+
+{% block step_footer %}
+<div class="step-footer">
+	<div>
+		{% if proj_id %}
+		{% if step_id > 1 %}
+		<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+		{% endif %}
+		{% if step_id < step_list|length %}
+		<button id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
+		{% endif %}
+		{% endif %}
+	</div>
+</div>
+{% endblock step_footer %}
 
 
 {% block end_body_scripts %}
@@ -42,26 +74,30 @@
 
 
 <script>
-	var helpSelectBMModalDOM = document.getElementById("helpSelectBMModal");
+
+		function submitBusinessModelForm(){
+			document.getElementById("businessModelForm").submit()
+		}
+
+		var helpSelectBMModalDOM = document.getElementById("helpSelectBMModal");
+		function showQuestionnaire(){
+			$.ajax({
+				url: `{% url 'help_select_questions' bm.id %}`,
+				success: function (formContent) {
+					helpSelectBMModalDOM.querySelector('form').innerHTML = formContent;
+					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' })
+				}
+			});
+		}
+
 	$(document).on('change', '#id_model_name', function () {
 		document.getElementById("selected_model").innerHTML = ""
-		console.log('selection changed')
-		console.log($(this).val());
 		var modelChoice = $(this).val();  // get the selected model from the HTML input
 
 		if(modelChoice == ""){}
 		else if(modelChoice == "help_select")
 		{
-			console.log("help select");
-
-			$.ajax({
-				url: `{% url 'help_select_questions' bm.id %}`,
-				success: function (formContent) {
-					console.log(formContent);
-					helpSelectBMModalDOM.querySelector('form').innerHTML = formContent;
-					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' })
-				}
-			});
+			showQuestionnaire()
 		}
 		else {
 			$.ajax({
@@ -70,7 +106,6 @@
 					'model_choice': modelChoice
 				},
 				success: function (data) {
-					console.log(data);
 					document.getElementById("selected_model").innerHTML = data
 				}
 			});
@@ -78,15 +113,13 @@
 	});
 
 	function suggestBusinessModel(event){
-		hideModal(modalId='helpSelectBMModal');
-		helpSelectBMModalDOM.querySelector('form').submit()
+		helpSelectBMModalDOM.querySelector('#helpSelectBMModalSubmitBtn').click()
 	}
 </script>
 
-{% if recommanded_model %}
 <script>
+	// trigger the change function of the model selection to update display for preselected values
 	$("#id_model_name").change();
 </script>
-{% endif %}
 
 {% endblock end_body_scripts %}
