@@ -90,3 +90,15 @@ def model_suggestion(request, bm_id):
         pass
 
     return answer
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def reset_answers_to_questionnaire(request, bm_id):
+    bm = get_object_or_404(BusinessModel, id=bm_id)
+
+    BMAnswer.objects.filter(business_model=bm).delete()
+    bm.model_name = None
+    bm.save()
+    proj_id = bm.scenario.project.id
+    return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"]]))
