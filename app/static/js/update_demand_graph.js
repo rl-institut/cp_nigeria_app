@@ -1,11 +1,11 @@
-//TODO load graph also with saved form data
 // variable to store the timeseries as they are retrieved from the database
 var timeseriesData = {}
 
 $(document).ready(function() {
+    // delete empty extra form if necessary
+    deleteEmptyForm();
     // load timeseries once on page load (to update graph with existing formset data)
     $('select[id*="timeseries"]').each(function() {
-    // Call the function for each select element
     getTimeseries.call(this);
     });
 
@@ -18,8 +18,8 @@ function getTimeseries () {
         console.log('timeseries selection changed')
         var parentTr = $(this).closest('tr');
         // get the unique id of this consumer group to save the current timeseries in a variable
-        var uniqueId = $(this).attr('id').split('-')[1];
-        var timeseriesVarName = 'timeseriesData_' + uniqueId;
+        var formId = $(this).attr('id').split('-')[1];
+        var timeseriesVarName = 'timeseriesData_' + formId;
         var consumerGroupDemandName = $(this).find('option:selected').html();
         var timeseriesId = $(this).val();
         var nrConsumers = parentTr.find('input[id*="number_consumers"]').val();
@@ -41,7 +41,7 @@ function getTimeseries () {
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
                 var newDemand = data.timeseries_values.map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers')
-                updateGraph(newDemand, consumerGroupDemandName, uniqueId);
+                updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
             error: function() {
                     console.error(data);
@@ -55,20 +55,20 @@ function updateNumberConsumers() {
 // if only number of consumers is changed, retrieve timeseries values from variable and multiply them by new consumers
         var parentTr = $(this).closest('tr');
         var nrConsumers = $(this).val();
-        var uniqueId = $(this).attr('id').split('-')[1];
-        var timeseriesVarName = 'timeseriesData_' + uniqueId;
+        var formId = $(this).attr('id').split('-')[1];
+        var timeseriesVarName = 'timeseriesData_' + formId;
         var consumerGroupDemandName = parentTr.find('select[id*="timeseries"]').find('option:selected').html();
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
                 var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers')
-                updateGraph(newDemand, consumerGroupDemandName, uniqueId)
+                updateGraph(newDemand, consumerGroupDemandName, formId)
                 }
 }
 
 
 // generate timestamps for the plot
-// TODO set start date according to project start date
+// TODO set start date according to project start date and adapt timeseries order
 function generateTimeSeries(start, end) {
     var timeSeries = [];
     var currentTime = new Date(start);
@@ -115,7 +115,7 @@ function initialPlot () {
 // data variable to check which traces are already in the graph
 var data = []
 // update graph
-function updateGraph (newDemand, consumerGroupDemandName, uniqueId){
+function updateGraph (newDemand, consumerGroupDemandName, formId){
         console.log('updating graph for consumergroup: ' + consumerGroupDemandName)
         var plot_div = document.getElementById('demand-aggregate');
         var trace = {
@@ -123,13 +123,13 @@ function updateGraph (newDemand, consumerGroupDemandName, uniqueId){
             y: newDemand,
             stackgroup: 'one',
             name: consumerGroupDemandName,
-            consumerGroupIndex: uniqueId
+            formId: formId
             };
 
         //check if trace already exists in the plot
         var existingTrace = false;
         for (var i = 0; i < data.length; i++) {
-            if (data[i].consumerGroupIndex === uniqueId) {
+            if (data[i].formId === formId) {
                 existingTrace = true;
                 data[i].y = newDemand;
                 var traceIndex = i+1;
@@ -164,4 +164,13 @@ function updateKeyParams() {
     var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 365 / 1000;
     document.getElementById('avg_daily').innerHTML = avgDaily.toFixed(2);
     document.getElementById('peak_demand').innerHTML = peakDemand.toFixed(2);
+}
+
+function deleteTrace(consumerGroupId) {
+    var formId = consumerGroupId.split('-')[1];
+    var traceIndex = parseInt(formId)+1;
+    console.log("hiding trace index: " + traceIndex)
+    var plot_div = document.getElementById('demand-aggregate');
+
+    Plotly.restyle(plot_div, {visible: false}, traceIndex)
 }

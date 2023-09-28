@@ -38,7 +38,7 @@
             </thead>
             <tbody>
             {% for form in formset %}
-            <tr id="consumer-group0" class="consumer--group" style="height: fit-content">
+            <tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
                 <td>
                 <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="icon icon-more"></span>
@@ -47,11 +47,16 @@
                     <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
                     <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
                 </ul>
+                <input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
                 </td>
                     {% for field in form %}
+                    {% if field.name != 'DELETE' %}
+
                     <td>
                         {{ field | as_crispy_field }}
                     </td>
+
+                    {% endif %}
                     {% endfor %}
             </tr>
             {% endfor %}
@@ -69,13 +74,7 @@
             </div>
         </div>
         <center>
-            <button class="btn btn--medium" type="submit">
-                {% if proj_id %}
-                    {% translate "Update load profile" %}
-                {% else %}
-                    {% translate "Save load profile" %}
-                {% endif %}
-            </button>
+            <button class="btn btn--medium" type="submit">{% translate "Save load profile" %}</button>
         </center>
     </form>
 </main>
@@ -87,11 +86,3 @@
 initialPlot();
 </script>
 {% endblock end_body_scripts %}
-
-
-
-
-
-
-
-

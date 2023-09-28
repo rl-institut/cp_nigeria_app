@@ -1,15 +1,12 @@
-
-
-
 // create a new row in the consumer groups table upon button click
 $(document).on('click', '#add-consumer-group', function() {
     console.log('adding consumer group')
     // Clone the first form in the formset
     var formCount = $('#id_form-TOTAL_FORMS').val();
-    var newForm = $('#consumer-group0').clone();
+    var newForm = $('#form-0').clone();
 
     // Update the form prefixes and IDs
-    newForm.attr({'name': 'consumer-group' + formCount, 'id': 'id_consumer-group' + formCount})
+    newForm.attr({'name': 'form-' + formCount, 'id': 'id_form-' + formCount})
     newForm.find('input, select, div').each(function() {
     if ($(this).is('input, select')) {
         var name =  $(this).attr('name').replace('-0-', '-' + formCount + '-');
@@ -34,31 +31,28 @@ $(document).on('click', '#add-consumer-group', function() {
     $('#id_form-TOTAL_FORMS').val(parseInt(formCount) + 1);
   });
 
-// TODO delete consumer group on delete button click
 $(document).on('click', '#delete-consumer-group', function() {
-        //submit the form to delete a report item
         var consumerGroup = $(this).closest('tr');
         var consumerGroupId = consumerGroup.attr('id');
-        var formCount = $('#id_form-TOTAL_FORMS').val();
-        //var deleteFlag = consumerGroup.find('#delete');
-        //deleteFlag.value = "True";
-
-        // Update the total form count
-        $('#id_form-TOTAL_FORMS').val(parseInt(formCount) - 1);
 
         if(confirm("Are you sure? This action cannot be undone")){
-            $.ajax({
-                headers: {'X-CSRFToken': csrfToken },
-                type: "POST",
-                url: urlDeleteConsumerGroup,
-                data: {consumer_group_id: consumerGroupId},
-                success: function (jsonRes) {
-                    $('#' + consumerGroupId).remove();
-                    console.log("deleting " + consumerGroupId)
-                },
-                error: function (err) {
-                    console.log(err);
-                },
-            })
+
+            $('#' + consumerGroupId).hide();
+            $('#' + consumerGroupId + '-DELETE').val("true");
+            console.log("deleting " + consumerGroupId);
+            deleteTrace(consumerGroupId)
+
+            }
+        });
+
+// function to delete extra empty form when db data is being loaded
+// TODO find a more elegant solution; i could not figure out how to fix this is the views/forms
+function deleteEmptyForm() {
+        var formCount = $('#id_form-TOTAL_FORMS').val();
+        var lastFormId = formCount - 1;
+        if (formCount > 1) {
+            var consumerGroupId = "form-" + lastFormId;
+            $('#' + consumerGroupId).hide();
+            $('#' + consumerGroupId + '-DELETE').val("true");
         }
-    });
+}

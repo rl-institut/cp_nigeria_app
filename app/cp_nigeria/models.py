@@ -24,7 +24,6 @@ class DemandTimeseries(Timeseries):
 
 class ConsumerGroup(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
-    group_id = models.IntegerField(blank=True, null=True)
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
     timeseries = models.ForeignKey(
         DemandTimeseries, on_delete=models.CASCADE, null=True

@@ -43,7 +43,7 @@
     }
     </script>
 	<section>
-		<form method="POST" action="{% url 'cpn_scenario' proj_id scen_id %}">
+		<form method="POST" action="{% url 'cpn_scenario' proj_id %}">
 			{% csrf_token %}
 			<center>
 				<!-- TODO move to next step-->

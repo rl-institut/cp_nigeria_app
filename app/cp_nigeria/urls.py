@@ -18,7 +18,7 @@ urlpatterns = [
     path("<int:proj_id>/edit/demand", cpn_demand_params, name="cpn_scenario_demand"),
     path("<int:proj_id>/edit/constraints", cpn_constraints, name="cpn_constraints"),
     path(
-        "<int:proj_id>/edit/scenario/<int:scen_id>", cpn_scenario, name="cpn_scenario"
+        "<int:proj_id>/edit/scenario", cpn_scenario, name="cpn_scenario"
     ),
     path("<int:proj_id>/review", cpn_review, name="cpn_review"),
     path(

@@ -12,7 +12,6 @@ CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
-
     start_date = forms.DateField(
         label=_("Simulation start"),
         widget=forms.DateInput(
@@ -67,10 +66,7 @@ class ProjectForm(OpenPlanModelForm):
 
 
 class EconomicDataForm(OpenPlanModelForm):
-
-    capex_fix = forms.FloatField(
-        label=_("Fix project costs"), validators=[MinValueValidator(0.0)]
-    )
+    capex_fix = forms.FloatField(label=_("Fix project costs"), validators=[MinValueValidator(0.0)])
 
     class Meta:
         model = EconomicData
@@ -92,9 +88,7 @@ class DemandProfileForm(OpenPlanForm):
     curve = forms.ChoiceField(
         label=_("Load curve"),
         choices=CURVES,
-        widget=forms.Select(
-            attrs={"data-bs-toggle": "tooltip", "title": _("Load curve")}
-        ),
+        widget=forms.Select(attrs={"data-bs-toggle": "tooltip", "title": _("Load curve")}),
     )
     households = forms.IntegerField(label=_("Number of households"))
 
@@ -111,38 +105,32 @@ class UploadDemandForm(UploadTimeseriesForm):
                     "placeholder": "Select a start date",
                     "type": "date",
                 },
-            )
+            ),
         }
 
 
 class PVForm(AssetCreateForm):
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, asset_type="pv_plant", **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
         # for field in self.fields:
-        #     self.fields[field].required = False
 
         self.fields["input_timeseries"].required = False
 
-        for field, value in zip(
-            ("name", "renewable_asset"), (self.asset_type_name, True)
-        ):
+        for field, value in zip(("name", "renewable_asset"), (self.asset_type_name, True)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
 
 class DieselForm(AssetCreateForm):
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, asset_type="diesel_generator", **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
         # for field in self.fields:
-        #     self.fields[field].required = False
 
         for field, value in zip(("name",), (self.asset_type_name,)):
             self.fields[field].widget = forms.HiddenInput()
@@ -150,14 +138,12 @@ class DieselForm(AssetCreateForm):
 
 
 class BessForm(StorageForm):
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, asset_type="bess", **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
         # for field in self.fields:
-        #     self.fields[field].required = False
 
         for field, value in zip(("name",), (self.asset_type_name,)):
             self.fields[field].widget = forms.HiddenInput()
@@ -165,9 +151,7 @@ class BessForm(StorageForm):
 
 
 class DummyForm(forms.Form):
-    some_input = forms.ChoiceField(
-        label=_("Some INput"), choices=(("a", "a"), ("b", "b"))
-    )
+    some_input = forms.ChoiceField(label=_("Some INput"), choices=(("a", "a"), ("b", "b")))
 
 
 class ConsumerGroupForm(OpenPlanModelForm):
@@ -175,7 +159,7 @@ class ConsumerGroupForm(OpenPlanModelForm):
         model = ConsumerGroup
         exclude = ["project", "group_id"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         advanced_opt = kwargs.pop("advanced_view", False)
@@ -185,15 +169,15 @@ class ConsumerGroupForm(OpenPlanModelForm):
             self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
         else:
             consumer_type_id = instance.consumer_type_id
-            self.fields['timeseries'].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+            self.fields["timeseries"].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
 
         if advanced_opt is False:
             for field in ["expected_consumer_increase", "expected_demand_increase"]:
                 self.fields[field].widget = forms.HiddenInput()
 
         # Prevent automatic labels from being generated (to avoid issues with table display)
-        for field_name, field in self.fields.items():
+        for _field_name, field in self.fields.items():
             field.label = ""
 
 
-ConsumerGroupFormSet = modelformset_factory(ConsumerGroup, form=ConsumerGroupForm, extra=1)
+ConsumerGroupFormSet = modelformset_factory(ConsumerGroup, form=ConsumerGroupForm, extra=1, can_delete=True)
