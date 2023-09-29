@@ -18,69 +18,63 @@ from dashboard.helpers import B_MODELS
 
 
 class BusinessModel(models.Model):
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
 
-    scenario = models.ForeignKey(
-        Scenario, on_delete=models.CASCADE, null=True, blank=False
+    grid_condition = models.CharField(
+        max_length=14,
+        choices=(("interconnected", "Interconnected"), ("isolated", "Isolated")),
+        null=True,
+        default=False,
+        blank=True,
     )
-
-    grid_connection = models.BooleanField(
-        choices=((False, "no"), (True, "yes")), null=True, default=False, blank=False
-    )
-    regional_active_disco = models.BooleanField(
-        choices=((False, "no"), (True, "yes")), null=True, default=False, blank=False
-    )
+    decision_tree = models.TextField(null=True, blank=True)
 
     model_name = models.CharField(
-        max_length=60,
-        null=True,
-        blank=False,
-        choices=[(k, k.replace("_", " ")) for k in B_MODELS],
+        max_length=60, null=True, blank=False, choices=[(k, k.replace("_", " ")) for k in B_MODELS]
     )
 
     @property
     def total_score(self):
         total_score = 0
-        for answer in self.capacitiesanswer_set.all():
-            total_score += answer.score * answer.criteria.weight
+        user_answers = self.user_answers.all()
+        if user_answers:
+            for answer in user_answers:
+                if answer.score is not None:
+                    total_score += answer.score * answer.question.criteria_weight
+                else:
+                    total_score = None
+                    break
+        else:
+            total_score = None
+
         return total_score
-        # print(qs)
-
-    # process_step = models.IntegerField(
-    #     null=False, blank=False,
-    # )
-    # process_step_label = models.CharField(
-    #     max_length=60, null=False, blank=False,
-    # )
-    #
-    # # models.SmallIntegerField
-    # question = models.TextField(
-    #     null=True, blank=False,
-    # )
-    # answer = models.TextField(
-    #     null=True, blank=False,
-    # )
 
 
-class Capacities(models.Model):
-    description = models.TextField(null=False)
-    weight = models.FloatField(null=False, verbose_name="Criteria weight")
+class BMQuestion(models.Model):
+    question_for_user = models.TextField(null=False)
+    criteria = models.TextField(null=False)
+    criteria_weight = models.FloatField(null=False, verbose_name="Criteria weight")
     score_allowed_values = models.TextField(null=True)
     weighted_score = models.FloatField(null=True, verbose_name="Weighted Score")
     category = models.CharField(
         max_length=60,
         null=True,
         blank=False,
-        choices=(("financial", "Financial"), ("institutional", "Intitutional")),
+        choices=(
+            ("dialogue", "Engagement, dialogue, and co-determination"),
+            ("steering", "Steering capacities"),
+            ("control", "Asserting control and credibility"),
+            ("institutional", "Supporting Institutional structures"),
+            ("economic", "Potential for economic co-benefits"),
+            ("financial", "Financial capacities"),
+        ),
     )
+    description = models.TextField(null=False)
 
 
-class CapacitiesAnswer(models.Model):
-    criteria = models.ForeignKey(
-        Capacities, on_delete=models.CASCADE, null=True, blank=False
-    )
+class BMAnswer(models.Model):
+    question = models.ForeignKey(BMQuestion, on_delete=models.CASCADE, null=True, blank=False)
     business_model = models.ForeignKey(
-        BusinessModel, on_delete=models.CASCADE, null=True, blank=False
+        BusinessModel, on_delete=models.CASCADE, null=True, blank=False, related_name="user_answers"
     )
     score = models.FloatField(null=True, verbose_name="Score")

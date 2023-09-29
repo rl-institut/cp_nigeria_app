@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 import pandas as pd
 from business_model.models import *
 
@@ -7,23 +7,19 @@ class Command(BaseCommand):
     help = "Update the assettype objects from /static/capacities_list.csv"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--update", action="store_true", help="Update existing capacities"
-        )
+        parser.add_argument("--update", action="store_true", help="Update existing capacities")
 
     def handle(self, *args, **options):
-
         update_assets = options["update"]
 
-        df = pd.read_csv("static/capacities_list.csv")
+        df = pd.read_csv("static/business_model_questions.csv")
         assets = df.to_dict(orient="records")
         for asset_params in assets:
-            # import pdb;pdb.set_trace()
-            qs = Capacities.objects.filter(description=asset_params["description"])
-
+            question_id = asset_params.pop("question_index")
+            qs = BMQuestion.objects.filter(id=question_id)
+            asset_params["score_allowed_values"] = asset_params["score_allowed_values"].replace("'", '"')
             if qs.exists() is False:
-
-                new_asset = Capacities(**asset_params)
+                new_asset = BMQuestion(**asset_params)
                 new_asset.save()
             else:
                 if update_assets is True:

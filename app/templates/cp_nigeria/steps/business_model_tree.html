@@ -12,7 +12,8 @@
 <script src="{% static 'js/decision_tree.js' %}"></script>
 <script>
     const csrfToken = '{{ csrf_token }}';
-    const postUrl = '{% url 'cpn_business_model' %}';
+    const projId =`{{proj_id}}`;
+    const postUrlBusinessModel = '{% url 'cpn_business_model' %}';
 </script>
 
 <div class="container">
@@ -133,8 +134,3 @@
 
 {% block end_body_scripts %}
 {% endblock end_body_scripts %}
-
-
-
-
-

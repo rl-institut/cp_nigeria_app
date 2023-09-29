@@ -1,0 +1,128 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+{% block head_block %}
+{% endblock head_block %}
+
+<!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
+{% block progression_content %}
+
+{% include "modal_template.html" with id="helpSelectBMModal" modal_style_class="modal--gui" submit_btn_label="Save" title="Assess suitability for a community-led approach" custom_submit_function="suggestBusinessModel(event)"%}
+
+<section class="project-setup two-columns">
+	<div class="left">
+		<div style="padding-right:4rem;">
+			<div class="text">
+				<span>
+					{% translate "Choose your model amongst the selection:" %}
+				</span>
+			</div>
+			<form id="businessModelForm" action="{% url 'cpn_model_choice' proj_id %}" method="POST">
+				{{ form }}
+				{% csrf_token %}
+			</form>
+			{% if recommanded_model %}
+			<div class="text">
+				<span>
+					{% translate "Recommanded model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>: <strong>{{ recommanded_model }}</strong>
+				</span>
+
+			</div>
+			<div class="text">
+				<form action="{% url 'reset_answers_to_questionnaire' bm.id %}">
+					{% csrf_token %}
+					<button type="submit" class="btn btn--medium">{% translate "Reset the questionnaire" %}</button>
+				</form>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+	<div class="right" style="background-color: #f4f7f9;padding-left:1.5rem">
+		<div>
+			<div id="selected_model">
+
+			</div>
+		</div>
+	</div>
+</section>
+
+
+
+
+
+
+{% endblock progression_content %}
+
+{% block step_footer %}
+<div class="step-footer">
+	<div>
+		{% if proj_id %}
+		{% if step_id > 1 %}
+		<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+		{% endif %}
+		{% if step_id < step_list|length %}
+		<button id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
+		{% endif %}
+		{% endif %}
+	</div>
+</div>
+{% endblock step_footer %}
+
+
+{% block end_body_scripts %}
+<script src="{% static 'js/modal_utils.js' %}"></script>
+
+
+<script>
+
+		function submitBusinessModelForm(){
+			document.getElementById("businessModelForm").submit()
+		}
+
+		var helpSelectBMModalDOM = document.getElementById("helpSelectBMModal");
+		function showQuestionnaire(){
+			$.ajax({
+				url: `{% url 'help_select_questions' bm.id %}`,
+				success: function (formContent) {
+					helpSelectBMModalDOM.querySelector('form').innerHTML = formContent;
+					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' })
+				}
+			});
+		}
+
+	$(document).on('change', '#id_model_name', function () {
+		document.getElementById("selected_model").innerHTML = ""
+		var modelChoice = $(this).val();  // get the selected model from the HTML input
+
+		if(modelChoice == ""){}
+		else if(modelChoice == "help_select")
+		{
+			showQuestionnaire()
+		}
+		else {
+			$.ajax({
+				url: `{% url 'ajax_bmodel_infos' %}`,
+				data: {
+					'model_choice': modelChoice
+				},
+				success: function (data) {
+					document.getElementById("selected_model").innerHTML = data
+				}
+			});
+		}
+	});
+
+	function suggestBusinessModel(event){
+		helpSelectBMModalDOM.querySelector('#helpSelectBMModalSubmitBtn').click()
+	}
+</script>
+
+<script>
+	// trigger the change function of the model selection to update display for preselected values
+	$("#id_model_name").change();
+</script>
+
+{% endblock end_body_scripts %}

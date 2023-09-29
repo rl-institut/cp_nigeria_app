@@ -1,5 +1,0 @@
-description,weight,score_allowed_values,category
-Could community projects be implemented successfully in the past?,0.125,"[[1.0, ""yes""], [0.0, ""no""]]",institutional
-Is there a cooperative or other institutional structure present in the community?,0.125,"[[1.0, ""yes""], [0.0, ""no""]]",institutional
-How would you rate the level of expertise regarding the regulatory environment in the mini-grid market of certain community members?,0.125,"[[1.0, ""High""], [0.5, “Medium”], [0.0, ""Low""]]",institutional
-What is the potential amount of equity that can be mobilized from the community?,0.5,,financial

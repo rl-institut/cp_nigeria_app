@@ -208,8 +208,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             existing_ess_asset = qs.get()
             ess_asset_children = Asset.objects.filter(parent_asset=existing_ess_asset.id)
             ess_capacity_asset = ess_asset_children.get(asset_type__asset_type="capacity")
-            ess_asset_children.get(asset_type__asset_type="charging_power")
-            ess_asset_children.get(asset_type__asset_type="discharging_power")
+            ess_charging_power_asset = ess_asset_children.get(asset_type__asset_type="charging_power")
+            ess_discharging_power_asset = ess_asset_children.get(asset_type__asset_type="discharging_power")
             # also get all child assets
             context["es_assets"].append(asset_type_name)
             context["form_storage"] = BessForm(
@@ -246,8 +246,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
     if request.method == "POST":
-        asset_forms = {"bess": BessForm, "pv_plant": PVForm, "diesel_generator": DieselForm}
-        print(request.POST)
+        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
         assets = request.POST.getlist("es_choice", [])
 
         qs = Bus.objects.filter(scenario=scenario)
@@ -308,7 +307,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         #
         #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
-    return None
 
 
 @login_required
@@ -412,20 +410,32 @@ def cpn_model_choice(request, proj_id, step_id=6):
         "step_list": CPN_STEP_VERBOSE,
     }
 
-    html_template = "cp_nigeria/steps/scenario_step6.html"
-
-    qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
+    html_template = "cp_nigeria/steps/scenario_model_choice.html"
 
     if request.method == "GET":
-        score = None
-        if qs_bm.exists():
-            bm = qs_bm.get()
-            score = bm.total_score
-        context["form"] = ModelSuggestionForm(score=score)
-        context["score"] = score
-        if score is not None:
-            context["recommanded_model"] = model_score_mapping(score)
-    return render(request, html_template, context)
+        bm, created = BusinessModel.objects.get_or_create(
+            scenario=project.scenario, defaults={"scenario": project.scenario}
+        )
+        context["form"] = ModelSuggestionForm(instance=bm)
+        context["bm"] = bm
+        context["score"] = bm.total_score
+
+        recommended = context["form"].fields["model_name"].initial
+        if recommended is not None:
+            context["recommanded_model"] = recommended
+            context["form"] = ModelSuggestionForm(instance=bm, initial={"model_name": recommended})
+        answer = render(request, html_template, context)
+
+    if request.method == "POST":
+        bm = BusinessModel.objects.get(scenario=project.scenario)
+        form = ModelSuggestionForm(request.POST, instance=bm)
+        if form.is_valid():
+            form.save()
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"] + 1]))
+        else:
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"] + 1]))
+
+    return answer
 
 
 @login_required
@@ -450,7 +460,7 @@ def cpn_outputs(request, proj_id, step_id=6):
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
     unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-    qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
     # TODO make this depend on the previous step user choice
     model = list(B_MODELS.keys())[3]
@@ -537,7 +547,7 @@ def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
 @require_http_methods(["GET", "POST"])
 def ajax_bmodel_infos(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        model = request.GET.get("consumer_type")
+        model = request.GET.get("model_choice")
 
         return render(
             request,
@@ -605,9 +615,9 @@ def cpn_kpi_results(request, proj_id=None):
         json.loads(kpi_cost_results_obj.cost_values)
 
         qs_res = FancyResults.objects.filter(simulation=sim)
-        qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
-        qs_res.get(asset="electricity_dc_excess").total_flow
-        qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+        opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
+        unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
+        unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
         kpis_of_interest = [
             "costs_total",
@@ -643,7 +653,6 @@ def cpn_kpi_results(request, proj_id=None):
                 }
             )
         table = {"General": kpis}
-        print(table)
 
         answer = JsonResponse(
             {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
@@ -687,8 +696,14 @@ def upload_demand_timeseries(request):
 def cpn_business_model(request):
     # TODO process this data
     if request.method == "POST":
-        model_type = request.POST.get("modelType")
-
-        return JsonResponse({"message": f"{model_type} model type"})
+        grid_condition = request.POST.get("grid_condition")
+        proj_id = int(request.POST.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        bm, created = BusinessModel.objects.get_or_create(
+            scenario=project.scenario, defaults={"scenario": project.scenario}
+        )
+        bm.grid_condition = grid_condition.lower()
+        bm.save()
+        return JsonResponse({"message": f"{grid_condition} model type"})
 
     return JsonResponse({"message": "Invalid request method"})

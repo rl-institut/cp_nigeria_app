@@ -15,22 +15,21 @@
             selectId: selectId,
             selectedValue: selectedValue,
         });
-        console.log(selectionHistory)
+        console.log(selectionHistory);
 
           // grey out previous select
-          $(this).prop('disabled', true)
+          $(this).prop('disabled', true);
 
           nextQuestion.show();
           console.log(selectId, selectedValue);
-
+          var modelType = "";
           // start an AJAX call with the business model and display next button if the user gets to the end of a tree path
           if (nextQuestion.attr('id') === ("grid_yes") || nextQuestion.attr('id') === ("model_interconnected")) {
-            var modelType = "Interconnected";
+            modelType = "interconnected";
             $('#next').show();
             sendAjaxCall(modelType);
-          } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no")
-          || nextQuestion.attr('id') === ("model_isolated")) {
-            var modelType = "Isolated";
+          } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no") || nextQuestion.attr('id') === ("model_isolated")) {
+            modelType = "isolated";
             $('#next').show();
             sendAjaxCall(modelType);
           }
@@ -39,8 +38,8 @@
           $.ajax({
             headers: {'X-CSRFToken': csrfToken },
             type: 'POST',
-            url: postUrl,
-            data: {modelType: modelType},
+            url: postUrlBusinessModel,
+            data: {grid_condition: modelType, proj_id: projId},
             success: function(response) {
             // Handle the response from the server if needed
             console.log('Data sent successfully:', response);
@@ -77,6 +76,6 @@
     //Redirect to next button below if next is clicked
         $('#next').on('click', function() {
             $("#next-button")[0].click();
-            console.log($("#next-button"))
+            console.log($("#next-button"));
     });
     });

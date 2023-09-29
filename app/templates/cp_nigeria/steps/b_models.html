@@ -1,0 +1,14 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+<h4> Model chosen: {{model_name}}</h4>
+
+<div style="display:flex;justify-content:center;align-content:center;padding-top:2rem;padding-bottom:2rem;">
+	<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
+</div>
+<h4>Description</h4>
+<div>
+	{{ model_description}}
+</div>

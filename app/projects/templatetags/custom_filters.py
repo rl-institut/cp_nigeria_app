@@ -38,9 +38,7 @@ def has_viewer_edit_rights(proj_id, user):
         if project.user == user:
             answer = True
         else:
-            qs = project.viewers.filter(
-                Q(user__email=user.email) & Q(share_rights="edit")
-            )
+            qs = project.viewers.filter(Q(user__email=user.email) & Q(share_rights="edit"))
             if qs.exists():
                 answer = True
     return answer
@@ -57,9 +55,7 @@ def has_viewer_read_rights(proj_id, user):
         if project.user == user:
             answer = True
         else:
-            qs = project.viewers.filter(
-                Q(user__email=user.email) & Q(share_rights="read")
-            )
+            qs = project.viewers.filter(Q(user__email=user.email) & Q(share_rights="read"))
             if qs.exists():
                 answer = True
     return answer
@@ -131,3 +127,14 @@ def is_technical_parameter(param):
 @register.filter
 def get_selected_scenarios(request, proj_id):
     return request.session.get("selected_scenarios", {}).get(str(proj_id))
+
+
+@register.filter
+def get_category(field_id, categories):
+    question_id = int(field_id.split("_")[1]) - 1
+    return categories[question_id]
+
+
+@register.filter
+def is_current_category(field_category, current_category):
+    return field_category == current_category
