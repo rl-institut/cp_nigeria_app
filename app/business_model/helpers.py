@@ -12,4 +12,4 @@ def model_score_mapping(score):
 
 
 def available_models(grid_condition):
-    return [(k, k.replace("_", " ")) for k in B_MODELS if B_MODELS[k]["Category"] == grid_condition.lower()]
+    return [(k, k.replace("_", " ")) for k in B_MODELS if B_MODELS[k]["Category"] == grid_condition]

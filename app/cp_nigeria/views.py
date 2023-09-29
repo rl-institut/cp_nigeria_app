@@ -208,8 +208,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             existing_ess_asset = qs.get()
             ess_asset_children = Asset.objects.filter(parent_asset=existing_ess_asset.id)
             ess_capacity_asset = ess_asset_children.get(asset_type__asset_type="capacity")
-            ess_asset_children.get(asset_type__asset_type="charging_power")
-            ess_asset_children.get(asset_type__asset_type="discharging_power")
+            ess_charging_power_asset = ess_asset_children.get(asset_type__asset_type="charging_power")
+            ess_discharging_power_asset = ess_asset_children.get(asset_type__asset_type="discharging_power")
             # also get all child assets
             context["es_assets"].append(asset_type_name)
             context["form_storage"] = BessForm(
@@ -246,7 +246,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
     if request.method == "POST":
-        asset_forms = {"bess": BessForm, "pv_plant": PVForm, "diesel_generator": DieselForm}
+        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
         print(request.POST)
         assets = request.POST.getlist("es_choice", [])
 
@@ -450,7 +450,7 @@ def cpn_outputs(request, proj_id, step_id=6):
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
     unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-    qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
     # TODO make this depend on the previous step user choice
     model = list(B_MODELS.keys())[3]
@@ -605,9 +605,9 @@ def cpn_kpi_results(request, proj_id=None):
         json.loads(kpi_cost_results_obj.cost_values)
 
         qs_res = FancyResults.objects.filter(simulation=sim)
-        qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
-        qs_res.get(asset="electricity_dc_excess").total_flow
-        qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+        opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
+        unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
+        unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
         kpis_of_interest = [
             "costs_total",
@@ -687,8 +687,15 @@ def upload_demand_timeseries(request):
 def cpn_business_model(request):
     # TODO process this data
     if request.method == "POST":
-        model_type = request.POST.get("modelType")
-
-        return JsonResponse({"message": f"{model_type} model type"})
+        grid_condition = request.POST.get("grid_condition")
+        proj_id = int(request.POST.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        # import pdb;pdb.set_trace()
+        bm, created = BusinessModel.objects.get_or_create(
+            scenario=project.scenario, defaults={"scenario": project.scenario}
+        )
+        bm.grid_condition = grid_condition.lower()
+        bm.save()
+        return JsonResponse({"message": f"{grid_condition} model type"})
 
     return JsonResponse({"message": "Invalid request method"})
