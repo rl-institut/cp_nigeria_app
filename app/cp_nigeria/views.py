@@ -1,9 +1,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 import logging
-import traceback
-from django.http import HttpResponseForbidden, JsonResponse
-from django.http.response import Http404
+from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
@@ -18,7 +16,7 @@ from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from business_model.models import *
 from projects.services import RenewableNinjas
-from projects.constants import DONE, PENDING, ERROR, MODIFIED
+from projects.constants import DONE, PENDING, ERROR
 from business_model.helpers import model_score_mapping
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS, B_MODELS
@@ -48,9 +46,7 @@ CPN_STEP_VERBOSE = {
 }
 
 # sorts the step names based on the order defined in STEP_MAPPING (for ribbon)
-CPN_STEP_VERBOSE = [
-    CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])
-]
+CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
 
 
 @require_http_methods(["GET"])
@@ -60,21 +56,12 @@ def home_cpn(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_grid_conditions(
-    request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]
-):
-    messages.info(
-        request, "Please include information about your connection to the grid."
-    )
+def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
+    messages.info(request, "Please include information about your connection to the grid.")
     return render(
         request,
-        f"cp_nigeria/steps/business_model_tree.html",
-        {
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "scen_id": scen_id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
+        "cp_nigeria/steps/business_model_tree.html",
+        {"proj_id": proj_id, "step_id": step_id, "scen_id": scen_id, "step_list": CPN_STEP_VERBOSE},
     )
 
 
@@ -85,10 +72,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
     if qs_project.exists():
         project = qs_project.get()
         if (project.user != request.user) and (
-            project.viewers.filter(
-                user__email=request.user.email, share_rights="edit"
-            ).exists()
-            is False
+            project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
         ):
             raise PermissionDenied
 
@@ -96,22 +80,15 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         project = None
 
     if request.method == "POST":
-        if project is not None:
-            form = ProjectForm(request.POST, instance=project)
-        else:
-            form = ProjectForm(request.POST)
+        form = ProjectForm(request.POST, instance=project) if project is not None else ProjectForm(request.POST)
 
         if form.is_valid():
             project = form.save(user=request.user)
-            return HttpResponseRedirect(
-                reverse("cpn_scenario_demand", args=[project.id])
-            )
+            return HttpResponseRedirect(reverse("cpn_scenario_demand", args=[project.id]))
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
-            form = ProjectForm(
-                instance=project, initial={"start_date": scenario.start_date}
-            )
+            form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
         else:
             form = ProjectForm()
     messages.info(
@@ -122,13 +99,8 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
     return render(
         request,
-        f"cp_nigeria/steps/scenario_create.html",
-        {
-            "form": form,
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
+        "cp_nigeria/steps/scenario_create.html",
+        {"form": form, "proj_id": proj_id, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
     )
 
 
@@ -140,7 +112,51 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
     # with option advanced_view set by user choice
-    form = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
+    if request.method == "POST":
+        formset_qs = ConsumerGroup.objects.filter(project=project)
+        formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+
+        for form in formset:
+            # set timeseries queryset so form doesn't throw a validation error
+            if f"{form.prefix}-consumer_type" in form.data:
+                try:
+                    consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
+                    form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
+                        consumer_type_id=consumer_type_id
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+            if form.is_valid():
+                # update consumer group if already in database and create new entry if not
+                try:
+                    group_id = form.cleaned_data["id"].id
+                    consumer_group = ConsumerGroup.objects.get(id=group_id)
+                    if form.cleaned_data["DELETE"] is True:
+                        consumer_group.delete()
+                    else:
+                        for field_name, field_value in form.cleaned_data.items():
+                            if field_name == "id":
+                                continue
+                        setattr(consumer_group, field_name, field_value)
+                        consumer_group.save()
+
+                # AttributeError gets thrown when form id field is empty -> not yet in db
+                except AttributeError:
+                    if form.cleaned_data["DELETE"] is True:
+                        continue
+
+                    consumer_group = form.save(commit=False)
+                    consumer_group.project = project
+                    consumer_group.save()
+
+        if formset.is_valid():
+            step_id = STEP_MAPPING["demand_profile"] + 1
+            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
+
+    elif request.method == "GET":
+        formset_qs = ConsumerGroup.objects.filter(project=proj_id)
+        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
 
     messages.info(
         request,
@@ -149,13 +165,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "survey data or available information about the community.",
     )
 
-    # TODO@Paula use a FormSet for the consumer groups instead of a custom made table structure
-
     return render(
         request,
-        f"cp_nigeria/steps/scenario_demand.html",
+        "cp_nigeria/steps/scenario_demand.html",
         {
-            "form": form,
+            "formset": formset,
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": project.scenario.id,
@@ -188,24 +202,14 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         asset_type_name = "bess"
 
-        qs = Asset.objects.filter(
-            scenario=scenario.id, asset_type__asset_type=asset_type_name
-        )
+        qs = Asset.objects.filter(scenario=scenario.id, asset_type__asset_type=asset_type_name)
 
         if qs.exists():
             existing_ess_asset = qs.get()
-            ess_asset_children = Asset.objects.filter(
-                parent_asset=existing_ess_asset.id
-            )
-            ess_capacity_asset = ess_asset_children.get(
-                asset_type__asset_type="capacity"
-            )
-            ess_charging_power_asset = ess_asset_children.get(
-                asset_type__asset_type="charging_power"
-            )
-            ess_discharging_power_asset = ess_asset_children.get(
-                asset_type__asset_type="discharging_power"
-            )
+            ess_asset_children = Asset.objects.filter(parent_asset=existing_ess_asset.id)
+            ess_capacity_asset = ess_asset_children.get(asset_type__asset_type="capacity")
+            ess_asset_children.get(asset_type__asset_type="charging_power")
+            ess_asset_children.get(asset_type__asset_type="discharging_power")
             # also get all child assets
             context["es_assets"].append(asset_type_name)
             context["form_storage"] = BessForm(
@@ -229,12 +233,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         else:
             context["form_bess"] = BessForm()
 
-        for asset_type_name, form in zip(
-            ["pv_plant", "diesel_generator"], [PVForm, DieselForm]
-        ):
-            qs = Asset.objects.filter(
-                scenario=scenario.id, asset_type__asset_type=asset_type_name
-            )
+        for asset_type_name, form in zip(["pv_plant", "diesel_generator"], [PVForm, DieselForm]):
+            qs = Asset.objects.filter(scenario=scenario.id, asset_type__asset_type=asset_type_name)
 
             if qs.exists():
                 existing_asset = qs.get()
@@ -242,15 +242,12 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 context[f"form_{asset_type_name}"] = form(instance=existing_asset)
 
             else:
-
                 context[f"form_{asset_type_name}"] = form()
 
-        return render(request, f"cp_nigeria/steps/scenario_components.html", context)
+        return render(request, "cp_nigeria/steps/scenario_components.html", context)
     if request.method == "POST":
-
-        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
+        asset_forms = {"bess": BessForm, "pv_plant": PVForm, "diesel_generator": DieselForm}
         print(request.POST)
-        # import pdb;pdb.set_trace()
         assets = request.POST.getlist("es_choice", [])
 
         qs = Bus.objects.filter(scenario=scenario)
@@ -258,19 +255,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         if qs.exists():
             bus_el = qs.get()
         else:
-            bus_el = Bus(
-                type="Electricity",
-                scenario=scenario,
-                pos_x=600,
-                pos_y=150,
-                name="el_bus",
-            )
+            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="el_bus")
             bus_el.save()
 
         for i, asset_name in enumerate(assets):
-            qs = Asset.objects.filter(
-                scenario=scenario, asset_type__asset_type=asset_name
-            )
+            qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first())
             else:
@@ -289,62 +278,37 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 asset.save()
                 if asset_name == "bess":
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="input_1",
-                        asset=asset,
-                        flow_direction="A2B",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="output_1",
-                        asset=asset,
-                        flow_direction="B2A",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
                     )
                 else:
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="input_1",
-                        asset=asset,
-                        flow_direction="A2B",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
 
         # Remove unselected assets
         for asset in Asset.objects.filter(
-            scenario=scenario.id,
-            asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"],
+            scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
         ):
             if asset.asset_type.asset_type not in assets:
                 asset.delete()
 
         #     if form.is_valid():
         #         # check whether the constraint is already associated to the scenario
-        #         qs = constraints_models[constraint_type].objects.filter(
-        #             scenario=scenario
-        #         )
         #         if qs.exists():
         #             if len(qs) == 1:
-        #                 constraint_instance = qs[0]
         #                 for name, value in form.cleaned_data.items():
         #                     if getattr(constraint_instance, name) != value:
-        #                         setattr(constraint_instance, name, value)
         #                         if qs_sim.exists():
-        #                             qs_sim.update(status=MODIFIED)
         #
-        #         else:
-        #             constraint_instance = form.save(commit=False)
-        #             constraint_instance.scenario = scenario
         #
         #         if constraint_type == "net_zero_energy":
-        #             constraint_instance.value = constraint_instance.activated
         #
-        #         constraint_instance.save()
         #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
-
-        # import pdb;pdb.set_trace()
+    return None
 
 
 @login_required
@@ -352,9 +316,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     project = get_object_or_404(Project, id=proj_id)
     scenario = project.scenario
-    messages.info(
-        request, "Please include any relevant constraints for the optimization."
-    )
+    messages.info(request, "Please include any relevant constraints for the optimization.")
 
     if request.method == "POST":
         form = EconomicDataForm(request.POST, instance=project.economic_data)
@@ -362,15 +324,13 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
+        return None
     elif request.method == "GET":
-
-        form = EconomicDataForm(
-            instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}
-        )
+        form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
 
         return render(
             request,
-            f"cp_nigeria/steps/scenario_system_params.html",
+            "cp_nigeria/steps/scenario_system_params.html",
             {
                 "proj_id": proj_id,
                 "step_id": step_id,
@@ -379,6 +339,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 "step_list": CPN_STEP_VERBOSE,
             },
         )
+    return None
 
 
 @login_required
@@ -390,7 +351,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
         raise PermissionDenied
 
     if request.method == "GET":
-        html_template = f"cp_nigeria/steps/simulation/no-status.html"
+        html_template = "cp_nigeria/steps/simulation/no-status.html"
         context = {
             "scenario": project.scenario,
             "scen_id": project.scenario.id,
@@ -432,6 +393,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
             print("no simulation existing")
 
         return render(request, html_template, context)
+    return None
 
 
 @login_required
@@ -455,7 +417,6 @@ def cpn_model_choice(request, proj_id, step_id=6):
     qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
     if request.method == "GET":
-        # html_template = "cp_nigeria/steps/scenario_step6.html"
         score = None
         if qs_bm.exists():
             bm = qs_bm.get()
@@ -471,7 +432,6 @@ def cpn_model_choice(request, proj_id, step_id=6):
 @require_http_methods(["GET", "POST"])
 def cpn_model_suggestion(request, bm_id):
     bm = get_object_or_404(BusinessModel, pk=bm_id)
-    scen_id = bm.scenario.id
     proj_id = bm.scenario.project.id
     return HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id]))
 
@@ -479,7 +439,6 @@ def cpn_model_suggestion(request, bm_id):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_outputs(request, proj_id, step_id=6):
-
     project = get_object_or_404(Project, id=proj_id)
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
@@ -491,9 +450,7 @@ def cpn_outputs(request, proj_id, step_id=6):
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
     unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-    unused_diesel = (
-        qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
-    )
+    qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
     # TODO make this depend on the previous step user choice
     model = list(B_MODELS.keys())[3]
@@ -530,11 +487,7 @@ CPN_STEPS = {
 }
 
 # sorts the order in which the views are served in cpn_steps (defined in STEP_MAPPING)
-CPN_STEPS = [
-    CPN_STEPS[k]
-    for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])
-    if k in CPN_STEPS
-]
+CPN_STEPS = [CPN_STEPS[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1]) if k in CPN_STEPS]
 
 
 @login_required
@@ -555,12 +508,10 @@ def get_pv_output(request, proj_id):
     location = RenewableNinjas()
     location.get_pv_output(coordinates)
     response = HttpResponse(
-        content_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'},
+        content_type="text/csv", headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'}
     )
     location.data.to_csv(response, index=False, sep=";")
-    plot_div = location.create_pv_graph()
-    # HttpResponseRedirect(reverse("home_cpn", args=[project.id]))
+    location.create_pv_graph()
     return response
 
 
@@ -572,18 +523,13 @@ def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
         # TODO change DB default value to 1
         # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
         # with option advanced_view set by user choice
-        form_ug = ConsumerGroupForm(
-            initial={"number_consumers": 1}, advanced_view=False
-        )
+        form_ug = ConsumerGroupForm(initial={"number_consumers": 1}, advanced_view=False)
         return render(
             request,
             "cp_nigeria/steps/consumergroup_form.html",
-            context={
-                "form": form_ug,
-                "scen_id": scen_id,
-                "unique_id": request.POST.get("ug_id"),
-            },
+            context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
         )
+    return None
 
 
 @login_required
@@ -603,6 +549,7 @@ def ajax_bmodel_infos(request):
                 "model_image_resp": B_MODELS[model]["Responsibilities"],
             },
         )
+    return None
 
 
 @login_required
@@ -611,30 +558,11 @@ def ajax_bmodel_infos(request):
 def ajax_load_timeseries(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         consumer_type_id = request.GET.get("consumer_type")
-        timeseries_qs = DemandTimeseries.objects.filter(
-            consumer_type_id=consumer_type_id
-        )
+        timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
         return render(
-            request,
-            "cp_nigeria/steps/timeseries_dropdown_options.html",
-            context={"timeseries_qs": timeseries_qs},
+            request, "cp_nigeria/steps/timeseries_dropdown_options.html", context={"timeseries_qs": timeseries_qs}
         )
-
-
-@login_required
-@json_view
-@require_http_methods(["POST"])
-def create_consumergroup(request, scen_id=None):
-    # todo use redirect or use pure ajax call without redirect like for assets saving
-    return {"status": 200}
-
-
-@login_required
-@json_view
-@require_http_methods(["POST"])
-def delete_consumergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options"""
-    return {"status": 200}
+    return None
 
 
 @login_required
@@ -650,9 +578,7 @@ def ajax_update_graph(request):
         elif timeseries.units == "kWh":
             timeseries_values = [value / 1000 for value in timeseries.values]
         else:
-            return JsonResponse(
-                {"error": "timeseries has unsupported unit"}, status=403
-            )
+            return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
 
         return JsonResponse({"timeseries_values": timeseries_values})
 
@@ -664,7 +590,6 @@ def ajax_update_graph(request):
 @require_http_methods(["GET"])
 def cpn_kpi_results(request, proj_id=None):
     project = get_object_or_404(Project, id=proj_id)
-    unit_conv = {"currency": project.economic_data.currency, "Factor": "%"}
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
@@ -675,18 +600,14 @@ def cpn_kpi_results(request, proj_id=None):
     if qs.exists():
         sim = qs.get()
         kpi_scalar_results_obj = KPIScalarResults.objects.get(simulation=sim)
-        kpi_scalar_values_dict = json.loads(kpi_scalar_results_obj.scalar_values)
+        json.loads(kpi_scalar_results_obj.scalar_values)
         kpi_cost_results_obj = KPICostsMatrixResults.objects.get(simulation=sim)
-        kpi_cost_values_dict = json.loads(kpi_cost_results_obj.cost_values)
+        json.loads(kpi_cost_results_obj.cost_values)
 
         qs_res = FancyResults.objects.filter(simulation=sim)
-        opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list(
-            "asset", "asset_type", "optimized_capacity"
-        )
-        unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-        unused_diesel = (
-            qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
-        )
+        qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
+        qs_res.get(asset="electricity_dc_excess").total_flow
+        qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
         kpis_of_interest = [
             "costs_total",
@@ -694,36 +615,21 @@ def cpn_kpi_results(request, proj_id=None):
             "total_emissions",
             "renewable_factor",
         ]
-        kpis_of_comparison_diesel = [
-            "costs_total",
-            "levelized_costs_of_electricity_equivalent",
-            "total_emissions",
-        ]
+        kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
 
-        # import pdb;pdb.set_trace()
-        diesel_results = json.loads(
-            KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values
-        )
-        scenario_results = json.loads(
-            KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values
-        )
+        diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
+        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values)
 
         kpis = []
         for kpi in kpis_of_interest:
-
-            unit = KPI_PARAMETERS[kpi]["unit"].replace(
-                "currency", project.economic_data.currency_symbol
-            )
+            unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
             if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
                 factor = 100.0
                 unit = "%"
             else:
                 factor = 1.0
 
-            scen_values = [
-                round(scenario_results[kpi] * factor, 2),
-                round(diesel_results[kpi] * factor, 2),
-            ]
+            scen_values = [round(scenario_results[kpi] * factor, 2), round(diesel_results[kpi] * factor, 2)]
             if kpi not in kpis_of_comparison_diesel:
                 scen_values[1] = ""
 
@@ -738,21 +644,12 @@ def cpn_kpi_results(request, proj_id=None):
             )
         table = {"General": kpis}
         print(table)
-        # import pdb;pdb.set_trace()
 
         answer = JsonResponse(
-            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]},
-            status=200,
-            content_type="application/json",
+            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
         )
 
     return answer
-
-
-def save_demand(request):
-    # TODO save either aggregated demand profile to database or full demand data (with all consumer groups) when the
-    #  user is finished
-    return {"status": 200}
 
 
 @json_view
@@ -782,11 +679,9 @@ def upload_demand_timeseries(request):
         if form.is_valid():
             ts = form.save(commit=True)
             ts.user = request.user
-
-
-def delete_usergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options"""
-    return {"status": 200}
+            return None
+        return None
+    return None
 
 
 def cpn_business_model(request):

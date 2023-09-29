@@ -2,8 +2,8 @@
 /* create a dependent dropdown for facility type depending on consumer type
 source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-implement-dependent-or-chained-dropdown-list-with-django.html */
 
-    $(document).on('change', '#id_consumer_type', function () {
-      console.log('selection changed')
+    $(document).on('change', 'select[id*="consumer_type"]', function () {
+      console.log('consumer type selection changed')
       var consumer_typeId = $(this).val();  // get the selected consumer_type ID from the HTML input
       var parentTr = $(this).closest('tr'); // Get the parent table row of the changed input
       // Find the corresponding timeseries input within the same div
@@ -20,5 +20,4 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
           timeseriesInput.change(); //trigger programatic change of the selection to update the graph
         }
       });
-
     });

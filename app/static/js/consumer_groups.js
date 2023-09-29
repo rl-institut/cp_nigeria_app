@@ -1,90 +1,58 @@
+// create a new row in the consumer groups table upon button click
+$(document).on('click', '#add-consumer-group', function() {
+    console.log('adding consumer group')
+    // Clone the first form in the formset
+    var formCount = $('#id_form-TOTAL_FORMS').val();
+    var newForm = $('#form-0').clone();
 
+    // Update the form prefixes and IDs
+    newForm.attr({'name': 'form-' + formCount, 'id': 'id_form-' + formCount})
+    newForm.find('input, select, div').each(function() {
+    if ($(this).is('input, select')) {
+        var name =  $(this).attr('name').replace('-0-', '-' + formCount + '-');
+        var id = 'id_' + name;
+            if (~name.indexOf("number_consumers")) {
+                $(this).attr({'name': name, 'id': id}).val('1');
+            } else {
+                $(this).attr({'name': name, 'id': id}).val('').removeAttr('value');
+            }
+    } else if ($(this).is('div')) {
+        if ($(this).attr('id')) {
+           var id =  $(this).attr('id').replace('-0-', '-' + formCount + '-');
+           $(this).attr({'id': id});
+        }
+    }
+    });
 
+    // Append the new form to the table
+    $('tbody').append(newForm);
 
-/* create a new div in the user groups container upon button click*/
-function addConsumerGroupDivToDOM(unique_id, consumerGroupDOMId="ug_container"){
-    console.log('add new consumer group')
-    var ugContainer = document.getElementById(consumerGroupDOMId)
+    // Update the total form count
+    $('#id_form-TOTAL_FORMS').val(parseInt(formCount) + 1);
+  });
 
-    const ug_next_id = unique_id ? "consumer-group" + unique_id : "consumer-group" + (ugContainer.childElementCount + 1) ;
-    // generate html elements of a graph area
-    var newConsumerGroupDOM = ml("tr", { id: ug_next_id , class: "consumer--group", style: "height: fit-content;"});
-    // Note: postUrl and csrfToken are defined in scenario_step2.html
-    console.log(postUrl)
-    $.ajax({
-            headers: {'X-CSRFToken': csrfToken },
-            type: "POST",
-            url: postUrl,
-            data: {
-              'ug_id': ug_next_id
-            },
-            success: function (formContent) {
-                newConsumerGroupDOM.innerHTML = formContent;
-                ugContainer.appendChild(newConsumerGroupDOM);
+$(document).on('click', '#delete-consumer-group', function() {
+        var consumerGroup = $(this).closest('tr');
+        var consumerGroupId = consumerGroup.attr('id');
+
+        if(confirm("Are you sure? This action cannot be undone")){
+
+            $('#' + consumerGroupId).hide();
+            $('#' + consumerGroupId + '-DELETE').val("true");
+            console.log("deleting " + consumerGroupId);
+            deleteTrace(consumerGroupId)
+
             }
         });
 
-
-    return ug_next_id
-}
-
-// TODO these 2 functions are copy pasted from report_items.js, they could be placed into a separate utils.js
-// TODO for the time being copy-pasting is ok
-
-// credits: https://idiallo.com/javascript/create-dom-elements-faster
-function ml(tagName, props, nest) {
-    var el = document.createElement(tagName);
-    if(props) {
-        for(var name in props) {
-            if(name.indexOf("on") === 0) {
-                el.addEventListener(name.substr(2).toLowerCase(), props[name], false)
-            } else {
-                el.setAttribute(name, props[name]);
-            }
+// function to delete extra empty form when db data is being loaded
+// TODO find a more elegant solution; i could not figure out how to fix this is the views/forms
+function deleteEmptyForm() {
+        var formCount = $('#id_form-TOTAL_FORMS').val();
+        var lastFormId = formCount - 1;
+        if (formCount > 1) {
+            var consumerGroupId = "form-" + lastFormId;
+            $('#' + consumerGroupId).hide();
+            $('#' + consumerGroupId + '-DELETE').val("true");
         }
-    }
-    if (!nest) {
-        return el;
-    }
-    return nester(el, nest)
 }
-
-// credits: https://idiallo.com/javascript/create-dom-elements-faster
-function nester(el, n) {
-    if (typeof n === "string") {
-        var t = document.createTextNode(n);
-        el.appendChild(t);
-    } else if (n instanceof Array) {
-        for(var i = 0; i < n.length; i++) {
-            if (typeof n[i] === "string") {
-                var t = document.createTextNode(n[i]);
-                el.appendChild(t);
-            } else if (n[i] instanceof Node){
-                el.appendChild(n[i]);
-            }
-        }
-    } else if (n instanceof Node){
-        el.appendChild(n)
-    }
-    return el;
-}
-
-
-function addDummyPlot(x, timeseries) {
-    var data = [{
-    x: x,
-    y: timeseries,
-    mode: "lines",
-    type: "scatter"
-    }];
-
-    var layout = {
-    xaxis: {range: [0, 8760], title: "Time"},
-    yaxis: {range: [0, 6000], title: "kWh"},
-    title: "Load profile (Year)"
-    };
-
-    Plotly.newPlot("Dummy", data, layout)
-
-}
-
