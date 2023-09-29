@@ -423,6 +423,7 @@ def cpn_model_choice(request, proj_id, step_id=6):
         recommended = context["form"].fields["model_name"].initial
         if recommended is not None:
             context["recommanded_model"] = recommended
+            context["form"] = ModelSuggestionForm(instance=bm, initial={"model_name": recommended})
         answer = render(request, html_template, context)
 
     if request.method == "POST":
