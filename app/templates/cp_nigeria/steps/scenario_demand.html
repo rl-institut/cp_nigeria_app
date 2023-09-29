@@ -10,7 +10,6 @@
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
     const updateGraphUrl = '{% url 'ajax_update_graph' %}';
-    const urlDeleteConsumerGroup = `{% url 'delete_consumergroup' scen_id %}`;
 </script>
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>

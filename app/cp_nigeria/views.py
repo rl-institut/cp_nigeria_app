@@ -61,12 +61,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
     return render(
         request,
         "cp_nigeria/steps/business_model_tree.html",
-        {
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "scen_id": scen_id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
+        {"proj_id": proj_id, "step_id": step_id, "scen_id": scen_id, "step_list": CPN_STEP_VERBOSE},
     )
 
 
@@ -105,12 +100,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
     return render(
         request,
         "cp_nigeria/steps/scenario_create.html",
-        {
-            "form": form,
-            "proj_id": proj_id,
-            "step_id": step_id,
-            "step_list": CPN_STEP_VERBOSE,
-        },
+        {"form": form, "proj_id": proj_id, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
     )
 
 
@@ -132,7 +122,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 try:
                     consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
                     form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
-                        consumer_type_id=consumer_type_id,
+                        consumer_type_id=consumer_type_id
                     )
                 except (ValueError, TypeError):
                     pass
@@ -238,7 +228,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     "optimize_cap": ess_capacity_asset.optimize_cap,
                     "soc_max": ess_capacity_asset.soc_max,
                     "soc_min": ess_capacity_asset.soc_min,
-                },
+                }
             )
         else:
             context["form_bess"] = BessForm()
@@ -265,13 +255,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         if qs.exists():
             bus_el = qs.get()
         else:
-            bus_el = Bus(
-                type="Electricity",
-                scenario=scenario,
-                pos_x=600,
-                pos_y=150,
-                name="el_bus",
-            )
+            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="el_bus")
             bus_el.save()
 
         for i, asset_name in enumerate(assets):
@@ -294,32 +278,19 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 asset.save()
                 if asset_name == "bess":
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="input_1",
-                        asset=asset,
-                        flow_direction="A2B",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="output_1",
-                        asset=asset,
-                        flow_direction="B2A",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
                     )
                 else:
                     ConnectionLink.objects.create(
-                        bus=bus_el,
-                        bus_connection_port="input_1",
-                        asset=asset,
-                        flow_direction="A2B",
-                        scenario=scenario,
+                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
 
         # Remove unselected assets
         for asset in Asset.objects.filter(
-            scenario=scenario.id,
-            asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"],
+            scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
         ):
             if asset.asset_type.asset_type not in assets:
                 asset.delete()
@@ -338,7 +309,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
     return None
-
 
 
 @login_required
@@ -408,7 +378,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
                     "secondsElapsed": simulation.elapsed_seconds,
                     "rating": simulation.user_rating,
                     "mvs_token": simulation.mvs_token,
-                },
+                }
             )
 
             if simulation.status == ERROR:
@@ -538,8 +508,7 @@ def get_pv_output(request, proj_id):
     location = RenewableNinjas()
     location.get_pv_output(coordinates)
     response = HttpResponse(
-        content_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'},
+        content_type="text/csv", headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'}
     )
     location.data.to_csv(response, index=False, sep=";")
     location.create_pv_graph()
@@ -558,11 +527,7 @@ def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
         return render(
             request,
             "cp_nigeria/steps/consumergroup_form.html",
-            context={
-                "form": form_ug,
-                "scen_id": scen_id,
-                "unique_id": request.POST.get("ug_id"),
-            },
+            context={"form": form_ug, "scen_id": scen_id, "unique_id": request.POST.get("ug_id")},
         )
     return None
 
@@ -595,27 +560,9 @@ def ajax_load_timeseries(request):
         consumer_type_id = request.GET.get("consumer_type")
         timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
         return render(
-            request,
-            "cp_nigeria/steps/timeseries_dropdown_options.html",
-            context={"timeseries_qs": timeseries_qs},
+            request, "cp_nigeria/steps/timeseries_dropdown_options.html", context={"timeseries_qs": timeseries_qs}
         )
     return None
-
-
-@login_required
-@json_view
-@require_http_methods(["POST"])
-def create_consumergroup(request, scen_id=None):
-    # TODO use redirect or use pure ajax call without redirect like for assets saving
-    return {"status": 200}
-
-
-@login_required
-@json_view
-@require_http_methods(["POST"])
-def delete_consumergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the consumergroup top right menu options."""
-    return {"status": 200}
 
 
 @login_required
@@ -668,11 +615,7 @@ def cpn_kpi_results(request, proj_id=None):
             "total_emissions",
             "renewable_factor",
         ]
-        kpis_of_comparison_diesel = [
-            "costs_total",
-            "levelized_costs_of_electricity_equivalent",
-            "total_emissions",
-        ]
+        kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
 
         diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
         scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values)
@@ -686,10 +629,7 @@ def cpn_kpi_results(request, proj_id=None):
             else:
                 factor = 1.0
 
-            scen_values = [
-                round(scenario_results[kpi] * factor, 2),
-                round(diesel_results[kpi] * factor, 2),
-            ]
+            scen_values = [round(scenario_results[kpi] * factor, 2), round(diesel_results[kpi] * factor, 2)]
             if kpi not in kpis_of_comparison_diesel:
                 scen_values[1] = ""
 
@@ -700,24 +640,16 @@ def cpn_kpi_results(request, proj_id=None):
                     "unit": unit,
                     "scen_values": scen_values,
                     "description": KPI_PARAMETERS[kpi]["definition"],
-                },
+                }
             )
         table = {"General": kpis}
         print(table)
 
         answer = JsonResponse(
-            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]},
-            status=200,
-            content_type="application/json",
+            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
         )
 
     return answer
-
-
-def save_demand(request):
-    # TODO save either aggregated demand profile to database or full demand data (with all consumer groups) when the
-    #  user is finished
-    return {"status": 200}
 
 
 @json_view
@@ -734,7 +666,7 @@ def upload_demand_timeseries(request):
                 "end_time": "2023-01-31",
                 "open_source": True,
                 "units": "kWh",
-            },
+            }
         )
         context = {"form": form}
 
@@ -750,11 +682,6 @@ def upload_demand_timeseries(request):
             return None
         return None
     return None
-
-
-def delete_usergroup(request, scen_id=None):
-    """This ajax view is triggered by clicking on "delete" in the usergroup top right menu options."""
-    return {"status": 200}
 
 
 def cpn_business_model(request):
