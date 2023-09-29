@@ -247,7 +247,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
     if request.method == "POST":
         asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
-        print(request.POST)
         assets = request.POST.getlist("es_choice", [])
 
         qs = Bus.objects.filter(scenario=scenario)
@@ -308,7 +307,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         #
         #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
-    return None
 
 
 @login_required
@@ -414,17 +412,26 @@ def cpn_model_choice(request, proj_id, step_id=6):
 
     html_template = "cp_nigeria/steps/scenario_step6.html"
 
-    qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
-
     if request.method == "GET":
-        score = None
-        if qs_bm.exists():
-            bm = qs_bm.get()
-            score = bm.total_score
-        context["form"] = ModelSuggestionForm(score=score)
-        context["score"] = score
-        if score is not None:
-            context["recommanded_model"] = model_score_mapping(score)
+        bm, created = BusinessModel.objects.get_or_create(
+            scenario=project.scenario, defaults={"scenario": project.scenario}
+        )
+        score = bm.total_score
+        context["form"] = ModelSuggestionForm(score=score, grid_condition=bm.grid_condition)
+        context["bm"] = bm
+
+        recommended = context["form"].fields["model_name"].initial
+        print(recommended)
+        import pdb
+
+        pdb.set_trace()
+        if recommended is not None:
+            context["recommanded_model"] = recommended
+    if request.method == "POST":
+        # TODO fill here and move to next step
+        import pdb
+
+        pdb.set_trace()
     return render(request, html_template, context)
 
 
@@ -537,7 +544,7 @@ def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
 @require_http_methods(["GET", "POST"])
 def ajax_bmodel_infos(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        model = request.GET.get("consumer_type")
+        model = request.GET.get("model_choice")
 
         return render(
             request,
@@ -643,7 +650,6 @@ def cpn_kpi_results(request, proj_id=None):
                 }
             )
         table = {"General": kpis}
-        print(table)
 
         answer = JsonResponse(
             {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
@@ -690,7 +696,6 @@ def cpn_business_model(request):
         grid_condition = request.POST.get("grid_condition")
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
-        # import pdb;pdb.set_trace()
         bm, created = BusinessModel.objects.get_or_create(
             scenario=project.scenario, defaults={"scenario": project.scenario}
         )

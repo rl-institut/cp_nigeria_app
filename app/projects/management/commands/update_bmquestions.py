@@ -17,7 +17,7 @@ class Command(BaseCommand):
         for asset_params in assets:
             question_id = asset_params.pop("question_index")
             qs = BMQuestion.objects.filter(id=question_id)
-
+            asset_params["score_allowed_values"] = asset_params["score_allowed_values"].replace("'", '"')
             if qs.exists() is False:
                 new_asset = BMQuestion(**asset_params)
                 new_asset.save()

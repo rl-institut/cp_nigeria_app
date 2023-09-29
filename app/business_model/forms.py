@@ -18,13 +18,14 @@ class ModelSuggestionForm(ModelForm):
         grid_condition = kwargs.pop("grid_condition", None)
         super().__init__(*args, **kwargs)
         choices = self.fields["model_name"].choices
-        print(B_MODELS)
-        updated_choices = [choices[0]] + [
+
+        default_choices = [choices[0]] + [
             ("help_select", _("Assess whether your community is suitable for a community-led approach"))
         ]
-        self.fields["model_name"].choices = updated_choices + available_models(grid_condition)
-        if score is not None:
-            self.fields["model_name"].initial = model_score_mapping(score)
+        updated_choices = available_models(score, grid_condition)
+        self.fields["model_name"].choices = default_choices + updated_choices
+        if len(updated_choices) == 1:
+            self.fields["model_name"].initial = updated_choices[0][0]
 
 
 class BMQuestionForm(forms.Form):
@@ -39,7 +40,6 @@ class BMQuestionForm(forms.Form):
                 opts["initial"] = criteria.score
 
             if alv is not None:
-                # import pdb;pdb.set_trace()
                 try:
                     opts["choices"] = json.loads(alv)
 

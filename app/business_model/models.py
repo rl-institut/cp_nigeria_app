@@ -38,7 +38,8 @@ class BusinessModel(models.Model):
         total_score = 0
 
         for answer in self.user_answers.all():
-            total_score += answer.score * answer.question.criteria_weight
+            if answer.score is not None:
+                total_score += answer.score * answer.question.criteria_weight
         return total_score
 
 

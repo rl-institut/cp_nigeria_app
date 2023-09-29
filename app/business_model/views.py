@@ -5,6 +5,7 @@ import json
 import logging
 import traceback
 from django.http import HttpResponseForbidden, JsonResponse
+from django.template.loader import get_template
 from django.http.response import Http404
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -39,7 +40,22 @@ def help_select_questions(request, bm_id):
                 crit = qs.get(question__id=int(criteria_num.replace("criteria_", "")))
                 crit.score = score
                 crit.save(update_fields=["score"])
-            answer = HttpResponseRedirect(reverse("cpn_model_suggestion", args=[bm.id]))
+            proj_id = bm.scenario.project.id
+            answer = HttpResponseRedirect(reverse("cpn_model_choice", args=[proj_id]))
+        else:
+            criterias = BMQuestion.objects.all()
+            categories_map = [cat for cat in criterias.values_list("category", flat=True)]
+            categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
+            form_html = get_template("cp_nigeria/business_model/help_select_questions.html")
+            answer = JsonResponse(
+                {
+                    "success": False,
+                    "form_html": form_html.render(
+                        {"form": form, "categories_map": categories_map, "categories": categories}
+                    ),
+                },
+                status=422,
+            )
     else:
         qs = BMAnswer.objects.filter(business_model=bm)
 
@@ -50,19 +66,12 @@ def help_select_questions(request, bm_id):
 
                 criteria_params["business_model"] = bm
                 criteria_params["question"] = criteria
-
-                # if qs.exists() is False:
-
                 new_criteria = BMAnswer(**criteria_params)
                 new_criteria.save()
-                # else:
-                #     if update_assets is True:
-                #         qs.update(**criteria_params)
 
         categories_map = [cat for cat in criterias.values_list("category", flat=True)]
         categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
         form = BMQuestionForm(qs=BMAnswer.objects.filter(business_model=bm))
-
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             answer = render(
                 request,

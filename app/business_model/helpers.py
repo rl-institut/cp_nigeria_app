@@ -11,5 +11,14 @@ def model_score_mapping(score):
     return answer
 
 
-def available_models(grid_condition):
-    return [(k, k.replace("_", " ")) for k in B_MODELS if B_MODELS[k]["Category"] == grid_condition]
+def available_models(score, grid_condition):
+    models = []
+    for k in B_MODELS:
+        if B_MODELS[k]["Category"] == grid_condition:
+            if score >= 0.7:
+                if "cooperative" in B_MODELS[k]["Name"]:
+                    models.append((k, k.replace("_", " ")))
+            else:
+                if "cooperative" not in B_MODELS[k]["Name"]:
+                    models.append((k, k.replace("_", " ")))
+    return models

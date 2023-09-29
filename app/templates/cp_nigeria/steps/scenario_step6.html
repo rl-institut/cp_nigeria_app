@@ -15,7 +15,8 @@
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 {% block progression_content %}
 
-<a href="{% url 'business_model' scen_id %}"> help preselect the most appropriate model</a>
+{% include "modal_template.html" with id="helpSelectBMModal" modal_style_class="modal--gui" submit_btn_label="Save" title="Assess suitability for a community-led approach" custom_submit_function="suggestBusinessModel(event)"%}
+
 
 <form action="{% url 'cpn_model_choice' proj_id %}" method="POST">
 		{{ form }}
@@ -37,26 +38,55 @@
 
 
 {% block end_body_scripts %}
-<script>
-$(document).on('change', '#id_model_name', function () {
-	console.log('selection changed')
-	console.log($(this).val());
-	var consumer_typeId = $(this).val();  // get the selected consumer_type ID from the HTML input
-	// var parentTr = $(this).closest('tr'); // Get the parent table row of the changed input
-	// // Find the corresponding timeseries input within the same div
-	// var timeseriesInput = parentTr.find('select[name*="timeseries"]');
-	//
+<script src="{% static 'js/modal_utils.js' %}"></script>
 
-	$.ajax({                       // initialize an AJAX request
-		url: `{% url 'ajax_bmodel_infos' %}`,                    // set the url of the request (= localhost:8000/hr/ajax/load-facilities/)
-		data: {
-			'consumer_type': consumer_typeId       // add the consumer_type id to the GET parameters
-		},
-		success: function (data) {   // `data` is the return of the `load_facilities` view function
-			console.log(data);
-			document.getElementById("selected_model").innerHTML=data
+
+<script>
+	var helpSelectBMModalDOM = document.getElementById("helpSelectBMModal");
+	$(document).on('change', '#id_model_name', function () {
+		document.getElementById("selected_model").innerHTML = ""
+		console.log('selection changed')
+		console.log($(this).val());
+		var modelChoice = $(this).val();  // get the selected model from the HTML input
+
+		if(modelChoice == ""){}
+		else if(modelChoice == "help_select")
+		{
+			console.log("help select");
+
+			$.ajax({
+				url: `{% url 'help_select_questions' bm.id %}`,
+				success: function (formContent) {
+					console.log(formContent);
+					helpSelectBMModalDOM.querySelector('form').innerHTML = formContent;
+					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' })
+				}
+			});
+		}
+		else {
+			$.ajax({
+				url: `{% url 'ajax_bmodel_infos' %}`,
+				data: {
+					'model_choice': modelChoice
+				},
+				success: function (data) {
+					console.log(data);
+					document.getElementById("selected_model").innerHTML = data
+				}
+			});
 		}
 	});
-});
+
+	function suggestBusinessModel(event){
+		hideModal(modalId='helpSelectBMModal');
+		helpSelectBMModalDOM.querySelector('form').submit()
+	}
 </script>
+
+{% if recommanded_model %}
+<script>
+	$("#id_model_name").change();
+</script>
+{% endif %}
+
 {% endblock end_body_scripts %}

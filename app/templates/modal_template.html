@@ -11,7 +11,7 @@ submit_btn_label:
     the text displayed on the submit button of the modal's form
 title:
     the text display in the title bar of the modal
-form:
+form: (opt)
     a form to be displayed within the modal-body
 modal_style_class:
     the name of a custom class to add to the main div of the modal
@@ -33,7 +33,9 @@ custom_submit_function: (opt)
             <div class="modal-body">
                 <form method="POST" {% if enctype %} enctype="multipart/form-data" {% endif %}>
                     {% csrf_token %}
-                    {{ form|crispy }}
+                    {% if form %}
+                      {{ form|crispy }}
+                    {% endif %}
                     <button style="display:none;" type="submit" id="{{ id }}SubmitBtn"></button>
                 </form>
             </div>
