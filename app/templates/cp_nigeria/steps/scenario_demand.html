@@ -22,18 +22,18 @@
 <main>
     <div class="grid-container">
         <!--button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button-->
-        <button class="btn btn--medium btn--short" type="button" id="add-consumer-group">Add Consumer Group</button>
     </div>
 
     <form method="POST" id="consumer-group-form">
         {% csrf_token %}
         {{ formset.management_form | crispy}}
-        <table class="table" id="ug_container">
+        <table class="table" id="ug_container" style="margin-bottom: 0">
             <thead>
             <th></th>
             <th>Consumer type</th>
             <th>Demand profile</th>
             <th>Nr. of consumers</th>
+
             </thead>
             <tbody>
             {% for form in formset %}
@@ -60,7 +60,20 @@
             </tr>
             {% endfor %}
             </tbody>
+					<tfoot>
+   <tr>
+      <td colspan="4" style="text-align: center;padding-top:0">
+				<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
+								<span class="icon icon-add"></span>
+								Add Consumer Group
+							</button>
+
+			</td>
+   </tr>
+</tfoot>
         </table>
+
+
 
         </table>
         <div class="container">
