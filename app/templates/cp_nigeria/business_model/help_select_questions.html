@@ -5,17 +5,27 @@
 {% load custom_template_tags %}
 
 {% csrf_token %}
-<div class="container">
-	{% for cat in categories %}
-	<div class="row align-items-start">
-		<h3>{% translate cat %}</h3>
-		{% for field in form %}
-		{% if field.name|get_category:categories_map|is_current_category:cat %}
-		<div class="form-group{% if field.errors %} invalid{% endif %}">
-			{{ field|as_crispy_field }}
+<div class="container accordion" id="accordionQuestions">
+	{% for cat in categories_map %}
+	<div class="row align-items-start accordion-item">
+		<h3 class="accordion-header" id="heading-{{ forloop.counter }}">
+			<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse-{{ forloop.counter }}">
+				{% cat %}
+			</button>
+		</h3>
+
+		<div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionQuestions">
+			<div class="accordion-body">
+				{% for field in form %}
+				{% if field.name|get_category:categories_map|is_current_category:cat %}
+				<div class="form-group{% if field.errors %} invalid{% endif %}">
+					{{ field|as_crispy_field }}
+				</div>
+				{% endif %}
+				{% endfor %}
+			</div>
 		</div>
-		{% endif %}
-		{% endfor %}
+
 	</div>
 	{% endfor %}
 
