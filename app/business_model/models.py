@@ -15,6 +15,7 @@ from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
 from dashboard.helpers import B_MODELS
+from business_model.helpers import QUESTIONS_CATEGORIES
 
 
 class BusinessModel(models.Model):
@@ -60,14 +61,7 @@ class BMQuestion(models.Model):
         max_length=60,
         null=True,
         blank=False,
-        choices=(
-            ("dialogue", "Engagement, dialogue, and co-determination"),
-            ("steering", "Steering capacities"),
-            ("control", "Asserting control and credibility"),
-            ("institutional", "Supporting Institutional structures"),
-            ("economic", "Potential for economic co-benefits"),
-            ("financial", "Financial capacities"),
-        ),
+        choices=[(k, v) for k, v in QUESTIONS_CATEGORIES.items()],
     )
     description = models.TextField(null=False)
 

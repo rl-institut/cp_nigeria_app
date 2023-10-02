@@ -24,3 +24,21 @@ def available_models(score, grid_condition):
                 if "cooperative" not in B_MODELS[k]["Name"]:
                     models.append((k, k.replace("_", " ")))
     return models
+
+
+# QUESTIONS_CATEGORIES ={
+#             "dialogue": "Engagement, dialogue, and co-determination",
+#             "steering": "Steering capacities",
+#             "control": "Asserting control and credibility",
+#             "institutional": "Supporting Institutional structures",
+#             "economic": "Potential for economic co-benefits",
+#             "financial": "Financial capacities",
+# }
+QUESTIONS_CATEGORIES = {
+    "dialogue": "c",
+    "steering": "r",
+    "control": "r",
+    "institutional": "r",
+    "economic": "f",
+    "financial": "r",
+}
