@@ -17,6 +17,7 @@ from projects.models import *
 from business_model.models import *
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
+from projects.views import request_mvs_simulation, simulation_cancel
 from business_model.helpers import model_score_mapping
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS, B_MODELS
@@ -489,7 +490,7 @@ def cpn_model_suggestion(request, bm_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_outputs(request, proj_id, step_id=6):
+def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
@@ -548,6 +549,32 @@ def cpn_steps(request, proj_id, step_id=None):
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
     return CPN_STEPS[step_id - 1](request, proj_id, step_id)
+
+
+@login_required
+@require_http_methods(["GET"])
+def cpn_simulation_cancel(request, proj_id):
+    project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
+        raise PermissionDenied
+
+    simulation_cancel(request, project.scenario.id)
+
+    return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, STEP_MAPPING["simulation"]]))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cpn_simulation_request(request, proj_id=0):
+    project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
+        raise PermissionDenied
+
+    request_mvs_simulation(request, project.scenario.id)
+
+    return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, STEP_MAPPING["simulation"]]))
 
 
 @login_required
