@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 import logging
+import numpy as np
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -15,6 +16,7 @@ from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from business_model.models import *
+from cp_nigeria.models import ConsumerGroup
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
@@ -23,6 +25,19 @@ from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResul
 from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 
 logger = logging.getLogger(__name__)
+
+
+def get_aggregated_demand(proj_id):
+    total_demand = []
+    for cg in ConsumerGroup.objects.filter(project__id=proj_id):
+        timeseries_values = np.array(cg.timeseries.values)
+        if cg.timeseries.units == "Wh":
+            timeseries_values = np.array(cg.timeseries.values)
+        elif cg.imeseries.units == "kWh":
+            timeseries_values = timeseries_values / 1000
+        total_demand.append(timeseries_values)
+    return np.vstack(total_demand).sum(axis=0).tolist()
+
 
 STEP_MAPPING = {
     "choose_location": 1,
@@ -153,6 +168,16 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     consumer_group.save()
 
         if formset.is_valid():
+            # update demand if exists
+            qs_demand = Asset.objects.filter(
+                scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+            )
+            if qs_demand.exists():
+                total_demand = get_aggregated_demand(project.id)
+                demand = qs_demand.get()
+                demand.input_timeseries = json.dumps(total_demand)
+                demand.save()
+
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
@@ -264,6 +289,19 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         else:
             bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="electricity_bus")
             bus_el.save()
+
+        asset_type_name = "demand"
+
+        demand, created = Asset.objects.get_or_create(
+            scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
+        )
+        if created is True:
+            total_demand = get_aggregated_demand(project.id)
+            demand.input_timeseries = json.dumps(total_demand)
+            demand.save()
+            ConnectionLink.objects.create(
+                bus=bus_el, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
+            )
 
         for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
