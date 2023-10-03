@@ -353,6 +353,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         scenario=scenario,
                     )
 
+                if asset_name == "pv_plant":
+                    if asset.input_timeseries == []:
+                        asset.input_timeseries = json.dumps(np.random.random(8760).tolist())
+                        asset.save()
+
                 if asset_name == "bess":
                     ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
