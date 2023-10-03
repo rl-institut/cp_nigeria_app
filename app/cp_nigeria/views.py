@@ -246,19 +246,25 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 context[f"form_{asset_type_name}"] = form()
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
+
     if request.method == "POST":
         asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
-        assets = request.POST.getlist("es_choice", [])
+        # collect the assets selected by the user
+        user_assets = request.POST.getlist("es_choice", [])
 
-        qs = Bus.objects.filter(scenario=scenario)
+        # TODO add the grid option here
+        grid_option = request.POST.getlist("grid_option", [])
+        # add a form for energy price etc...
+
+        qs = Bus.objects.filter(scenario=scenario, type="Electricity")
 
         if qs.exists():
             bus_el = qs.get()
         else:
-            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="el_bus")
+            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="electricity_bus")
             bus_el.save()
 
-        for i, asset_name in enumerate(assets):
+        for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first())
@@ -276,6 +282,37 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 asset.pos_x = 400
                 asset.pos_y = 150 + i * 150
                 asset.save()
+
+                if asset_name == "diesel_generator":
+                    bus_diesel, _ = Bus.objects.get_or_create(
+                        type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
+                    )
+
+                    dso_diesel, _ = Asset.objects.get_or_create(
+                        energy_price="0",
+                        feedin_tariff="0",
+                        renewable_share=0,
+                        peak_demand_pricing=0,
+                        scenario=scenario,
+                        asset_type=AssetType.objects.get(asset_type="gas_dso"),
+                        name="diesel_fuel",
+                    )
+
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_diesel,
+                        bus_connection_port="input_1",
+                        asset=dso_diesel,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_diesel,
+                        bus_connection_port="output_1",
+                        asset=asset,
+                        flow_direction="B2A",
+                        scenario=scenario,
+                    )
+
                 if asset_name == "bess":
                     ConnectionLink.objects.create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
@@ -292,8 +329,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         for asset in Asset.objects.filter(
             scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
         ):
-            if asset.asset_type.asset_type not in assets:
+            if asset.asset_type.asset_type not in user_assets:
                 asset.delete()
+                if asset.asset_type.asset_type == "diesel_generator":
+                    Asset.objects.filter(asset_type__asset_type="gas_dso").delete()
+                    Bus.objects.filter(scenario=scenario, type="Gas").delete()
 
         #     if form.is_valid():
         #         # check whether the constraint is already associated to the scenario
