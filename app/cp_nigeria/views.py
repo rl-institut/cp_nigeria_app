@@ -293,6 +293,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         energy_price="0",
                         feedin_tariff="0",
                         renewable_share=0,
+                        peak_demand_pricing_period=1,
                         peak_demand_pricing=0,
                         scenario=scenario,
                         asset_type=AssetType.objects.get(asset_type="gas_dso"),
@@ -331,10 +332,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
         ):
             if asset.asset_type.asset_type not in user_assets:
-                asset.delete()
                 if asset.asset_type.asset_type == "diesel_generator":
                     Asset.objects.filter(asset_type__asset_type="gas_dso").delete()
                     Bus.objects.filter(scenario=scenario, type="Gas").delete()
+                asset.delete()
 
         #     if form.is_valid():
         #         # check whether the constraint is already associated to the scenario
