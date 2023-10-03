@@ -553,8 +553,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
 
-    # TODO make this depend on the previous step user choice
-    model = list(B_MODELS.keys())[3]
+    bm = BusinessModel.objects.get(scenario__project=project)
+    model = bm.model_name
     html_template = "cp_nigeria/steps/scenario_outputs.html"
 
     context = {
