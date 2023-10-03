@@ -59,16 +59,19 @@
 {% block step_footer %}
 <div class="step-footer">
 	<div>
-		{% if proj_id %}
-		{% if step_id > 1 %}
-		<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
-		{% endif %}
-		{% if step_id < step_list|length %}
-		<button id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
-		{% endif %}
-		{% endif %}
+		<div class="step-footer__left"></div>
+		<div class="step-footer__center">
+			{% if proj_id %}
+			{% if step_id > 1 %}
+			<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+			{% endif %}
+			{% if step_id < step_list|length %}
+			<button id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
+			{% endif %}
+			{% endif %}
+		</div>
+		<div class="step-footer__right"></div>
 	</div>
-</div>
 {% endblock step_footer %}
 
 
