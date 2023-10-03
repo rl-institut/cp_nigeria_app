@@ -501,7 +501,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
-    unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
+    bus_el_name = Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
+    unused_pv = qs_res.get(asset=f"{bus_el_name}_excess").total_flow
     unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
 
     # TODO make this depend on the previous step user choice
