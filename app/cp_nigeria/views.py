@@ -84,7 +84,8 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         if form.is_valid():
             project = form.save(user=request.user)
-            return HttpResponseRedirect(reverse("cpn_scenario_demand", args=[project.id]))
+            return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, step_id + 1]))
+
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
