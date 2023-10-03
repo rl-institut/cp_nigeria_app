@@ -672,9 +672,6 @@ def cpn_kpi_results(request, proj_id=None):
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
-    # 65 230 D
-    # 65 232 DBPV
-    # TODO get the 2 scenarios
     qs = Simulation.objects.filter(scenario=project.scenario)
     if qs.exists():
         sim = qs.get()
@@ -696,8 +693,8 @@ def cpn_kpi_results(request, proj_id=None):
         ]
         kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
 
-        diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
-        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values)
+        # diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
+        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
 
         kpis = []
         for kpi in kpis_of_interest:
@@ -708,9 +705,9 @@ def cpn_kpi_results(request, proj_id=None):
             else:
                 factor = 1.0
 
-            scen_values = [round(scenario_results[kpi] * factor, 2), round(diesel_results[kpi] * factor, 2)]
-            if kpi not in kpis_of_comparison_diesel:
-                scen_values[1] = ""
+            scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
+            # if kpi not in kpis_of_comparison_diesel:
+            #     scen_values[1] = ""
 
             kpis.append(
                 {
@@ -723,9 +720,8 @@ def cpn_kpi_results(request, proj_id=None):
             )
         table = {"General": kpis}
 
-        answer = JsonResponse(
-            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
-        )
+        # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
+        answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
 
     return answer
 
