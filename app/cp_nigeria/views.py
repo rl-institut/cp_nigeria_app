@@ -337,7 +337,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         asset_type=AssetType.objects.get(asset_type="gas_dso"),
                         name="diesel_fuel",
                     )
-
+                    # connect the diesel generator to the diesel bus and the electricity bus
                     ConnectionLink.objects.get_or_create(
                         bus=bus_diesel,
                         bus_connection_port="input_1",
@@ -359,6 +359,56 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         asset.save()
 
                 if asset_name == "bess":
+                    # Create the ess charging power
+                    ess_charging_power_asset = Asset(
+                        name=f"{asset.name} input power",
+                        asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # Create the ess discharging power
+                    ess_discharging_power_asset = Asset(
+                        name=f"{asset.name} output power",
+                        asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # Create the ess capacity
+                    ess_capacity_asset = Asset(
+                        name=f"{asset.name} capacity",
+                        asset_type=get_object_or_404(AssetType, asset_type="capacity"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # remove name property from the form
+                    form.cleaned_data.pop("name", None)
+                    # Populate all subassets properties
+                    for param, value in form.cleaned_data.items():
+                        setattr(ess_capacity_asset, param, value)
+
+                        # split efficiency between charge and discharge
+                        if param == "efficiency":
+                            value = np.sqrt(float(value))
+                        # for the charge and discharge set all costs to 0
+                        if param in ["capex_fix", "capex_var", "opex_fix"]:
+                            value = 0
+
+                        if ess_discharging_power_asset.has_parameter(param):
+                            setattr(ess_discharging_power_asset, param, value)
+
+                        # set dispatch price to 0 only for charging power
+                        if param == "opex_var":
+                            value = 0
+                        if ess_charging_power_asset.has_parameter(param):
+                            setattr(ess_charging_power_asset, param, value)
+
+                    ess_capacity_asset.save()
+                    ess_charging_power_asset.save()
+                    ess_discharging_power_asset.save()
+                    asset.name = "battery"
+                    asset.save()
+
+                    # connect the battery to the electricity bus
                     ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
@@ -366,6 +416,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
                     )
                 else:
+                    # connect the asset to the electricity bus
                     ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
