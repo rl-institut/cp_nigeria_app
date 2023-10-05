@@ -31,6 +31,23 @@ class ConsumerGroup(models.Model):
     expected_demand_increase = models.FloatField(blank=True, null=True)
 
 
+class Options(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    user_case = models.TextField(default="")
+    main_grid = models.BooleanField(null=True)
+
+    @property
+    def schema_name(self):
+        name = ""
+        if "diesel" in self.user_case:
+            name += "D"
+        if "pv" in self.user_case:
+            name += "PV"
+        if "bess" in self.user_case:
+            name += "B"
+        return f"{name}_case.svg"
+
+
 def copy_energy_system_from_usecase(usecase_name, scenario):
     """Given a scenario, copy the topology of the usecase"""
     # Filter the name of the project and the usecasename within this project

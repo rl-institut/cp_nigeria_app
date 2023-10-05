@@ -219,12 +219,19 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "in any combination.",
         )
 
+        qs_options = Options.objects.filter(project=project)
+        if qs_options.exists():
+            es_schema_name = qs_options.get().schema_name
+        else:
+            es_schema_name = None
+
         context = {
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
+            "es_schema_name": es_schema_name,
         }
 
         asset_type_name = "bess"
@@ -277,6 +284,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
         # collect the assets selected by the user
         user_assets = request.POST.getlist("es_choice", [])
+
+        # Options
+        options, _ = Options.objects.get_or_create(project=project)
+        options.user_case = json.dumps(user_assets)
+        options.save()
 
         # TODO add the grid option here
         grid_option = request.POST.getlist("grid_option", [])
@@ -463,6 +475,12 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     elif request.method == "GET":
         form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
 
+        qs_options = Options.objects.filter(project=project)
+        if qs_options.exists():
+            es_schema_name = qs_options.get().schema_name
+        else:
+            es_schema_name = None
+
         return render(
             request,
             "cp_nigeria/steps/scenario_system_params.html",
@@ -471,6 +489,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 "step_id": step_id,
                 "scen_id": scenario.id,
                 "form": form,
+                "es_schema_name": es_schema_name,
                 "step_list": CPN_STEP_VERBOSE,
             },
         )
@@ -608,6 +627,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     model = bm.model_name
     html_template = "cp_nigeria/steps/scenario_outputs.html"
 
+    qs_options = Options.objects.filter(project=project)
+    if qs_options.exists():
+        es_schema_name = qs_options.get().schema_name
+    else:
+        es_schema_name = None
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
@@ -618,6 +643,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "model_name": B_MODELS[model]["Name"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,

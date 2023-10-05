@@ -30,7 +30,9 @@
 			<p>The parameters about maintenance costs which are gathered on the other page could also be layed out here instead as option.</p>
 			<p><span>total daily demand</span> : XXXX</p>
 			<p><span>daily peak demand</span> : XXXX</p>
-			<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es">
+				{% if es_schema_name %}
+			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+				{% endif %}
 		  </div>
 		</div>
 
