@@ -20,16 +20,9 @@
         "consumer_type": "Public facility"
     }
 },
-{
-    "model": "cp_nigeria.consumertype",
-    "pk": 4,
-    "fields": {
-        "consumer_type": "Health facility"
-    }
-},
     {
     "model": "cp_nigeria.consumertype",
-    "pk": 5,
+    "pk": 4,
     "fields": {
         "consumer_type": "Machinery"
     }

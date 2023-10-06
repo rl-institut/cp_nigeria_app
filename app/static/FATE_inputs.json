@@ -1,0 +1,146 @@
+{
+    "demand_increase": {
+        "verbose": "Expected increase in mini grid demand per year",
+        "cell": null,
+        "value": null,
+        "unit": "kWh/year",
+        "source": "demand_data",
+        "default": null
+    },
+    "consumer_increase": {
+        "verbose": "Expected increase in number of mini grid consumers per year",
+        "cell": null,
+        "value": null,
+        "unit": "nr/year",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "nr_consumers_households": {
+        "verbose": "number of mini-grid consumers: households",
+        "cell": "N78",
+        "value": null,
+        "unit": "nr",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "nr_consumers_enterprises": {
+        "verbose": "number of mini-grid consumers: enterprises",
+        "cell": "N80",
+        "value": null,
+        "unit": "nr",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "nr_consumers_public": {
+        "verbose": "number of mini-grid consumers: public sector",
+        "cell": "N79",
+        "value": null,
+        "unit": "nr",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "total_demand_households": {
+        "verbose": "energy demand of consumers: households",
+        "cell": "M78",
+        "value": null,
+        "unit": "kWh/year",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "total_demand_enterprises": {
+        "verbose": "energy demand of consumers: enterprises",
+        "cell": "M80",
+        "value": null,
+        "unit": "kWh/year",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "total_demand_public": {
+        "verbose": "energy demand of consumers: public sector",
+        "cell": "M79",
+        "value": null,
+        "unit": "kWh/year",
+        "source":  "demand_data",
+        "default":  null
+    },
+    "fuel_price": {
+        "verbose": "Diesel fuel price",
+        "cell": "H94",
+        "value": null,
+        "unit": "NGN",
+        "source": "simulation_results",
+        "default": null
+    },
+    "fuel_consumption": {
+        "verbose": "Diesel fuel consumption",
+        "cell": "H95",
+        "value": null,
+        "unit": "l/year",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "pv_capacity": {
+        "verbose": "Solar PV capacity",
+        "cell": "H115",
+        "value": null,
+        "unit": "kWp",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "pv_invest_per_unit": {
+        "verbose": "Solar PV invest",
+        "cell": "H116",
+        "value": null,
+        "unit": "NGN/kWp",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "battery_capacity": {
+        "verbose": "Battery capacity",
+        "cell": "H117",
+        "value": null,
+        "unit": "kWh",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "battery_invest_per_unit": {
+        "verbose": "Battery invest",
+        "cell": "H118",
+        "value": null,
+        "unit": "NGN/kWh",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "inverter_capacity": {
+        "verbose": "Inverters or charge controller",
+        "cell": "H119",
+        "value": null,
+        "unit": "kVA",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "inverter_invest_per_unit": {
+        "verbose": "Inverters or charge controller invest",
+        "cell": "H120",
+        "value": null,
+        "unit": "NGN/kVa",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "genset_capacity": {
+        "verbose": "Diesel Genset",
+        "cell": "H121",
+        "value": null,
+        "unit": "kW",
+        "source":  "simulation_results",
+        "default": null
+    },
+    "genset_invest_per_unit": {
+        "verbose": "Diesel Genset invest",
+        "cell": "H122",
+        "value": null,
+        "unit": "NGN/kw",
+        "source":  "simulation_results",
+        "default": null
+    }
+}
