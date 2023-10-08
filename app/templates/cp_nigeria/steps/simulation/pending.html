@@ -27,14 +27,18 @@
     </main>
 {% endblock progression_content %}
 
-{% block footer %}
-    <footer class="simulation-footer">
-
-      <div>
-        <a class="btn btn--medium btn--hollow" href="{% url 'simulation_cancel' scen_id %}" onclick="return confirm('Are you sure?')">{% translate "Cancel simulation" %}</a>
-      </div>
-    </footer>
-{% endblock footer %}
+{% block step_footer %}
+<footer class="step-footer">
+	<div>
+		<div class="step-footer__left"></div>
+		<div class="step-footer__center">
+			<a class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
+			<a class="btn btn--medium btn--hollow" href="{% url 'cpn_simulation_cancel' proj_id %}" onclick="return confirm('Are you sure?')">{% translate "Cancel simulation" %}</a>
+		</div>
+		<div class="step-footer__right"></div>
+	</div>
+</footer>
+{% endblock step_footer %}
 
 {% block end_body_scripts %}
 {% if simulation_status == "PENDING" %}

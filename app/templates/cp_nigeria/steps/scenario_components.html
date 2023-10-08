@@ -71,8 +71,9 @@
 </fieldset>
     </div>
 		<div style="display:flex;justify-content:center;align-content:center;">
-			<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es" style="width:400px;">
-
+				{% if es_schema_name %}
+			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+				{% endif %}
 		</div>
     <div class="grid-container">
 
@@ -98,10 +99,3 @@
 
 {% block end_body_scripts %}
 {% endblock end_body_scripts %}
-
-
-
-
-
-
-

@@ -26,17 +26,17 @@
 {% endblock progression_content %}
 
 
-{% block footer %}
+{% block step_footer %}
 <footer class="step-footer">
   <div>
     <div class="step-footer__left"></div>
     <div class="step-footer__center">
 
-       <a class="btn btn--medium" href="{% url 'simulation_cancel' scen_id %}" onclick="return confirm('Are you sure?')">{% translate "Reset simulation" %}</a>
+       <a class="btn btn--medium" href="{% url 'cpn_simulation_cancel' proj_id %}" onclick="return confirm('Are you sure?')">{% translate "Reset simulation" %}</a>
         <a class="btn btn--medium btn--hollow" href="{% url 'view_mvs_data_input' scen_id %}" >{% translate "Proof parameters JSON file" %} </a>
         <a class="btn btn--medium btn--hollow btb--disabled" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}" >{% translate "Link to send bug report automatically" %} </a>
     </div>
     <div class="step-footer__right"></div>
   </div>
 </footer>
-{% endblock footer %}
+{% endblock step_footer %}

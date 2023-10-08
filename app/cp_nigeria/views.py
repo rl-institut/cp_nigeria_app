@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 import logging
+import numpy as np
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -15,13 +16,28 @@ from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from business_model.models import *
+from cp_nigeria.models import ConsumerGroup
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
+from projects.views import request_mvs_simulation, simulation_cancel
 from business_model.helpers import model_score_mapping
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 
 logger = logging.getLogger(__name__)
+
+
+def get_aggregated_demand(proj_id):
+    total_demand = []
+    for cg in ConsumerGroup.objects.filter(project__id=proj_id):
+        timeseries_values = np.array(cg.timeseries.values)
+        if cg.timeseries.units == "Wh":
+            timeseries_values = np.array(cg.timeseries.values)
+        elif cg.imeseries.units == "kWh":
+            timeseries_values = timeseries_values / 1000
+        total_demand.append(timeseries_values)
+    return np.vstack(total_demand).sum(axis=0).tolist()
+
 
 STEP_MAPPING = {
     "choose_location": 1,
@@ -84,7 +100,8 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         if form.is_valid():
             project = form.save(user=request.user)
-            return HttpResponseRedirect(reverse("cpn_scenario_demand", args=[project.id]))
+            return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, step_id + 1]))
+
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
@@ -151,6 +168,16 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     consumer_group.save()
 
         if formset.is_valid():
+            # update demand if exists
+            qs_demand = Asset.objects.filter(
+                scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+            )
+            if qs_demand.exists():
+                total_demand = get_aggregated_demand(project.id)
+                demand = qs_demand.get()
+                demand.input_timeseries = json.dumps(total_demand)
+                demand.save()
+
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
@@ -192,12 +219,19 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "in any combination.",
         )
 
+        qs_options = Options.objects.filter(project=project)
+        if qs_options.exists():
+            es_schema_name = qs_options.get().schema_name
+        else:
+            es_schema_name = None
+
         context = {
             "proj_id": proj_id,
             "step_id": step_id,
             "scen_id": scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
+            "es_schema_name": es_schema_name,
         }
 
         asset_type_name = "bess"
@@ -245,19 +279,43 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 context[f"form_{asset_type_name}"] = form()
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
+
     if request.method == "POST":
         asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
-        assets = request.POST.getlist("es_choice", [])
+        # collect the assets selected by the user
+        user_assets = request.POST.getlist("es_choice", [])
 
-        qs = Bus.objects.filter(scenario=scenario)
+        # Options
+        options, _ = Options.objects.get_or_create(project=project)
+        options.user_case = json.dumps(user_assets)
+        options.save()
+
+        # TODO add the grid option here
+        grid_option = request.POST.getlist("grid_option", [])
+        # add a form for energy price etc...
+
+        qs = Bus.objects.filter(scenario=scenario, type="Electricity")
 
         if qs.exists():
             bus_el = qs.get()
         else:
-            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="el_bus")
+            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="electricity_bus")
             bus_el.save()
 
-        for i, asset_name in enumerate(assets):
+        asset_type_name = "demand"
+
+        demand, created = Asset.objects.get_or_create(
+            scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
+        )
+        if created is True:
+            total_demand = get_aggregated_demand(project.id)
+            demand.input_timeseries = json.dumps(total_demand)
+            demand.save()
+            ConnectionLink.objects.create(
+                bus=bus_el, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
+            )
+
+        for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first())
@@ -275,15 +333,103 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 asset.pos_x = 400
                 asset.pos_y = 150 + i * 150
                 asset.save()
+
+                if asset_name == "diesel_generator":
+                    bus_diesel, _ = Bus.objects.get_or_create(
+                        type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
+                    )
+
+                    dso_diesel, _ = Asset.objects.get_or_create(
+                        energy_price="0",
+                        feedin_tariff="0",
+                        renewable_share=0,
+                        peak_demand_pricing_period=1,
+                        peak_demand_pricing=0,
+                        scenario=scenario,
+                        asset_type=AssetType.objects.get(asset_type="gas_dso"),
+                        name="diesel_fuel",
+                    )
+                    # connect the diesel generator to the diesel bus and the electricity bus
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_diesel,
+                        bus_connection_port="input_1",
+                        asset=dso_diesel,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_diesel,
+                        bus_connection_port="output_1",
+                        asset=asset,
+                        flow_direction="B2A",
+                        scenario=scenario,
+                    )
+
+                if asset_name == "pv_plant":
+                    if asset.input_timeseries == []:
+                        asset.input_timeseries = json.dumps(np.random.random(8760).tolist())
+                        asset.save()
+
                 if asset_name == "bess":
-                    ConnectionLink.objects.create(
+                    # Create the ess charging power
+                    ess_charging_power_asset = Asset(
+                        name=f"{asset.name} input power",
+                        asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # Create the ess discharging power
+                    ess_discharging_power_asset = Asset(
+                        name=f"{asset.name} output power",
+                        asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # Create the ess capacity
+                    ess_capacity_asset = Asset(
+                        name=f"{asset.name} capacity",
+                        asset_type=get_object_or_404(AssetType, asset_type="capacity"),
+                        scenario=scenario,
+                        parent_asset=asset,
+                    )
+                    # remove name property from the form
+                    form.cleaned_data.pop("name", None)
+                    # Populate all subassets properties
+                    for param, value in form.cleaned_data.items():
+                        setattr(ess_capacity_asset, param, value)
+
+                        # split efficiency between charge and discharge
+                        if param == "efficiency":
+                            value = np.sqrt(float(value))
+                        # for the charge and discharge set all costs to 0
+                        if param in ["capex_fix", "capex_var", "opex_fix"]:
+                            value = 0
+
+                        if ess_discharging_power_asset.has_parameter(param):
+                            setattr(ess_discharging_power_asset, param, value)
+
+                        # set dispatch price to 0 only for charging power
+                        if param == "opex_var":
+                            value = 0
+                        if ess_charging_power_asset.has_parameter(param):
+                            setattr(ess_charging_power_asset, param, value)
+
+                    ess_capacity_asset.save()
+                    ess_charging_power_asset.save()
+                    ess_discharging_power_asset.save()
+                    asset.name = "battery"
+                    asset.save()
+
+                    # connect the battery to the electricity bus
+                    ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
-                    ConnectionLink.objects.create(
+                    ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
                     )
                 else:
-                    ConnectionLink.objects.create(
+                    # connect the asset to the electricity bus
+                    ConnectionLink.objects.get_or_create(
                         bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
 
@@ -291,7 +437,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         for asset in Asset.objects.filter(
             scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
         ):
-            if asset.asset_type.asset_type not in assets:
+            if asset.asset_type.asset_type not in user_assets:
+                if asset.asset_type.asset_type == "diesel_generator":
+                    Asset.objects.filter(asset_type__asset_type="gas_dso").delete()
+                    Bus.objects.filter(scenario=scenario, type="Gas").delete()
                 asset.delete()
 
         #     if form.is_valid():
@@ -326,6 +475,12 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     elif request.method == "GET":
         form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
 
+        qs_options = Options.objects.filter(project=project)
+        if qs_options.exists():
+            es_schema_name = qs_options.get().schema_name
+        else:
+            es_schema_name = None
+
         return render(
             request,
             "cp_nigeria/steps/scenario_system_params.html",
@@ -334,6 +489,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 "step_id": step_id,
                 "scen_id": scenario.id,
                 "form": form,
+                "es_schema_name": es_schema_name,
                 "step_list": CPN_STEP_VERBOSE,
             },
         )
@@ -448,7 +604,7 @@ def cpn_model_suggestion(request, bm_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_outputs(request, proj_id, step_id=6):
+def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
@@ -459,12 +615,23 @@ def cpn_outputs(request, proj_id, step_id=6):
 
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
-    unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+    bus_el_name = Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
+    unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
+    if unused_pv.exists():
+        unused_pv = unused_pv.get().total_flow
+    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
+    if unused_diesel.exists():
+        unused_diesel = unused_diesel.get().total_flow
 
-    # TODO make this depend on the previous step user choice
-    model = list(B_MODELS.keys())[3]
+    bm = BusinessModel.objects.get(scenario__project=project)
+    model = bm.model_name
     html_template = "cp_nigeria/steps/scenario_outputs.html"
+
+    qs_options = Options.objects.filter(project=project)
+    if qs_options.exists():
+        es_schema_name = qs_options.get().schema_name
+    else:
+        es_schema_name = None
 
     context = {
         "proj_id": proj_id,
@@ -476,6 +643,7 @@ def cpn_outputs(request, proj_id, step_id=6):
         "model_name": B_MODELS[model]["Name"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,
@@ -507,6 +675,32 @@ def cpn_steps(request, proj_id, step_id=None):
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 1]))
 
     return CPN_STEPS[step_id - 1](request, proj_id, step_id)
+
+
+@login_required
+@require_http_methods(["GET"])
+def cpn_simulation_cancel(request, proj_id):
+    project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
+        raise PermissionDenied
+
+    simulation_cancel(request, project.scenario.id)
+
+    return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, STEP_MAPPING["simulation"]]))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cpn_simulation_request(request, proj_id=0):
+    project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (request.user not in project.viewers.all()):
+        raise PermissionDenied
+
+    request_mvs_simulation(request, project.scenario.id)
+
+    return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, STEP_MAPPING["simulation"]]))
 
 
 @login_required
@@ -603,9 +797,6 @@ def cpn_kpi_results(request, proj_id=None):
 
     if (project.user != request.user) and (request.user not in project.viewers.all()):
         raise PermissionDenied
-    # 65 230 D
-    # 65 232 DBPV
-    # TODO get the 2 scenarios
     qs = Simulation.objects.filter(scenario=project.scenario)
     if qs.exists():
         sim = qs.get()
@@ -616,8 +807,15 @@ def cpn_kpi_results(request, proj_id=None):
 
         qs_res = FancyResults.objects.filter(simulation=sim)
         opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
-        unused_pv = qs_res.get(asset="electricity_dc_excess").total_flow
-        unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess").get().total_flow
+        bus_el_name = (
+            Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
+        )
+        unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
+        if unused_pv.exists():
+            unused_pv = unused_pv.get().total_flow
+        unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
+        if unused_diesel.exists():
+            unused_diesel = unused_diesel.get().total_flow
 
         kpis_of_interest = [
             "costs_total",
@@ -627,8 +825,8 @@ def cpn_kpi_results(request, proj_id=None):
         ]
         kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
 
-        diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
-        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=232).scalar_values)
+        # diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
+        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
 
         kpis = []
         for kpi in kpis_of_interest:
@@ -639,9 +837,9 @@ def cpn_kpi_results(request, proj_id=None):
             else:
                 factor = 1.0
 
-            scen_values = [round(scenario_results[kpi] * factor, 2), round(diesel_results[kpi] * factor, 2)]
-            if kpi not in kpis_of_comparison_diesel:
-                scen_values[1] = ""
+            scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
+            # if kpi not in kpis_of_comparison_diesel:
+            #     scen_values[1] = ""
 
             kpis.append(
                 {
@@ -654,9 +852,8 @@ def cpn_kpi_results(request, proj_id=None):
             )
         table = {"General": kpis}
 
-        answer = JsonResponse(
-            {"data": table, "hdrs": ["Indicator", "Scen1", "Diesel only"]}, status=200, content_type="application/json"
-        )
+        # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
+        answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
 
     return answer
 

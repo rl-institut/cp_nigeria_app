@@ -215,14 +215,15 @@
 					<div class="chart__plot">
 						<h3 style="padding-left:5rem"> Energy system</h3>
 								<div style="display:flex;justify-content:center;align-content:center;">
-			<img class="img" src="{% static 'assets/gui/example.svg' %}" alt="example_es" style="width:400px;">
+													{% if es_schema_name %}
+			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es" style="width:400px;">
+				{% endif %}
 
 		</div>
 						<h3 style="padding-left:5rem"> Model choosen: {{model_name}}</h3>
 						{{ model_graph}}
 											<div style="display:flex;justify-content:center;align-content:center;">
 			<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
-<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image_resp}}" alt="example_es" style="width:400px;">
 
 		</div>
 						<h4 style="padding-left:5rem">Model description</h4>

@@ -38,13 +38,9 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
 
     # make sure the name is not already used by another bus
     form.full_clean()
-    qs = Bus.objects.filter(scenario=scenario, name=form.cleaned_data["name"]).exclude(
-        pk=asset_uuid
-    )
+    qs = Bus.objects.filter(scenario=scenario, name=form.cleaned_data["name"]).exclude(pk=asset_uuid)
     if qs.exists():
-        form.add_error(
-            "name", _("There is already a bus with this name in the scenario")
-        )
+        form.add_error("name", _("There is already a bus with this name in the scenario"))
     if form.is_valid():
         bus = form.save(commit=False)
         bus.scenario = scenario
@@ -54,22 +50,16 @@ def handle_bus_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None
             bus.input_ports = int(float(form.data["input_ports"]))
             bus.output_ports = int(float(form.data["output_ports"]))
         except Exception as ex:
-            logger.warning(
-                f"Failed to set positioning for bus {bus.name} in scenario: {scen_id}."
-            )
+            logger.warning(f"Failed to set positioning for bus {bus.name} in scenario: {scen_id}.")
         bus.save()
         qs_sim = Simulation.objects.filter(scenario=scenario)
         if not asset_uuid and qs_sim.exists():
-            AssetChangeTracker.objects.create(
-                simulation=scenario.simulation, name=bus.name, action=1
-            )
+            AssetChangeTracker.objects.create(simulation=scenario.simulation, name=bus.name, action=1)
         return JsonResponse({"success": True, "asset_id": bus.id}, status=200)
     logger.warning(f"The submitted bus has erroneous field values.")
 
     form_html = get_template("asset/bus_create_form.html")
-    return JsonResponse(
-        {"success": False, "form_html": form_html.render({"form": form})}, status=422
-    )
+    return JsonResponse({"success": False, "form_html": form_html.render({"form": form})}, status=422)
 
 
 def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
@@ -118,15 +108,10 @@ def track_asset_changes(scenario, param, form, existing_asset, new_value=None):
                 else:
                     qs_param.update(new_value=new_value)
             else:
-                raise ValueError(
-                    "There are too many parameters which should be singled out"
-                )
+                raise ValueError("There are too many parameters which should be singled out")
 
 
-def handle_storage_unit_form_post(
-    request, scen_id=0, asset_type_name="", asset_uuid=None
-):
-
+def handle_storage_unit_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None):
     input_output_mapping = {
         "inputs": request.POST.get("inputs", "").split(","),
         "outputs": request.POST.get("outputs", "").split(","),
@@ -142,13 +127,9 @@ def handle_storage_unit_form_post(
 
     # make sure the name is not already used by another asset
     form.full_clean()
-    qs = Asset.objects.filter(
-        scenario=scenario, name=form.cleaned_data["name"]
-    ).exclude(unique_id=asset_uuid)
+    qs = Asset.objects.filter(scenario=scenario, name=form.cleaned_data["name"]).exclude(unique_id=asset_uuid)
     if qs.exists():
-        form.add_error(
-            "name", _("There is already a storage with this name in the scenario")
-        )
+        form.add_error("name", _("There is already a storage with this name in the scenario"))
 
     if form.is_valid():
         try:
@@ -157,9 +138,7 @@ def handle_storage_unit_form_post(
                 existing_asset = get_object_or_404(Asset, unique_id=asset_uuid)
                 # existing_asset.delete()  # deletes also automatically all children using models.CASCADE
                 ess_asset = existing_asset
-                ess_capacity_asset = Asset.objects.get(
-                    parent_asset=ess_asset, asset_type__asset_type="capacity"
-                )
+                ess_capacity_asset = Asset.objects.get(parent_asset=ess_asset, asset_type__asset_type="capacity")
                 ess_charging_power_asset = Asset.objects.get(
                     parent_asset=ess_asset, asset_type__asset_type="charging_power"
                 )
@@ -174,9 +153,7 @@ def handle_storage_unit_form_post(
                 # Create the ESS Parent Asset
                 ess_asset = Asset.objects.create(
                     name=form.cleaned_data.pop("name"),
-                    asset_type=get_object_or_404(
-                        AssetType, asset_type=f"{asset_type_name}"
-                    ),
+                    asset_type=get_object_or_404(AssetType, asset_type=f"{asset_type_name}"),
                     pos_x=float(form.data["pos_x"]),
                     pos_y=float(form.data["pos_y"]),
                     unique_id=asset_uuid
@@ -189,18 +166,14 @@ def handle_storage_unit_form_post(
                 # Create the ess charging power
                 ess_charging_power_asset = Asset(
                     name=f"{ess_asset.name} input power",
-                    asset_type=get_object_or_404(
-                        AssetType, asset_type="charging_power"
-                    ),
+                    asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
                     scenario=scenario,
                     parent_asset=ess_asset,
                 )
                 # Create the ess discharging power
                 ess_discharging_power_asset = Asset(
                     name=f"{ess_asset.name} output power",
-                    asset_type=get_object_or_404(
-                        AssetType, asset_type="discharging_power"
-                    ),
+                    asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
                     scenario=scenario,
                     parent_asset=ess_asset,
                 )
@@ -215,11 +188,8 @@ def handle_storage_unit_form_post(
             qs_sim = Simulation.objects.filter(scenario=scenario)
             # Populate all subassets
             for param, value in form.cleaned_data.items():
-
                 if asset_uuid and qs_sim.exists():
-                    track_asset_changes(
-                        scenario, param, form, existing_asset=ess_capacity_asset
-                    )
+                    track_asset_changes(scenario, param, form, existing_asset=ess_capacity_asset)
                 setattr(ess_capacity_asset, param, value)
 
                 # split efficiency between charge and discharge
@@ -260,27 +230,18 @@ def handle_storage_unit_form_post(
             ess_charging_power_asset.save()
             ess_discharging_power_asset.save()
             if not asset_uuid and qs_sim.exists():
-                AssetChangeTracker.objects.create(
-                    simulation=scenario.simulation, name=ess_asset.name, action=1
-                )
-            return JsonResponse(
-                {"success": True, "asset_id": ess_asset.unique_id}, status=200
-            )
+                AssetChangeTracker.objects.create(simulation=scenario.simulation, name=ess_asset.name, action=1)
+            return JsonResponse({"success": True, "asset_id": ess_asset.unique_id}, status=200)
         except Exception as ex:
-            logger.warning(
-                f"Failed to create storage asset {ess_asset.name} in scenario: {scen_id}."
-            )
+            logger.warning(f"Failed to create storage asset {ess_asset.name} in scenario: {scen_id}.")
             return JsonResponse({"success": False, "exception": ex}, status=422)
 
     logger.warning(f"The submitted asset has erroneous field values.")
     form_html = get_template("asset/storage_asset_create_form.html")
-    return JsonResponse(
-        {"success": False, "form_html": form_html.render({"form": form})}, status=422
-    )
+    return JsonResponse({"success": False, "form_html": form_html.render({"form": form})}, status=422)
 
 
 def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=None):
-
     # collect the information about the connected nodes in the GUI
     input_output_mapping = {
         "inputs": json.loads(request.POST.get("inputs", "[]")),
@@ -311,13 +272,9 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
 
     # make sure the name is not already used by another asset
     form.full_clean()
-    qs = Asset.objects.filter(
-        scenario=scenario, name=form.cleaned_data["name"]
-    ).exclude(unique_id=asset_uuid)
+    qs = Asset.objects.filter(scenario=scenario, name=form.cleaned_data["name"]).exclude(unique_id=asset_uuid)
     if qs.exists():
-        form.add_error(
-            "name", _("There is already an asset with this name in the scenario")
-        )
+        form.add_error("name", _("There is already an asset with this name in the scenario"))
 
     if form.is_valid():
         qs_sim = Simulation.objects.filter(scenario=scenario)
@@ -335,14 +292,10 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
             asset.pos_x = float(form.data["pos_x"])
             asset.pos_y = float(form.data["pos_y"])
         except Exception as ex:
-            logger.warning(
-                f"Failed to set positioning for asset {asset.name} in scenario: {scen_id}."
-            )
+            logger.warning(f"Failed to set positioning for asset {asset.name} in scenario: {scen_id}.")
         asset.save()
         if not asset_uuid and qs_sim.exists():
-            AssetChangeTracker.objects.create(
-                simulation=scenario.simulation, name=asset.name, action=1
-            )
+            AssetChangeTracker.objects.create(simulation=scenario.simulation, name=asset.name, action=1)
         # will apply for he
         cop_calculator_id = request.POST.get("copId", "")
         if asset_type_name == "heat_pump" and cop_calculator_id != "":
@@ -354,9 +307,7 @@ def handle_asset_form_post(request, scen_id=0, asset_type_name="", asset_uuid=No
     logger.warning(f"The submitted asset has erroneous field values.")
 
     form_html = get_template("asset/asset_create_form.html")
-    return JsonResponse(
-        {"success": False, "form_html": form_html.render({"form": form})}, status=422
-    )
+    return JsonResponse({"success": False, "form_html": form_html.render({"form": form})}, status=422)
 
 
 def load_scenario_topology_from_db(scen_id):
@@ -384,9 +335,7 @@ def db_bus_nodes_to_list(scen_id):
                 "name": db_bus.name,
                 "bustype": db_bus.type,
                 "databaseId": db_bus.id,
-                "parent_asset_id": db_bus.parent_asset_id
-                if db_bus.parent_asset_id
-                else "",
+                "parent_asset_id": db_bus.parent_asset_id if db_bus.parent_asset_id else "",
             },
         }
         bus_nodes_list.append(db_bus_dict)
@@ -407,9 +356,7 @@ def db_asset_nodes_to_list(scen_id):
             "data": {
                 "name": db_asset.name,
                 "unique_id": db_asset.unique_id,
-                "parent_asset_id": db_asset.parent_asset_id
-                if db_asset.parent_asset_id
-                else "",
+                "parent_asset_id": db_asset.parent_asset_id if db_asset.parent_asset_id else "",
             },
         }
         asset_nodes_list.append(db_asset_dict)
@@ -463,9 +410,7 @@ def duplicate_scenario_objects(obj_list, scenario, asset_mapping_dict=None):
     # now properly update the parent id of all new storage assets
     for obj in storage_subasset_list:
         obj.parent_asset_id = (
-            asset_mapping_dict[obj.parent_asset_id]
-            if type(obj) == Bus
-            else mapping_dict[obj.parent_asset_id]
+            asset_mapping_dict[obj.parent_asset_id] if type(obj) == Bus else mapping_dict[obj.parent_asset_id]
         )
         obj.save()
 
@@ -510,6 +455,48 @@ def load_project_from_dict(model_data, user=None):
     return project.id
 
 
+def assign_busses(scenario, busses):
+    """Assign a list of busses produced by the export function"""
+
+    for bus_data in busses:
+        bus_inputs = bus_data.pop("inputs")
+        bus_outputs = bus_data.pop("outputs")
+        bus = Bus(**bus_data)
+        bus.scenario = scenario
+        bus.save()
+        for link_data in bus_inputs + bus_outputs:
+            asset_name = link_data.pop("asset")
+            new_connection = ConnectionLink(**link_data)
+            new_connection.scenario = scenario
+            new_connection.bus = bus
+            new_connection.asset = scenario.asset_set.get(name=asset_name)
+            new_connection.save()
+
+
+def assign_assets(scenario, assets):
+    """Assign a list of assets produced by the export function"""
+    # push the children asset at the end of the list to make sure we create the parents first
+    assets.sort(key=lambda asset_data: 1 if "parent_asset" in asset_data else 0)
+
+    for asset_data in assets:
+        if "parent_asset" in asset_data:
+            asset_data["parent_asset"] = Asset.objects.get(name=asset_data["parent_asset"], scenario=scenario)
+        asset_type = asset_data.pop("asset_info")
+        asset_data["asset_type"] = AssetType.objects.get(asset_type=asset_type["asset_type"])
+
+        COP_parameters = asset_data.pop("COP_parameters", None)
+
+        asset = Asset(**asset_data)
+        asset.scenario = scenario
+        asset.save()
+
+        if COP_parameters is not None:
+            COP_parameters["asset"] = asset
+            COP_parameters["scenario"] = scenario
+            cop_parameters = COPCalculator(**COP_parameters)
+            cop_parameters.save()
+
+
 def load_scenario_from_dict(model_data, user, project=None):
     """Create a new scenario for a user within a given project
 
@@ -540,44 +527,8 @@ def load_scenario_from_dict(model_data, user, project=None):
     scenario.project = project
     scenario.save()
 
-    # push the children asset at the end of the list to make sure we create the parents first
-    assets.sort(key=lambda asset_data: 1 if "parent_asset" in asset_data else 0)
-
-    for asset_data in assets:
-        if "parent_asset" in asset_data:
-            asset_data["parent_asset"] = Asset.objects.get(
-                name=asset_data["parent_asset"], scenario=scenario
-            )
-        asset_type = asset_data.pop("asset_info")
-        asset_data["asset_type"] = AssetType.objects.get(
-            asset_type=asset_type["asset_type"]
-        )
-
-        COP_parameters = asset_data.pop("COP_parameters", None)
-
-        asset = Asset(**asset_data)
-        asset.scenario = scenario
-        asset.save()
-
-        if COP_parameters is not None:
-            COP_parameters["asset"] = asset
-            COP_parameters["scenario"] = scenario
-            cop_parameters = COPCalculator(**COP_parameters)
-            cop_parameters.save()
-
-    for bus_data in busses:
-        bus_inputs = bus_data.pop("inputs")
-        bus_outputs = bus_data.pop("outputs")
-        bus = Bus(**bus_data)
-        bus.scenario = scenario
-        bus.save()
-        for link_data in bus_inputs + bus_outputs:
-            asset_name = link_data.pop("asset")
-            new_connection = ConnectionLink(**link_data)
-            new_connection.scenario = scenario
-            new_connection.bus = bus
-            new_connection.asset = scenario.asset_set.get(name=asset_name)
-            new_connection.save()
+    assign_assets(scenario, assets)
+    assign_busses(scenario, busses)
 
     return scenario.id
 
@@ -587,11 +538,7 @@ class NodeObject:
         self.name = node_data["name"]  # asset type name : e.g. bus, pv_plant, etc
         self.data = node_data["data"]  # name: eg. demand_01, parent_asset_id, unique_id
         self.db_obj_id = self.uuid_2_db_id(node_data)
-        self.group_id = (
-            node_data["data"]["parent_asset_id"]
-            if "parent_asset_id" in node_data["data"]
-            else None
-        )
+        self.group_id = node_data["data"]["parent_asset_id"] if "parent_asset_id" in node_data["data"] else None
         self.node_obj_type = "bus" if self.name == "bus" else "asset"
         self.inputs = node_data["inputs"]
         self.outputs = node_data["outputs"]
@@ -626,22 +573,16 @@ class NodeObject:
         for port_key, connections_list in self.outputs.items():
             for output_connection in connections_list:
                 # node_obj is a bus connecting to asset(s)
-                if self.node_obj_type == "bus" and isinstance(
-                    output_connection["node"], str
-                ):  # i.e. unique_id
+                if self.node_obj_type == "bus" and isinstance(output_connection["node"], str):  # i.e. unique_id
                     ConnectionLink.objects.create(
                         bus=get_object_or_404(Bus, pk=self.db_obj_id),
-                        asset=get_object_or_404(
-                            Asset, unique_id=output_connection["node"]
-                        ),
+                        asset=get_object_or_404(Asset, unique_id=output_connection["node"]),
                         flow_direction="B2A",
                         bus_connection_port=port_key,
                         scenario=get_object_or_404(Scenario, pk=scen_id),
                     )
                 # node_obj is an asset connecting to bus(ses)
-                elif self.node_obj_type != "bus" and isinstance(
-                    output_connection["node"], int
-                ):
+                elif self.node_obj_type != "bus" and isinstance(output_connection["node"], int):
                     ConnectionLink.objects.create(
                         bus=get_object_or_404(Bus, pk=output_connection["node"]),
                         asset=get_object_or_404(Asset, pk=self.db_obj_id),
@@ -658,19 +599,11 @@ class NodeObject:
         try:
             if self.node_obj_type == "asset":
                 asset = get_object_or_404(Asset, pk=self.db_obj_id)
-                asset.parent_asset_id = (
-                    node_to_db_mapping[self.group_id]["db_obj_id"]
-                    if self.group_id
-                    else None
-                )
+                asset.parent_asset_id = node_to_db_mapping[self.group_id]["db_obj_id"] if self.group_id else None
                 asset.save()
             else:  # i.e. "bus"
                 bus = get_object_or_404(Bus, pk=self.db_obj_id)
-                bus.parent_asset_id = (
-                    node_to_db_mapping[self.group_id]["db_obj_id"]
-                    if self.group_id
-                    else None
-                )
+                bus.parent_asset_id = node_to_db_mapping[self.group_id]["db_obj_id"] if self.group_id else None
                 bus.save()
         except KeyError:
             return {"success": False, "obj_type": self.node_obj_type}
@@ -684,12 +617,10 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
     """Delete Database Scenario Related Objects which are not in the topology before inserting or updating data."""
     all_scenario_assets = Asset.objects.filter(scenario_id=scenario_id)
     # dont include storage unit children assets
-    scenario_assets_ids_excluding_storage_children = all_scenario_assets.filter(
-        parent_asset=None
-    ).values_list("id", flat=True)
-    all_scenario_busses_ids = Bus.objects.filter(scenario_id=scenario_id).values_list(
+    scenario_assets_ids_excluding_storage_children = all_scenario_assets.filter(parent_asset=None).values_list(
         "id", flat=True
     )
+    all_scenario_busses_ids = Bus.objects.filter(scenario_id=scenario_id).values_list("id", flat=True)
 
     # lists the DB ids of the assets and busses coming from the topology
     topology_asset_ids = list()
@@ -700,21 +631,16 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
     for node in topo_node_list:
         if node.name != "bus" and node.db_obj_id:
             topology_asset_ids.append(node.db_obj_id)
-            asset_node_positions[node.db_obj_id] = dict(
-                pos_x=node.pos_x, pos_y=node.pos_y
-            )
+            asset_node_positions[node.db_obj_id] = dict(pos_x=node.pos_x, pos_y=node.pos_y)
         elif node.name == "bus" and node.db_obj_id:
             topology_busses_ids.append(node.db_obj_id)
-            bus_node_positions[node.db_obj_id] = dict(
-                pos_x=node.pos_x, pos_y=node.pos_y
-            )
+            bus_node_positions[node.db_obj_id] = dict(pos_x=node.pos_x, pos_y=node.pos_y)
 
     scenario = get_object_or_404(Scenario, id=scenario_id)
     qs_sim = Simulation.objects.filter(scenario=scenario)
 
     # deletes asset or bus which DB id is not in the topology anymore (was removed by user)
     for asset_id in scenario_assets_ids_excluding_storage_children:
-
         qs = Asset.objects.filter(id=asset_id)
         if asset_id not in topology_asset_ids:
             logger.debug(
@@ -723,16 +649,13 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             if qs_sim.exists():
                 for name in qs.values_list("name", flat=True):
                     # TODO export asset dto to be able to undo the changes
-                    AssetChangeTracker.objects.create(
-                        simulation=scenario.simulation, name=name, action=0
-                    )
+                    AssetChangeTracker.objects.create(simulation=scenario.simulation, name=name, action=0)
             qs.delete()
 
         else:
             qs.update(**asset_node_positions[asset_id])
 
     for bus_id in all_scenario_busses_ids:
-
         qs = Bus.objects.filter(id=bus_id)
         if bus_id not in topology_busses_ids:
             logger.debug(
@@ -741,9 +664,7 @@ def update_deleted_objects_from_database(scenario_id, topo_node_list):
             if qs_sim.exists():
                 for name in qs.values_list("name", flat=True):
                     # TODO export asset dto to be able to undo the changes
-                    AssetChangeTracker.objects.create(
-                        simulation=scenario.simulation, name=name, action=0
-                    )
+                    AssetChangeTracker.objects.create(simulation=scenario.simulation, name=name, action=0)
             qs.delete()
         else:
             qs.update(**bus_node_positions[bus_id])
@@ -757,15 +678,9 @@ def create_ESS_objects(all_ess_assets_node_list, scen_id):
     capacity_asset_id = AssetType.objects.get(asset_type="capacity")
 
     scenario_connection_links = ConnectionLink.objects.filter(scenario_id=scen_id)
-    cap_scenario_connection_links = scenario_connection_links.filter(
-        asset__asset_type=capacity_asset_id
-    )
-    charge_scenario_connection_links = scenario_connection_links.filter(
-        asset__asset_type=charging_power_asset_id
-    )
-    discharge_scenario_connection_links = scenario_connection_links.filter(
-        asset__asset_type=discharging_power_asset_id
-    )
+    cap_scenario_connection_links = scenario_connection_links.filter(asset__asset_type=capacity_asset_id)
+    charge_scenario_connection_links = scenario_connection_links.filter(asset__asset_type=charging_power_asset_id)
+    discharge_scenario_connection_links = scenario_connection_links.filter(asset__asset_type=discharging_power_asset_id)
 
     for asset in all_ess_assets_node_list:
         if asset.name == "capacity":
