@@ -696,7 +696,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     if options.community is not None:
                         community = options.community
                         asset.input_timeseries = community.pv_timeseries.values
-                        asset.save()
                     else:
                         if asset.input_timeseries == []:
                             qs_pv = Timeseries.objects.filter(scenario=project.scenario)
