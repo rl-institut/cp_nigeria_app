@@ -131,6 +131,9 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # with option advanced_view set by user choice
     if request.method == "POST":
         formset_qs = ConsumerGroup.objects.filter(project=project)
+        if project.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=project.community.id)
+
         formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
 
         for form in formset:
@@ -183,6 +186,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
     elif request.method == "GET":
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
+        if not formset_qs and project.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=project.community.id)
         formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
 
     messages.info(
