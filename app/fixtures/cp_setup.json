@@ -85,7 +85,7 @@
         }
     },
     {
-        "model": "projects.community",
+        "model": "cp_nigeria.community",
         "pk": 1,
         "fields": {
             "name": "Ebute-Ipare",
@@ -95,7 +95,7 @@
         }
     },
     {
-        "model": "projects.community",
+        "model": "cp_nigeria.community",
         "pk": 2,
         "fields": {
             "name": "Ezere",
@@ -105,7 +105,7 @@
         }
     },
     {
-        "model": "projects.community",
+        "model": "cp_nigeria.community",
         "pk": 3,
         "fields": {
             "name": "Usungwe",
@@ -115,7 +115,7 @@
         }
     },
     {
-        "model": "projects.community",
+        "model": "cp_nigeria.community",
         "pk": 4,
         "fields": {
             "name": "Unguwar Kure",
@@ -125,7 +125,7 @@
         }
     },
     {
-        "model": "projects.community",
+        "model": "cp_nigeria.community",
         "pk": 5,
         "fields": {
             "name": "Egbuniwa (Okpanam)",

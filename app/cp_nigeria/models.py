@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from projects.models import Timeseries, Project, Scenario, Community, Asset, Bus, UseCase
+from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 
 
@@ -17,6 +17,17 @@ class ConsumerType(models.Model):
 
 class DemandTimeseries(Timeseries):
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Community(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=50)
+    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.CASCADE, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    lon = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -36,6 +47,7 @@ class Options(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_case = models.TextField(default="")
     main_grid = models.BooleanField(null=True)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, blank=True, null=True)
 
     @property
     def schema_name(self):

@@ -39,14 +39,18 @@
             {% for form in formset %}
             <tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
                 <td>
+									{% if allow_edition %}
                 <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="icon icon-more"></span>
                 </button>
+
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
                     <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
                     <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
                 </ul>
+
                 <input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
+									{% endif %}
                 </td>
                     {% for field in form %}
                     {% if field.name != 'DELETE' and field.name != 'community' %}
@@ -62,6 +66,7 @@
             </tbody>
 					<tfoot>
    <tr>
+		 {% if allow_edition %}
       <td colspan="4" style="text-align: center;padding-top:0">
 				<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
 								<span class="icon icon-add"></span>
@@ -69,6 +74,7 @@
 							</button>
 
 			</td>
+		 {% endif %}
    </tr>
 </tfoot>
         </table>

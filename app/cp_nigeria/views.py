@@ -104,11 +104,17 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         if form.is_valid():
             project = form.save(user=request.user)
+            options, _ = Options.objects.get_or_create(project=project)
+            # import pdb;pdb.set_trace()
+            options.community = form.cleaned_data["community"]
+            options.save()
+
             return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, step_id + 1]))
 
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
+            # TODO initial depending on options.community
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
         else:
             form = ProjectForm()
@@ -135,7 +141,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # with option advanced_view set by user choice
     if request.method == "POST":
         formset_qs = ConsumerGroup.objects.filter(project=project)
-        if project.community is not None:
+        if options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=project.community.id)
 
         formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
@@ -192,9 +198,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
+        options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        if not formset_qs and project.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=project.community.id)
+        if not formset_qs:
+            if options_qs.exists():
+                formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
         formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
 
     messages.info(
@@ -213,6 +221,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
+            "allow_edition": not formset_qs.exists(),
         },
     )
 
@@ -739,13 +748,9 @@ def get_pv_output(request, proj_id):
 @json_view
 @require_http_methods(["GET", "POST"])
 def get_community_details(request):
-    community_id = request.GET.get('community_id')
+    community_id = request.GET.get("community_id")
     community = Community.objects.get(pk=community_id)
-    data = {
-        'name': community.name,
-        'latitude': community.lat,
-        'longitude': community.lon
-    }
+    data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
     return JsonResponse(data)
 
 
