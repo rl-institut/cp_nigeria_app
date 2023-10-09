@@ -5,7 +5,7 @@ POSTGRES = "postgres"
 MYSQL = "mysql"
 DB_CHOICES = (POSTGRES, MYSQL)
 
-LOGS = {"gui": "app", "db": "db", "server": "nginx", "queues": "djangoq"}
+LOGS = {"gui": "app", "db": "db", "server": "nginx", "queues": "djangoq", "lo": "libreoffice"}
 
 parser = argparse.ArgumentParser(
     prog="python deploy.py",
@@ -64,7 +64,6 @@ def get_docker_service_name(logs, db):
 
 
 if __name__ == "__main__":
-
     args = vars(parser.parse_args())
     db = args.get("database")
     docker_down = args.get("docker_down")
@@ -81,11 +80,8 @@ if __name__ == "__main__":
     list_cmds = []
 
     if docker_down is True:
-
         if (
-            input(
-                "This will delete the data in your open-plan app database, are you sure you want to proceed? (Y/[n])"
-            )
+            input("This will delete the data in your open-plan app database, are you sure you want to proceed? (Y/[n])")
             != "Y"
         ):
             exit()
@@ -95,20 +91,14 @@ if __name__ == "__main__":
         if docker_down is False:
             list_cmds.append(f"docker-compose --file=docker-compose-{db}.yml down")
         list_cmds.append(f"docker-compose --file=docker-compose-{db}.yml up -d --build")
-        list_cmds.append(
-            f"docker-compose --file=docker-compose-{db}.yml exec -u root {app_name} sh update_gui.sh"
-        )
+        list_cmds.append(f"docker-compose --file=docker-compose-{db}.yml exec -u root {app_name} sh update_gui.sh")
     else:
         if docker_down is False:
             log_service_name = get_docker_service_name(logs, db)
             if log_service_name is not None:
-                list_cmds.append(
-                    f"docker-compose --file=docker-compose-{db}.yml logs {log_service_name}"
-                )
+                list_cmds.append(f"docker-compose --file=docker-compose-{db}.yml logs {log_service_name}")
             else:
-                list_cmds.append(
-                    f"docker-compose --file=docker-compose-{db}.yml up -d --build"
-                )
+                list_cmds.append(f"docker-compose --file=docker-compose-{db}.yml up -d --build")
                 list_cmds.append(
                     f"docker-compose --file=docker-compose-{db}.yml exec -u root {app_name} sh initial_setup.sh"
                 )

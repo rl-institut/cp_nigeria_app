@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM python:3.9.5
 
 RUN echo POSTGRES
 ENV APP_ROOT /src
@@ -8,13 +8,10 @@ ENV PYTHONUNBUFFERED 1
 
 RUN mkdir ${CONFIG_ROOT}
 COPY requirements/postgres.txt ${CONFIG_ROOT}/requirements.txt
-RUN apt-get update -y
-RUN apt-get -y install python3 python3-pip
+
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r ${CONFIG_ROOT}/requirements.txt
 
-RUN apt install -y libreoffice libreoffice-script-provider-python python3-uno
-RUN pip install unotools
 WORKDIR ${APP_ROOT}
 
 ADD . ${APP_ROOT}
@@ -26,4 +23,4 @@ RUN adduser appuser --system --no-create-home --shell /bin/sh \
     && chown -R appuser ${APP_ROOT}
 USER appuser
 
-CMD ["python3", "manage.py", "collectstatic"]
+CMD ["python", "manage.py", "collectstatic"]

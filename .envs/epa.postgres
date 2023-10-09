@@ -1,6 +1,6 @@
 EPA_SECRET_KEY=v@p9^=@lc3#1u_xtx*^xhrv0f3fli1(+8ik^k@g-_bzmexb0$7n
 DEBUG=False
-TRUSTED_HOST=127.0.0.1:8080
+TRUSTED_HOST=127.0.0.1:8075
 EMAIL_HOST_IP=127.0.0.1
 USE_PROXY=False
 PROXY_ADDRESS=http://proxy_address:port
@@ -15,3 +15,4 @@ SQL_PASSWORD=dummy_pw
 SQL_HOST=db_pg
 SQL_PORT=5432
 DATABASE=postgres
+RN_API_TOKEN=7812cb589bfc247e81b109dadbfc91bf6a9a3950

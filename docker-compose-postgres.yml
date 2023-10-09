@@ -4,7 +4,7 @@ services:
 
   db_pg:
     image: postgres:14.3-alpine
-    container_name: open_plan_pg
+    container_name: cp_pg
     restart: always
     env_file:
       - .envs/db.postgres
@@ -13,12 +13,12 @@ services:
     volumes:
       - db_data_pg:/var/lib/postgresql/data/
     networks:
-      - open_plan_network_pg
+      - cp_network
   app_pg:
     build:
       context: ./app
       dockerfile: ./compose/production/app_postgres/Dockerfile
-    container_name: django-open_plan_pg
+    container_name: cp_django
     restart: always
     env_file:
       - .envs/epa.postgres
@@ -30,12 +30,12 @@ services:
     depends_on:
       - db_pg
     networks:
-      - open_plan_network_pg
+      - cp_network
   djangoq_pg:
     build:
       context: ./app
-      dockerfile: ./compose/production/app_postgres/Dockerfile
-    container_name: django-q-open_plan_pg
+      dockerfile: ./compose/production/app_postgres/Dockerfile_djangoq
+    container_name: cp_django-q
     restart: always
     env_file:
       - .envs/epa.postgres
@@ -48,24 +48,43 @@ services:
       - db_pg
       - app_pg
     networks:
-      - open_plan_network_pg
+      - cp_network
   nginx_pg:
     image: nginx:1.21-alpine
-    container_name: ngx_pg
+    container_name: cp_ngx
     restart: always
     ports:
-      - "8080:80"
+      - "8075:80"
+      - "8100:8100"
     volumes:
       - ./nginx/postgres:/etc/nginx/conf.d
       - static_volume_pg:/static
     depends_on:
       - app_pg
     networks:
-      - open_plan_network_pg
+      - cp_network
 
+  libreoffice:
+      image: lcrea/libreoffice-headless
+      networks:
+        - cp_network
+
+#  libreoffice:
+#    build:
+#      context: ./FATE_tool
+#      dockerfile: ./compose/production/app_postgres/Dockerfile
+#    container_name: libreoffice_pg
+#    env_file:
+#      - .envs/epa.postgres
+#    expose:
+#      - 8100
+#    depends_on:
+#      - app_pg
+#    networks:
+#      - open_plan_network_pg
 volumes:
   db_data_pg:
   static_volume_pg:
 
 networks:
-  open_plan_network_pg:
+  cp_network:
