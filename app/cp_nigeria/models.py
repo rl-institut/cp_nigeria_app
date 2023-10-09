@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase
+from projects.models import Timeseries, Project, Scenario, Community, Asset, Bus, UseCase
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 
 
@@ -29,6 +29,7 @@ class ConsumerGroup(models.Model):
     number_consumers = models.IntegerField()
     expected_consumer_increase = models.FloatField(blank=True, null=True)
     expected_demand_increase = models.FloatField(blank=True, null=True)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class Options(models.Model):

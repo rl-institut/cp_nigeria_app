@@ -12,6 +12,8 @@ CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
+    community = forms.ModelChoiceField(queryset=Community.objects.all(), required=False,
+                                       label="Pre-select a community (optional)")
     start_date = forms.DateField(
         label=_("Simulation start"),
         widget=forms.DateInput(

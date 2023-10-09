@@ -65,7 +65,18 @@ class Viewer(models.Model):
         return f"{self.user.email} [{self.share_rights}]"
 
 
+class Community(models.Model):
+    name = models.CharField(max_length=50)
+    pv_timeseries = models.IntegerField() # i removed the ForeignKey here to avoid circular import issues
+    lat = models.FloatField(blank=True, null=True)
+    lon = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=120)
@@ -770,3 +781,4 @@ class AbstractSimulation(models.Model):
 
     class Meta:
         abstract = True
+
