@@ -27,9 +27,13 @@ from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 logger = logging.getLogger(__name__)
 
 
-def get_aggregated_demand(proj_id):
+def get_aggregated_demand(proj_id=None, community_id=None):
     total_demand = []
-    for cg in ConsumerGroup.objects.filter(project__id=proj_id):
+    if proj_id:
+        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
+    elif community_id:
+        cg_qs = ConsumerGroup.objects.filter(community=community_id)
+    for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
         if cg.timeseries.units == "Wh":
             timeseries_values = np.array(cg.timeseries.values)
@@ -176,7 +180,10 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
             )
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(project.id)
+                if project.community is not None:
+                    total_demand = get_aggregated_demand(community_id=project.community.id)
+                else:
+                    total_demand = get_aggregated_demand(proj_id=project.id)
                 demand = qs_demand.get()
                 demand.input_timeseries = json.dumps(total_demand)
                 demand.save()
@@ -313,7 +320,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
         )
         if created is True:
-            total_demand = get_aggregated_demand(project.id)
+            if project.community is not None:
+                total_demand = get_aggregated_demand(community_id=project.community.id)
+            else:
+                total_demand = get_aggregated_demand(project.id)
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
             ConnectionLink.objects.create(
@@ -371,8 +381,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     )
 
                 if asset_name == "pv_plant":
-                    if asset.input_timeseries == []:
-                        asset.input_timeseries = json.dumps(np.random.random(8760).tolist())
+                    if project.community is not None:
+                        community = Community.objects.get(pk=project.community.id)
+                        asset.input_timeseries = Timeseries.objects.get(pk=community.pv_timeseries).values
                         asset.save()
 
                 if asset_name == "bess":
