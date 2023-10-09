@@ -721,6 +721,20 @@ def get_pv_output(request, proj_id):
 
 @login_required
 @json_view
+@require_http_methods(["GET", "POST"])
+def get_community_details(request):
+    community_id = request.GET.get('community_id')
+    community = Community.objects.get(pk=community_id)
+    data = {
+        'name': community.name,
+        'latitude': community.lat,
+        'longitude': community.lon
+    }
+    return JsonResponse(data)
+
+
+@login_required
+@json_view
 @require_http_methods(["POST"])
 def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

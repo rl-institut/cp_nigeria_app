@@ -21,3 +21,23 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
         }
       });
     });
+
+
+// dependent dropdown to pre-fill form coordinates depending on selected community
+    $(document).on('change', '#id_community', function() {
+            console.log('fetching community info')
+            var communityId = $(this).val();
+            // Make an AJAX request to fetch community details based on communityId
+            $.ajax({
+                url: getCommunityDetails,  // URL to fetch community details (create a Django view for this)
+                data: {
+                    community_id: communityId
+                },
+                success: function(data) {
+                    // Update the name, latitude, and longitude fields in the form
+                    $('#id_name').val(data.name);
+                    $('#id_latitude').val(data.latitude);
+                    $('#id_longitude').val(data.longitude);
+                }
+            });
+        });

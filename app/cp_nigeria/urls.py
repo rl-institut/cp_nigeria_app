@@ -5,7 +5,7 @@ urlpatterns = [
     path("", home_cpn, name="home_cpn"),
     # steps
     path("<int:proj_id>/edit/step/<int:step_id>", cpn_steps, name="cpn_steps"),
-    path("<int:proj_id>/edit/<int:scen_id>/step/<int:step_id>", cpn_steps, name="cpn_steps"),
+    path("<int:proj_id>/edit/<int:community_id>/step/<int:step_id>", cpn_steps, name="cpn_steps"),
     path("new/scenario", cpn_scenario_create, name="cpn_new_scenario"),
     path("<int:proj_id>/edit/create", cpn_scenario_create, name="cpn_scenario_create"),
     path("<int:proj_id>/edit/submit", cpn_scenario_create, name="cpn_scenario_create"),
@@ -23,6 +23,7 @@ urlpatterns = [
     path("ajax/load-timeseries", ajax_load_timeseries, name="ajax_load_timeseries"),
     path("ajax/update-graph", ajax_update_graph, name="ajax_update_graph"),
     path("ajax/bmodel/infos", ajax_bmodel_infos, name="ajax_bmodel_infos"),
+    path("ajax/community/details", get_community_details, name="get_community_details"),
     path("upload/timeseries", upload_demand_timeseries, name="upload_demand_timeseries"),
     path("ajax/<int:proj_id>/cpn_kpi_results", cpn_kpi_results, name="cpn_kpi_results"),
     path("simulation/cancel/<int:proj_id>", cpn_simulation_cancel, name="cpn_simulation_cancel"),

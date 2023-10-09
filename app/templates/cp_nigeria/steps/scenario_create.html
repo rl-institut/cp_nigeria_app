@@ -13,6 +13,10 @@
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" crossorigin=""
         integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==">
     </script>
+<script src="{% static 'js/dependent_dropdown.js' %}"></script>
+<script>
+    const getCommunityDetails = `{% url 'get_community_details' %}`
+</script>
 {% endblock %}
 
 {% block progression_content %}
@@ -27,14 +31,19 @@
                     </div>
                     <form method="post">
                         {% csrf_token %}
-											  {{form |crispy }}
-											  <button class="btn btn--medium" type="submit">
-													{% if proj_id %}
-														{% translate "Update project" %}
-													{% else %}
-														{% translate "Create project" %}
-													{% endif %}
-												</button>
+                        {{ form.community | as_crispy_field }}
+                        {% for field in form %}
+                            {% if field.name != 'community' %}
+                                {{ field | as_crispy_field }}
+                            {% endif %}
+                        {% endfor %}
+                        <button class="btn btn--medium" type="submit">
+                            {% if proj_id %}
+                                {% translate "Update project" %}
+                            {% else %}
+                                {% translate "Create project" %}
+                            {% endif %}
+                        </button>
                     </form>
                 </div>
             </div>
