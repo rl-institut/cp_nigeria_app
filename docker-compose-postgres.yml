@@ -55,7 +55,6 @@ services:
     restart: always
     ports:
       - "8075:80"
-      - "8100:8100"
     volumes:
       - ./nginx/postgres:/etc/nginx/conf.d
       - static_volume_pg:/static
@@ -68,6 +67,8 @@ services:
       image: lcrea/libreoffice-headless
       networks:
         - cp_network
+      expose:
+        - 8100
 
 #  libreoffice:
 #    build:
