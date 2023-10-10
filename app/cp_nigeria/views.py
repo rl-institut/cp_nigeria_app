@@ -142,63 +142,72 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
     # with option advanced_view set by user choice
     if request.method == "POST":
+        qs_demand = Asset.objects.filter(
+            scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+        )
+
         formset_qs = ConsumerGroup.objects.filter(project=project)
         if options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=options.community)
             allow_edition = False
 
-        formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
-
-        for form in formset:
-            # set timeseries queryset so form doesn't throw a validation error
-            if f"{form.prefix}-consumer_type" in form.data:
-                try:
-                    consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
-                    form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
-                        consumer_type_id=consumer_type_id
-                    )
-                except (ValueError, TypeError):
-                    pass
-
-            if form.is_valid():
-                # update consumer group if already in database and create new entry if not
-                try:
-                    group_id = form.cleaned_data["id"].id
-                    consumer_group = ConsumerGroup.objects.get(id=group_id)
-                    if form.cleaned_data["DELETE"] is True:
-                        consumer_group.delete()
-                    else:
-                        for field_name, field_value in form.cleaned_data.items():
-                            if field_name == "id":
-                                continue
-                        setattr(consumer_group, field_name, field_value)
-                        consumer_group.save()
-
-                # AttributeError gets thrown when form id field is empty -> not yet in db
-                except AttributeError:
-                    if form.cleaned_data["DELETE"] is True:
-                        continue
-
-                    consumer_group = form.save(commit=False)
-                    consumer_group.project = project
-                    consumer_group.save()
-
-        if formset.is_valid():
-            # update demand if exists
-            qs_demand = Asset.objects.filter(
-                scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
-            )
+        if allow_edition is False:
             if qs_demand.exists():
-                if options.community is not None:
-                    total_demand = get_aggregated_demand(community=options.community)
-                else:
-                    total_demand = get_aggregated_demand(proj_id=project.id)
+                total_demand = get_aggregated_demand(community=options.community)
                 demand = qs_demand.get()
                 demand.input_timeseries = json.dumps(total_demand)
                 demand.save()
 
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
+        else:
+            formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+
+            for form in formset:
+                # set timeseries queryset so form doesn't throw a validation error
+                if f"{form.prefix}-consumer_type" in form.data:
+                    try:
+                        consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
+                        form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
+                            consumer_type_id=consumer_type_id
+                        )
+                    except (ValueError, TypeError):
+                        pass
+
+                if form.is_valid():
+                    # update consumer group if already in database and create new entry if not
+                    try:
+                        group_id = form.cleaned_data["id"].id
+                        consumer_group = ConsumerGroup.objects.get(id=group_id)
+                        if form.cleaned_data["DELETE"] is True:
+                            consumer_group.delete()
+                        else:
+                            for field_name, field_value in form.cleaned_data.items():
+                                if field_name == "id":
+                                    continue
+                            setattr(consumer_group, field_name, field_value)
+                            consumer_group.save()
+
+                    # AttributeError gets thrown when form id field is empty -> not yet in db
+                    except AttributeError:
+                        if form.cleaned_data["DELETE"] is True:
+                            continue
+
+                        consumer_group = form.save(commit=False)
+                        consumer_group.project = project
+                        consumer_group.save()
+
+            if formset.is_valid():
+                # update demand if exists
+
+                if qs_demand.exists():
+                    total_demand = get_aggregated_demand(proj_id=project.id)
+                    demand = qs_demand.get()
+                    demand.input_timeseries = json.dumps(total_demand)
+                    demand.save()
+
+                step_id = STEP_MAPPING["demand_profile"] + 1
+                return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
         options_qs = Options.objects.filter(project=project)
@@ -206,14 +215,14 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         if options_qs.exists() and options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
             allow_edition = False
-        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}],
-                                       form_kwargs={"allow_edition": allow_edition})
+        formset = ConsumerGroupFormSet(
+            queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
+        )
 
         for form, obj in zip(formset, formset_qs):
             for field in form.fields:
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
-
 
     messages.info(
         request,
