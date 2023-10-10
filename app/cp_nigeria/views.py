@@ -27,12 +27,12 @@ from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 logger = logging.getLogger(__name__)
 
 
-def get_aggregated_demand(proj_id=None, community_id=None):
+def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
     if proj_id:
         cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
-    elif community_id:
-        cg_qs = ConsumerGroup.objects.filter(community=community_id)
+    elif community:
+        cg_qs = ConsumerGroup.objects.filter(community=community)
     for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
         if cg.timeseries.units == "Wh":
@@ -114,8 +114,8 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
-            # TODO initial depending on options.community
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
+            form["community"].initial = Options.objects.get(project=project).community
         else:
             form = ProjectForm()
     messages.info(
@@ -135,6 +135,8 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
+    allow_edition = True
 
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
@@ -142,7 +144,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     if request.method == "POST":
         formset_qs = ConsumerGroup.objects.filter(project=project)
         if options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=project.community.id)
+            formset_qs = ConsumerGroup.objects.filter(community=options.community)
+            allow_edition = False
 
         formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
 
@@ -186,8 +189,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
             )
             if qs_demand.exists():
-                if project.community is not None:
-                    total_demand = get_aggregated_demand(community_id=project.community.id)
+                if options.community is not None:
+                    total_demand = get_aggregated_demand(community=options.community)
                 else:
                     total_demand = get_aggregated_demand(proj_id=project.id)
                 demand = qs_demand.get()
@@ -200,10 +203,17 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     elif request.method == "GET":
         options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        if not formset_qs:
-            if options_qs.exists():
-                formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
-        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
+        if options_qs.exists() and options.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
+            allow_edition = False
+        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}],
+                                       form_kwargs={"allow_edition": allow_edition})
+
+        for form, obj in zip(formset, formset_qs):
+            for field in form.fields:
+                if field != "DELETE":
+                    form[field].initial = getattr(obj, field)
+
 
     messages.info(
         request,
@@ -221,7 +231,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
-            "allow_edition": not formset_qs.exists(),
+            "allow_edition": allow_edition,
         },
     )
 
@@ -329,8 +339,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
         )
         if created is True:
-            if project.community is not None:
-                total_demand = get_aggregated_demand(community_id=project.community.id)
+            if options.community is not None:
+                total_demand = get_aggregated_demand(community=options.community)
             else:
                 total_demand = get_aggregated_demand(project.id)
             demand.input_timeseries = json.dumps(total_demand)
@@ -390,9 +400,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     )
 
                 if asset_name == "pv_plant":
-                    if project.community is not None:
-                        community = Community.objects.get(pk=project.community.id)
-                        asset.input_timeseries = Timeseries.objects.get(pk=community.pv_timeseries).values
+                    if options.community is not None:
+                        community = options.community
+                        asset.input_timeseries = community.pv_timeseries.values
                         asset.save()
 
                 if asset_name == "bess":

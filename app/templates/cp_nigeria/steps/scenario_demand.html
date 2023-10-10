@@ -53,7 +53,7 @@
 									{% endif %}
                 </td>
                     {% for field in form %}
-                    {% if field.name != 'DELETE' and field.name != 'community' %}
+                    {% if field.name != 'DELETE' %}
 
                     <td>
                         {{ field | as_crispy_field }}
