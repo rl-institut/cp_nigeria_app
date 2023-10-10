@@ -3,7 +3,6 @@
 source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-implement-dependent-or-chained-dropdown-list-with-django.html */
 
     $(document).on('change', 'select[id*="consumer_type"]', function () {
-      console.log('consumer type selection changed')
       var consumer_typeId = $(this).val();  // get the selected consumer_type ID from the HTML input
       var parentTr = $(this).closest('tr'); // Get the parent table row of the changed input
       // Find the corresponding timeseries input within the same div
@@ -25,7 +24,6 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
 
 // dependent dropdown to pre-fill form coordinates depending on selected community
     $(document).on('change', '#id_community', function() {
-            console.log('fetching community info')
             var communityId = $(this).val();
             // Make an AJAX request to fetch community details based on communityId
             $.ajax({
@@ -38,6 +36,10 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
                     $('#id_name').val(data.name);
                     $('#id_latitude').val(data.latitude);
                     $('#id_longitude').val(data.longitude);
+                    if(marker){mymap.removeLayer(marker);}
+                    marker = new L.Marker([data.latitude, data.longitude]);
+                    marker.addTo(mymap);
+
                 }
             });
         });
