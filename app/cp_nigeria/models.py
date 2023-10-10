@@ -22,6 +22,17 @@ class DemandTimeseries(Timeseries):
         return self.name
 
 
+class Community(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=50)
+    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.CASCADE, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    lon = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class ConsumerGroup(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
@@ -29,12 +40,14 @@ class ConsumerGroup(models.Model):
     number_consumers = models.IntegerField()
     expected_consumer_increase = models.FloatField(blank=True, null=True)
     expected_demand_increase = models.FloatField(blank=True, null=True)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class Options(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_case = models.TextField(default="")
     main_grid = models.BooleanField(null=True)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, blank=True, null=True)
 
     @property
     def schema_name(self):

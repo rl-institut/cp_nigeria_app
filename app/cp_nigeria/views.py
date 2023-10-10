@@ -27,9 +27,13 @@ from dashboard.helpers import KPI_PARAMETERS, B_MODELS
 logger = logging.getLogger(__name__)
 
 
-def get_aggregated_demand(proj_id):
+def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
-    for cg in ConsumerGroup.objects.filter(project__id=proj_id):
+    if proj_id:
+        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
+    elif community:
+        cg_qs = ConsumerGroup.objects.filter(community=community)
+    for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
         if cg.timeseries.units == "Wh":
             timeseries_values = np.array(cg.timeseries.values)
@@ -100,12 +104,18 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         if form.is_valid():
             project = form.save(user=request.user)
+            options, _ = Options.objects.get_or_create(project=project)
+            # import pdb;pdb.set_trace()
+            options.community = form.cleaned_data["community"]
+            options.save()
+
             return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, step_id + 1]))
 
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
+            form["community"].initial = Options.objects.get(project=project).community
         else:
             form = ProjectForm()
     messages.info(
@@ -125,65 +135,94 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
+    allow_edition = True
 
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
     # with option advanced_view set by user choice
     if request.method == "POST":
+        qs_demand = Asset.objects.filter(
+            scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+        )
+
         formset_qs = ConsumerGroup.objects.filter(project=project)
-        formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+        if options.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=options.community)
+            allow_edition = False
 
-        for form in formset:
-            # set timeseries queryset so form doesn't throw a validation error
-            if f"{form.prefix}-consumer_type" in form.data:
-                try:
-                    consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
-                    form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
-                        consumer_type_id=consumer_type_id
-                    )
-                except (ValueError, TypeError):
-                    pass
-
-            if form.is_valid():
-                # update consumer group if already in database and create new entry if not
-                try:
-                    group_id = form.cleaned_data["id"].id
-                    consumer_group = ConsumerGroup.objects.get(id=group_id)
-                    if form.cleaned_data["DELETE"] is True:
-                        consumer_group.delete()
-                    else:
-                        for field_name, field_value in form.cleaned_data.items():
-                            if field_name == "id":
-                                continue
-                        setattr(consumer_group, field_name, field_value)
-                        consumer_group.save()
-
-                # AttributeError gets thrown when form id field is empty -> not yet in db
-                except AttributeError:
-                    if form.cleaned_data["DELETE"] is True:
-                        continue
-
-                    consumer_group = form.save(commit=False)
-                    consumer_group.project = project
-                    consumer_group.save()
-
-        if formset.is_valid():
-            # update demand if exists
-            qs_demand = Asset.objects.filter(
-                scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
-            )
+        if allow_edition is False:
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(project.id)
+                total_demand = get_aggregated_demand(community=options.community)
                 demand = qs_demand.get()
                 demand.input_timeseries = json.dumps(total_demand)
                 demand.save()
 
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
+        else:
+            formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+
+            for form in formset:
+                # set timeseries queryset so form doesn't throw a validation error
+                if f"{form.prefix}-consumer_type" in form.data:
+                    try:
+                        consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
+                        form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
+                            consumer_type_id=consumer_type_id
+                        )
+                    except (ValueError, TypeError):
+                        pass
+
+                if form.is_valid():
+                    # update consumer group if already in database and create new entry if not
+                    try:
+                        group_id = form.cleaned_data["id"].id
+                        consumer_group = ConsumerGroup.objects.get(id=group_id)
+                        if form.cleaned_data["DELETE"] is True:
+                            consumer_group.delete()
+                        else:
+                            for field_name, field_value in form.cleaned_data.items():
+                                if field_name == "id":
+                                    continue
+                            setattr(consumer_group, field_name, field_value)
+                            consumer_group.save()
+
+                    # AttributeError gets thrown when form id field is empty -> not yet in db
+                    except AttributeError:
+                        if form.cleaned_data["DELETE"] is True:
+                            continue
+
+                        consumer_group = form.save(commit=False)
+                        consumer_group.project = project
+                        consumer_group.save()
+
+            if formset.is_valid():
+                # update demand if exists
+
+                if qs_demand.exists():
+                    total_demand = get_aggregated_demand(proj_id=project.id)
+                    demand = qs_demand.get()
+                    demand.input_timeseries = json.dumps(total_demand)
+                    demand.save()
+
+                step_id = STEP_MAPPING["demand_profile"] + 1
+                return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
+        options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
+        if options_qs.exists() and options.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
+            allow_edition = False
+        formset = ConsumerGroupFormSet(
+            queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
+        )
+
+        for form, obj in zip(formset, formset_qs):
+            for field in form.fields:
+                if field != "DELETE":
+                    form[field].initial = getattr(obj, field)
 
     messages.info(
         request,
@@ -201,6 +240,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
+            "allow_edition": allow_edition,
         },
     )
 
@@ -308,7 +348,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
         )
         if created is True:
-            total_demand = get_aggregated_demand(project.id)
+            if options.community is not None:
+                total_demand = get_aggregated_demand(community=options.community)
+            else:
+                total_demand = get_aggregated_demand(project.id)
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
             ConnectionLink.objects.create(
@@ -366,8 +409,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     )
 
                 if asset_name == "pv_plant":
-                    if asset.input_timeseries == []:
-                        asset.input_timeseries = json.dumps(np.random.random(8760).tolist())
+                    if options.community is not None:
+                        community = options.community
+                        asset.input_timeseries = community.pv_timeseries.values
                         asset.save()
 
                 if asset_name == "bess":
@@ -717,6 +761,16 @@ def get_pv_output(request, proj_id):
     location.data.to_csv(response, index=False, sep=";")
     location.create_pv_graph()
     return response
+
+
+@login_required
+@json_view
+@require_http_methods(["GET", "POST"])
+def get_community_details(request):
+    community_id = request.GET.get("community_id")
+    community = Community.objects.get(pk=community_id)
+    data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
+    return JsonResponse(data)
 
 
 @login_required

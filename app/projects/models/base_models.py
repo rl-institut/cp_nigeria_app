@@ -43,12 +43,8 @@ class Feedback(models.Model):
 class EconomicData(models.Model):
     duration = models.PositiveSmallIntegerField()
     currency = models.CharField(max_length=3, choices=CURRENCY)
-    discount = models.FloatField(
-        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)]
-    )
-    tax = models.FloatField(
-        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0
-    )
+    discount = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0)
 
     @property
     def currency_symbol(self):
@@ -56,9 +52,7 @@ class EconomicData(models.Model):
 
 
 class Viewer(models.Model):
-    share_rights = models.CharField(
-        max_length=10, choices=(("edit", _("Edit")), ("read", _("Read")))
-    )
+    share_rights = models.CharField(max_length=10, choices=(("edit", _("Edit")), ("read", _("Read"))))
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -73,12 +67,8 @@ class Project(models.Model):
     country = models.CharField(max_length=50, choices=COUNTRY)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    economic_data = models.OneToOneField(
-        EconomicData, on_delete=models.SET_NULL, null=True
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True
-    )
+    economic_data = models.OneToOneField(EconomicData, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     viewers = models.ManyToManyField(Viewer, related_name="viewer_projects")
 
     def __str__(self):
@@ -89,9 +79,7 @@ class Project(models.Model):
         return self.scenario_set.last()
 
     def get_scenarios_with_results(self):
-        return self.scenario_set.filter(simulation__isnull=False).filter(
-            simulation__results__isnull=False
-        )
+        return self.scenario_set.filter(simulation__isnull=False).filter(simulation__results__isnull=False)
 
     def export(self, bind_scenario_data=True):
         """
@@ -122,9 +110,7 @@ class Project(models.Model):
             if users.exists():
                 user = users.first()
         else:
-            message = _(
-                f"No email address provided to find the user to share the project '{self.name}' with"
-            )
+            message = _(f"No email address provided to find the user to share the project '{self.name}' with")
 
         if user is not None:
             viewers = Viewer.objects.filter(user=user, share_rights=share_rights)
@@ -158,12 +144,7 @@ class Project(models.Model):
                         )
 
         else:
-            message = (
-                _(
-                    "We could not find a user registered under the email address you provided: "
-                )
-                + email
-            )
+            message = _("We could not find a user registered under the email address you provided: ") + email
         return (success, message)
 
     def revoke_access(self, viewers=None):
@@ -177,7 +158,6 @@ class Project(models.Model):
         if viewers is not None:
             existing_viewers = viewers.intersection(self.viewers.all())
             if existing_viewers.exists():
-
                 for viewer_id in existing_viewers.values_list("id", flat=True):
                     self.viewers.remove(viewer_id)
                 success = True
@@ -189,9 +169,7 @@ class Project(models.Model):
                     f"The user(s) {','.join(viewers.values_list('user__email', flat=True))} does not belong to the viewers of the project '{self.name}'"
                 )
         else:
-            message = _(
-                "The user(s) you selected seems to not be registered in the open-plan-tool"
-            )
+            message = _("The user(s) you selected seems to not be registered in the open-plan-tool")
         return success, message
 
 
@@ -209,21 +187,13 @@ class Scenario(models.Model):
 
     start_date = models.DateTimeField()
     time_step = models.IntegerField(validators=[MinValueValidator(0)])
-    capex_fix = models.FloatField(
-        validators=[MinValueValidator(0.0)], default=0, blank=True
-    )
+    capex_fix = models.FloatField(validators=[MinValueValidator(0.0)], default=0, blank=True)
     # The next 3 fields make no sense for a scenario, they are asset fields.
     # Removing them caused trouble with existing database though, so default values are used instead
     # related to https://github.com/open-plan-tool/gui/issues/32
-    capex_var = models.FloatField(
-        validators=[MinValueValidator(0.0)], default=0, blank=True
-    )
-    opex_fix = models.FloatField(
-        validators=[MinValueValidator(0.0)], default=0, blank=True
-    )
-    opex_var = models.FloatField(
-        validators=[MinValueValidator(0.0)], default=0, blank=True
-    )
+    capex_var = models.FloatField(validators=[MinValueValidator(0.0)], default=0, blank=True)
+    opex_fix = models.FloatField(validators=[MinValueValidator(0.0)], default=0, blank=True)
+    opex_var = models.FloatField(validators=[MinValueValidator(0.0)], default=0, blank=True)
     evaluated_period = models.IntegerField(validators=[MinValueValidator(0)])
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
 
@@ -239,9 +209,7 @@ class Scenario(models.Model):
 
         for i in range(self.evaluated_period):
             for j in range(n_occurence_per_day):
-                iter_date = self.start_date + timedelta(
-                    days=i + 1, minutes=self.time_step * (j + 1)
-                )
+                iter_date = self.start_date + timedelta(days=i + 1, minutes=self.time_step * (j + 1))
                 if json_format is True:
                     iter_date = iter_date.isoformat().replace("T", " ")
                 answer.append(iter_date)
@@ -307,39 +275,25 @@ def get_default_timeseries():
 
 class Timeseries(models.Model):
     name = models.CharField(max_length=120, blank=True, default="")
-    values = ArrayField(
-        models.FloatField(), blank=False, default=get_default_timeseries
-    )
-    units = models.CharField(
-        max_length=50, choices=TIMESERIES_UNITS, blank=True, null=True
-    )
-    category = models.CharField(
-        max_length=6, choices=TIMESERIES_CATEGORIES, blank=True, null=True
-    )
+    values = ArrayField(models.FloatField(), blank=False, default=get_default_timeseries)
+    units = models.CharField(max_length=50, choices=TIMESERIES_UNITS, blank=True, null=True)
+    category = models.CharField(max_length=6, choices=TIMESERIES_CATEGORIES, blank=True, null=True)
 
     # TODO user or scenario can be both null only if open_source attribute is True --> by way of saving
     # TODO if the timeseries is open_source and the user is deleted, the timeseries user should just be set to null,
     # otherwise the timeseries should be deleted
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     # TODO check that if both a user and scenario are provided the scenario belongs to the user
-    scenario = models.ForeignKey(
-        Scenario, on_delete=models.CASCADE, null=True, blank=True
-    )
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
     ts_type = models.CharField(max_length=12, choices=MVS_TYPE, blank=True, null=True)
 
-    open_source = models.BooleanField(
-        null=False, blank=False, choices=BOOL_CHOICES, default=False
-    )
+    open_source = models.BooleanField(null=False, blank=False, choices=BOOL_CHOICES, default=False)
 
     # get this from the scenario
     # TODO rename with _date instead of _time
     start_time = models.DateTimeField(blank=True, default=None, null=True)
     end_time = models.DateTimeField(blank=True, default=None, null=True)
-    time_step = models.IntegerField(
-        blank=True, default=None, null=True, validators=[MinValueValidator(1)]
-    )
+    time_step = models.IntegerField(blank=True, default=None, null=True, validators=[MinValueValidator(1)])
 
     def save(self, *args, **kwargs):
         n = len(self.values)
@@ -365,9 +319,7 @@ class Timeseries(models.Model):
 
 
 class AssetType(models.Model):
-    asset_type = models.CharField(
-        max_length=30, choices=ASSET_TYPE, null=False, unique=True
-    )
+    asset_type = models.CharField(max_length=30, choices=ASSET_TYPE, null=False, unique=True)
     asset_category = models.CharField(max_length=30, choices=ASSET_CATEGORY)
     energy_vector = models.CharField(max_length=20, choices=ENERGY_VECTOR)
     mvs_type = models.CharField(max_length=20, choices=MVS_TYPE)
@@ -405,12 +357,8 @@ class TopologyNode(models.Model):
     name = models.CharField(max_length=60, null=False, blank=False)
     pos_x = models.FloatField(default=0.0)
     pos_y = models.FloatField(default=0.0)
-    scenario = models.ForeignKey(
-        Scenario, on_delete=models.CASCADE, null=False, blank=False
-    )
-    parent_asset = models.ForeignKey(
-        to="Asset", on_delete=models.CASCADE, null=True, blank=True
-    )
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=False, blank=False)
+    parent_asset = models.ForeignKey(to="Asset", on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -427,30 +375,14 @@ class Asset(TopologyNode):
             self.optimize_cap = False
         super().save(*args, **kwargs)
 
-    unique_id = models.CharField(
-        max_length=120, default=uuid.uuid4, unique=True, editable=False
-    )
-    capex_fix = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )  # development_costs
-    capex_var = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )  # specific_costs
-    opex_fix = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )  # specific_costs_om
-    opex_var = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )  # dispatch_price
-    lifetime = models.IntegerField(
-        null=True, blank=False, validators=[MinValueValidator(0)]
-    )
-    input_timeseries = models.TextField(
-        null=True, blank=False
-    )  # , validators=[validate_timeseries])
-    crate = models.FloatField(
-        null=True, blank=False, default=1, validators=[MinValueValidator(0.0)]
-    )
+    unique_id = models.CharField(max_length=120, default=uuid.uuid4, unique=True, editable=False)
+    capex_fix = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # development_costs
+    capex_var = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # specific_costs
+    opex_fix = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # specific_costs_om
+    opex_var = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # dispatch_price
+    lifetime = models.IntegerField(null=True, blank=False, validators=[MinValueValidator(0)])
+    input_timeseries = models.TextField(null=True, blank=False)  # , validators=[validate_timeseries])
+    crate = models.FloatField(null=True, blank=False, default=1, validators=[MinValueValidator(0.0)])
     efficiency = models.TextField(null=True, blank=False)
     # used in the case of transformers with one input and two outputs
     # or two inputs and one output
@@ -466,49 +398,27 @@ class Asset(TopologyNode):
         blank=False,
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
     )
-    dispatchable = models.BooleanField(
-        null=True, blank=False, choices=TRUE_FALSE_CHOICES, default=None
-    )
-    maximum_capacity = models.FloatField(
-        null=True, blank=True, validators=[MinValueValidator(0.0)]
-    )
+    dispatchable = models.BooleanField(null=True, blank=False, choices=TRUE_FALSE_CHOICES, default=None)
+    maximum_capacity = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0.0)])
     energy_price = models.TextField(null=True, blank=False)
     feedin_tariff = models.TextField(null=True, blank=False)
 
-    feedin_cap = models.FloatField(
-        default=None, null=True, blank=True, validators=[MinValueValidator(0.0)]
-    )
+    feedin_cap = models.FloatField(default=None, null=True, blank=True, validators=[MinValueValidator(0.0)])
 
-    peak_demand_pricing = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )
-    peak_demand_pricing_period = models.SmallIntegerField(
-        null=True, blank=False, validators=[MinValueValidator(0)]
-    )
+    peak_demand_pricing = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])
+    peak_demand_pricing_period = models.SmallIntegerField(null=True, blank=False, validators=[MinValueValidator(0)])
     renewable_share = models.FloatField(
         null=True,
         blank=False,
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
     )
-    renewable_asset = models.BooleanField(
-        null=True, blank=False, choices=TRUE_FALSE_CHOICES, default=None
-    )
-    asset_type = models.ForeignKey(
-        AssetType, on_delete=models.CASCADE, null=False, blank=True
-    )
-    optimize_cap = models.BooleanField(
-        null=True, blank=False, choices=BOOL_CHOICES, default=False
-    )
-    installed_capacity = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )
-    age_installed = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )
+    renewable_asset = models.BooleanField(null=True, blank=False, choices=TRUE_FALSE_CHOICES, default=None)
+    asset_type = models.ForeignKey(AssetType, on_delete=models.CASCADE, null=False, blank=True)
+    optimize_cap = models.BooleanField(null=True, blank=False, choices=BOOL_CHOICES, default=False)
+    installed_capacity = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])
+    age_installed = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])
 
-    thermal_loss_rate = models.FloatField(
-        null=True, blank=False, validators=[MinValueValidator(0.0)]
-    )
+    thermal_loss_rate = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])
     fixed_thermal_losses_relative = models.TextField(null=True, blank=False)
     fixed_thermal_losses_absolute = models.TextField(null=True, blank=False)
 
@@ -585,9 +495,7 @@ class Asset(TopologyNode):
         A dict with the parameters describing an asset model
         """
 
-        fields = (
-            self.asset_type.asset_fields.replace("[", "").replace("]", "").split(",")
-        )
+        fields = self.asset_type.asset_fields.replace("[", "").replace("]", "").split(",")
         fields += ["name", "pos_x", "pos_y"]
         dm = model_to_dict(self, fields=fields)
         dm["asset_info"] = self.asset_type.export()
@@ -609,10 +517,7 @@ class Asset(TopologyNode):
 
 
 class COPCalculator(models.Model):
-
-    scenario = models.ForeignKey(
-        Scenario, on_delete=models.CASCADE, null=False, blank=False
-    )
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=False, blank=False)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, null=True, blank=True)
 
     temperature_high = models.TextField(null=False, blank=False)
@@ -700,9 +605,7 @@ class ConnectionLink(models.Model):
 
 class Constraint(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=False)
-    activated = models.BooleanField(
-        null=True, blank=False, choices=BOOL_CHOICES, default=False
-    )
+    activated = models.BooleanField(null=True, blank=False, choices=BOOL_CHOICES, default=False)
 
     class Meta:
         abstract = True
@@ -716,15 +619,11 @@ class MinRenewableConstraint(Constraint):
         default=0.2,
     )
     unit = models.CharField(max_length=6, default="factor", editable=False)
-    name = models.CharField(
-        max_length=30, default="minimal_renewable_factor", editable=False
-    )
+    name = models.CharField(max_length=30, default="minimal_renewable_factor", editable=False)
 
 
 class MaxEmissionConstraint(Constraint):
-    value = models.FloatField(
-        null=False, blank=False, validators=[MinValueValidator(0.0)], default=0.0
-    )
+    value = models.FloatField(null=False, blank=False, validators=[MinValueValidator(0.0)], default=0.0)
     unit = models.CharField(max_length=9, default="kgCO2eq/a", editable=False)
     name = models.CharField(max_length=30, default="maximum_emissions", editable=False)
 
@@ -737,15 +636,11 @@ class MinDOAConstraint(Constraint):
         default=0.3,
     )
     unit = models.CharField(max_length=6, default="factor", editable=False)
-    name = models.CharField(
-        max_length=30, default="minimal_degree_of_autonomy", editable=False
-    )
+    name = models.CharField(max_length=30, default="minimal_degree_of_autonomy", editable=False)
 
 
 class NZEConstraint(Constraint):
-    value = models.BooleanField(
-        null=True, blank=False, choices=BOOL_CHOICES, default=False
-    )
+    value = models.BooleanField(null=True, blank=False, choices=BOOL_CHOICES, default=False)
     unit = models.CharField(max_length=4, default="bool", editable=False)
     name = models.CharField(max_length=30, default="net_zero_energy", editable=False)
 
@@ -756,15 +651,12 @@ class ScenarioFile(models.Model):
 
 
 class AbstractSimulation(models.Model):
-
     start_date = models.DateTimeField(auto_now_add=True, null=False)
     end_date = models.DateTimeField(null=True)
     elapsed_seconds = models.FloatField(null=True)
     mvs_token = models.CharField(max_length=200, null=True)
     mvs_version = models.CharField(max_length=15, null=True)
-    status = models.CharField(
-        max_length=20, choices=SIMULATION_STATUS, null=False, default=PENDING
-    )
+    status = models.CharField(max_length=20, choices=SIMULATION_STATUS, null=False, default=PENDING)
     results = models.TextField(null=True, max_length=30e6)
     errors = models.TextField(null=True)
 

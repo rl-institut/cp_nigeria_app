@@ -12,6 +12,8 @@ CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
+    community = forms.ModelChoiceField(queryset=Community.objects.all(), required=False,
+                                       label="Pre-select a community (optional)")
     start_date = forms.DateField(
         label=_("Simulation start"),
         widget=forms.DateInput(
@@ -157,13 +159,17 @@ class DummyForm(forms.Form):
 class ConsumerGroupForm(OpenPlanModelForm):
     class Meta:
         model = ConsumerGroup
-        exclude = ["project", "group_id"]
+        exclude = ["project", "community"]
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
+    def __init__(self, *args, **kwargs):
         advanced_opt = kwargs.pop("advanced_view", False)
         instance = kwargs.pop("instance", None)
+        allow_edition = kwargs.pop("allow_edition", True)
+        super().__init__(*args, **kwargs)
+
+        if allow_edition is False:
+            for field in self.fields:
+                self.fields[field].disabled = True
 
         if instance is None:
             self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
