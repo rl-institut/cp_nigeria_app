@@ -273,6 +273,11 @@ def get_default_timeseries():
     return list([])
 
 
+class TimeseriesManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Timeseries(models.Model):
     name = models.CharField(max_length=120, blank=True, default="")
     values = ArrayField(models.FloatField(), blank=False, default=get_default_timeseries)
@@ -294,6 +299,7 @@ class Timeseries(models.Model):
     start_time = models.DateTimeField(blank=True, default=None, null=True)
     end_time = models.DateTimeField(blank=True, default=None, null=True)
     time_step = models.IntegerField(blank=True, default=None, null=True, validators=[MinValueValidator(1)])
+    objects = TimeseriesManager()
 
     def save(self, *args, **kwargs):
         n = len(self.values)
@@ -316,6 +322,9 @@ class Timeseries(models.Model):
 
     def compute_end_time_from_duration(self, duration):
         pass
+
+    def natural_key(self):
+        return (self.name, )
 
 
 class AssetType(models.Model):
