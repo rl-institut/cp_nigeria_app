@@ -116,9 +116,14 @@ nav.navbar {
   background-color: $primary-gray-color-1;
   height: $wizard-height;
   min-height: $wizard-height;
+  @media only screen and (max-width: $medium-screen) {
+    margin-top: 6.5rem;
+    padding-bottom: 2rem;
+  }
+
 
   @include flex-row-justify-center;
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
 
   &> div {
     @include flex-column-align-justify-center;
@@ -131,7 +136,7 @@ nav.navbar {
   &__back {
     position: absolute;
     right: 2rem;
-    bottom: -1.5rem;
+    bottom: -4.5rem;
     font-size: $font-size-small;
 
     &::before {
@@ -173,18 +178,18 @@ nav.navbar {
     ul {
       @include ul-horizontal;
     }
-  
+
     li {
       display: inline-block;
       color: $primary-gray-color-3;
       position: relative;
-      font-weight: 700;
       font-size: $font-size-small;
-  
+      padding-bottom: 0.5rem;
+
       &:not(:last-of-type) {
         padding-right: 2rem;
       }
-  
+
       &::before {
         font-size: $font-size-small;
         font-weight: 700;
@@ -200,10 +205,11 @@ nav.navbar {
           content: "#{$i}";
         }
       }
-  
+
       &.active {
         color: $primary-color-1;
-  
+        font-weight: 700;
+
         &::before {
           background-color: $primary-color-1;
         }

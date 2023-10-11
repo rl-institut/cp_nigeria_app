@@ -37,28 +37,25 @@
 				{% endfor %}
 			</ul>
 		</div>
-
-		<div class="scenario-create__info-message">
-			{% block step_explanation %}
-			{% if messages %}
-			{% for message in messages %}
-			<div>
-				<p>
-					{{ message }}
-				</p>
-			</div>
-			{% endfor %}
-			{% endif %}
-
-			{% endblock step_explanation %}
-		</div>
 	</div>
 </section>
 
+	<div class="scenario-create__info-message">
+		{% block step_explanation %}
+		{% if messages %}
+		{% for message in messages %}
+		<div>
+			<p>
+				{{ message }}
+			</p>
+		</div>
+		{% endfor %}
+		{% endif %}
 
+		{% endblock step_explanation %}
+	</div>
 {% block progression_content %}
 {% endblock progression_content %}
-
 
 
 
