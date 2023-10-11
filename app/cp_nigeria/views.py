@@ -512,7 +512,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         #         if constraint_type == "net_zero_energy":
         #
         #
-        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
 
 
 @login_required
