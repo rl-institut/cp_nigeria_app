@@ -10,6 +10,7 @@ import pandas as pd
 
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
@@ -73,9 +74,27 @@ class BMAnswer(models.Model):
 class EquityData(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
     debt_start = models.IntegerField()
-    grant_share = models.FloatField()
-    debt_share = models.FloatField()
-    debt_interest_MG = models.FloatField()
-    debt_interest_SHS = models.FloatField(null=True)
-    equity_interest_MG = models.FloatField()
-    equity_interest_SHS = models.FloatField(null=True)
+    grant_share = models.FloatField(
+        verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+    )
+    debt_share = models.FloatField(
+        verbose_name=_("Share of the external debt (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+    )
+    debt_interest_MG = models.FloatField(
+        verbose_name=_("Interest rate for external loan: mini-grid (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    debt_interest_SHS = models.FloatField(
+        verbose_name=_("Interest rate for external loan: SHS (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        null=True,
+    )
+    equity_interest_MG = models.FloatField(
+        verbose_name=_("Interest rate for external equity: mini-grid (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    equity_interest_SHS = models.FloatField(
+        verbose_name=_("Interest rate for external equity: SHS (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        null=True,
+    )

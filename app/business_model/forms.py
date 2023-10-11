@@ -83,16 +83,3 @@ class EquityDataForm(forms.ModelForm):
                 if "SHS" in field:
                     self.fields[field].widget = forms.HiddenInput()
                     self.fields[field].required = False
-
-        labels = {
-            "grant_share": _("Share of grant for assets (%)"),
-            "debt_share": _("Share of the external debt (%)"),
-            "debt_interest_MG": _("Interest rate for external loan: mini-grid (%)"),
-            "debt_interest_SHS": _("Interest rate for external loan: SHS (%)"),
-            "equity_interest_MG": _("Interest rate for external equity: mini-grid (%)"),
-            "equity_interest_SHS": _("Interest rate for external equity: SHS (%)"),
-        }
-
-        # Set labels for form fields based on the dictionary
-        for field_name, label in labels.items():
-            self.fields[field_name].label = label
