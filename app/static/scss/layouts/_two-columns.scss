@@ -10,7 +10,7 @@
     @include flex-row;
     padding-top: $padding-sides-large;
 
-    @media only screen and (min-width: $large-screen) {
+    @media only screen and (min-width: $medium-screen) {
       flex: 1 1 0;
     }
 
