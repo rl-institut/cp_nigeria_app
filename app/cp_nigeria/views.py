@@ -79,12 +79,20 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
     # TODO in the future, pre-load the questions instead of written out in the template
     project = get_object_or_404(Project, id=proj_id)
     messages.info(request, "Please include information about your connection to the grid.")
+
+    bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
+    if bm_qs.exists():
+        grid_condition = bm_qs.get().grid_condition
+    else:
+        grid_condition = ""
+
     return render(
         request,
         "cp_nigeria/steps/business_model_tree.html",
         {
             "proj_id": proj_id,
             "proj_name": project.name,
+            "grid_condition": grid_condition,
             "step_id": step_id,
             "scen_id": scen_id,
             "step_list": CPN_STEP_VERBOSE,

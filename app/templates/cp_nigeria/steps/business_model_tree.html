@@ -19,7 +19,7 @@
             <label class="col-form-label col-lg-8 requiredField" for="grid">What type of mini-grid would your
                 community be able to pursue?</label>
 
-            <select id="model" class="textinput textInput form-control" >
+            <select id="model" class="textinput textInput form-control">
                 <option value="">--Please choose an option--</option>
                 <option value="unknown">Assess the most suitable mini-grid type for your community</option>
                 <option value="interconnected">Interconnected mini-grid</option>
@@ -147,5 +147,11 @@
     const postUrlBusinessModel = '{% url 'cpn_business_model' %}';
 		// hide the button to go to previous question at first
 		$('#back').hide();
+		$('#model').val(`{{ grid_condition }}`).change();
 </script>
+{% if grid_condition %}
+<script>
+	$('#next').attr("disabled", false);
+</script>
+{% endif %}
 {% endblock end_body_scripts %}
