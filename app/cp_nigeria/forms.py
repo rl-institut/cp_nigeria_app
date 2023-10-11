@@ -6,6 +6,7 @@ from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 from projects.models import Project, EconomicData, Scenario
+from projects.constants import CURRENCY_SYMBOLS
 from .models import *
 from projects.helpers import PARAMETERS
 
@@ -155,9 +156,14 @@ class DieselForm(AssetCreateForm):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
+        qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
+        if qs.exists():
+            currency = qs.values_list("economic_data__currency", flat=True).get()
+            currency = CURRENCY_SYMBOLS[currency]
+
         # TODO right now only added as a form field for demonstration purposes but no changes to the db
-        self.fields["fuel_price"] = forms.DecimalField(initial=0.65, decimal_places=2)
-        self.fields["fuel_price"].label = "Fuel price (€/l)"
+        self.fields["capex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
+        self.fields["capex_var"].label = f"Fuel price ({currency}/l)"
 
 
 class BessForm(StorageForm):
