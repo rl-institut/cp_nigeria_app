@@ -31,12 +31,8 @@ EMPTY_SUBCAT = "none"
 KPI_PARAMETERS = {}
 KPI_PARAMETERS_ASSETS = {}
 
-B_MODELS = {}
-
 if os.path.exists(staticfiles_storage.path("MVS_kpis_list.csv")) is True:
-    with open(
-        staticfiles_storage.path("MVS_kpis_list.csv"), encoding="utf-8"
-    ) as csvfile:
+    with open(staticfiles_storage.path("MVS_kpis_list.csv"), encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:
@@ -82,9 +78,7 @@ if os.path.exists(staticfiles_storage.path("MVS_kpis_list.csv")) is True:
                 #                 {"name": _(verbose), "id": label, "unit": _(unit)}
                 #             )
 
-    with open(
-        staticfiles_storage.path("MVS_kpis_list.csv"), encoding="utf-8"
-    ) as csvfile:
+    with open(staticfiles_storage.path("MVS_kpis_list.csv"), encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:
@@ -99,33 +93,12 @@ if os.path.exists(staticfiles_storage.path("MVS_kpis_list.csv")) is True:
 
                 if category != "files":
                     KPI_PARAMETERS[label] = {
-                        k: _(v) if k == "verbose" or k == "definition" else v
-                        for k, v in zip(hdr, row)
+                        k: _(v) if k == "verbose" or k == "definition" else v for k, v in zip(hdr, row)
                     }
                     if "asset" in scope:
                         KPI_PARAMETERS_ASSETS[label] = {
-                            k: _(v) if k == "verbose" or k == "definition" else v
-                            for k, v in zip(hdr, row)
+                            k: _(v) if k == "verbose" or k == "definition" else v for k, v in zip(hdr, row)
                         }
-
-if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
-    with open(
-        staticfiles_storage.path("business_model_list.csv"), encoding="utf-8"
-    ) as csvfile:
-        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
-        for i, row in enumerate(csvreader):
-            if i == 0:
-                hdr = row
-                # Name,Category,Description,Graph,Responsibilities
-                label_idx = hdr.index("Name")
-                graph_idx = hdr.index("Graph")
-                description_idx = hdr.index("Description")
-                cat_idx = hdr.index("Category")
-                resp_idx = hdr.index("Responsibilities")
-            else:
-                label = row[label_idx]
-
-                B_MODELS[label] = {k: v for k, v in zip(hdr, row)}
 
                 #### FUNCTIONS ####
 
@@ -170,21 +143,15 @@ def fetch_user_projects(user):
     user_project_ids = user.project_set.values_list("id", flat=True).distinct()
 
     viewer_project_ids = (
-        Viewer.objects.filter(user__email=user.email)
-        .values_list("viewer_projects", flat=True)
-        .distinct()
+        Viewer.objects.filter(user__email=user.email).values_list("viewer_projects", flat=True).distinct()
     )
 
-    user_projects = Project.objects.filter(
-        Q(id__in=user_project_ids) | Q(id__in=viewer_project_ids)
-    ).annotate(
+    user_projects = Project.objects.filter(Q(id__in=user_project_ids) | Q(id__in=viewer_project_ids)).annotate(
         label=Case(
             When(Q(id__in=viewer_project_ids), then=Concat("name", Value(" (shared)"))),
             default=F("name"),
         ),
-        shared=Case(
-            When(Q(id__in=viewer_project_ids), then=Value(True)), default=Value(False)
-        ),
+        shared=Case(When(Q(id__in=viewer_project_ids), then=Value(True)), default=Value(False)),
     )
 
     return user_projects
@@ -194,9 +161,7 @@ def kpi_scalars_list(kpi_scalar_values_dict, KPI_SCALAR_UNITS, KPI_SCALAR_TOOLTI
     return [
         {
             "kpi": key.replace("_", " "),
-            "value": round(val, 3)
-            if "currency/kWh" in KPI_SCALAR_UNITS[key]
-            else round(val, 2),
+            "value": round(val, 3) if "currency/kWh" in KPI_SCALAR_UNITS[key] else round(val, 2),
             "unit": KPI_SCALAR_UNITS[key],
             "tooltip": KPI_SCALAR_TOOLTIPS[key],
         }
@@ -321,9 +286,7 @@ def get_nested_value(dct, keys):
         elif len(keys) == 1:
             answer = dct[keys[0]]
         else:
-            raise ValueError(
-                "The tuple argument 'keys' from get_nested_value() should not be empty"
-            )
+            raise ValueError("The tuple argument 'keys' from get_nested_value() should not be empty")
     else:
         raise TypeError("The argument 'keys' from get_nested_value() should be a tuple")
     return answer
@@ -357,14 +320,10 @@ class KPIFinder:
         return dict_keyword_mapper(self.results_dct, self.kpi_mapping, kpi_name)
 
     def get_value(self, kpi_name):
-        return dict_keyword_mapper(self.results_dct, self.kpi_mapping, kpi_name)[
-            "value"
-        ]
+        return dict_keyword_mapper(self.results_dct, self.kpi_mapping, kpi_name)["value"]
 
     def get_unit(self, kpi_name):
-        return dict_keyword_mapper(self.results_dct, self.kpi_mapping, kpi_name)[
-            self.unit_hdr
-        ]
+        return dict_keyword_mapper(self.results_dct, self.kpi_mapping, kpi_name)[self.unit_hdr]
 
     def get_doc_unit(self, param_name):
         if isinstance(param_name, list):
@@ -437,9 +396,7 @@ REPORT_TYPES = (
 )
 
 
-def single_timeseries_to_json(
-    value=None, unit="", label="", asset_type="", asset_category=""
-):
+def single_timeseries_to_json(value=None, unit="", label="", asset_type="", asset_category=""):
     """format the information about a single timeseries in a specific JSON"""
     if value is None:
         value = []
@@ -452,9 +409,7 @@ def single_timeseries_to_json(
     }
 
 
-def simulation_timeseries_to_json(
-    scenario_name="", scenario_id="", scenario_timeseries=None, scenario_timestamps=""
-):
+def simulation_timeseries_to_json(scenario_name="", scenario_id="", scenario_timeseries=None, scenario_timestamps=""):
     """format the information about several timeseries within a scenario in a specific JSON"""
     if scenario_timeseries is None:
         scenario_timeseries = []
@@ -466,9 +421,7 @@ def simulation_timeseries_to_json(
     }
 
 
-def report_item_render_to_json(
-    report_item_id="", data=None, title="", report_item_type=""
-):
+def report_item_render_to_json(report_item_id="", data=None, title="", report_item_type=""):
     """format the information about a report item instance in a specific JSON"""
     if data is None:
         data = []
@@ -497,9 +450,7 @@ def report_item_render_to_json(
     return answer
 
 
-def sensitivity_analysis_graph_render_to_json(
-    sa_id="", data=None, title="", x_label="", y_label=""
-):
+def sensitivity_analysis_graph_render_to_json(sa_id="", data=None, title="", x_label="", y_label=""):
     """format the information about a report item instance in a specific JSON"""
     answer = report_item_render_to_json(
         report_item_id=sa_id,
@@ -525,11 +476,7 @@ def decode_sa_graph_id(report_id):
 # To visualize the json structure of the output of the render_json() method of the ReportItem class
 GRAPH_PARAMETERS_RENDERED_JSON = {
     GRAPH_TIMESERIES: report_item_render_to_json(
-        data=[
-            simulation_timeseries_to_json(
-                scenario_timeseries=[single_timeseries_to_json()]
-            )
-        ]
+        data=[simulation_timeseries_to_json(scenario_timeseries=[single_timeseries_to_json()])]
     )
 }
 
@@ -618,9 +565,7 @@ GRAPH_PARAMETERS_SCHEMAS = {
     GRAPH_SANKEY: {
         "type": "object",
         "required": ["energy_vector"],
-        "properties": {
-            "energy_vector": {"oneOf": [{"type": "array", "items": {"type": "string"}}]}
-        },
+        "properties": {"energy_vector": {"oneOf": [{"type": "array", "items": {"type": "string"}}]}},
         "additionalProperties": False,
     },
 }

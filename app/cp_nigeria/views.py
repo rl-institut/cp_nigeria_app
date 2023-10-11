@@ -20,9 +20,9 @@ from cp_nigeria.models import ConsumerGroup
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
-from business_model.helpers import model_score_mapping
+from business_model.helpers import model_score_mapping, B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
-from dashboard.helpers import KPI_PARAMETERS, B_MODELS
+from dashboard.helpers import KPI_PARAMETERS
 
 logger = logging.getLogger(__name__)
 
