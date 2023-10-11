@@ -4,6 +4,7 @@
 .project-setup.two-columns {
   @include flex-row-justify-center;
   padding-bottom: 6rem;
+  flex: 1;
 
   .left,
   .right {
