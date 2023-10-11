@@ -42,9 +42,7 @@ def gettext_variables(some_string, lang="de"):
 
     some_string = str(some_string)
 
-    trans_file = os.path.join(
-        django_settings.STATIC_ROOT, f"personal_translation_{lang}.pickle"
-    )
+    trans_file = os.path.join(django_settings.STATIC_ROOT, f"personal_translation_{lang}.pickle")
 
     if os.path.exists(trans_file):
         with open(trans_file, "rb") as handle:
@@ -193,9 +191,7 @@ class ProjectCreateForm(OpenPlanForm):
             attrs={
                 "placeholder": _("More detailed description here..."),
                 "data-bs-toggle": "tooltip",
-                "title": _(
-                    "A description of what this project objectives or test cases."
-                ),
+                "title": _("A description of what this project objectives or test cases."),
             }
         ),
     )
@@ -216,9 +212,7 @@ class ProjectCreateForm(OpenPlanForm):
                 "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
-                "title": _(
-                    "Longitude coordinate of the project's geographical location."
-                ),
+                "title": _("Longitude coordinate of the project's geographical location."),
             }
         ),
     )
@@ -229,9 +223,7 @@ class ProjectCreateForm(OpenPlanForm):
                 "placeholder": _("click on the map"),
                 "readonly": "",
                 "data-bs-toggle": "tooltip",
-                "title": _(
-                    "Latitude coordinate of the project's geographical location."
-                ),
+                "title": _("Latitude coordinate of the project's geographical location."),
             }
         ),
     )
@@ -256,9 +248,7 @@ class ProjectCreateForm(OpenPlanForm):
         widget=forms.Select(
             attrs={
                 "data-bs-toggle": "tooltip",
-                "title": _(
-                    "The currency of the country where the project is implemented."
-                ),
+                "title": _("The currency of the country where the project is implemented."),
             }
         ),
     )
@@ -325,11 +315,7 @@ class ProjectRevokeForm(ModelForm):
         model = Project
         fields = ["viewers"]
         widgets = {"viewers": forms.SelectMultiple()}
-        help_texts = {
-            "viewers": _(
-                "Select the user(s) for which you want to revoke access rights "
-            )
-        }
+        help_texts = {"viewers": _("Select the user(s) for which you want to revoke access rights ")}
         labels = {"viewers": _("Users currently having access to the project")}
 
     def __init__(self, *args, **kwargs):
@@ -338,9 +324,7 @@ class ProjectRevokeForm(ModelForm):
         self.fields["viewers"].empty_label = _("No users have access to this project")
         self.fields["viewers"].required = False
         if proj_id is not None:
-            self.fields["viewers"].queryset = Project.objects.get(
-                id=proj_id
-            ).viewers.all()
+            self.fields["viewers"].queryset = Project.objects.get(id=proj_id).viewers.all()
 
 
 class UploadFileForm(forms.Form):
@@ -365,10 +349,7 @@ class UseCaseForm(forms.Form):
         if usecase_qs is not None:
             self.fields["usecase"].choices = [(uc.id, _(uc.name)) for uc in usecase_qs]
             self.fields["usecase"].label = (
-                _("Select a use case (or")
-                + f"<a href='{usecase_url}'>"
-                + _("visit use cases page")
-                + "</a>)"
+                _("Select a use case (or") + f"<a href='{usecase_url}'>" + _("visit use cases page") + "</a>)"
             )
 
 
@@ -523,9 +504,7 @@ class ConstraintForm(OpenPlanModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["help_text"] = forms.CharField(
-            widget=forms.HiddenInput(), required=False
-        )
+        self.fields["help_text"] = forms.CharField(widget=forms.HiddenInput(), required=False)
 
 
 class MinRenewableConstraintForm(ConstraintForm):
@@ -554,9 +533,7 @@ class NZEConstraintForm(ConstraintForm):
 
 class SensitivityAnalysisForm(ModelForm):
     output_parameters_names = forms.MultipleChoiceField(
-        choices=[
-            (v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS
-        ]
+        choices=[(v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS]
     )
 
     class Meta:
@@ -593,8 +570,7 @@ class SensitivityAnalysisForm(ModelForm):
             # self.fields["output_parameters_names"] = forms.MultipleChoiceField(choices = [(v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS])
             # TODO restrict possible parameters here
             self.fields["output_parameters_names"].choices = [
-                (v, _(KPI_PARAMETERS_ASSETS[v]["verbose"]))
-                for v in KPI_PARAMETERS_ASSETS
+                (v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS
             ]
 
     def clean_output_parameters_names(self):
@@ -607,12 +583,8 @@ class SensitivityAnalysisForm(ModelForm):
 class COPCalculatorForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["temperature_high"] = DualNumberField(
-            default=60, min=-273, param_name="temperature_high"
-        )
-        self.fields["temperature_low"] = DualNumberField(
-            default=40, min=-273, param_name="temperature_low"
-        )
+        self.fields["temperature_high"] = DualNumberField(default=60, min=-273, param_name="temperature_high")
+        self.fields["temperature_low"] = DualNumberField(default=40, min=-273, param_name="temperature_low")
 
     class Meta:
         model = COPCalculator
@@ -664,11 +636,7 @@ class AssetCreateForm(OpenPlanModelForm):
         super().__init__(*args, **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         asset_type = AssetType.objects.get(asset_type=self.asset_type_name)
-        [
-            self.fields.pop(field)
-            for field in list(self.fields)
-            if field not in asset_type.visible_fields
-        ]
+        [self.fields.pop(field) for field in list(self.fields) if field not in asset_type.visible_fields]
 
         self.timestamps = None
         if self.existing_asset is not None:
@@ -686,49 +654,33 @@ class AssetCreateForm(OpenPlanModelForm):
             if qs.exists():
                 currency = qs.values_list("economic_data__currency", flat=True).get()
                 currency = CURRENCY_SYMBOLS[currency]
-                # TODO use mapping to display currency symbol
 
-        self.fields["inputs"] = forms.CharField(
-            widget=forms.HiddenInput(), required=False
-        )
+        self.fields["inputs"] = forms.CharField(widget=forms.HiddenInput(), required=False)
 
         if self.asset_type_name == "heat_pump":
-            self.fields["efficiency"] = DualNumberField(
-                default=1, min=1, param_name="efficiency"
-            )
+            self.fields["efficiency"] = DualNumberField(default=1, min=1, param_name="efficiency")
             self.fields["efficiency"].label = "COP"
 
             value = self.fields.pop("efficiency")
             self.fields["efficiency"] = value
         if self.asset_type_name == "chp":
-            self.fields["efficiency"] = DualNumberField(
-                default=1, min=0, max=1, param_name="efficiency"
-            )
-            self.fields["efficiency"].label = _(
-                "Electrical efficiency with no heat extraction"
-            )
+            self.fields["efficiency"] = DualNumberField(default=1, min=0, max=1, param_name="efficiency")
+            self.fields["efficiency"].label = _("Electrical efficiency with no heat extraction")
 
-            self.fields[
-                "efficiency"
-            ].help_text = "This is the custom help text for chp efficiency"
+            self.fields["efficiency"].help_text = "This is the custom help text for chp efficiency"
 
             self.fields["efficiency_multiple"] = DualNumberField(
                 default=1, min=0, max=1, param_name="efficiency_multiple"
             )
-            self.fields["efficiency_multiple"].label = _(
-                "Thermal efficiency with maximal heat extraction"
-            )
+            self.fields["efficiency_multiple"].label = _("Thermal efficiency with maximal heat extraction")
 
             self.fields["thermal_loss_rate"].label = _("Stromverlustkenzahl")
 
         if self.asset_type_name == "chp_fixed_ratio":
-
             self.fields["efficiency"].label = _("Efficiency gaz to electricity")
 
             # TODO
-            self.fields[
-                "efficiency"
-            ].help_text = "This is the custom help text for chp efficiency"
+            self.fields["efficiency"].help_text = "This is the custom help text for chp efficiency"
 
             self.fields["efficiency_multiple"].widget = forms.NumberInput(
                 attrs={
@@ -744,13 +696,11 @@ class AssetCreateForm(OpenPlanModelForm):
             for field_name in ("energy_price", "feedin_tariff"):
                 help_text = self.fields[field_name].help_text
                 label = self.fields[field_name].label
-                self.fields[field_name] = DualNumberField(
-                    default=0.1, param_name=field_name
-                )
+                self.fields[field_name] = DualNumberField(default=0.1, param_name=field_name)
                 self.fields[field_name].help_text = help_text
                 self.fields[field_name].label = label
 
-        """ DrawFlow specific configuration, add a special attribute to 
+        """ DrawFlow specific configuration, add a special attribute to
             every field in order for the framework to be able to export
             the data to json.
             !! This addition doesn't affect the previous behavior !!
@@ -782,19 +732,13 @@ class AssetCreateForm(OpenPlanModelForm):
 
                 if "capex_fix" in field:
                     self.fields[field].label = (
-                        self.fields[field]
-                        .label.replace("project", "")
-                        .replace("Feste Projektkosten", "Fixkosten")
+                        self.fields[field].label.replace("project", "").replace("Feste Projektkosten", "Fixkosten")
                     )
 
                 if "€" in self.fields[field].label and currency is not None:
-                    self.fields[field].label = self.fields[field].label.replace(
-                        "€", currency
-                    )
+                    self.fields[field].label = self.fields[field].label.replace("€", currency)
                 if ":unit:" in self.fields[field].label:
-                    self.fields[field].label = self.fields[field].label.replace(
-                        ":unit:", asset_type.unit
-                    )
+                    self.fields[field].label = self.fields[field].label.replace(":unit:", asset_type.unit)
 
         """ ----------------------------------------------------- """
 
@@ -816,9 +760,7 @@ class AssetCreateForm(OpenPlanModelForm):
             else:
                 # set the previous timeseries from the asset if any
                 if self.is_input_timeseries_empty() is False:
-                    input_timeseries_values = (
-                        self.existing_asset.input_timeseries_values
-                    )
+                    input_timeseries_values = self.existing_asset.input_timeseries_values
             return input_timeseries_values
         except json.decoder.JSONDecodeError as ex:
             raise ValidationError(
@@ -848,15 +790,10 @@ class AssetCreateForm(OpenPlanModelForm):
     def clean(self):
         cleaned_data = super().clean()
         if "installed_capacity" in cleaned_data and "age_installed" in cleaned_data:
-            if (
-                cleaned_data["installed_capacity"] == 0.0
-                and cleaned_data["age_installed"] > 0
-            ):
+            if cleaned_data["installed_capacity"] == 0.0 and cleaned_data["age_installed"] > 0:
                 self.add_error(
                     "age_installed",
-                    _(
-                        "If you have no installed capacity, age installed should also be 0"
-                    ),
+                    _("If you have no installed capacity, age installed should also be 0"),
                 )
 
         if self.asset_type_name == "heat_pump":
@@ -866,11 +803,7 @@ class AssetCreateForm(OpenPlanModelForm):
 
         if self.asset_type_name == "chp_fixed_ratio":
             if "efficiency" not in self.errors:
-                if (
-                    float(cleaned_data["efficiency"])
-                    + float(cleaned_data["efficiency_multiple"])
-                    > 1
-                ):
+                if float(cleaned_data["efficiency"]) + float(cleaned_data["efficiency_multiple"]) > 1:
                     msg = _("The sum of the efficiencies should not exceed 1")
                     self.add_error("efficiency", msg)
                     self.add_error("efficiency_multiple", msg)
@@ -905,9 +838,7 @@ class AssetCreateForm(OpenPlanModelForm):
                             + f" ({len(ts)})"
                             + _(" are not equal to the number of simulation timesteps")
                             + f" ({len(self.timestamps)})"
-                            + _(
-                                ". You can change the number of timesteps in the first step of scenario creation."
-                            )
+                            + _(". You can change the number of timesteps in the first step of scenario creation.")
                         )
                         self.add_error(param, msg)
 
@@ -924,26 +855,14 @@ class AssetCreateForm(OpenPlanModelForm):
                     # "style": "font-weight:400; font-size:13px;",
                 }
             ),
-            "capex_fix": forms.NumberInput(
-                attrs={"placeholder": "e.g. 10000", "min": "0.0", "step": ".01"}
-            ),
-            "capex_var": forms.NumberInput(
-                attrs={"placeholder": "e.g. 4000", "min": "0.0", "step": ".01"}
-            ),
-            "opex_fix": forms.NumberInput(
-                attrs={"placeholder": "e.g. 0", "min": "0.0", "step": ".01"}
-            ),
-            "opex_var": forms.NumberInput(
-                attrs={"placeholder": "Currency", "min": "0.0", "step": ".01"}
-            ),
-            "lifetime": forms.NumberInput(
-                attrs={"placeholder": "e.g. 10 years", "min": "0", "step": "1"}
-            ),
+            "capex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 10000", "min": "0.0", "step": ".01"}),
+            "capex_var": forms.NumberInput(attrs={"placeholder": "e.g. 4000", "min": "0.0", "step": ".01"}),
+            "opex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 0", "min": "0.0", "step": ".01"}),
+            "opex_var": forms.NumberInput(attrs={"placeholder": "Currency", "min": "0.0", "step": ".01"}),
+            "lifetime": forms.NumberInput(attrs={"placeholder": "e.g. 10 years", "min": "0", "step": "1"}),
             # TODO: Try changing this to FileInput
             "input_timeseries": forms.FileInput(
-                attrs={
-                    "onchange": "plot_file_trace(obj=this.files, plot_id='timeseries_trace')"
-                }
+                attrs={"onchange": "plot_file_trace(obj=this.files, plot_id='timeseries_trace')"}
             ),
             # 'input_timeseries': forms.Textarea(attrs={'placeholder': 'e.g. [4,3,2,5,3,...]',
             #                                           'style': 'font-weight:400; font-size:13px;'}),
@@ -979,24 +898,12 @@ class AssetCreateForm(OpenPlanModelForm):
                     "step": ".01",
                 }
             ),
-            "maximum_capacity": forms.NumberInput(
-                attrs={"placeholder": "e.g. 1000", "min": "0.0", "step": ".01"}
-            ),
-            "energy_price": forms.NumberInput(
-                attrs={"placeholder": "e.g. 0.1", "min": "0.0", "step": ".0001"}
-            ),
-            "feedin_tariff": forms.NumberInput(
-                attrs={"placeholder": "e.g. 0.0", "min": "0.0", "step": ".0001"}
-            ),
-            "feedin_cap": forms.NumberInput(
-                attrs={"placeholder": "e.g. 0.0", "min": "0.0"}
-            ),
-            "peak_demand_pricing": forms.NumberInput(
-                attrs={"placeholder": "e.g. 60", "min": "0.0", "step": ".01"}
-            ),
-            "peak_demand_pricing_period": forms.Select(
-                choices=((1, 1), (2, 2), (3, 3), (4, 4), (6, 6), (12, 12))
-            ),
+            "maximum_capacity": forms.NumberInput(attrs={"placeholder": "e.g. 1000", "min": "0.0", "step": ".01"}),
+            "energy_price": forms.NumberInput(attrs={"placeholder": "e.g. 0.1", "min": "0.0", "step": ".0001"}),
+            "feedin_tariff": forms.NumberInput(attrs={"placeholder": "e.g. 0.0", "min": "0.0", "step": ".0001"}),
+            "feedin_cap": forms.NumberInput(attrs={"placeholder": "e.g. 0.0", "min": "0.0"}),
+            "peak_demand_pricing": forms.NumberInput(attrs={"placeholder": "e.g. 60", "min": "0.0", "step": ".01"}),
+            "peak_demand_pricing_period": forms.Select(choices=((1, 1), (2, 2), (3, 3), (4, 4), (6, 6), (12, 12))),
             "renewable_share": forms.NumberInput(
                 attrs={
                     "placeholder": "e.g. 0.1",
@@ -1005,12 +912,8 @@ class AssetCreateForm(OpenPlanModelForm):
                     "step": ".0001",
                 }
             ),
-            "installed_capacity": forms.NumberInput(
-                attrs={"placeholder": "e.g. 50", "min": "0.0", "step": ".01"}
-            ),
-            "age_installed": forms.NumberInput(
-                attrs={"placeholder": "e.g. 10", "min": "0.0", "step": "1"}
-            ),
+            "installed_capacity": forms.NumberInput(attrs={"placeholder": "e.g. 50", "min": "0.0", "step": ".01"}),
+            "age_installed": forms.NumberInput(attrs={"placeholder": "e.g. 10", "min": "0.0", "step": "1"}),
         }
         labels = {"input_timeseries": _("Timeseries vector")}
         help_texts = {

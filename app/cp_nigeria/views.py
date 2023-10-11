@@ -299,6 +299,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             # also get all child assets
             context["es_assets"].append(asset_type_name)
             context["form_storage"] = BessForm(
+                proj_id=project.id,
                 initial={
                     "name": existing_ess_asset.name,
                     "installed_capacity": ess_capacity_asset.installed_capacity,
@@ -314,10 +315,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     "optimize_cap": ess_capacity_asset.optimize_cap,
                     "soc_max": ess_capacity_asset.soc_max,
                     "soc_min": ess_capacity_asset.soc_min,
-                }
+                },
             )
         else:
-            context["form_bess"] = BessForm()
+            context["form_bess"] = BessForm(proj_id=project.id)
 
         for asset_type_name, form in zip(["pv_plant", "diesel_generator"], [PVForm, DieselForm]):
             qs = Asset.objects.filter(scenario=scenario.id, asset_type__asset_type=asset_type_name)
@@ -325,10 +326,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             if qs.exists():
                 existing_asset = qs.get()
                 context["es_assets"].append(asset_type_name)
-                context[f"form_{asset_type_name}"] = form(instance=existing_asset)
+                context[f"form_{asset_type_name}"] = form(instance=existing_asset, proj_id=project.id)
 
             else:
-                context[f"form_{asset_type_name}"] = form()
+                context[f"form_{asset_type_name}"] = form(proj_id=project.id)
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
 
@@ -373,9 +374,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
-                form = asset_forms[asset_name](request.POST, instance=qs.first())
+                form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
             else:
-                form = asset_forms[asset_name](request.POST)
+                form = asset_forms[asset_name](request.POST, proj_id=project.id)
 
             if form.is_valid():
                 asset_type = get_object_or_404(AssetType, asset_type=asset_name)
