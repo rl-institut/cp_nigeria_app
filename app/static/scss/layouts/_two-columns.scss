@@ -9,6 +9,7 @@
   .left,
   .right {
     @include flex-row;
+    flex-grow: 1;
     padding-top: $padding-sides-large;
 
     @media only screen and (min-width: $medium-screen) {
@@ -55,6 +56,10 @@
       width: calc(100% - 1.5rem);
       height: 100%;
       background-color: $primary-gray-color-2;
+      min-height: 30rem;
     }
   }
+}
+@media only screen and (max-width: $medium-screen) {
+  flex-direction: column;
 }
