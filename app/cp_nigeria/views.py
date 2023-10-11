@@ -35,11 +35,10 @@ def get_aggregated_demand(proj_id=None, community=None):
         cg_qs = ConsumerGroup.objects.filter(community=community)
     for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
-        if cg.timeseries.units == "Wh":
-            timeseries_values = np.array(cg.timeseries.values)
-        elif cg.imeseries.units == "kWh":
+        nr_consumers = cg.number_consumers
+        if cg.timeseries.units == "kWh":
             timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values)
+        total_demand.append(timeseries_values*nr_consumers)
     return np.vstack(total_demand).sum(axis=0).tolist()
 
 
