@@ -120,10 +120,16 @@ class PVForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
+        self.fields["optimize_cap"].initial = True
+
         # for field in self.fields:
 
         self.fields["input_timeseries"].required = False
-        self.fields["optimize_cap"].initial = True
+
+        visible_fields = ["opex_var"]
+        for field in self.fields:
+            if field not in visible_fields:
+                pass  # self.fields[field].widget = forms.HiddenInput()
 
         for field, value in zip(
             ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
@@ -138,7 +144,12 @@ class DieselForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        # for field in self.fields:
+        self.fields["optimize_cap"].initial = True
+
+        visible_fields = ["opex_var"]
+        for field in self.fields:
+            if field not in visible_fields:
+                pass  # self.fields[field].widget = forms.HiddenInput()
 
         for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
             self.fields[field].widget = forms.HiddenInput()

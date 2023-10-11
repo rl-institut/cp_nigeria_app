@@ -32,16 +32,6 @@
 
 
 <main>
-	<script>
-    function displayForm(form_id) {
-          const elem = document.getElementById(form_id);
-          if (elem.style.visibility == 'hidden') {
-          	elem.style.visibility = 'visible';
-          } else {
-          	elem.style.visibility = 'hidden';
-          }
-    }
-    </script>
 	<section>
 		<form method="POST" action="{% url 'cpn_scenario' proj_id %}">
 			{% csrf_token %}
@@ -49,40 +39,57 @@
     <div class="grid-container" >
 <fieldset style="display: contents;">
           <div>
-						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" onclick="displayForm('diesel_params');" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
+						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="diesel_checkbox">Diesel generator</label>
-						<img class="img" src="{% static 'assets/gui/diesel_generator.svg' %}" alt="diesel_generator">
+						<div>
+							<img class="img" src="{% static 'assets/gui/diesel_generator.svg' %}" alt="diesel_generator">
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#diesel_params" aria-expanded="false">Expand parameters</a>
+						</div>
 					</div>
 
 					<div>
-						<input class="form-check-input" type="checkbox" id="pv_checkbox" name="es_choice" value="pv_plant" onclick="displayForm('pv_params');" {% if 'pv_plant' in es_assets %} checked {% endif %}>
+						<input class="form-check-input" type="checkbox" id="pv_checkbox" name="es_choice" value="pv_plant" {% if 'pv_plant' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="pv_checkbox">PV-Plant</label>
-						<img class="img" src="{% static 'assets/gui/pv_plant.svg' %}" alt="pv_plant">
+						<div>
+							<img class="img" src="{% static 'assets/gui/pv_plant.svg' %}" alt="pv_plant">
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#pv_params" aria-expanded="false">Expand parameters</a>
+						</div>
 					</div>
 
 					<div>
-						<input class="form-check-input" type="checkbox" id="storage_checkbox" name="es_choice" value="bess" onclick="displayForm('storage_params');" {% if 'bess' in es_assets %} checked {% endif %}>
+						<input class="form-check-input" type="checkbox" id="storage_checkbox" name="es_choice" value="bess" {% if 'bess' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="storage_checkbox">Storage</label>
-						<img class="img" src="{% static 'assets/gui/bess.svg' %}" alt="storage">
+						<div>
+							<img class="img" src="{% static 'assets/gui/bess.svg' %}" alt="storage">
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#storage_params" aria-expanded="false">Expand parameters</a>
+						</div>
 					</div>
 </fieldset>
     </div>
-		<div style="display:flex;justify-content:center;align-content:center;">
-				{% if es_schema_name %}
-			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
-				{% endif %}
-		</div>
-    <div class="grid-container">
-
-        <div class="form-stretch" id="diesel_params" {% if 'diesel_generator' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+			{% if es_schema_name %}
+			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
+				<div>Currently saved system (click next to update)</div>
+			</div>
+			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
+				<img id="es_schema" class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+			</div>
+			{% endif %}
+    <div class="row">
+				<div class="col">
+        <div class="collapse form-stretch" id="diesel_params">
                 {{ form_diesel_generator|crispy }}
         </div>
-				<div class="form-stretch" id="pv_params" {% if 'pv_plant' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+					</div>
+			<div class="col">
+				<div class="collapse form-stretch" id="pv_params">
 								{{ form_pv_plant|crispy }}
 				</div>
-				<div class="form-stretch" id="storage_params" {% if 'bess' in es_assets %} {% else %} style="visibility:hidden" {% endif %}>
+			</div>
+			<div class="col">
+				<div class="collapse form-stretch" id="storage_params">
 								{{ form_bess|crispy }}
 				</div>
+			</div>
     </div>
 		</form>
 
