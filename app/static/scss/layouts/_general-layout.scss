@@ -1,6 +1,10 @@
 @import '../abstracts/variables';
 @import '../abstracts/mixins';
 
+body {
+  min-height: 100vh;
+}
+
 .main {
   &--padding-top {
     padding-top: $main-padding-top;

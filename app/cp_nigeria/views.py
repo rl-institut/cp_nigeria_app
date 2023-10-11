@@ -38,7 +38,7 @@ def get_aggregated_demand(proj_id=None, community=None):
         nr_consumers = cg.number_consumers
         if cg.timeseries.units == "kWh":
             timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values*nr_consumers)
+        total_demand.append(timeseries_values * nr_consumers)
     return np.vstack(total_demand).sum(axis=0).tolist()
 
 
@@ -77,11 +77,18 @@ def home_cpn(request):
 @require_http_methods(["GET", "POST"])
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
     # TODO in the future, pre-load the questions instead of written out in the template
+    project = get_object_or_404(Project, id=proj_id)
     messages.info(request, "Please include information about your connection to the grid.")
     return render(
         request,
         "cp_nigeria/steps/business_model_tree.html",
-        {"proj_id": proj_id, "step_id": step_id, "scen_id": scen_id, "step_list": CPN_STEP_VERBOSE},
+        {
+            "proj_id": proj_id,
+            "proj_name": project.name,
+            "step_id": step_id,
+            "scen_id": scen_id,
+            "step_list": CPN_STEP_VERBOSE,
+        },
     )
 
 
@@ -89,6 +96,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
 @require_http_methods(["GET", "POST"])
 def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_location"]):
     qs_project = Project.objects.filter(id=proj_id)
+    proj_name = ""
     if qs_project.exists():
         project = qs_project.get()
         if (project.user != request.user) and (
@@ -116,6 +124,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
             scenario = Scenario.objects.filter(project=project).last()
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
             form["community"].initial = Options.objects.get(project=project).community
+
         else:
             form = ProjectForm()
     messages.info(
@@ -123,11 +132,12 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         "Please input basic project information, such as name, location and duration. You can "
         "input geographical data by clicking on the desired project location on the map.",
     )
-
+    if project is not None:
+        proj_name = project.name
     return render(
         request,
         "cp_nigeria/steps/scenario_create.html",
-        {"form": form, "proj_id": proj_id, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
+        {"form": form, "proj_id": proj_id, "proj_name": proj_name, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
     )
 
 
@@ -237,6 +247,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         {
             "formset": formset,
             "proj_id": proj_id,
+            "proj_name": project.name,
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
@@ -267,6 +278,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         context = {
             "proj_id": proj_id,
+            "proj_name": project.name,
             "step_id": step_id,
             "scen_id": scenario.id,
             "step_list": CPN_STEP_VERBOSE,
@@ -530,6 +542,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             "cp_nigeria/steps/scenario_system_params.html",
             {
                 "proj_id": proj_id,
+                "proj_name": project.name,
                 "step_id": step_id,
                 "scen_id": scenario.id,
                 "form": form,

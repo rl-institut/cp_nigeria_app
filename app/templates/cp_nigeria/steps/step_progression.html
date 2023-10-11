@@ -11,52 +11,51 @@
 {% block content %}
 
 <section class="wizard">
-    <div>
-        <h1 class="wizard__name">
-            <span class="project">{{ proj_name }}</span>
-            <!--span class="scenario">{% translate "Scenario" %} {{ scenario.name }}</span-->
-        </h1>
-        {% if proj_id %}
-        <!--div class="wizard__back">
-            <div>
-                <a href="{% url 'project_search' proj_id %}">{% translate "My projects" %}</a>
-            </div>
-        </div-->
-        {% endif %}
-        <div class="wizard__steps">
-            <ul>
-                {% for step in step_list %}
-                <li {% if step_id == forloop.counter %} class="active" {% endif %}>
-                    {% if proj_id %}
-                    <a href="{% url 'cpn_steps' proj_id forloop.counter %}" >{% translate step %}</a>
-                    {% else %}
-                    {% translate step %}
-                    {% endif %}
-                </li>
+	<div>
+		<h1 class="wizard__name">
+			<span class="project">{{ proj_name }}</span>
+			<!--span class="scenario">{% translate "Scenario" %} {{ scenario.name }}</span-->
+		</h1>
+		{% if proj_id %}
+		<!--div class="wizard__back">
+				<div>
+						<a href="{% url 'project_search' proj_id %}">{% translate "My projects" %}</a>
+				</div>
+		</div-->
+		{% endif %}
+		<div class="wizard__steps">
+			<ul>
+				{% for step in step_list %}
+				<li {% if step_id == forloop.counter %} class="active" {% endif %}>
+					{% if proj_id %}
+					<a href="{% url 'cpn_steps' proj_id forloop.counter %}" >{% translate step %}</a>
+					{% else %}
+					{% translate step %}
+					{% endif %}
+				</li>
 
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="step_description">
-            {% block step_explanation %}
-					 {% if messages %}
-    {% for message in messages %}
-    <div>
-        {{ message }}
-    </div>
-    {% endfor %}
-{% endif %}
-
-            {% endblock step_explanation %}
-        </div>
-    </div>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
 </section>
 
+	<div class="scenario-create__info-message">
+		{% block step_explanation %}
+		{% if messages %}
+		{% for message in messages %}
+		<div>
+			<p>
+				{{ message }}
+			</p>
+		</div>
+		{% endfor %}
+		{% endif %}
 
+		{% endblock step_explanation %}
+	</div>
 {% block progression_content %}
 {% endblock progression_content %}
-
 
 
 

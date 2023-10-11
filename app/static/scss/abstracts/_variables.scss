@@ -1,24 +1,28 @@
 // Colors
-$primary-color-1: #006400;
-$primary-color-1-dark: #228b22;
-$primary-color-2: #343434;
-$primary-color-2-light: #8c8c8c;
+$primary-color-1: #008753;
+$primary-color-1-dark: #00673D;
+$primary-color-2: #54504C;
+$primary-color-2-light: #A69F99;
 
-$primary-gray-color-1: #F4F7F9;
-$primary-gray-color-2: #E3EAEE;
-$primary-gray-color-3: #A8B5C0;
-$primary-gray-color-4: #495965;
+$primary-gray-color-1: #F9F8F7;
+$primary-gray-color-2: #E3DFDB;
+$primary-gray-color-3: #A69F99;
+$primary-gray-color-4: #54504C;
 
 $white: #fff;
 $black: #000;
-$secondary-gray-color-1: #E4E4E4;
-$secondary-gray-color-2: #D6D6D6;
+$secondary-gray-color-1: $primary-gray-color-2;
+$secondary-gray-color-2: #D1CCC7;
 
-$error-color: #9A031E;
-$success-color: #09BC8A;
-$pending-color: #EC9A29;
-$warning-bg-color: #FFF3D4;
-$warning-color: #FDC534;
+$error-color: #D73B45;
+$error-color-bg: #FFF8F8;
+$error-color-text: #991818;
+$success-color: #3EA761;
+$success-color-bg: #F4FFFC;
+$success-color-text: #08421B;
+$pending-color: #EDB72F;
+$warning-bg-color: #FDF6E2;
+$warning-color: #EFC142;
 $warning-text-color: #825F08;
 $disabled-color: $primary-gray-color-3;
 
@@ -114,11 +118,11 @@ $component-border-color--storage: #90F1EF;
 $component-border-color--demand: #FFD6E0;
 $component-border-color--bus: #F4CC9E;
 $component-categories: (
-  'providers': $component-border-color--providers, 
-  'production': $component-border-color--production, 
-  'conversion': $component-border-color--conversion, 
-  'storage': $component-border-color--storage, 
-  'demand': $component-border-color--demand, 
+  'providers': $component-border-color--providers,
+  'production': $component-border-color--production,
+  'conversion': $component-border-color--conversion,
+  'storage': $component-border-color--storage,
+  'demand': $component-border-color--demand,
   'bus': $component-border-color--bus
 );
 
