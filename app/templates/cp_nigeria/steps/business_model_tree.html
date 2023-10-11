@@ -19,9 +19,11 @@
 <div class="container">
     <!-- Intro question -->
         <div id="start" style="display:block">
+
         <form method="post">
             <label class="col-form-label col-lg-8 requiredField" for="grid">What type of mini-grid would your
                 community be able to pursue?</label>
+
             <select id="model" class="textinput textInput form-control" >
                 <option value="">--Please choose an option--</option>
                 <option value="unknown">Assess the most suitable mini-grid type for your community</option>
@@ -62,7 +64,10 @@
     <div id="grid_no" style="display:none">
         <form method="post">
             <label class="col-form-label col-lg-8 requiredField" for="iedno">Has the area been assigned to
-                an Independent Electricity Distribution Network Operator (IEDNO)?</label>
+                an <span class="hover"> Independent Electricity Distribution Network Operator (IEDNO)?
+                    <span class="helptext">An IEDNO is an operator of a distribution network <b>not</b> directly connected
+                        to a transmission system and that is <b>neither</b> a distribution company (DisCo) <b>nor</b> a mini-grid
+                        company.</span></span> </label>
             <select id="iedno" class="textinput textInput form-control">
                 <option value="">--Please choose an option--</option>
                 <option value="yes">Yes</option>
