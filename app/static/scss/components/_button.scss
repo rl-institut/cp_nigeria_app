@@ -21,6 +21,17 @@ footer button.btn {
     background-color: $primary-color-1-dark !important;
   }
 
+  &--secondary {
+    #{$anchor-pseudo-classes} {
+      background-color: #F2CD5D;
+      color: $text-color-main !important;
+    }
+
+    #{$anchor-pseudo-classes-active-state} {
+      background-color: #EDB72F !important;
+    }
+  }
+
   &--large {
     padding: 0.925rem;
     width: 100%;
@@ -180,7 +191,7 @@ ul.dropdown-menu {
   box-shadow: $box-shadow-frame;
   border: 1px solid $primary-gray-color-2;
 }
- 
+
 a.dropdown-item:active {
   background-color: $primary-gray-color-2;
 }
