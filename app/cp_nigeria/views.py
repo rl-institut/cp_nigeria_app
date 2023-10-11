@@ -524,15 +524,24 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
     qs_options = Options.objects.filter(project=project)
     if qs_options.exists():
-        es_schema_name = qs_options.get().schema_name
+        options = qs_options.get()
+        es_schema_name = options.schema_name
+        demand = np.array(get_aggregated_demand(community=options.community))
+        peak_demand = demand.max() / 1000
+        daily_demand = demand.sum() / 365 / 1000
+
     else:
         es_schema_name = None
+        peak_demand = None
+        daily_demand = None
 
     context = {
         "proj_id": proj_id,
         "proj_name": project.name,
         "step_id": step_id,
         "scen_id": scenario.id,
+        "daily_demand": daily_demand,
+        "peak_demand": peak_demand,
         "es_schema_name": es_schema_name,
         "step_list": CPN_STEP_VERBOSE,
     }
