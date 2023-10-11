@@ -12,8 +12,9 @@ CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
 
 class ProjectForm(OpenPlanModelForm):
-    community = forms.ModelChoiceField(queryset=Community.objects.all(), required=False,
-                                       label="Pre-select a community (optional)")
+    community = forms.ModelChoiceField(
+        queryset=Community.objects.all(), required=False, label="Pre-select a community (optional)"
+    )
     start_date = forms.DateField(
         label=_("Simulation start"),
         widget=forms.DateInput(
@@ -72,7 +73,7 @@ class EconomicDataForm(OpenPlanModelForm):
 
     class Meta:
         model = EconomicData
-        exclude = ("tax",)
+        exclude = ("tax", "currency", "duration")
 
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)

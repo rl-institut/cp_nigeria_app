@@ -20,9 +20,9 @@ from cp_nigeria.models import ConsumerGroup
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
-from business_model.helpers import model_score_mapping
+from business_model.helpers import model_score_mapping, B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
-from dashboard.helpers import KPI_PARAMETERS, B_MODELS
+from dashboard.helpers import KPI_PARAMETERS
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +79,20 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
     # TODO in the future, pre-load the questions instead of written out in the template
     project = get_object_or_404(Project, id=proj_id)
     messages.info(request, "Please include information about your connection to the grid.")
+
+    bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
+    if bm_qs.exists():
+        grid_condition = bm_qs.get().grid_condition
+    else:
+        grid_condition = ""
+
     return render(
         request,
         "cp_nigeria/steps/business_model_tree.html",
         {
             "proj_id": proj_id,
             "proj_name": project.name,
+            "grid_condition": grid_condition,
             "step_id": step_id,
             "scen_id": scen_id,
             "step_list": CPN_STEP_VERBOSE,
@@ -299,6 +307,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             # also get all child assets
             context["es_assets"].append(asset_type_name)
             context["form_storage"] = BessForm(
+                proj_id=project.id,
                 initial={
                     "name": existing_ess_asset.name,
                     "installed_capacity": ess_capacity_asset.installed_capacity,
@@ -314,10 +323,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     "optimize_cap": ess_capacity_asset.optimize_cap,
                     "soc_max": ess_capacity_asset.soc_max,
                     "soc_min": ess_capacity_asset.soc_min,
-                }
+                },
             )
         else:
-            context["form_bess"] = BessForm()
+            context["form_bess"] = BessForm(proj_id=project.id)
 
         for asset_type_name, form in zip(["pv_plant", "diesel_generator"], [PVForm, DieselForm]):
             qs = Asset.objects.filter(scenario=scenario.id, asset_type__asset_type=asset_type_name)
@@ -325,10 +334,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             if qs.exists():
                 existing_asset = qs.get()
                 context["es_assets"].append(asset_type_name)
-                context[f"form_{asset_type_name}"] = form(instance=existing_asset)
+                context[f"form_{asset_type_name}"] = form(instance=existing_asset, proj_id=project.id)
 
             else:
-                context[f"form_{asset_type_name}"] = form()
+                context[f"form_{asset_type_name}"] = form(proj_id=project.id)
 
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
 
@@ -373,9 +382,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
-                form = asset_forms[asset_name](request.POST, instance=qs.first())
+                form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
             else:
-                form = asset_forms[asset_name](request.POST)
+                form = asset_forms[asset_name](request.POST, proj_id=project.id)
 
             if form.is_valid():
                 asset_type = get_object_or_404(AssetType, asset_type=asset_name)
@@ -511,7 +520,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         #         if constraint_type == "net_zero_energy":
         #
         #
-        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, 4]))
+        return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
 
 
 @login_required
@@ -521,36 +530,89 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     scenario = project.scenario
     messages.info(request, "Please include any relevant constraints for the optimization.")
 
-    if request.method == "POST":
-        form = EconomicDataForm(request.POST, instance=project.economic_data)
+    qs_options = Options.objects.filter(project=project)
+    if qs_options.exists():
+        options = qs_options.get()
+        es_schema_name = options.schema_name
+        demand = np.array(get_aggregated_demand(community=options.community))
+        peak_demand = demand.max() / 1000
+        daily_demand = demand.sum() / 365 / 1000
 
+    else:
+        es_schema_name = None
+        peak_demand = None
+        daily_demand = None
+
+    context = {
+        "proj_id": proj_id,
+        "proj_name": project.name,
+        "step_id": step_id,
+        "scen_id": scenario.id,
+        "daily_demand": daily_demand,
+        "peak_demand": peak_demand,
+        "es_schema_name": es_schema_name,
+        "step_list": CPN_STEP_VERBOSE,
+    }
+
+    if request.method == "POST":
+        form = EconomicDataForm(request.POST, instance=project.economic_data, prefix="economic")
+        try:
+            equity_data = EquityData.objects.get(scenario=scenario)
+            equity_form = EquityDataForm(request.POST, instance=equity_data, prefix="equity")
+        except EquityData.DoesNotExist:
+            equity_form = EquityDataForm(request.POST, prefix="equity")
+
+        form_errors = False
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
-        return None
-    elif request.method == "GET":
-        form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
-
-        qs_options = Options.objects.filter(project=project)
-        if qs_options.exists():
-            es_schema_name = qs_options.get().schema_name
         else:
-            es_schema_name = None
+            form_errors = True
 
-        return render(
+        if equity_form.is_valid():
+            equity_data = equity_form.save(commit=False)
+            equity_data.debt_start = scenario.start_date.year
+            equity_data.scenario = scenario
+            equity_data.save()
+        else:
+            form_errors = True
+
+        if form_errors is False:
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
+        else:
+            context.update(
+                {
+                    "form": form,
+                    "equity_form": equity_form,
+                }
+            )
+            answer = render(
+                request,
+                "cp_nigeria/steps/scenario_system_params.html",
+                context,
+            )
+    elif request.method == "GET":
+        form = EconomicDataForm(
+            instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}, prefix="economic"
+        )
+        try:
+            equity_data = EquityData.objects.get(scenario=scenario)
+            equity_form = EquityDataForm(instance=equity_data, prefix="equity")
+        except EquityData.DoesNotExist:
+            equity_form = EquityDataForm(prefix="equity")
+
+        context.update(
+            {
+                "form": form,
+                "equity_form": equity_form,
+            }
+        )
+
+        answer = render(
             request,
             "cp_nigeria/steps/scenario_system_params.html",
-            {
-                "proj_id": proj_id,
-                "proj_name": project.name,
-                "step_id": step_id,
-                "scen_id": scenario.id,
-                "form": form,
-                "es_schema_name": es_schema_name,
-                "step_list": CPN_STEP_VERBOSE,
-            },
+            context,
         )
-    return None
+    return answer
 
 
 @login_required

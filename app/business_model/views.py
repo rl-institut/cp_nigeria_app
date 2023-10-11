@@ -23,6 +23,7 @@ import traceback
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.staticfiles.storage import staticfiles_storage
+from business_model.helpers import BM_QUESTIONS_CATEGORIES
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +67,18 @@ def help_select_questions(request, bm_id):
 
         categories_map = [cat for cat in criterias.values_list("category", flat=True)]
         categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
+
         form = BMQuestionForm(qs=BMAnswer.objects.filter(business_model=bm))
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             answer = render(
                 request,
                 "cp_nigeria/business_model/help_select_questions.html",
-                {"form": form, "categories_map": categories_map, "categories": categories},
+                {
+                    "form": form,
+                    "categories_map": categories_map,
+                    "categories": categories,
+                    "categories_verbose": BM_QUESTIONS_CATEGORIES,
+                },
             )
 
     return answer

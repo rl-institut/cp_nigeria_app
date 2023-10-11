@@ -11,40 +11,54 @@
 
 
 <main>
+<div class="container">
 
 	<section class="project-setup two-columns">
-		<div class="left">
-			<div>
-			<form method="post">
-			{% csrf_token %}
-			{{form |crispy }}
-			<button class="btn btn--medium" type="submit">
-				{% translate "Save parameters" %}
+<form method="POST">
+
+	<div style="display:flex">
+			<div class="left">
+				<div>
+				<div>
+					{% csrf_token %}
+					{{form |crispy }}
+					{{equity_form |crispy }}
+				</div>
+				</div>
+			</div>
+			<div class="right">
+				<div>
+					<p>Shortly explain dispatch hierarchy: prioritize solar > main grid > batt > diesel</p>
+					<div>
+						<div>Avg. daily demand (kWh)</div><div style="background-color: #F2CD5D;padding:1rem;">{{ daily_demand }}</div>
+					<div>Peak demand (kW)</div><div style="background-color: #F2CD5D;padding:1rem;">{{ peak_demand }}</div>
+					</div>
+
+					{% if es_schema_name %}
+					<div style="margin-top:2rem;">
+					<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+					</div>
+					{% endif %}
+				</div>
+
+
+			</div>
+		</div>
+				<button id="submitFormBtn" style="display: none" type="submit">
 			</button>
 		</form>
-				</div>
-		</div>
-		<div class="right">
-			<div>
-			<p>Shortly explain dispatch hierarchy: prioritize solar > main grid > batt > diesel</p>
-			<p>The parameters about maintenance costs which are gathered on the other page could also be layed out here instead as option.</p>
-			<p><span>total daily demand</span> : XXXX</p>
-			<p><span>daily peak demand</span> : XXXX</p>
-				{% if es_schema_name %}
-			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
-				{% endif %}
-		  </div>
-		</div>
-
 	</section>
 
-
+</div>
 </main>
 
 
 
 {% endblock progression_content %}
 
+{% block next_btn %}
+			<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
+{% endblock next_btn %}
 
 {% block end_body_scripts %}
 {% endblock end_body_scripts %}

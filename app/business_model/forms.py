@@ -67,3 +67,19 @@ class BMQuestionForm(forms.Form):
         else:
             raise ValidationError("This form cannot be blank")
         return cleaned_data
+
+
+class EquityDataForm(forms.ModelForm):
+    class Meta:
+        model = EquityData
+        exclude = ["scenario", "debt_start"]
+
+    def __init__(self, *args, **kwargs):
+        include_shs = kwargs.pop("include_shs", False)
+        super().__init__(*args, **kwargs)
+
+        if not include_shs:
+            for field in self.fields:
+                if "SHS" in field:
+                    self.fields[field].widget = forms.HiddenInput()
+                    self.fields[field].required = False

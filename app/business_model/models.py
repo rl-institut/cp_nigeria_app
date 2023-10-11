@@ -10,11 +10,12 @@ import pandas as pd
 
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
-from dashboard.helpers import B_MODELS
+from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES
 
 
 class BusinessModel(models.Model):
@@ -30,7 +31,7 @@ class BusinessModel(models.Model):
     decision_tree = models.TextField(null=True, blank=True)
 
     model_name = models.CharField(
-        max_length=60, null=True, blank=False, choices=[(k, k.replace("_", " ")) for k in B_MODELS]
+        max_length=60, null=True, blank=False, choices=[(k, k.replace("_", " ").capitalize()) for k in B_MODELS]
     )
 
     @property
@@ -57,17 +58,7 @@ class BMQuestion(models.Model):
     score_allowed_values = models.TextField(null=True)
     weighted_score = models.FloatField(null=True, verbose_name="Weighted Score")
     category = models.CharField(
-        max_length=60,
-        null=True,
-        blank=False,
-        choices=(
-            ("dialogue", "Engagement, dialogue, and co-determination"),
-            ("steering", "Steering capacities"),
-            ("control", "Asserting control and credibility"),
-            ("institutional", "Supporting Institutional structures"),
-            ("economic", "Potential for economic co-benefits"),
-            ("financial", "Financial capacities"),
-        ),
+        max_length=60, null=True, blank=False, choices=[(k, v) for k, v in BM_QUESTIONS_CATEGORIES.items()]
     )
     description = models.TextField(null=False)
 
@@ -78,3 +69,32 @@ class BMAnswer(models.Model):
         BusinessModel, on_delete=models.CASCADE, null=True, blank=False, related_name="user_answers"
     )
     score = models.FloatField(null=True, verbose_name="Score")
+
+
+class EquityData(models.Model):
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
+    debt_start = models.IntegerField()
+    grant_share = models.FloatField(
+        verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+    )
+    debt_share = models.FloatField(
+        verbose_name=_("Share of the external debt (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+    )
+    debt_interest_MG = models.FloatField(
+        verbose_name=_("Interest rate for external loan: mini-grid (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    debt_interest_SHS = models.FloatField(
+        verbose_name=_("Interest rate for external loan: SHS (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        null=True,
+    )
+    equity_interest_MG = models.FloatField(
+        verbose_name=_("Interest rate for external equity: mini-grid (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    equity_interest_SHS = models.FloatField(
+        verbose_name=_("Interest rate for external equity: SHS (%)"),
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        null=True,
+    )

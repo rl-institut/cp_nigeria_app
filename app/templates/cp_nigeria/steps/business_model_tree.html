@@ -9,12 +9,7 @@
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 {% block progression_content %}
 <main>
-<script src="{% static 'js/decision_tree.js' %}"></script>
-<script>
-    const csrfToken = '{{ csrf_token }}';
-    const projId =`{{proj_id}}`;
-    const postUrlBusinessModel = '{% url 'cpn_business_model' %}';
-</script>
+
 
 <div class="container">
     <!-- Intro question -->
@@ -24,7 +19,7 @@
             <label class="col-form-label col-lg-8 requiredField" for="grid">What type of mini-grid would your
                 community be able to pursue?</label>
 
-            <select id="model" class="textinput textInput form-control" >
+            <select id="model" class="textinput textInput form-control">
                 <option value="">--Please choose an option--</option>
                 <option value="unknown">Assess the most suitable mini-grid type for your community</option>
                 <option value="interconnected">Interconnected mini-grid</option>
@@ -132,13 +127,31 @@
         </p>
     </div>
 
-    <button id="back">Back</button>
-    <button id="next" style="display:none">Next</button>
+    <button id="back" class="btn btn--small btn--hollow">Modify last selection</button>
     </div>
 </main>
 
 {% endblock progression_content %}
 
+{% block next_btn %}
+			<button id="next" disabled="true" class="btn btn--medium" onclick="javascript:nextBtn.click()">{% translate "Next" %}</button>
+			<a id="nextBtn" style="display: none;" href="{% url 'cpn_steps' proj_id step_id|add:1 %}"></a>
+{% endblock next_btn %}
+
 
 {% block end_body_scripts %}
+<script src="{% static 'js/decision_tree.js' %}"></script>
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const projId =`{{proj_id}}`;
+    const postUrlBusinessModel = '{% url 'cpn_business_model' %}';
+		// hide the button to go to previous question at first
+		$('#back').hide();
+		$('#model').val(`{{ grid_condition }}`).change();
+</script>
+{% if grid_condition %}
+<script>
+	$('#next').attr("disabled", false);
+</script>
+{% endif %}
 {% endblock end_body_scripts %}
