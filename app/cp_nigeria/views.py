@@ -523,13 +523,26 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
     if request.method == "POST":
         form = EconomicDataForm(request.POST, instance=project.economic_data)
-
-        if form.is_valid():
+        try:
+            equity_data = EquityData.objects.get(scenario=scenario)
+            equity_form = EquityDataForm(request.POST, instance=equity_data)
+        except EquityData.DoesNotExist:
+            equity_form = EquityDataForm(request.POST)
+        if form.is_valid() and equity_form.is_valid():
             form.save()
+            equity_data = equity_form.save(commit=False)
+            equity_data.debt_start = scenario.start_date.year
+            equity_data.scenario = scenario
+            equity_data.save()
             return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
         return None
     elif request.method == "GET":
         form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
+        try:
+            equity_data = EquityData.objects.get(scenario=scenario)
+            equity_form = EquityDataForm(instance=equity_data)
+        except EquityData.DoesNotExist:
+            equity_form = EquityDataForm()
 
         qs_options = Options.objects.filter(project=project)
         if qs_options.exists():
@@ -546,6 +559,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 "step_id": step_id,
                 "scen_id": scenario.id,
                 "form": form,
+                "equity_form": equity_form,
                 "es_schema_name": es_schema_name,
                 "step_list": CPN_STEP_VERBOSE,
             },

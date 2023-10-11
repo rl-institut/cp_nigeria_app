@@ -67,3 +67,32 @@ class BMQuestionForm(forms.Form):
         else:
             raise ValidationError("This form cannot be blank")
         return cleaned_data
+
+
+class EquityDataForm(forms.ModelForm):
+    class Meta:
+        model = EquityData
+        exclude = ["scenario", "debt_start"]
+
+    def __init__(self, *args, **kwargs):
+        include_shs = kwargs.pop("include_shs", False)
+        super().__init__(*args, **kwargs)
+
+        if not include_shs:
+            for field in self.fields:
+                if "SHS" in field:
+                    self.fields[field].widget = forms.HiddenInput()
+                    self.fields[field].required = False
+
+        labels = {
+            "grant_share": _("Share of grant for assets (%)"),
+            "debt_share": _("Share of the external debt (%)"),
+            "debt_interest_MG": _("Interest rate for external loan: mini-grid (%)"),
+            "debt_interest_SHS": _("Interest rate for external loan: SHS (%)"),
+            "equity_interest_MG": _("Interest rate for external equity: mini-grid (%)"),
+            "equity_interest_SHS": _("Interest rate for external equity: SHS (%)"),
+        }
+
+        # Set labels for form fields based on the dictionary
+        for field_name, label in labels.items():
+            self.fields[field_name].label = label

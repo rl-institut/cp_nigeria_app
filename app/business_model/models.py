@@ -78,3 +78,14 @@ class BMAnswer(models.Model):
         BusinessModel, on_delete=models.CASCADE, null=True, blank=False, related_name="user_answers"
     )
     score = models.FloatField(null=True, verbose_name="Score")
+
+
+class EquityData(models.Model):
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
+    debt_start = models.IntegerField()
+    grant_share = models.FloatField()
+    debt_share = models.FloatField()
+    debt_interest_MG = models.FloatField()
+    debt_interest_SHS = models.FloatField(null=True)
+    equity_interest_MG = models.FloatField()
+    equity_interest_SHS = models.FloatField(null=True)
