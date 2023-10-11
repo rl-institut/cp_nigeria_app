@@ -6,7 +6,10 @@ from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 from projects.models import Project, EconomicData, Scenario
+from projects.constants import CURRENCY_SYMBOLS
 from .models import *
+from projects.helpers import PARAMETERS
+
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
@@ -118,11 +121,20 @@ class PVForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
+        self.fields["optimize_cap"].initial = True
+
         # for field in self.fields:
 
         self.fields["input_timeseries"].required = False
 
-        for field, value in zip(("name", "renewable_asset"), (self.asset_type_name, True)):
+        visible_fields = ["opex_var"]
+        for field in self.fields:
+            if field not in visible_fields:
+                pass  # self.fields[field].widget = forms.HiddenInput()
+
+        for field, value in zip(
+            ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
+        ):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
@@ -133,11 +145,25 @@ class DieselForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        # for field in self.fields:
+        self.fields["optimize_cap"].initial = True
 
-        for field, value in zip(("name",), (self.asset_type_name,)):
+        visible_fields = ["opex_var"]
+        for field in self.fields:
+            if field not in visible_fields:
+                pass  # self.fields[field].widget = forms.HiddenInput()
+
+        for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
+
+        qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
+        if qs.exists():
+            currency = qs.values_list("economic_data__currency", flat=True).get()
+            currency = CURRENCY_SYMBOLS[currency]
+
+        # TODO right now only added as a form field for demonstration purposes but no changes to the db
+        self.fields["capex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
+        self.fields["capex_var"].label = f"Fuel price ({currency}/l)"
 
 
 class BessForm(StorageForm):
@@ -147,10 +173,31 @@ class BessForm(StorageForm):
         self.prefix = self.asset_type_name
 
         # for field in self.fields:
+        #     self.fields[field].required = False
+        self.fields["optimize_cap"].initial = True
 
-        for field, value in zip(("name",), (self.asset_type_name,)):
+        for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
+
+        # TODO this is a patchy fix to get the tooltips even with the changed labels (copied code from forms), fix properly later
+        for field, value in zip(
+            ("crate", "soc_min", "efficiency"), ("C-Rate", "Depth of Discharge (DOD)", "Round-trip efficiency")
+        ):
+            RTD_url = "https://open-plan-documentation.readthedocs.io/en/latest/model/input_parameters.html#"
+            if field in PARAMETERS:
+                param_ref = PARAMETERS[field]["ref"]
+                help_text = PARAMETERS[field][":Definition_Short:"]
+            elif "c-rate" in PARAMETERS:
+                param_ref = PARAMETERS["c-rate"]["ref"]
+                help_text = PARAMETERS["c-rate"][":Definition_Short:"]
+            else:
+                param_ref = ""
+            if field != "name":
+                question_icon = f'<a href="{RTD_url}{param_ref}"><span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span></a>'
+            else:
+                question_icon = ""
+            self.fields[field].label = value + question_icon
 
 
 class DummyForm(forms.Form):
