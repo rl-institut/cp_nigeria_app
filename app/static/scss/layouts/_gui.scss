@@ -273,8 +273,10 @@
 }
 
 .modal.modal--gui {
+
   .modal-dialog {
-    min-width: 1000px;
+    min-width: 55%;
+    max-width: 80%;
   }
 
   .modal-body .container {
