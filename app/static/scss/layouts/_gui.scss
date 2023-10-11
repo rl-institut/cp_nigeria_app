@@ -310,3 +310,41 @@
     }
   }
 }
+
+
+/* hover container */
+.hover {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.hover .helptext {
+  visibility: hidden;
+  width: 500px;
+  background-color: $primary-gray-color-2;
+  color: black;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 150%;
+  left: 50%;
+  margin-left: -60px;
+}
+
+.hover .helptext::after {
+  content: " ";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: $primary-gray-color-2 transparent transparent transparent;
+}
+
+.hover:hover .helptext {
+  visibility: visible;
+}

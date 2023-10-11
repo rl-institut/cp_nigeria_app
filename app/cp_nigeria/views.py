@@ -77,6 +77,7 @@ def home_cpn(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
+    # TODO in the future, pre-load the questions instead of written out in the template
     messages.info(request, "Please include information about your connection to the grid.")
     return render(
         request,
