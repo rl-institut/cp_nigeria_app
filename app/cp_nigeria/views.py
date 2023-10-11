@@ -434,6 +434,15 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         community = options.community
                         asset.input_timeseries = community.pv_timeseries.values
                         asset.save()
+                    else:
+                        if asset.input_timeseries == []:
+                            qs_pv = Timeseries.objects.filter(scenario=project.scenario)
+                            if qs_pv.exists():
+                                values = qs_pv.get().values
+                            else:
+                                values = get_pv_output(project.id)
+                            asset.input_timeseries = json.dumps(values)
+                            asset.save()
 
                 if asset_name == "bess":
                     # Create the ess charging power
@@ -822,20 +831,20 @@ def cpn_simulation_request(request, proj_id=0):
     return HttpResponseRedirect(reverse("cpn_steps", args=[project.id, STEP_MAPPING["simulation"]]))
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
-# TODO: make this view work with dynamic coordinates (from map)
-def get_pv_output(request, proj_id):
+def get_pv_output(proj_id):
     project = Project.objects.get(id=proj_id)
     coordinates = {"lat": project.latitude, "lon": project.longitude}
     location = RenewableNinjas()
     location.get_pv_output(coordinates)
-    response = HttpResponse(
-        content_type="text/csv", headers={"Content-Disposition": 'attachment; filename="pv_output.csv"'}
-    )
-    location.data.to_csv(response, index=False, sep=";")
-    location.create_pv_graph()
-    return response
+    pv_ts, _ = Timeseries.objects.get_or_create(scenario=project.scenario, open_source=True, ts_type="source")
+
+    pv_ts.values = np.squeeze(location.data.values).tolist()
+    pv_ts.start_time = location.data.index[0]
+    pv_ts.end_time = location.data.index[-1]
+    pv_ts.time_step = 60
+    pv_ts.save()
+
+    return pv_ts.values
 
 
 @login_required
