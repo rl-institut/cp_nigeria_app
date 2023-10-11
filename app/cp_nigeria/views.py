@@ -522,50 +522,80 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     scenario = project.scenario
     messages.info(request, "Please include any relevant constraints for the optimization.")
 
+    qs_options = Options.objects.filter(project=project)
+    if qs_options.exists():
+        es_schema_name = qs_options.get().schema_name
+    else:
+        es_schema_name = None
+
+    context = {
+        "proj_id": proj_id,
+        "proj_name": project.name,
+        "step_id": step_id,
+        "scen_id": scenario.id,
+        "es_schema_name": es_schema_name,
+        "step_list": CPN_STEP_VERBOSE,
+    }
+
     if request.method == "POST":
-        form = EconomicDataForm(request.POST, instance=project.economic_data)
+        form = EconomicDataForm(request.POST, instance=project.economic_data, prefix="economic")
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
-            equity_form = EquityDataForm(request.POST, instance=equity_data)
+            equity_form = EquityDataForm(request.POST, instance=equity_data, prefix="equity")
         except EquityData.DoesNotExist:
-            equity_form = EquityDataForm(request.POST)
-        if form.is_valid() and equity_form.is_valid():
+            equity_form = EquityDataForm(request.POST, prefix="equity")
+
+        form_errors = False
+        if form.is_valid():
             form.save()
+        else:
+            form_errors = True
+
+        if equity_form.is_valid():
             equity_data = equity_form.save(commit=False)
             equity_data.debt_start = scenario.start_date.year
             equity_data.scenario = scenario
             equity_data.save()
-            return HttpResponseRedirect(reverse("cpn_constraints", args=[proj_id]))
-        return None
+        else:
+            form_errors = True
+
+        if form_errors is False:
+            answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
+        else:
+            context.update(
+                {
+                    "form": form,
+                    "equity_form": equity_form,
+                }
+            )
+            answer = render(
+                request,
+                "cp_nigeria/steps/scenario_system_params.html",
+                context,
+            )
     elif request.method == "GET":
-        form = EconomicDataForm(instance=project.economic_data, initial={"capex_fix": scenario.capex_fix})
+        form = EconomicDataForm(
+            instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}, prefix="economic"
+        )
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
-            equity_form = EquityDataForm(instance=equity_data)
+            equity_form = EquityDataForm(instance=equity_data, prefix="equity")
         except EquityData.DoesNotExist:
-            equity_form = EquityDataForm()
+            equity_form = EquityDataForm(prefix="equity")
 
-        qs_options = Options.objects.filter(project=project)
-        if qs_options.exists():
-            es_schema_name = qs_options.get().schema_name
-        else:
-            es_schema_name = None
-
-        return render(
-            request,
-            "cp_nigeria/steps/scenario_system_params.html",
+        context.update(
             {
-                "proj_id": proj_id,
-                "proj_name": project.name,
-                "step_id": step_id,
-                "scen_id": scenario.id,
                 "form": form,
                 "equity_form": equity_form,
-                "es_schema_name": es_schema_name,
-                "step_list": CPN_STEP_VERBOSE,
-            },
+            }
         )
-    return None
+
+        answer = render(
+            request,
+            "cp_nigeria/steps/scenario_system_params.html",
+            context,
+        )
+    return answer
 
 
 @login_required
