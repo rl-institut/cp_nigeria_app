@@ -552,8 +552,8 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         options = qs_options.get()
         es_schema_name = options.schema_name
         demand = np.array(get_aggregated_demand(community=options.community))
-        peak_demand = demand.max() / 1000
-        daily_demand = demand.sum() / 365 / 1000
+        peak_demand = demand.max()
+        daily_demand = demand.sum() / 365
 
     else:
         es_schema_name = None
