@@ -1,5 +1,4 @@
 from django.utils.translation import gettext_lazy as _
-from decimal import Decimal
 
 COUNTRY = (
     ("", "Choose..."),
@@ -457,4 +456,4 @@ MAP_MVS_EPA = {value: key for (key, value) in MAP_EPA_MVS.items()}
 COMPARE_VIEW = "compare"
 
 # Between 8.8 and 11 kWh/L depending on the diesel
-ENERGY_DENSITY_DIESEL = Decimal(9.8)
+ENERGY_DENSITY_DIESEL = 9.8

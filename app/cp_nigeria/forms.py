@@ -146,6 +146,10 @@ class DieselForm(AssetCreateForm):
 
         self.fields["optimize_cap"].initial = True
 
+        asset = kwargs.get("instance", None)
+        if asset is not None:
+            self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
+
         visible_fields = ["opex_var"]
         for field in self.fields:
             if field not in visible_fields:
@@ -160,7 +164,6 @@ class DieselForm(AssetCreateForm):
             currency = qs.values_list("economic_data__currency", flat=True).get()
             currency = CURRENCY_SYMBOLS[currency]
 
-        self.fields["opex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
         self.fields["opex_var"].label = f"Fuel price ({currency}/l)"
 
     def clean_opex_var(self):
