@@ -41,49 +41,45 @@
             {% for form in formset %}
             <tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
                 <td>
-									{% if allow_edition %}
-                <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="icon icon-more"></span>
-                </button>
+                    {% if allow_edition %}
+                    <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="icon icon-more"></span>
+                    </button>
 
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
-                    <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
-                    <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
-                </ul>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
+                        <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
+                        <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
+                    </ul>
 
-                <input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
-									{% endif %}
-                </td>
-                    {% for field in form %}
-                    {% if field.name != 'DELETE' %}
-
-                    <td>
-                        {{ field | as_crispy_field }}
-                    </td>
-
+                    <input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
                     {% endif %}
-                    {% endfor %}
+                </td>
+                {% for field in form %}
+                {% if field.name != 'DELETE' %}
+
+                <td>
+                    {{ field | as_crispy_field }}
+                </td>
+
+                {% endif %}
+                {% endfor %}
             </tr>
             {% endfor %}
             </tbody>
-					<tfoot>
-   <tr>
-		 {% if allow_edition %}
-      <td colspan="4" style="text-align: center;padding-top:0">
-				<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
-								<span class="icon icon-add"></span>
-								Add Consumer Group
-							</button>
-
-			</td>
-		 {% endif %}
-   </tr>
-</tfoot>
+            <tfoot>
+            <tr>
+                {% if allow_edition %}
+                <td colspan="4" style="text-align: center;padding-top:0">
+                    <button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
+                        <span class="icon icon-add"></span>
+                        Add Consumer Group
+                    </button>
+                </td>
+                {% endif %}
+            </tr>
+            </tfoot>
         </table>
 
-
-
-        </table>
         <div class="container">
             <div>
                 <p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
@@ -93,13 +89,16 @@
             <div id="demand-aggregate">
             </div>
         </div>
-        <center>
-            <button class="btn btn--medium" type="submit">{% translate "Save load profile" %}</button>
-        </center>
+        <button id="submitFormBtn" style="display: none;" type="submit">
+        </button>
     </form>
 </main>
 
 {% endblock progression_content %}
+
+{% block next_btn %}
+<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
+{% endblock next_btn %}
 
 {% block end_body_scripts %}
 <script>
