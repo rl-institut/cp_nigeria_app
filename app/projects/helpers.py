@@ -12,7 +12,10 @@ from projects.dtos import convert_to_dto
 from projects.models import Timeseries, AssetType
 from projects.constants import MAP_MVS_EPA
 from dashboard.helpers import KPIFinder
+from decimal import Decimal
 
+# TODO kWh/L, taken from offgridders, double check - also find a better place for this
+ENERGY_DENSITY_DIESEL = Decimal(9.8)
 
 PARAMETERS = {}
 if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:

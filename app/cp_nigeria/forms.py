@@ -152,7 +152,7 @@ class DieselForm(AssetCreateForm):
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
+        for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
@@ -162,8 +162,8 @@ class DieselForm(AssetCreateForm):
             currency = CURRENCY_SYMBOLS[currency]
 
         # TODO right now only added as a form field for demonstration purposes but no changes to the db
-        self.fields["capex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
-        self.fields["capex_var"].label = f"Fuel price ({currency}/l)"
+        self.fields["opex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
+        self.fields["opex_var"].label = f"Fuel price ({currency}/l)"
 
 
 class BessForm(StorageForm):
