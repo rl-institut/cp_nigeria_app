@@ -159,9 +159,9 @@ class DieselForm(AssetCreateForm):
         #     self.fields[field].widget = forms.HiddenInput()
         #     self.fields[field].initial = value
 
-        for field, value in zip(("name"), (self.asset_type_name)):
-            self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+        # for field, value in ("name", self.asset_type_name):
+        #     self.fields["name"].widget = forms.HiddenInput()
+        self.fields["name"].initial = self.asset_type_name
 
         qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
         if qs.exists():
