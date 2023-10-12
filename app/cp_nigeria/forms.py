@@ -6,10 +6,9 @@ from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 from projects.models import Project, EconomicData, Scenario
-from projects.constants import CURRENCY_SYMBOLS
+from projects.constants import CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 from .models import *
 from projects.helpers import PARAMETERS
-
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
@@ -152,7 +151,7 @@ class DieselForm(AssetCreateForm):
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
+        for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
@@ -161,9 +160,11 @@ class DieselForm(AssetCreateForm):
             currency = qs.values_list("economic_data__currency", flat=True).get()
             currency = CURRENCY_SYMBOLS[currency]
 
-        # TODO right now only added as a form field for demonstration purposes but no changes to the db
-        self.fields["capex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
-        self.fields["capex_var"].label = f"Fuel price ({currency}/l)"
+        self.fields["opex_var"] = forms.DecimalField(initial=0.65, decimal_places=2)
+        self.fields["opex_var"].label = f"Fuel price ({currency}/l)"
+
+    def clean_opex_var(self):
+        return self.cleaned_data["opex_var"] / ENERGY_DENSITY_DIESEL
 
 
 class BessForm(StorageForm):
