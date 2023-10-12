@@ -247,6 +247,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 total_demand = get_aggregated_demand(community=options.community)
             else:
                 total_demand = get_aggregated_demand(proj_id=proj_id)
+        else:
+            total_demand = []
 
     messages.info(
         request,
