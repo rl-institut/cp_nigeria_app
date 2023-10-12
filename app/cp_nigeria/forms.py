@@ -121,9 +121,7 @@ class PVForm(AssetCreateForm):
         self.prefix = self.asset_type_name
 
         self.fields["optimize_cap"].initial = True
-
-        # for field in self.fields:
-
+        self.fields["input_timeseries"].widget = forms.HiddenInput()
         self.fields["input_timeseries"].required = False
 
         visible_fields = ["opex_var"]
@@ -131,11 +129,18 @@ class PVForm(AssetCreateForm):
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        for field, value in zip(
-            ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
-        ):
-            self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+        self.fields["name"].widget = forms.HiddenInput()
+        self.fields["name"].initial = self.asset_type_name
+
+        self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
+            "(CAPEX)", "(CAPEX). It should include inverter costs."
+        )
+
+        # for field, value in zip(
+        #     ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
+        # ):
+        #     self.fields[field].widget = forms.HiddenInput()
+        #     self.fields[field].initial = value
 
 
 class DieselForm(AssetCreateForm):
@@ -159,8 +164,7 @@ class DieselForm(AssetCreateForm):
         #     self.fields[field].widget = forms.HiddenInput()
         #     self.fields[field].initial = value
 
-        # for field, value in ("name", self.asset_type_name):
-        #     self.fields["name"].widget = forms.HiddenInput()
+        self.fields["name"].widget = forms.HiddenInput()
         self.fields["name"].initial = self.asset_type_name
 
         qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
@@ -176,17 +180,25 @@ class DieselForm(AssetCreateForm):
 
 class BessForm(StorageForm):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, asset_type="bess", **kwargs)
+        super().__init__(*args, **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        # for field in self.fields:
-        #     self.fields[field].required = False
+        asset = kwargs.get("instance", None)
+        if asset is not None:
+            self.initial["soc_min"] = round(1 - asset.soc_min, 3)
+
         self.fields["optimize_cap"].initial = True
 
-        for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
-            self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+        self.fields["name"].widget = forms.HiddenInput()
+        self.fields["name"].initial = self.asset_type_name
+
+        # for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
+        #     self.fields[field].widget = forms.HiddenInput()
+        #     self.fields[field].initial = value
+        self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
+            "(CAPEX)", "(CAPEX). It should include inverter costs."
+        )
 
         # TODO this is a patchy fix to get the tooltips even with the changed labels (copied code from forms), fix properly later
         for field, value in zip(
@@ -201,11 +213,16 @@ class BessForm(StorageForm):
                 help_text = PARAMETERS["c-rate"][":Definition_Short:"]
             else:
                 param_ref = ""
+            if field == "soc_min":
+                help_text = "The fraction of the battery's capacity which is currently removed from the battery with regard to its fully charged state."  # source: Wikipedia
             if field != "name":
                 question_icon = f'<a href="{RTD_url}{param_ref}"><span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span></a>'
             else:
                 question_icon = ""
             self.fields[field].label = value + question_icon
+
+    def clean_soc_min(self):
+        return round(1 - self.cleaned_data["soc_min"], 3)
 
 
 class DummyForm(forms.Form):

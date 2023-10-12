@@ -57,7 +57,7 @@ CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
     "grid_conditions": _("Grid conditions"),
     "demand_profile": _("Demand load profile selection"),
-    "scenario_setup": _("Scenario setup"),
+    "scenario_setup": _("Supply system setup"),
     "economic_params": _("Economic parameters"),
     "simulation": _("Simulation"),
     "business_model": _("Business Model"),
@@ -121,7 +121,6 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         if form.is_valid():
             project = form.save(user=request.user)
             options, _ = Options.objects.get_or_create(project=project)
-            # import pdb;pdb.set_trace()
             options.community = form.cleaned_data["community"]
             options.save()
 
@@ -315,24 +314,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             ess_discharging_power_asset = ess_asset_children.get(asset_type__asset_type="discharging_power")
             # also get all child assets
             context["es_assets"].append(asset_type_name)
-            context["form_storage"] = BessForm(
+            context["form_bess"] = BessForm(
                 proj_id=project.id,
-                initial={
-                    "name": existing_ess_asset.name,
-                    "installed_capacity": ess_capacity_asset.installed_capacity,
-                    "age_installed": ess_capacity_asset.age_installed,
-                    "capex_fix": ess_capacity_asset.capex_fix,
-                    "capex_var": ess_capacity_asset.capex_var,
-                    "opex_fix": ess_capacity_asset.opex_fix,
-                    "opex_var": ess_capacity_asset.opex_var,
-                    "lifetime": ess_capacity_asset.lifetime,
-                    "crate": ess_capacity_asset.crate,
-                    "efficiency": ess_capacity_asset.efficiency,
-                    "dispatchable": ess_capacity_asset.dispatchable,
-                    "optimize_cap": ess_capacity_asset.optimize_cap,
-                    "soc_max": ess_capacity_asset.soc_max,
-                    "soc_min": ess_capacity_asset.soc_min,
-                },
+                instance=ess_capacity_asset,
             )
         else:
             context["form_bess"] = BessForm(proj_id=project.id)
@@ -389,7 +373,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             )
 
         for i, asset_name in enumerate(user_assets):
-            qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
+            qs = Asset.objects.filter(
+                scenario=scenario, asset_type__asset_type=asset_name if asset_name != "bess" else "capacity"
+            )
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
 
@@ -403,7 +389,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 # TODO the form save should do some specific things to save the storage correctly
 
                 asset.scenario = scenario
-                asset.asset_type = asset_type
+                if asset_name != "bess":
+                    asset.asset_type = asset_type
+                else:
+                    asset.asset_type = get_object_or_404(AssetType, asset_type="capacity")
                 asset.pos_x = 400
                 asset.pos_y = 150 + i * 150
                 asset.save()
@@ -455,27 +444,30 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                             asset.save()
 
                 if asset_name == "bess":
+                    ess_asset, _ = Asset.objects.get_or_create(
+                        name="battery",
+                        asset_type=get_object_or_404(AssetType, asset_type=asset_name),
+                        scenario=scenario,
+                    )
+                    qs_ac = Asset.objects.filter(parent_asset=asset)
                     # Create the ess charging power
-                    ess_charging_power_asset = Asset(
-                        name=f"{asset.name} input power",
+                    ess_charging_power_asset, _ = Asset.objects.get_or_create(
+                        name=f"{ess_asset.name} input power",
                         asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
                         scenario=scenario,
-                        parent_asset=asset,
+                        parent_asset=ess_asset,
                     )
                     # Create the ess discharging power
-                    ess_discharging_power_asset = Asset(
-                        name=f"{asset.name} output power",
+                    ess_discharging_power_asset, _ = Asset.objects.get_or_create(
+                        name=f"{ess_asset.name} output power",
                         asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
                         scenario=scenario,
-                        parent_asset=asset,
+                        parent_asset=ess_asset,
                     )
                     # Create the ess capacity
-                    ess_capacity_asset = Asset(
-                        name=f"{asset.name} capacity",
-                        asset_type=get_object_or_404(AssetType, asset_type="capacity"),
-                        scenario=scenario,
-                        parent_asset=asset,
-                    )
+                    ess_capacity_asset = asset
+                    ess_capacity_asset.name = f"{ess_asset.name} capacity"
+                    ess_capacity_asset.parent_asset = ess_asset
                     # remove name property from the form
                     form.cleaned_data.pop("name", None)
                     # Populate all subassets properties
@@ -501,15 +493,23 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     ess_capacity_asset.save()
                     ess_charging_power_asset.save()
                     ess_discharging_power_asset.save()
-                    asset.name = "battery"
-                    asset.save()
+
+                    ess_asset.save()
 
                     # connect the battery to the electricity bus
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
+                        bus=bus_el,
+                        bus_connection_port="input_1",
+                        asset=ess_asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
                     )
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
+                        bus=bus_el,
+                        bus_connection_port="output_1",
+                        asset=ess_asset,
+                        flow_direction="B2A",
+                        scenario=scenario,
                     )
                 else:
                     # connect the asset to the electricity bus
@@ -527,18 +527,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     Bus.objects.filter(scenario=scenario, type="Gas").delete()
                 asset.delete()
 
-        #     if form.is_valid():
-        #         # check whether the constraint is already associated to the scenario
-        #         if qs.exists():
-        #             if len(qs) == 1:
-        #                 for name, value in form.cleaned_data.items():
-        #                     if getattr(constraint_instance, name) != value:
-        #                         if qs_sim.exists():
-        #
-        #
-        #         if constraint_type == "net_zero_energy":
-        #
-        #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
 
 
