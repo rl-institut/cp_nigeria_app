@@ -5,9 +5,14 @@ $(document).ready(function() {
     // delete empty extra form if necessary
     deleteEmptyForm();
     // load timeseries once on page load (to update graph with existing formset data)
-    $('select[id*="timeseries"]').each(function() {
-    getTimeseries.call(this);
-    });
+    if (allowEdition == true) {
+        $('select[id*="timeseries"]').each(function() {
+        getTimeseries.call(this);
+        });
+    } else {
+    updateGraph(totalDemand, "Total demand", 1);
+    updateKeyParams();
+    }
 
     $(document).on('change', 'select[id*="timeseries"]', getTimeseries);
     $(document).on('click keyup', 'input[id*="number_consumers"]', updateNumberConsumers);

@@ -242,6 +242,12 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
 
+        if formset_qs.exists():
+            if options.community is not None:
+                total_demand = get_aggregated_demand(community=options.community)
+            else:
+                total_demand = get_aggregated_demand(proj_id=proj_id)
+
     messages.info(
         request,
         "Please input user group data. This includes user type information about "
@@ -260,6 +266,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "allow_edition": allow_edition,
+            "total_demand": total_demand,
         },
     )
 

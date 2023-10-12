@@ -10,6 +10,8 @@
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
     const updateGraphUrl = '{% url 'ajax_update_graph' %}';
+    var totalDemand = {{ total_demand }};
+    const allowEdition = '{{ allow_edition }}';
 </script>
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
