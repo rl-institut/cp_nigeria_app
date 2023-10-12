@@ -47,8 +47,8 @@ STEP_MAPPING = {
     "grid_conditions": 2,
     "demand_profile": 3,
     "scenario_setup": 4,
-    "economic_params": 5,
-    "business_model": 6,
+    "business_model": 5,
+    "economic_params": 6,
     "simulation": 7,
     "outputs": 8,
 }
