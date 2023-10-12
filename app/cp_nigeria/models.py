@@ -58,7 +58,9 @@ class Options(models.Model):
             name += "PV"
         if "bess" in self.user_case:
             name += "B"
-        return f"{name}_case.svg"
+        if name != "":
+            name = f"{name}_case.svg"
+        return name
 
 
 def copy_energy_system_from_usecase(usecase_name, scenario):
