@@ -69,11 +69,14 @@
 			{% if step_id > 1 %}
 			<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
 			{% endif %}
+
 			{% if step_id < step_list|length %}
 			{% block next_btn %}
 			<a id="next-button" class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
 			{% endblock next_btn %}
 			{% endif %}
+			{% else %}
+			<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
 			{% endif %}
 		</div>
 		<div class="step-footer__right"></div>
