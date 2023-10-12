@@ -489,6 +489,18 @@ h2,
 h3 {
   letter-spacing: 0.03rem; }
 
+.cpn-accordion .accordion-button {
+  color: #54504C;
+  background-color: #FDF6E2; }
+  .cpn-accordion .accordion-button:not(.collapsed) {
+    color: #54504C;
+    background-color: #FDF6E2; }
+  .cpn-accordion .accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem RGB(153 150 17/25%);
+    border-color: #FDF6E2; }
+  .cpn-accordion .accordion-button::after, .cpn-accordion .accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2354504C'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e"); }
+
 a {
   font-weight: 700;
   color: #008753 !important;
@@ -1595,6 +1607,151 @@ nav.navbar {
       .wizard__steps li:not(:first-of-type)::after {
         width: 1.25rem;
         margin-left: -2.5rem; } }
+@use 'variables' as *;
+.cpn .form-check-input:checked {
+  background-color: #008753;
+  border-color: #008753; }
+
+.cpn .form-check-input:focus {
+  box-shadow: 0 0 0.25rem RGB(56 167 17/25%); }
+
+.cpn-setup .form-check-input ~ div .img {
+  margin: 1rem;
+  padding: 1rem;
+  width: 6rem;
+  border-radius: 8px;
+  border: 2px solid #F9F8F7;
+  background-color: #F9F8F7; }
+
+.cpn-setup .form-check-input:checked ~ div .img {
+  background-color: #F4FFFC;
+  border: 2px solid #008753; }
+
+.cpn-setup .form-check-input ~ div .img span {
+  display: block;
+  width: 4em;
+  height: 4rem;
+  background-size: contain; }
+
+.cpn-setup .form-check-input ~ div .img--diesel span {
+  background-image: url("/static/assets/cp_nigeria/diesel_grey.svg"); }
+
+.cpn-setup .form-check-input:checked ~ div .img--diesel span {
+  background-image: url("/static/assets/cp_nigeria/diesel_green.svg"); }
+
+.cpn-setup .form-check-input ~ div .img--pv span {
+  background-image: url("/static/assets/cp_nigeria/pv_plant_grey.svg"); }
+
+.cpn-setup .form-check-input:checked ~ div .img--pv span {
+  background-image: url("/static/assets/cp_nigeria/pv_plant_green.svg"); }
+
+.cpn-setup .form-check-input ~ div .img--storage span {
+  background-image: url("/static/assets/cp_nigeria/bess_grey.svg"); }
+
+.cpn-setup .form-check-input:checked ~ div .img--storage span {
+  background-image: url("/static/assets/cp_nigeria/bess_green.svg"); }
+
+.cpn-economic__prio {
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #EFEDEB; }
+  .cpn-economic__prio > div {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 1rem;
+    margin-bottom: 0.5rem;
+    height: 3.25rem; }
+  .cpn-economic__prio--1 {
+    width: 100%;
+    background-color: #8CD9A8; }
+  .cpn-economic__prio--2 {
+    width: 85%;
+    background-color: #BAE9C8; }
+  .cpn-economic__prio--3 {
+    width: 70%;
+    background-color: #E2F9F0; }
+  .cpn-economic__prio--4 {
+    width: 65%;
+    background-color: #F4FFFC; }
+  .cpn-economic__prio span.number {
+    margin-right: 1rem;
+    background-color: #fff;
+    border-radius: 100%;
+    height: 1.5rem;
+    width: 1.5rem;
+    text-align: center;
+    font-weight: 700; }
+  .cpn-economic__prio span.technology {
+    margin-right: 1rem;
+    padding-bottom: 0; }
+  .cpn-economic__prio img {
+    height: 2rem; }
+
+.cpn-economic__results {
+  display: flex;
+  flex-direction: row;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #EFEDEB; }
+  .cpn-economic__results > div {
+    flex: 1; }
+    .cpn-economic__results > div:first-of-type {
+      padding-right: 0.5rem; }
+    .cpn-economic__results > div:last-of-type {
+      padding-left: 0.5rem; }
+  .cpn-economic__results > div span.title {
+    display: block;
+    text-align: center;
+    padding-bottom: 0.25rem; }
+  .cpn-economic__results > div span.value {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 4rem;
+    background-color: #F2CD5D;
+    font-weight: 700;
+    font-size: 18px; }
+
+.cpn-economic__system {
+  padding-top: 2rem;
+  text-align: center; }
+  .cpn-economic__system img {
+    max-width: 22rem; }
+
+.cpn-business__info {
+  padding-top: 2rem; }
+  .cpn-business__info h3 {
+    font-size: 16px;
+    text-align: center; }
+  .cpn-business__info h3 span {
+    display: block; }
+  .cpn-business__info h3 span.model-chosen {
+    display: inline-block;
+    background-color: #F2CD5D;
+    color: #54504C;
+    margin-top: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700; }
+  .cpn-business__info .diagramm {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    text-align: center; }
+  .cpn-business__info .diagramm img {
+    max-width: 26rem; }
+  .cpn-business__info .advantages {
+    padding-top: 2rem;
+    padding-bottom: 2rem; }
+    .cpn-business__info .advantages h4 {
+      padding: 0.5rem 1rem;
+      font-size: 1.25rem; }
+    .cpn-business__info .advantages .pros h4 {
+      border-bottom: 4px solid #1BBB78; }
+    .cpn-business__info .advantages .cons h4 {
+      border-bottom: 4px solid #D73B45; }
+
 @use 'variables' as *;
 .dashboard-tabs {
   display: flex;
