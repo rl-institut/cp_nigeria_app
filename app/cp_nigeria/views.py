@@ -383,8 +383,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
-                if asset_name == "diesel_generator":
-                    form["opex_var"].initial = asset.opex_var * ENERGY_DENSITY_DIESEL
 
             else:
                 form = asset_forms[asset_name](request.POST, proj_id=project.id)
