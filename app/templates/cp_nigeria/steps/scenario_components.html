@@ -32,14 +32,86 @@
 
 
 <main>
-	<section>
+	<section class="container-lg cpn cpn-setup">
 		<form method="POST" action="{% url 'cpn_scenario' proj_id %}">
 			{% csrf_token %}
-				<button id="submitFormBtn" style="display: none;" class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
-    <div class="grid-container" >
+			<button id="submitFormBtn" style="display: none;" class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
+
+			<div class="row">
+				<div class="col-md-4">
+					<div>
+						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="diesel_checkbox">Diesel generator</label>
+						<div>
+							<div class="img img--diesel">
+								<span></span>
+							</div>
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse"  data-bs-target="#diesel_params"  aria-expanded="false">Expand parameters</a>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div>
+						<input class="form-check-input" type="checkbox" id="pv_checkbox" name="es_choice" value="pv_plant" {% if 'pv_plant' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="pv_checkbox">PV plant</label>
+						<div>
+							<div class="img img--pv">
+								<span></span>
+							</div>
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#pv_params" aria-expanded="false">Expand parameters</a>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div>
+						<input class="form-check-input" type="checkbox" id="storage_checkbox" name="es_choice" value="bess" {% if 'bess' in es_assets %} checked {% endif %}>
+						<label class="form-check-label" for="storage_checkbox">Storage</label>
+						<div>
+							<div class="img img--storage">
+								<span></span>
+							</div>
+							<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#storage_params" aria-expanded="false">Expand parameters</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			{% if es_schema_name %}
+			<div class="row">
+			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
+				<div>Currently saved system (click next to update)</div>
+			</div>
+			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
+				<img id="es_schema" class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+			</div>
+				</div>
+			{% endif %}
+
+			<div class="row">
+				<div class="col">
+					<div class="collapse form-stretch" id="diesel_params">
+						{{ form_diesel_generator|crispy }}
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse form-stretch" id="pv_params">
+						{{ form_pv_plant|crispy }}
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse form-stretch" id="storage_params">
+						{{ form_bess|crispy }}
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+
+	<!--section>
+		    <div class="grid-container" >
 <fieldset style="display: contents;">
           <div>
-						<input class="form-check-input" type="checkbox" id="diesel_checkbox" name="es_choice" value="diesel_generator" {% if 'diesel_generator' in es_assets %} checked {% endif %}>
+
 						<label class="form-check-label" for="diesel_checkbox">Diesel generator</label>
 						<div>
 							<img class="img" src="{% static 'assets/gui/diesel_generator.svg' %}" alt="diesel_generator">
@@ -48,7 +120,6 @@
 					</div>
 
 					<div>
-						<input class="form-check-input" type="checkbox" id="pv_checkbox" name="es_choice" value="pv_plant" {% if 'pv_plant' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="pv_checkbox">PV-Plant</label>
 						<div>
 							<img class="img" src="{% static 'assets/gui/pv_plant.svg' %}" alt="pv_plant">
@@ -57,7 +128,6 @@
 					</div>
 
 					<div>
-						<input class="form-check-input" type="checkbox" id="storage_checkbox" name="es_choice" value="bess" {% if 'bess' in es_assets %} checked {% endif %}>
 						<label class="form-check-label" for="storage_checkbox">Storage</label>
 						<div>
 							<img class="img" src="{% static 'assets/gui/bess.svg' %}" alt="storage">
@@ -66,36 +136,13 @@
 					</div>
 </fieldset>
     </div>
-			{% if es_schema_name %}
-			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
-				<div>Currently saved system (click next to update)</div>
-			</div>
-			<div style="display:flex;justify-content:center;align-content:center;margin-bottom:2rem;">
-				<img id="es_schema" class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
-			</div>
-			{% endif %}
-    <div class="row">
-				<div class="col">
-        <div class="collapse form-stretch" id="diesel_params">
-                {{ form_diesel_generator|crispy }}
-        </div>
-					</div>
-			<div class="col">
-				<div class="collapse form-stretch" id="pv_params">
-								{{ form_pv_plant|crispy }}
-				</div>
-			</div>
-			<div class="col">
-				<div class="collapse form-stretch" id="storage_params">
-								{{ form_bess|crispy }}
-				</div>
-			</div>
-    </div>
+
+
 		</form>
 
 
 
-	</section>
+	</section-->
 </main>
 
 {% endblock progression_content %}
