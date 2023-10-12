@@ -155,7 +155,11 @@ class DieselForm(AssetCreateForm):
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
+        # for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
+        #     self.fields[field].widget = forms.HiddenInput()
+        #     self.fields[field].initial = value
+
+        for field, value in zip(("name"), (self.asset_type_name)):
             self.fields[field].widget = forms.HiddenInput()
             self.fields[field].initial = value
 
