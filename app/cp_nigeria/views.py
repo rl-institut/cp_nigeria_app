@@ -48,8 +48,8 @@ STEP_MAPPING = {
     "demand_profile": 3,
     "scenario_setup": 4,
     "economic_params": 5,
-    "simulation": 6,
-    "business_model": 7,
+    "business_model": 6,
+    "simulation": 7,
     "outputs": 8,
 }
 
@@ -383,6 +383,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
+                if asset_name == "diesel_generator":
+                    form["opex_var"].initial = asset.opex_var * ENERGY_DENSITY_DIESEL
+
             else:
                 form = asset_forms[asset_name](request.POST, proj_id=project.id)
 
