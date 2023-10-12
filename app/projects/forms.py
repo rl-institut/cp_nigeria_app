@@ -83,7 +83,8 @@ def set_parameter_info(param_name, field, parameters=PARAMETERS):
         if default_value == "None":
             default_value = None
     else:
-        print(f"{param_name} not in the parameters file")
+        pass
+        # print(f"{param_name} not in the parameters file")
 
     if verbose is not None:
         field.label = verbose
