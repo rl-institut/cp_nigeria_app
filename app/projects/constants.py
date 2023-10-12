@@ -1,4 +1,5 @@
 from django.utils.translation import gettext_lazy as _
+from decimal import Decimal
 
 COUNTRY = (
     ("", "Choose..."),
@@ -259,9 +260,7 @@ CURRENCY_SYMBOLS = {
 }
 # TODO use https://gist.github.com/lokeb/785b3a1ad9c90e984ea4ddb61ced3066 and allow user input currencies
 
-CURRENCY = tuple(
-    [("", "Choose...")] + [(k, f"{k} ({v})") for k, v in CURRENCY_SYMBOLS.items()]
-)
+CURRENCY = tuple([("", "Choose...")] + [(k, f"{k} ({v})") for k, v in CURRENCY_SYMBOLS.items()])
 
 TRUE_FALSE_CHOICES = ((None, _("Choose")), (True, _("Yes")), (False, _("No")))
 
@@ -456,3 +455,6 @@ MAP_EPA_MVS = {
 MAP_MVS_EPA = {value: key for (key, value) in MAP_EPA_MVS.items()}
 
 COMPARE_VIEW = "compare"
+
+# Between 8.8 and 11 kWh/L depending on the diesel
+ENERGY_DENSITY_DIESEL = Decimal(9.8)

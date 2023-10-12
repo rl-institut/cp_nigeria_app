@@ -12,16 +12,10 @@ from projects.dtos import convert_to_dto
 from projects.models import Timeseries, AssetType
 from projects.constants import MAP_MVS_EPA
 from dashboard.helpers import KPIFinder
-from decimal import Decimal
-
-# TODO kWh/L, taken from offgridders, double check - also find a better place for this
-ENERGY_DENSITY_DIESEL = Decimal(9.8)
 
 PARAMETERS = {}
 if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:
-    with open(
-        staticfiles_storage.path("MVS_parameters_list.csv"), encoding="utf-8"
-    ) as csvfile:
+    with open(staticfiles_storage.path("MVS_parameters_list.csv"), encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:
@@ -49,19 +43,13 @@ def remove_empty_elements(d):
     elif isinstance(d, list):
         return [v for v in (remove_empty_elements(v) for v in d) if not empty(v)]
     else:
-        return {
-            k: v
-            for k, v in ((k, remove_empty_elements(v)) for k, v in d.items())
-            if not empty(v)
-        }
+        return {k: v for k, v in ((k, remove_empty_elements(v)) for k, v in d.items()) if not empty(v)}
 
 
 # Helper to convert Scenario data to MVS importable json
 def format_scenario_for_mvs(scenario_to_convert, testing=False):
     mvs_request_dto = convert_to_dto(scenario_to_convert, testing=testing)
-    dumped_data = json.loads(
-        json.dumps(mvs_request_dto.__dict__, default=lambda o: o.__dict__)
-    )
+    dumped_data = json.loads(json.dumps(mvs_request_dto.__dict__, default=lambda o: o.__dict__))
 
     # format the constraints in MVS format directly, thus avoiding the need to maintain MVS-EPA
     # parser in multi-vector-simulator package
@@ -138,9 +126,7 @@ def sa_output_values_schema_generator(output_names):
                             {"type": "null"},
                             {
                                 "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "number"}, {"type": "null"}]
-                                },
+                                "items": {"anyOf": [{"type": "number"}, {"type": "null"}]},
                             },
                         ]
                     },
@@ -171,7 +157,6 @@ class JSPlotlyLib:
 
 
 class DualInputWidget(forms.MultiWidget):
-
     template_name = "asset/dual_input.html"
 
     class Media:
@@ -229,7 +214,6 @@ class DualNumberField(forms.MultiValueField):
             input_timeseries_values = parse_input_timeseries(timeseries_file)
             answer = input_timeseries_values
         else:
-
             if scalar_value is None:
                 scalar_value = ""
             # check the input string is a number or a list
@@ -247,9 +231,7 @@ class DualNumberField(forms.MultiValueField):
             if scalar_value == "":
                 self.set_widget_error()
                 raise ValidationError(
-                    _(
-                        "Please provide either a number within %(boundaries) s or upload a timeseries from a file"
-                    ),
+                    _("Please provide either a number within %(boundaries) s or upload a timeseries from a file"),
                     code="required",
                     params={"boundaries": self.boundaries},
                 )
@@ -271,7 +253,6 @@ class DualNumberField(forms.MultiValueField):
         return f"[{min_val}, {max_val}]"
 
     def check_boundaries(self, value):
-
         boundaries = self.boundaries
         if isinstance(value, list):
             for v in value:
@@ -318,7 +299,6 @@ class DualNumberField(forms.MultiValueField):
 
 
 class TimeseriesInputWidget(forms.MultiWidget):
-
     template_name = "asset/timeseries_input.html"
 
     class Media:
@@ -358,7 +338,6 @@ class TimeseriesInputWidget(forms.MultiWidget):
         return False
 
     def decompress(self, value):
-
         answer = [self.default, "", None]
         if value is not None:
             value = value.replace("'", '"')
@@ -376,16 +355,11 @@ class TimeseriesInputWidget(forms.MultiWidget):
 
 
 class TimeseriesField(forms.MultiValueField):
-    def __init__(
-        self, default=None, param_name=None, asset_type=None, qs_ts=None, **kwargs
-    ):
-
+    def __init__(self, default=None, param_name=None, asset_type=None, qs_ts=None, **kwargs):
         fields = (
             forms.DecimalField(required=False),
             forms.CharField(required=False),
-            forms.ModelChoiceField(
-                queryset=qs_ts, required=False, empty_label="Select a timeseries below"
-            ),
+            forms.ModelChoiceField(queryset=qs_ts, required=False, empty_label="Select a timeseries below"),
         )
         kwargs.pop("max_length", None)
         self.param_name = param_name
@@ -393,9 +367,7 @@ class TimeseriesField(forms.MultiValueField):
         self.min = kwargs.pop("min", None)
         self.max = kwargs.pop("max", None)
         select_widget = fields[2].widget
-        kwargs["widget"] = TimeseriesInputWidget(
-            default=default, param_name=param_name, select_widget=select_widget
-        )
+        kwargs["widget"] = TimeseriesInputWidget(default=default, param_name=param_name, select_widget=select_widget)
 
         super().__init__(fields=fields, require_all_fields=False, **kwargs)
 
@@ -429,9 +401,7 @@ class TimeseriesField(forms.MultiValueField):
             if scalar_value == "":
                 self.set_widget_error()
                 raise ValidationError(
-                    _(
-                        "Please provide either a number within %(boundaries) s or upload a timeseries from a file"
-                    ),
+                    _("Please provide either a number within %(boundaries) s or upload a timeseries from a file"),
                     code="required",
                     params={"boundaries": self.boundaries},
                 )
@@ -456,7 +426,6 @@ class TimeseriesField(forms.MultiValueField):
         return f"[{min_val}, {max_val}]"
 
     def check_boundaries(self, value):
-
         boundaries = self.boundaries
         if isinstance(value, list):
             for v in value:
@@ -540,9 +509,7 @@ def parse_input_timeseries(timeseries_file):
 
         for j in range(0, worksheet.max_row):
             try:
-                timeseries_values.append(
-                    float(worksheet.cell(row=j + 1, column=col_idx + 1).value)
-                )
+                timeseries_values.append(float(worksheet.cell(row=j + 1, column=col_idx + 1).value))
             except ValueError:
                 pass
 
