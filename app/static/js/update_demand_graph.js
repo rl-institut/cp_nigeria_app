@@ -5,9 +5,14 @@ $(document).ready(function() {
     // delete empty extra form if necessary
     deleteEmptyForm();
     // load timeseries once on page load (to update graph with existing formset data)
-    $('select[id*="timeseries"]').each(function() {
-    getTimeseries.call(this);
-    });
+    if (allowEdition == true) {
+        $('select[id*="timeseries"]').each(function() {
+        getTimeseries.call(this);
+        });
+    } else {
+    updateGraph(totalDemand, "Total demand", 1);
+    updateKeyParams();
+    }
 
     $(document).on('change', 'select[id*="timeseries"]', getTimeseries);
     $(document).on('click keyup', 'input[id*="number_consumers"]', updateNumberConsumers);
@@ -39,7 +44,7 @@ function getTimeseries () {
                 // Store the timeseries data in a variable (to avoid making an ajax call when only the consumer nr changes)
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
-                var newDemand = data.timeseries_values.map(x => x*nrConsumers);
+                var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers')
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
@@ -60,7 +65,7 @@ function updateNumberConsumers() {
         var consumerGroupDemandName = parentTr.find('select[id*="timeseries"]').find('option:selected').html();
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
-                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers);
+                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers')
                 updateGraph(newDemand, consumerGroupDemandName, formId)
                 }
@@ -102,8 +107,8 @@ function initialPlot () {
                 }];
 
         var layout = {
-            xaxis: {range: ["2022-01-01 00:00:00", "2023-01-01 00:00:00"], type: "date", title: "Time"},
-            yaxis: {autorange: true, title: "Wh"},
+            xaxis: {range: ["2022-06-01 00:00:00", "2022-06-08 00:00:00"], type: "date", title: "Time"},
+            yaxis: {autorange: true, title: "kWh"},
             title: "Total demand"
             };
 
@@ -160,8 +165,8 @@ function updateKeyParams() {
         totalDemand = totalDemand.map((e, j) => e + data[i].y[j]); // total demand array in kWh
     }
 
-    var peakDemand = Math.max(...totalDemand) / 1000;
-    var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 365 / 1000;
+    var peakDemand = Math.max(...totalDemand);
+    var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 365;
     document.getElementById('avg_daily').innerHTML = avgDaily.toFixed(2);
     document.getElementById('peak_demand').innerHTML = peakDemand.toFixed(2);
 }

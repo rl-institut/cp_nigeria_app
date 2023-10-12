@@ -242,6 +242,14 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
 
+        if formset_qs.exists():
+            if options.community is not None:
+                total_demand = get_aggregated_demand(community=options.community)
+            else:
+                total_demand = get_aggregated_demand(proj_id=proj_id)
+        else:
+            total_demand = []
+
     messages.info(
         request,
         "Please input user group data. This includes user type information about "
@@ -260,6 +268,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "allow_edition": allow_edition,
+            "total_demand": total_demand,
         },
     )
 
@@ -545,8 +554,8 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         options = qs_options.get()
         es_schema_name = options.schema_name
         demand = np.array(get_aggregated_demand(community=options.community))
-        peak_demand = demand.max() / 1000
-        daily_demand = demand.sum() / 365 / 1000
+        peak_demand = demand.max()
+        daily_demand = demand.sum() / 365
 
     else:
         es_schema_name = None

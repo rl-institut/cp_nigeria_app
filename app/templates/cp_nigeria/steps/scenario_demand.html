@@ -9,7 +9,9 @@
 <script>
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
-    const updateGraphUrl = '{% url 'ajax_update_graph' %}';
+    var totalDemand = {{ total_demand }};
+    const updateGraphUrl = `{% url 'ajax_update_graph' %}`;
+    const allowEdition = `{{ allow_edition }}`;
 </script>
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
@@ -20,84 +22,113 @@
 
 {% block progression_content %}
 <main>
-    <div class="grid-container">
-        <!--button class="btn btn--medium" type="button">{% translate "Upload load profile" %}</button-->
-    </div>
+	<section class="container-lg">
+		<div class="accordion cpn-accordion" id="accordionStep3">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="step3HeadingTwo">
+					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step3CollapseTwo" aria-expanded="{% if total_demand %} true {%else%} false {% endif %}" aria-controls="step3CollapseTwo">
+						Electricity Demand Summary
+					</button>
+				</h2>
+				<div id="step3CollapseTwo" class="accordion-collapse collapse {% if total_demand %} show {% endif %}" aria-labelledby="step3HeadingTwo" data-bs-parent="#accordionStep3">
+					<div class="accordion-body">
+						<div class="row">
+							<div class="col">
+								<p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
+							</div>
+							<div class="col">
+								<p>Peak demand: <b id="peak_demand"></b> kW</p>
+							</div>
+						</div>
 
-    <form method="POST" id="consumer-group-form">
-        {% csrf_token %}
-        {{ formset.management_form | crispy}}
-        <table class="table" id="ug_container" style="margin-bottom: 0">
-            <thead>
-            <th></th>
-            <th>Consumer type</th>
-            <th>Demand profile</th>
-            <th>Nr. of consumers</th>
+						<div class="row">
+							<div id="demand-aggregate">
+							</div>
+						</div>
 
-            </thead>
-            <tbody>
-            {% for form in formset %}
-            <tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
-                <td>
-									{% if allow_edition %}
-                <button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="icon icon-more"></span>
-                </button>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="step3HeadingOne">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3CollapseOne" aria-expanded="{% if total_demand %} false {%else%} true {% endif %}" aria-controls="step3CollapseOne">
+						Consumer type data
+					</button>
+				</h2>
+				<div id="step3CollapseOne" class="accordion-collapse collapse {% if not total_demand %} show {% endif %}" aria-labelledby="step3HeadingOne" data-bs-parent="#accordionStep3">
+					<div class="accordion-body">
+						<form method="POST" id="consumer-group-form">
+							{% csrf_token %}
+							{{ formset.management_form | crispy}}
+							<table class="table" id="ug_container" style="margin-bottom: 0">
+								<thead>
+								<th></th>
+								<th>Consumer type</th>
+								<th>Demand profile</th>
+								<th>Nr. of consumers</th>
 
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
-                    <li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
-                    <li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
-                </ul>
+								</thead>
+								<tbody>
+								{% for form in formset %}
+								<tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
+									<td>
+										{% if allow_edition %}
+										<button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
+											<span class="icon icon-more"></span>
+										</button>
 
-                <input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
+										<ul class="dropdown-menu" aria-labelledby="dropdownMenuTS">
+											<li><a class="dropdown-item" id="delete-consumer-group">{% translate 'Delete consumer group' %}</a></li>
+											<li><a class="dropdown-item" href="{% url 'not_implemented' %}?url={{ request.get_full_path }}">{% translate 'Export as .xls' %}</a></li>
+										</ul>
+
+										<input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
+										{% endif %}
+									</td>
+									{% for field in form %}
+									{% if field.name != 'DELETE' %}
+
+									<td>
+										{{ field | as_crispy_field }}
+									</td>
+
 									{% endif %}
-                </td>
-                    {% for field in form %}
-                    {% if field.name != 'DELETE' %}
+									{% endfor %}
+								</tr>
+								{% endfor %}
+								</tbody>
+								<tfoot>
+								<tr>
+									{% if allow_edition %}
+									<td colspan="4" style="text-align: center;padding-top:0">
+										<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
+											<span class="icon icon-add"></span>
+											Add Consumer Group
+										</button>
+									</td>
+									{% endif %}
+								</tr>
+								</tfoot>
+							</table>
+							<button id="submitFormBtn" style="display: none;" type="submit"></button>
+						</form>
+					</div>
+				</div>
+			</div>
 
-                    <td>
-                        {{ field | as_crispy_field }}
-                    </td>
-
-                    {% endif %}
-                    {% endfor %}
-            </tr>
-            {% endfor %}
-            </tbody>
-					<tfoot>
-   <tr>
-		 {% if allow_edition %}
-      <td colspan="4" style="text-align: center;padding-top:0">
-				<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
-								<span class="icon icon-add"></span>
-								Add Consumer Group
-							</button>
-
-			</td>
-		 {% endif %}
-   </tr>
-</tfoot>
-        </table>
-
+		</div>
+		</div>
+	</section>
 
 
-        </table>
-        <div class="container">
-            <div>
-                <p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
-                <p>Peak demand: <b id="peak_demand"></b> kW</p>
-            </div>
 
-            <div id="demand-aggregate">
-            </div>
-        </div>
-        <center>
-            <button class="btn btn--medium" type="submit">{% translate "Save load profile" %}</button>
-        </center>
-    </form>
 </main>
 
 {% endblock progression_content %}
+
+{% block next_btn %}
+<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
+{% endblock next_btn %}
 
 {% block end_body_scripts %}
 <script>
