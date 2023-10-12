@@ -23,7 +23,6 @@ from projects.views import request_mvs_simulation, simulation_cancel
 from business_model.helpers import model_score_mapping, B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS
-from projects.helpers import ENERGY_DENSITY_DIESEL
 
 logger = logging.getLogger(__name__)
 
@@ -393,8 +392,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 asset = form.save(commit=False)
                 # TODO the form save should do some specific things to save the storage correctly
 
-                if asset_name == "diesel_generator":
-                    asset.opex_var = form.cleaned_data["opex_var"]/ENERGY_DENSITY_DIESEL
                 asset.scenario = scenario
                 asset.asset_type = asset_type
                 asset.pos_x = 400
