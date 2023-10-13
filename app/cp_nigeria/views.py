@@ -691,7 +691,11 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             equity_data = EquityData.objects.get(scenario=scenario)
             equity_form = EquityDataForm(instance=equity_data, prefix="equity")
         except EquityData.DoesNotExist:
-            equity_form = EquityDataForm(prefix="equity")
+            qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
+            initial = {}
+            if qs_bm.exists():
+                initial = qs_bm.first().default_fate_values
+            equity_form = EquityDataForm(prefix="equity", initial=initial)
 
         context.update(
             {
