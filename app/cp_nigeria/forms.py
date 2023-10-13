@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.forms.models import modelformset_factory
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
@@ -19,6 +20,7 @@ class ProjectForm(OpenPlanModelForm):
     )
     start_date = forms.DateField(
         label=_("Simulation start"),
+        initial=f"{timezone.now().year}-01-01",
         widget=forms.DateInput(
             format="%Y-%m-%d",
             attrs={
@@ -33,6 +35,10 @@ class ProjectForm(OpenPlanModelForm):
     class Meta:
         model = Project
         exclude = ("country", "user", "viewers", "economic_data")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["description"].required = False
 
     def save(self, *args, **kwargs):
         user = kwargs.pop("user")
@@ -120,27 +126,25 @@ class PVForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        self.fields["optimize_cap"].initial = True
+        asset = kwargs.get("instance", None)
+        if asset is None:
+            default_values = {"lifetime": 8, "capex_var": 368606.52, "opex_fix": 7727.6}
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
+
+        self.initial["optimize_cap"] = True
         self.fields["input_timeseries"].widget = forms.HiddenInput()
         self.fields["input_timeseries"].required = False
-
-        visible_fields = ["opex_var"]
-        for field in self.fields:
-            if field not in visible_fields:
-                pass  # self.fields[field].widget = forms.HiddenInput()
-
-        self.fields["name"].widget = forms.HiddenInput()
-        self.fields["name"].initial = self.asset_type_name
 
         self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
             "(CAPEX)", "(CAPEX). It should include inverter costs."
         )
 
-        # for field, value in zip(
-        #     ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
-        # ):
-        #     self.fields[field].widget = forms.HiddenInput()
-        #     self.fields[field].initial = value
+        for field, value in zip(
+            ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
+        ):
+            self.fields[field].widget = forms.HiddenInput()
+            self.initial[field] = value
 
 
 class DieselForm(AssetCreateForm):
@@ -149,23 +153,23 @@ class DieselForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        self.fields["optimize_cap"].initial = True
+        self.initial["optimize_cap"] = True
 
         asset = kwargs.get("instance", None)
         if asset is not None:
             self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
-
+        else:
+            default_values = {"lifetime": 8, "capex_var": 309104, "opex_fix": 19319, "efficiency": 0.25}
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
         visible_fields = ["opex_var"]
         for field in self.fields:
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        # for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
-        #     self.fields[field].widget = forms.HiddenInput()
-        #     self.fields[field].initial = value
-
-        self.fields["name"].widget = forms.HiddenInput()
-        self.fields["name"].initial = self.asset_type_name
+        for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
+            self.fields[field].widget = forms.HiddenInput()
+            self.initial[field] = value
 
         qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
         if qs.exists():
@@ -196,15 +200,23 @@ class BessForm(StorageForm):
         asset = kwargs.get("instance", None)
         if asset is not None:
             self.initial["soc_min"] = round(1 - asset.soc_min, 3)
+        else:
+            default_values = {
+                "lifetime": 8,
+                "capex_var": 255783.56,
+                "opex_fix": 7727.6,
+                "crate": 1,
+                "soc_min": 0.8,
+                "soc_max": 1,
+                "efficiency": 0.9,
+            }
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
 
-        self.fields["optimize_cap"].initial = True
-
-        self.fields["name"].widget = forms.HiddenInput()
-        self.fields["name"].initial = self.asset_type_name
-
-        # for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
-        #     self.fields[field].widget = forms.HiddenInput()
-        #     self.fields[field].initial = value
+        self.initial["optimize_cap"] = True
+        for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
+            self.fields[field].widget = forms.HiddenInput()
+            self.initial[field] = value
         self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
             "(CAPEX)", "(CAPEX). It should include inverter costs."
         )
