@@ -12,14 +12,10 @@
 
 {% include "modal_template.html" with id="helpSelectBMModal" modal_style_class="modal--gui" submit_btn_label="Save" title="Assess suitability for a community-led approach" custom_submit_function="suggestBusinessModel(event)"%}
 
-<section class="project-setup two-columns">
-	<div class="left">
-		<div style="padding-right:4rem;">
-			<div class="text">
-				<span>
-					{% translate "Choose your model amongst the selection:" %}
-				</span>
-			</div>
+<section class="container-lg cpn cpn-business">
+	<div class="row">
+		<div class="col">
+			<p>Choose your model amongst the selection:</p>
 			<form id="businessModelForm" action="{% url 'cpn_model_choice' proj_id %}" method="POST">
 				{{ form }}
 				{% csrf_token %}
@@ -40,19 +36,8 @@
 			{% endif %}
 		</div>
 	</div>
-	<div class="right" style="background-color: #f4f7f9;padding-left:1.5rem">
-		<div>
-			<div id="selected_model">
-
-			</div>
-		</div>
-	</div>
+	<div id="selected_model"></div>
 </section>
-
-
-
-
-
 
 {% endblock progression_content %}
 

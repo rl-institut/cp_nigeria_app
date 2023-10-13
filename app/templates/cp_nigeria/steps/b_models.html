@@ -3,12 +3,50 @@
 {% load custom_filters %}
 {% load i18n %}
 
-<h4> Model chosen: {{model_name}}</h4>
 
-<div style="display:flex;justify-content:center;align-content:center;padding-top:2rem;padding-bottom:2rem;">
-	<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
-</div>
-<h4>Description</h4>
-<div>
-	{{ model_description}}
-</div>
+<div class="row cpn-business__info">
+          <div class="col">
+            <div class="row">
+              <h3>
+                <span>Model chosen:</span>
+                <span class="model-chosen">{{model_name}}</span>
+              </h3>
+            </div>
+          </div>
+          <div class="row justify-content-center">
+            <div class="col-md-8">
+              <div class="diagramm">
+                <!-- Change image -->
+                <img src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="Design system">
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="info-text">
+                <p>{{ model_description}}</p>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="row advantages">
+                <div class="col-6 pros">
+                  <h4>Advantages</h4>
+                  <ul>
+                    <li>Intuitive Design: The UI is designed keeping the user's natural workflow in mind, making it easier to navigate.</li>
+                    <li>Mobile Responsive: Ensures seamless experience across all device types - be it desktop, tablet, or mobile.</li>
+                    <li>Quick Load Time: Optimized graphics and scripts ensure that the UI loads quickly even on slower networks.</li>
+                    <li>Consistent Elements: UI elements remain consistent across different pages, reducing the learning curve for users.</li>
+                    <li>Personalized Experience: The interface adjusts according to user preferences, offering a tailored experience.</li>
+                  </ul>
+                </div>
+                <div class="col-6 cons">
+                  <h4>Disadvantages</h4>
+                  <ul>
+                    <li>Steeper Learning Curve: Some unique UI elements might be unfamiliar to first-time users.</li>
+                    <li>Overly Minimalistic: The UI might lack some detailed elements or descriptions that some users might find useful.</li>
+                    <li>Browser Compatibility: The interface might not display correctly in older or less common web browsers.</li>
+                    <li>Requires Frequent Updates: To maintain security and functionality, the UI needs regular updates.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

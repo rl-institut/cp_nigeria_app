@@ -5,7 +5,7 @@
 {% load custom_template_tags %}
 
 {% csrf_token %}
-<div class="container accordion" id="accordionQuestions">
+<div class="container accordion cpn-accordion" id="accordionQuestions">
 	{% for cat in categories %}
 	<div class="row align-items-start accordion-item">
 		<h3 class="accordion-header" style="background-color: #F5DA89" id="heading-{{ forloop.counter }}">
