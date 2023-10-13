@@ -78,6 +78,12 @@ def home_cpn(request):
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
     # TODO in the future, pre-load the questions instead of written out in the template
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     messages.info(request, "Please include information about your connection to the grid.")
 
     bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
@@ -104,6 +110,12 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
 @require_http_methods(["GET", "POST"])
 def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_location"]):
     qs_project = Project.objects.filter(id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     proj_name = ""
     if qs_project.exists():
         project = qs_project.get()
@@ -152,6 +164,12 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     options = get_object_or_404(Options, project=project)
     allow_edition = True
 
@@ -276,6 +294,12 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 @require_http_methods(["GET", "POST"])
 def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     scenario = project.scenario
 
     if request.method == "GET":
@@ -534,6 +558,12 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     scenario = project.scenario
     messages.info(request, "Please include any relevant constraints for the optimization.")
 
@@ -627,7 +657,9 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
 
     if request.method == "GET":
@@ -681,7 +713,9 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
 def cpn_model_choice(request, proj_id, step_id=6):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
     context = {
         "scenario": project.scenario,
@@ -733,7 +767,9 @@ def cpn_model_suggestion(request, bm_id):
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
     user_scenarios = [project.scenario]
 
@@ -931,8 +967,11 @@ def ajax_update_graph(request):
 def cpn_kpi_results(request, proj_id=None):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
+
     qs = Simulation.objects.filter(scenario=project.scenario)
     if qs.exists():
         sim = qs.get()
