@@ -59,7 +59,7 @@ class Options(models.Model):
         if "bess" in self.user_case:
             name += "B"
         if name != "":
-            name = f"{name}_case.svg"
+            name = f"{name}_case.png"
         return name
 
 
