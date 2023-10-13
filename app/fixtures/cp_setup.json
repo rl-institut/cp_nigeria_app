@@ -91,7 +91,7 @@
             "name": "Ebute-Ipare",
             "lat": 6.264858551370542,
             "lon": 4.6873677122178865,
-            "pv_timeseries": 47
+            "pv_timeseries": 48
         }
     },
     {
@@ -101,7 +101,7 @@
             "name": "Ezere",
             "lat": 5.743309814888137,
             "lon": 7.525518866763596,
-            "pv_timeseries": 48
+            "pv_timeseries": 49
         }
     },
     {
@@ -111,7 +111,7 @@
             "name": "Usungwe",
             "lat": 7.631209495569164,
             "lon": 6.21239729042989,
-            "pv_timeseries": 49
+            "pv_timeseries": 50
         }
     },
     {
@@ -121,7 +121,7 @@
             "name": "Unguwar Kure",
             "lat": 11.806950924970087,
             "lon": 8.065393779619265,
-            "pv_timeseries": 50
+            "pv_timeseries": 51
         }
     },
     {
@@ -131,9 +131,11 @@
             "name": "Egbuniwa (Okpanam)",
             "lat": 6.231665049251768,
             "lon": 6.652035681516617,
-            "pv_timeseries": 51
+            "pv_timeseries": 52
         }
     },
+
+
     {
         "model": "cp_nigeria.consumergroup",
         "pk": 1,
