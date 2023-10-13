@@ -40,6 +40,12 @@
 								<div style="border-bottom: 1px solid #EFEDEB;">
 									{{form |crispy }}
 								</div>
+								<div class="row cpn-business__info">
+									<h3>
+										<span>Model chosen:</span>
+										<span class="model-chosen">{{ model_name }}</span>
+									</h3>
+								</div>
 								<div>
 									{{equity_form |crispy }}
 								</div>
@@ -94,6 +100,7 @@
 									<img src="{% static 'assets/cp_nigeria/diesel_grey.svg' %}" alt="Diesel generator">
 								</div>
 							</div>
+
 							{% if es_schema_name %}
 							<div class="cpn-economic__system">
 								<img src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="Design system">
