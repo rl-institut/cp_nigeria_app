@@ -263,13 +263,10 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
     # Retrieve models
     project = Project.objects.get(scenario=scenario)
     economic_data = EconomicData.objects.get(project=project)
-    ess_list = Asset.objects.filter(
-        Q(scenario=scenario), Q(asset_type__asset_type__contains="ess")
-    )
+    ess_list = Asset.objects.filter(Q(scenario=scenario), Q(asset_type__asset_type__contains="ess"))
     # Exclude ESS related assets
     asset_list = Asset.objects.filter(Q(scenario=scenario)).exclude(
-        Q(asset_type__asset_type__contains="ess")
-        | Q(parent_asset__asset_type__asset_type__contains="ess")
+        Q(asset_type__asset_type__contains="ess") | Q(parent_asset__asset_type__asset_type__contains="ess")
     )
     bus_list = Bus.objects.filter(scenario=scenario).exclude(
         Q(connectionlink__asset__parent_asset__asset_type__asset_type__contains="ess")
@@ -309,9 +306,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
         evaluated_period.value = 3
 
     simulation_settings = SimulationSettingsDto(
-        scenario.start_date.strftime(
-            "%Y-%m-%d %H:%M"
-        ),  # datetime.combine(scenario.start_date, time()).timestamp(),
+        scenario.start_date.strftime("%Y-%m-%d %H:%M"),  # datetime.combine(scenario.start_date, time()).timestamp(),
         scenario.time_step,
         evaluated_period,
     )
@@ -331,19 +326,11 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
     # Iterate over ess_assets
     for ess in ess_list:
         # Find all connections to ess
-        input_connection = ConnectionLink.objects.filter(
-            asset=ess, flow_direction="B2A"
-        ).first()
-        output_connection = ConnectionLink.objects.filter(
-            asset=ess, flow_direction="A2B"
-        ).first()
+        input_connection = ConnectionLink.objects.filter(asset=ess, flow_direction="B2A").first()
+        output_connection = ConnectionLink.objects.filter(asset=ess, flow_direction="A2B").first()
 
-        inflow_direction = (
-            input_connection.bus.name if input_connection is not None else None
-        )
-        outflow_direction = (
-            output_connection.bus.name if output_connection is not None else None
-        )
+        inflow_direction = input_connection.bus.name if input_connection is not None else None
+        outflow_direction = output_connection.bus.name if output_connection is not None else None
         ess_sub_assets = {}
 
         for asset in Asset.objects.filter(parent_asset=ess):
@@ -379,25 +366,14 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
                 to_timeseries_data(asset, "input_timeseries"),
                 asset.asset_type.unit,
             )
-            if (
-                ess.asset_type.asset_type == "hess"
-                and asset.asset_type.asset_type == "capacity"
-            ):
+            if ess.asset_type.asset_type == "hess" and asset.asset_type.asset_type == "capacity":
                 asset_dto.thermal_loss_rate = to_value_type(asset, "thermal_loss_rate")
-                asset_dto.fixed_thermal_losses_relative = to_value_type(
-                    asset, "fixed_thermal_losses_relative"
-                )
-                fixed_thermal_losses_absolute = to_value_type(
-                    asset, "fixed_thermal_losses_absolute"
-                )
-                fixed_thermal_losses_absolute.value = float(
-                    fixed_thermal_losses_absolute.value
-                )
+                asset_dto.fixed_thermal_losses_relative = to_value_type(asset, "fixed_thermal_losses_relative")
+                fixed_thermal_losses_absolute = to_value_type(asset, "fixed_thermal_losses_absolute")
+                fixed_thermal_losses_absolute.value = float(fixed_thermal_losses_absolute.value)
                 asset_dto.fixed_thermal_losses_absolute = fixed_thermal_losses_absolute
                 efficiency = asset_dto.efficiency.value
-                asset_dto.efficiency.value = max(
-                    efficiency - asset_dto.thermal_loss_rate.value, 0
-                )
+                asset_dto.efficiency.value = max(efficiency - asset_dto.thermal_loss_rate.value, 0)
             ess_sub_assets.update({asset.asset_type.asset_type: asset_dto})
 
         ess_dto = EssDto(
@@ -417,36 +393,27 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
     # Iterate over assets
     for asset in asset_list:
         # Find all connections to asset
-        input_connection = ConnectionLink.objects.filter(
-            asset=asset, flow_direction="B2A"
-        )
-        output_connection = ConnectionLink.objects.filter(
-            asset=asset, flow_direction="A2B"
-        )
+        input_connection = ConnectionLink.objects.filter(asset=asset, flow_direction="B2A")
+        output_connection = ConnectionLink.objects.filter(asset=asset, flow_direction="A2B")
 
         inflow_direction = None
         num_inputs = input_connection.count()
         if num_inputs == 1:
             inflow_direction = input_connection.first().bus.name
         elif num_inputs > 1:
-            inflow_direction = [
-                n for n in input_connection.values_list("bus__name", flat=True)
-            ]
+            inflow_direction = [n for n in input_connection.values_list("bus__name", flat=True)]
 
         outflow_direction = None
         num_outputs = output_connection.count()
         if num_outputs == 1:
             outflow_direction = output_connection.first().bus.name
         elif num_outputs > 1:
-            outflow_direction = [
-                n for n in output_connection.values_list("bus__name", flat=True)
-            ]
+            outflow_direction = [n for n in output_connection.values_list("bus__name", flat=True)]
 
         asset_efficiency = to_value_type(asset, "efficiency")
 
         optional_parameters = {}
         if asset.asset_type.asset_type in ("chp", "chp_fixed_ratio"):
-
             if asset.asset_type.asset_type == "chp":
                 optional_parameters["beta"] = to_value_type(asset, "thermal_loss_rate")
 
@@ -455,9 +422,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             # for chp it corresponds to efficiency_th_max_heat_extraction
             e_th = to_value_type(asset, "efficiency_multiple").value
 
-            output_mapping = [
-                ev for ev in output_connection.values_list("bus__type", flat=True)
-            ]
+            output_mapping = [ev for ev in output_connection.values_list("bus__type", flat=True)]
 
             efficiencies = []
             outflow_direction = []
@@ -465,9 +430,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             for energy_vector in ["Electricity", "Heat"]:
                 if energy_vector in output_mapping:
                     # TODO get the case where get fails --> projects.models.base_models.ConnectionLink.DoesNotExist: ConnectionLink matching query does not exist
-                    outflow_direction.append(
-                        output_connection.get(bus__type=energy_vector).bus.name
-                    )
+                    outflow_direction.append(output_connection.get(bus__type=energy_vector).bus.name)
 
                     efficiency = e_el if energy_vector == "Electricity" else e_th
 
@@ -477,17 +440,13 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             optional_parameters["investment_bus"] = outflow_direction[0]
 
             if len(efficiencies) != 2:
-                print(
-                    "ERROR, a chp should have 1 electrical input and one heat output, thus 2 efficiencies!"
-                )
+                print("ERROR, a chp should have 1 electrical input and one heat output, thus 2 efficiencies!")
 
             asset_efficiency.value = efficiencies
 
         if asset.asset_type.asset_type == "heat_pump":
             cop = asset_efficiency.value
-            input_mapping = [
-                ev for ev in input_connection.values_list("bus__type", flat=True)
-            ]
+            input_mapping = [ev for ev in input_connection.values_list("bus__type", flat=True)]
 
             efficiencies = []
             inflow_direction = []
@@ -505,9 +464,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
                 for energy_vector in ["Electricity", "Heat"]:
                     if energy_vector in input_mapping:
                         # TODO get the case where get fails
-                        inflow_direction.append(
-                            input_connection.get(bus__type=energy_vector).bus.name
-                        )
+                        inflow_direction.append(input_connection.get(bus__type=energy_vector).bus.name)
                         if isinstance(cop, list):
                             efficiency = (
                                 (1 / np.array(cop)).tolist()
@@ -515,11 +472,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
                                 else (1 - 1 / np.array(cop)).tolist()
                             )
                         else:
-                            efficiency = (
-                                (1 / cop)
-                                if energy_vector == "Electricity"
-                                else (1 - 1 / cop)
-                            )
+                            efficiency = (1 / cop) if energy_vector == "Electricity" else (1 - 1 / cop)
 
                         efficiencies.append(efficiency)
 
@@ -540,6 +493,16 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             dso_energy_price.value = json.loads(dso_energy_price.value)
             dso_feedin_tariff.value = json.loads(dso_feedin_tariff.value)
 
+        asset_opex_var = to_value_type(asset, "opex_var")
+        if asset.asset_type.asset_type == "diesel_generator":
+            fuel_costs = asset_opex_var
+            asset_opex_var = to_value_type(asset, "opex_var_extra")
+            if asset_opex_var is not None:
+                if fuel_costs is not None:
+                    asset_opex_var.value = asset_opex_var.value + fuel_costs.value
+            else:
+                asset_opex_var = fuel_costs
+
         asset_dto = AssetDto(
             asset.asset_type.asset_type,
             asset.name,
@@ -554,7 +517,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             to_value_type(asset, "soc_max"),
             to_value_type(asset, "soc_min"),
             to_value_type(asset, "capex_fix"),
-            to_value_type(asset, "opex_var"),
+            asset_opex_var,
             asset_efficiency,
             to_value_type(asset, "installed_capacity"),
             to_value_type(asset, "lifetime"),
@@ -608,9 +571,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
         connections_list = ConnectionLink.objects.filter(bus=bus)
 
         # Find all assets associated with the connections
-        bus_asset_list = list(
-            set([connection.asset.name for connection in connections_list])
-        )
+        bus_asset_list = list(set([connection.asset.name for connection in connections_list]))
 
         bus_dto = BusDto(bus.name, bus.type, bus_asset_list)
 
@@ -662,11 +623,7 @@ def to_value_type(model_obj, field_name):
 def to_timeseries_data(model_obj, field_name):
     value_type = ValueType.objects.filter(type=field_name).first()
     unit = value_type.unit if value_type is not None else None
-    value_list = (
-        json.loads(getattr(model_obj, field_name))
-        if getattr(model_obj, field_name) is not None
-        else None
-    )
+    value_list = json.loads(getattr(model_obj, field_name)) if getattr(model_obj, field_name) is not None else None
     if value_list is not None:
         return TimeseriesDataDto(unit, value_list)
     else:

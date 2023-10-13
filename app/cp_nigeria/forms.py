@@ -171,8 +171,17 @@ class DieselForm(AssetCreateForm):
         if qs.exists():
             currency = qs.values_list("economic_data__currency", flat=True).get()
             currency = CURRENCY_SYMBOLS[currency]
+        else:
+            currency = "currency"
 
-        self.fields["opex_var"].label = f"Fuel price ({currency}/l)"
+        help_text = "Average fuel price."
+        question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+        self.fields["opex_var"].label = f"Fuel price ({currency}/l)" + question_icon
+        help_text = "Costs such as lubricant for motor."
+        question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+        self.fields["opex_var_extra"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
+
+        self.fields["efficiency"].label = self.fields["efficiency"].label.replace("Efficiency", "Average efficiency")
 
     def clean_opex_var(self):
         return self.cleaned_data["opex_var"] / ENERGY_DENSITY_DIESEL
@@ -214,7 +223,7 @@ class BessForm(StorageForm):
             else:
                 param_ref = ""
             if field == "soc_min":
-                help_text = "The fraction of the battery's capacity which is currently removed from the battery with regard to its fully charged state."  # source: Wikipedia
+                help_text = "The fraction of the battery's capacity that is discharged from the battery with regard to its fully charged state."  # source: Wikipedia
             if field != "name":
                 question_icon = f'<a href="{RTD_url}{param_ref}"><span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span></a>'
             else:
