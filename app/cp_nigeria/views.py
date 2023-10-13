@@ -865,6 +865,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
     if unused_pv.exists():
         unused_pv = unused_pv.get().total_flow
+    else:
+        unused_pv = 0
     unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
