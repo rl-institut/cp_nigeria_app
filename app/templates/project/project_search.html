@@ -103,6 +103,10 @@
 													{% endif %}
                         </div>
                         <div class="actions">
+													  <a class="btn btn--action btn--hollow action" href="{% url 'cpn_outputs' proj_id=project.id %}">
+                                <span class="icon icon-results" aria-hidden="true"></span>
+                                {% translate "CPN Results" %}
+                            </a>
                             <a class="btn btn--action btn--hollow action" href="{% url 'project_visualize_results' proj_id=project.id %}">
                                 <span class="icon icon-results" aria-hidden="true"></span>
                                 {% translate "Results" %}
