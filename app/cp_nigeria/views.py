@@ -16,6 +16,7 @@ from .forms import *
 from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
+from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from cp_nigeria.models import ConsumerGroup
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
@@ -114,6 +115,24 @@ def projects_list_cpn(request, proj_id=None):
 
 
 @login_required
+@require_http_methods(["POST"])
+def cpn_project_delete(request, proj_id):
+    project_delete(request, proj_id)
+    return HttpResponseRedirect(reverse("projects_list_cpn"))
+
+
+@login_required
+@require_http_methods(["POST"])
+def cpn_project_duplicate(request, proj_id):
+    """Duplicates the selected project along with its associated scenarios"""
+
+    answer = project_duplicate(request, proj_id)
+    new_proj_id = answer.url.split("/")[-1]
+
+    return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
     # TODO in the future, pre-load the questions instead of written out in the template
@@ -177,7 +196,9 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
-            form["community"].initial = Options.objects.get(project=project).community
+            qs_options = Options.objects.filter(project=project)
+            if qs_options.exists():
+                form["community"].initial = qs_options.get(project=project).community
 
         else:
             form = ProjectForm()
@@ -812,6 +833,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
+    # TODO here if there is no simulation or supply setup, tell the user they should define one first
     bus_el_name = Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
     unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
     if unused_pv.exists():

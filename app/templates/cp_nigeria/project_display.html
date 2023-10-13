@@ -109,7 +109,7 @@
                                 <span class="icon icon-edit" aria-hidden="true"></span>
                                 {% translate "Edit" %}
                             </a>
-                            <form action="{% url 'project_duplicate' project.id %}"
+                            <form action="{% url 'cpn_project_duplicate' project.id %}"
                                   method="POST">
                                 {% csrf_token %}
                                 <!-- TODO change the ugly inline style-->
@@ -118,7 +118,7 @@
                                     {% translate "Duplicate" %}
                                 </button>
                             </form>
-                            <form action="{% url 'project_delete' project.id %}"
+                            <form action="{% url 'cpn_project_delete' project.id %}"
                                   method="POST">
                                 {% csrf_token %}
                                 <!-- TODO change the ugly inline style-->
