@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.db.models import Q
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from business_model.forms import *
@@ -17,6 +18,7 @@ from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
 from business_model.models import *
 from cp_nigeria.models import ConsumerGroup
+from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
@@ -74,6 +76,44 @@ def home_cpn(request):
 
 
 @login_required
+@require_http_methods(["GET"])
+def projects_list_cpn(request, proj_id=None):
+    combined_projects_list = (
+        Project.objects.filter(Q(user=request.user) | Q(viewers__user__email=request.user.email))
+        .distinct()
+        .order_by("date_created")
+        .reverse()
+    )
+    # combined_projects_list = Project.objects.filter(
+    #     (Q(user=request.user) | Q(viewers__user=request.user)) & Q(country="NIGERIA")
+    # ).distinct()
+
+    scenario_upload_form = UploadFileForm(labels=dict(name=_("New scenario name"), file=_("Scenario file")))
+    project_upload_form = UploadFileForm(labels=dict(name=_("New project name"), file=_("Project file")))
+    project_share_form = ProjectShareForm()
+    project_revoke_form = ProjectRevokeForm(proj_id=proj_id)
+    usecase_form = UseCaseForm(usecase_qs=UseCase.objects.all(), usecase_url=reverse("usecase_search"))
+
+    return render(
+        request,
+        "cp_nigeria/project_display.html",
+        {
+            "project_list": combined_projects_list,
+            "proj_id": proj_id,
+            "scenario_upload_form": scenario_upload_form,
+            "project_upload_form": project_upload_form,
+            "project_share_form": project_share_form,
+            "project_revoke_form": project_revoke_form,
+            "usecase_form": usecase_form,
+            "translated_text": {
+                "showScenarioText": _("Show scenarios"),
+                "hideScenarioText": _("Hide scenarios"),
+            },
+        },
+    )
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
     # TODO in the future, pre-load the questions instead of written out in the template
@@ -110,11 +150,6 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
 @require_http_methods(["GET", "POST"])
 def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_location"]):
     qs_project = Project.objects.filter(id=proj_id)
-
-    if (project.user != request.user) and (
-        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
-    ):
-        raise PermissionDenied
 
     proj_name = ""
     if qs_project.exists():

@@ -16,7 +16,7 @@
     </script>
 {% endblock %}
 
-{% block title %}{% translate "Projects" %}{% endblock title %}
+{% block title %}{% translate "CP Nigeria" %}{% endblock title %}
 
 {% block content %}
 
@@ -42,7 +42,6 @@
 						<div>Some description of what you can do with the tool...
                         <ul>
                             <li>Model your energy demand based on community characteristics and needs</li>
-                            <li>Use the GUI to include sector-coupling and optimize the energy system model subject to equality constraints</li>
                         </ul>
                         </div>
 
@@ -61,7 +60,7 @@
 
 			<section class="projects-new">
 
-				<a class="btn btn-primary" href="{% url 'cpn_scenario_create' 1 %}">{% translate "Let's start" %}</a>
+				<a class="btn btn-primary" href="{% url 'cpn_new_scenario' %}">{% translate "Let's start" %}</a>
 
 			</section>
 

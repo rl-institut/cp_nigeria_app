@@ -26,19 +26,19 @@
                     {% if not scenario_create %}
                         <li class="nav-item">
                             <!--results.html-->
-                            <a class="nav-link" href="{% url 'scenario_visualize_results' %}">{% translate "Simulation results" %}</a>
+                            <a class="nav-link" href="{% url 'projects_list_cpn' %}">{% translate "Projects list" %}</a>
                         </li>
                         <li class="nav-item">
                             <!--scenario-empty.html-->
-                            <a class="nav-link" href="{% url 'scenario_select_project' %}">{% translate "New scenario" %}</a>
+                            <a class="nav-link" href="{% url 'cpn_new_scenario' %}">{% translate "New scenario" %}</a>
                         </li>
-                        <li class="nav-item">
+<!--                        <li class="nav-item">-->
                             <!--project-view.html-->
                             <!--a class="nav-link" href="{% url 'project_search' %}">{% translate "My projects" %}</a-->
-                        </li>
-                        <li class="nav-item">
+<!--                        </li>-->
+                        <!--li class="nav-item">
                             <a class="nav-link" href="{{ documentation_url }}" target="_blank" rel="noreferrer">{% translate "Documentation" %}</a>
-                        </li>
+                        </li-->
                     {% endif %}
                 {% elif signup %}
                     <!--For user signup the nav bar does not display all options-->
@@ -104,10 +104,10 @@
                         <img src="{% static 'assets/icons/i_profile_green.svg' %}" alt="Profile icon">
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'usecase_search' %}">{% translate "Use cases" %}</a></li>
+                        <!--li><a class="dropdown-item" href="{% url 'usecase_search' %}">{% translate "Use cases" %}</a></li>
                         <li><a class="dropdown-item" href="{% url 'license' %}">{% translate "License" %}</a></li>
                         <li><a class="dropdown-item" href="{% url 'about' %}">{% translate "Contact" %}</a></li> <!-- about.html -->
-                        <li><a class="dropdown-item" href="{% url 'user_feedback' %}">{% translate "Feedback" %}</a></li>
+                        <!--li><a class="dropdown-item" href="{% url 'user_feedback' %}">{% translate "Feedback" %}</a></li-->
                         <li><a class="dropdown-item" href="{% url 'user_info' %}">{% translate "Account" %}</a></li> <!-- account.html -->
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'logout' %}">{% translate "Log out" %}</a></li>
