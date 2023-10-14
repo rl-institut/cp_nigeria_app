@@ -1,0 +1,36 @@
+{% extends 'cp_nigeria/steps/step_progression.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% load i18n %}
+
+{% block title %} {% translate "FATE outputs" %} {% endblock title %}
+{% block progression_content %}
+
+<div class="container">
+    <h4> The graphs can be embedded into HTML out of the box:</h4>
+    <p> This is one graph </p>
+    <div class="chart__plot" style="width:800;height:400">
+        {{ revenue_graph | safe }}
+    </div>
+
+    <p> This is a different graph </p>
+    <div class="chart__plot" style="width:800;height:400">
+        {{ investment_specific_graph | safe }}
+    </div>
+
+    <p> They are not very pretty as of yet but that's okay </p>
+    <div class="chart__plot" style="width:800;height:400">
+        {{ opex_graph | safe }}
+    </div>
+    <div class="chart__plot" style="width:800;height:400">
+        {{ capex_graph | safe }}
+    </div>
+
+    <p> Or we can download them as a .docx report...</p>
+    <a class="btn btn--medium" href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
+        Download report
+    </a>
+
+</div>
+{% endblock progression_content %}

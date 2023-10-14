@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 import json
 import logging
 import numpy as np
+import os
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -11,6 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.db.models import Q
+from django.http import FileResponse
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from business_model.forms import *
@@ -25,7 +27,8 @@ from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
 from business_model.helpers import B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
-from dashboard.helpers import KPI_PARAMETERS
+from dashboard.helpers import KPI_PARAMETERS, B_MODELS
+from cp_nigeria.helpers import FATEHandler, ReportHandler
 
 logger = logging.getLogger(__name__)
 
@@ -1147,29 +1150,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         es_schema_name = None
 
-    # FATE graphs for demo, will be implemented properly later
-    fate_data = pd.read_csv("static/fate_graphs.csv", sep=";", header=0, index_col=0)
-    fate_figs = {}
-    for col in fate_data:
-        x_data = fate_data[col].index.tolist()
-        y_data = fate_data[col]
-        trace = go.Scatter(x=x_data, y=y_data, name=col)
-
-        layout = go.Layout(title=col, xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
-
-        fig = go.Figure(data=trace, layout=layout)
-        fate_figs[col] = fig.to_html()
-
-    # dict for community characteristics table
-    if options.community is not None:
-        aggregated_cgs = get_aggregated_cgs(community=options.community)
-    else:
-        aggregated_cgs = get_aggregated_cgs(project=project)
+    fate_handler = FATEHandler()
 
     context = {
         "proj_id": proj_id,
-        "capacities": opt_caps,
-        "pv_excess": round(unused_pv, 2),
+        # "capacities": opt_caps,
+        # "pv_excess": round(unused_pv, 2),
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
@@ -1446,3 +1432,45 @@ def cpn_business_model(request):
         return JsonResponse({"message": f"{grid_condition} model type"})
 
     return JsonResponse({"message": "Invalid request method"})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+# TODO this is just a dummy view to show the output, implement in results page
+def cpn_fate_outputs(request, proj_id):
+    html_template = "cp_nigeria/steps/fate_outputs.html"
+
+    fate_handler = FATEHandler()
+    # fate_handler.update_json_values(proj_id)
+    # fate_handler.update_fate_excel()
+    figs = fate_handler.plot_fate_graphs()
+
+    context = {
+        "proj_id": proj_id,
+        "revenue_graph": figs["revenue"],
+        "capex_graph": figs["capex"],
+        "opex_graph": figs["opex"],
+        "investment_specific_graph": figs["investment_specific"],
+    }
+
+    return render(request, html_template, context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def download_report(request, proj_id):
+    logging.info("downloading implementation plan")
+    implementation_plan = ReportHandler()
+    implementation_plan.add_heading("Implementation plan")
+    implementation_plan.add_paragraph("For now, this is just a demo")
+    implementation_plan.add_paragraph("Here are some graphs:")
+
+    graph_dir = "static/assets/cp_nigeria/FATE_graphs"
+    for graph in os.listdir(graph_dir):
+        implementation_plan.add_image(os.path.join(graph_dir, graph))
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    response["Content-Disposition"] = "attachment; filename=implementation_plan.docx"
+    implementation_plan.save(response)
+
+    return response
