@@ -1151,7 +1151,9 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         es_schema_name = None
 
-    fate_handler = FATEHandler()
+    fate_handler = FATEHandler(proj_id)
+    # fate_handler.update_json_values(proj_id)
+    fate_handler.update_fate_excel()
 
     context = {
         "proj_id": proj_id,
