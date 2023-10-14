@@ -44,7 +44,13 @@ controller.setActiveSheet(sheet)
 cell = sheet["A2"]
 cell.Value = 5
 cell = sheet["B2"]
-cell.Value = 6
+# cell.Value = 6
+
+sheet = document.getSheets()["right_sheet"]
+controller.setActiveSheet(sheet)
+cell = sheet["A2"]
+cell.Value = 9
+cell = sheet["B2"]
 # Calc.set_val(9, sheet=sheet, cell_name="A2")
 # import ipdb;ipdb.set_trace()
 # document.calculateAll()
