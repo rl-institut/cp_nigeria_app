@@ -18,14 +18,50 @@ from cp_nigeria.models import ConsumerGroup, DemandTimeseries
 
 # Class to handle FATE related operations
 class FATEHandler:
-    def __init__(self, proj_id=None) -> None:
+    def __init__(self, proj_id=None, lo_host="libreoffice") -> None:
         self.input_file_path = staticfiles_storage.path("FATE_inputs.json")
         self.graph_file_path = staticfiles_storage.path("FATE_graphs.json")
-        self.excel_file_path = staticfiles_storage.path("FATE_open.xlsx")
+        self.fate_model_path = "/opt/fate_model.xlsx"
+
         if proj_id is None:
             self.proj_id = ""
         else:
             self.proj_id = proj_id
+        self.excel_file_path = uno.systemPathToFileUrl(f"/home/libreoffice/fate_light{self.proj_id}.xlsx")
+        self.lo_host = lo_host  # name of the docker service which contains the libre office server
+        self.desktop = None
+        self.document = None
+        # copy the fate model for the current project
+        self.open_excel(fpath=self.fate_model_path)
+
+        # TODO copy the fate tool
+
+    def initiate_excel_connection(self):
+        if self.desktop is None:
+            local = uno.getComponentContext()
+            resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
+            context = resolver.resolve(f"uno:socket,host={self.lo_host},port=8100;urp;StarOffice.ServiceManager")
+            remoteContext = context.getPropertyValue("DefaultContext")
+            self.desktop = context.createInstanceWithContext("com.sun.star.frame.Desktop", remoteContext)
+
+    def open_excel(self, fpath=None):
+        if self.document is None:
+            self.initiate_excel_connection()
+            file_url = uno.systemPathToFileUrl(fpath if fpath is not None else self.excel_file_path)
+            self.document = self.desktop.loadComponentFromURL(file_url, "_default", 0, ())
+
+    def save_excel(self):
+        # https://wiki.openoffice.org/wiki/Documentation/DevGuide/Spreadsheets/Filter_Options
+        if self.document is not None:
+            self.document.storeAsURL(self.excel_file_path, ())
+            self.document.dispose()
+            self.document = None
+
+    def close_excel(self):
+        # https://wiki.openoffice.org/wiki/Documentation/DevGuide/Spreadsheets/Filter_Options
+        if self.document is not None:
+            self.document.dispose()
+            self.document = None
 
     def get_fate_demand_inputs(self, proj_id):
         # function to calculate the demand fate inputs from the consumer groups, is called inside update_json_values
@@ -109,22 +145,13 @@ class FATEHandler:
         pass
 
     def update_fate_excel(self):
-        local = uno.getComponentContext()
-        resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
-        context = resolver.resolve("uno:socket,host=libreoffice,port=8100;urp;StarOffice.ServiceManager")
-        remoteContext = context.getPropertyValue("DefaultContext")
-        desktop = context.createInstanceWithContext("com.sun.star.frame.Desktop", remoteContext)
-
+        self.open_excel()
         try:
             # fate_excel = load_workbook(self.excel_file_path)
-            file_url = uno.systemPathToFileUrl("/opt/fate_model.xlsx")
-            document = desktop.loadComponentFromURL(file_url, "_default", 0, ())
 
             # control_table = fate_excel["2. Control table"]
-            controller = document.getCurrentController()
-
-            # sheet = document.getSheets().getByIndex(0)
-            control_table = document.getSheets()["2. Control table"]
+            controller = self.document.getCurrentController()
+            control_table = self.document.getSheets()["2. Control table"]
             controller.setActiveSheet(control_table)
 
             with open(self.input_file_path) as json_file:
@@ -139,7 +166,8 @@ class FATEHandler:
                     elif value is None:
                         default = fate_input_data[key]["default"]
                         logging.info(f"No value input for parameter {key}; using default value {default}")
-                        control_table[cell].Value = default
+                        if default is not None:
+                            control_table[cell].Value = default
                     else:
                         logging.info(f"previous value: {control_table[cell].Value}")
                         control_table[cell].Value = value
@@ -147,18 +175,13 @@ class FATEHandler:
 
             # fate_excel.save(self.excel_file_path)
             # fate_excel.close()
-            file__out_url = uno.systemPathToFileUrl(f"/home/libreoffice/fate_light{self.proj_id}.xlsx")
-
-            # https://wiki.openoffice.org/wiki/Documentation/DevGuide/Spreadsheets/Filter_Options
-            pv_filtername = PropertyValue()
-            pv_filtername.Name = "FilterName"
-            pv_filtername.Value = "StarOffice XML (Calc)"
-
-            document.storeAsURL(file__out_url, ())  # (pv_filtername,))
-            document.dispose()
+            self.save_excel()
 
         except Exception as e:
             logging.error(f"An error occurred while updating the excel file: {e}")
+            import pdb
+
+            pdb.set_trace()
             raise e
 
         # reload excel so that the formulas reevaluate
@@ -172,11 +195,16 @@ class FATEHandler:
             with open(self.graph_file_path) as json_file:
                 report_graphs = json.load(json_file)
 
-            fate_excel = load_workbook(self.excel_file_path, data_only=True, read_only=True)
+            # fate_excel = load_workbook(self.excel_file_path, data_only=True, read_only=True)
+            self.open_excel()
+            controller = self.document.getCurrentController()
             html_figs = {}
 
             for name, graph in report_graphs.items():
-                data_table = fate_excel[graph["raw_data_sheet"]]
+                # data_table = fate_excel[graph["raw_data_sheet"]]
+                controller = self.document.getCurrentController()
+                data_table = self.document.getSheets()[graph["raw_data_sheet"]]
+                controller.setActiveSheet(data_table)
                 graph_data = get_excel_data(graph["raw_data_range"], data_table)
                 trace_labels = (
                     graph["trace_label"]
@@ -236,7 +264,7 @@ class FATEHandler:
                 fig.write_image(image_file)
                 html_figs[name] = fig.to_html()
 
-            fate_excel.close()
+            self.close_excel()
             return html_figs
         except Exception as e:
             logging.error(f"An error occurred: {e}")
@@ -259,6 +287,7 @@ class ReportHandler:
         self.doc.save(response)
 
 
+# TODO modify this for uno
 def get_excel_data(cell_range, data_table):
     data = []
     min_col, min_row, max_col, max_row = openpyxl.utils.cell.range_boundaries(cell_range)
