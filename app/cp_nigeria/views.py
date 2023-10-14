@@ -10,13 +10,16 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.db.models import Q
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
+from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from cp_nigeria.models import ConsumerGroup
+from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
@@ -29,10 +32,13 @@ logger = logging.getLogger(__name__)
 
 def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
-    if proj_id:
-        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
-    elif community:
+    if community is not None:
         cg_qs = ConsumerGroup.objects.filter(community=community)
+    elif proj_id is not None:
+        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
+    else:
+        cg_qs = []
+
     for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
         nr_consumers = cg.number_consumers
@@ -57,7 +63,7 @@ CPN_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
     "grid_conditions": _("Grid conditions"),
     "demand_profile": _("Demand load profile selection"),
-    "scenario_setup": _("Scenario setup"),
+    "scenario_setup": _("Supply system setup"),
     "economic_params": _("Economic parameters"),
     "simulation": _("Simulation"),
     "business_model": _("Business Model"),
@@ -74,10 +80,72 @@ def home_cpn(request):
 
 
 @login_required
+@require_http_methods(["GET"])
+def projects_list_cpn(request, proj_id=None):
+    combined_projects_list = (
+        Project.objects.filter(Q(user=request.user) | Q(viewers__user__email=request.user.email))
+        .distinct()
+        .order_by("date_created")
+        .reverse()
+    )
+    # combined_projects_list = Project.objects.filter(
+    #     (Q(user=request.user) | Q(viewers__user=request.user)) & Q(country="NIGERIA")
+    # ).distinct()
+
+    scenario_upload_form = UploadFileForm(labels=dict(name=_("New scenario name"), file=_("Scenario file")))
+    project_upload_form = UploadFileForm(labels=dict(name=_("New project name"), file=_("Project file")))
+    project_share_form = ProjectShareForm()
+    project_revoke_form = ProjectRevokeForm(proj_id=proj_id)
+    usecase_form = UseCaseForm(usecase_qs=UseCase.objects.all(), usecase_url=reverse("usecase_search"))
+
+    return render(
+        request,
+        "cp_nigeria/project_display.html",
+        {
+            "project_list": combined_projects_list,
+            "proj_id": proj_id,
+            "scenario_upload_form": scenario_upload_form,
+            "project_upload_form": project_upload_form,
+            "project_share_form": project_share_form,
+            "project_revoke_form": project_revoke_form,
+            "usecase_form": usecase_form,
+            "translated_text": {
+                "showScenarioText": _("Show scenarios"),
+                "hideScenarioText": _("Hide scenarios"),
+            },
+        },
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def cpn_project_delete(request, proj_id):
+    project_delete(request, proj_id)
+    return HttpResponseRedirect(reverse("projects_list_cpn"))
+
+
+@login_required
+@require_http_methods(["POST"])
+def cpn_project_duplicate(request, proj_id):
+    """Duplicates the selected project along with its associated scenarios"""
+
+    answer = project_duplicate(request, proj_id)
+    new_proj_id = answer.url.split("/")[-1]
+
+    return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_conditions"]):
     # TODO in the future, pre-load the questions instead of written out in the template
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     messages.info(request, "Please include information about your connection to the grid.")
 
     bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
@@ -104,6 +172,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
 @require_http_methods(["GET", "POST"])
 def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_location"]):
     qs_project = Project.objects.filter(id=proj_id)
+
     proj_name = ""
     if qs_project.exists():
         project = qs_project.get()
@@ -121,7 +190,6 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         if form.is_valid():
             project = form.save(user=request.user)
             options, _ = Options.objects.get_or_create(project=project)
-            # import pdb;pdb.set_trace()
             options.community = form.cleaned_data["community"]
             options.save()
 
@@ -131,7 +199,9 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
             form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
-            form["community"].initial = Options.objects.get(project=project).community
+            qs_options = Options.objects.filter(project=project)
+            if qs_options.exists():
+                form["community"].initial = qs_options.get(project=project).community
 
         else:
             form = ProjectForm()
@@ -153,6 +223,12 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 @require_http_methods(["GET", "POST"])
 def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     options = get_object_or_404(Options, project=project)
     allow_edition = True
 
@@ -277,6 +353,12 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 @require_http_methods(["GET", "POST"])
 def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     scenario = project.scenario
 
     if request.method == "GET":
@@ -315,24 +397,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             ess_discharging_power_asset = ess_asset_children.get(asset_type__asset_type="discharging_power")
             # also get all child assets
             context["es_assets"].append(asset_type_name)
-            context["form_storage"] = BessForm(
+            context["form_bess"] = BessForm(
                 proj_id=project.id,
-                initial={
-                    "name": existing_ess_asset.name,
-                    "installed_capacity": ess_capacity_asset.installed_capacity,
-                    "age_installed": ess_capacity_asset.age_installed,
-                    "capex_fix": ess_capacity_asset.capex_fix,
-                    "capex_var": ess_capacity_asset.capex_var,
-                    "opex_fix": ess_capacity_asset.opex_fix,
-                    "opex_var": ess_capacity_asset.opex_var,
-                    "lifetime": ess_capacity_asset.lifetime,
-                    "crate": ess_capacity_asset.crate,
-                    "efficiency": ess_capacity_asset.efficiency,
-                    "dispatchable": ess_capacity_asset.dispatchable,
-                    "optimize_cap": ess_capacity_asset.optimize_cap,
-                    "soc_max": ess_capacity_asset.soc_max,
-                    "soc_min": ess_capacity_asset.soc_min,
-                },
+                instance=ess_capacity_asset,
             )
         else:
             context["form_bess"] = BessForm(proj_id=project.id)
@@ -389,7 +456,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             )
 
         for i, asset_name in enumerate(user_assets):
-            qs = Asset.objects.filter(scenario=scenario, asset_type__asset_type=asset_name)
+            qs = Asset.objects.filter(
+                scenario=scenario, asset_type__asset_type=asset_name if asset_name != "bess" else "capacity"
+            )
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
 
@@ -403,7 +472,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 # TODO the form save should do some specific things to save the storage correctly
 
                 asset.scenario = scenario
-                asset.asset_type = asset_type
+                if asset_name != "bess":
+                    asset.asset_type = asset_type
+                else:
+                    asset.asset_type = get_object_or_404(AssetType, asset_type="capacity")
                 asset.pos_x = 400
                 asset.pos_y = 150 + i * 150
                 asset.save()
@@ -455,27 +527,30 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                             asset.save()
 
                 if asset_name == "bess":
+                    ess_asset, _ = Asset.objects.get_or_create(
+                        name="battery",
+                        asset_type=get_object_or_404(AssetType, asset_type=asset_name),
+                        scenario=scenario,
+                    )
+                    qs_ac = Asset.objects.filter(parent_asset=asset)
                     # Create the ess charging power
-                    ess_charging_power_asset = Asset(
-                        name=f"{asset.name} input power",
+                    ess_charging_power_asset, _ = Asset.objects.get_or_create(
+                        name=f"{ess_asset.name} input power",
                         asset_type=get_object_or_404(AssetType, asset_type="charging_power"),
                         scenario=scenario,
-                        parent_asset=asset,
+                        parent_asset=ess_asset,
                     )
                     # Create the ess discharging power
-                    ess_discharging_power_asset = Asset(
-                        name=f"{asset.name} output power",
+                    ess_discharging_power_asset, _ = Asset.objects.get_or_create(
+                        name=f"{ess_asset.name} output power",
                         asset_type=get_object_or_404(AssetType, asset_type="discharging_power"),
                         scenario=scenario,
-                        parent_asset=asset,
+                        parent_asset=ess_asset,
                     )
                     # Create the ess capacity
-                    ess_capacity_asset = Asset(
-                        name=f"{asset.name} capacity",
-                        asset_type=get_object_or_404(AssetType, asset_type="capacity"),
-                        scenario=scenario,
-                        parent_asset=asset,
-                    )
+                    ess_capacity_asset = asset
+                    ess_capacity_asset.name = f"{ess_asset.name} capacity"
+                    ess_capacity_asset.parent_asset = ess_asset
                     # remove name property from the form
                     form.cleaned_data.pop("name", None)
                     # Populate all subassets properties
@@ -501,15 +576,23 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     ess_capacity_asset.save()
                     ess_charging_power_asset.save()
                     ess_discharging_power_asset.save()
-                    asset.name = "battery"
-                    asset.save()
+
+                    ess_asset.save()
 
                     # connect the battery to the electricity bus
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
+                        bus=bus_el,
+                        bus_connection_port="input_1",
+                        asset=ess_asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
                     )
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el, bus_connection_port="output_1", asset=asset, flow_direction="B2A", scenario=scenario
+                        bus=bus_el,
+                        bus_connection_port="output_1",
+                        asset=ess_asset,
+                        flow_direction="B2A",
+                        scenario=scenario,
                     )
                 else:
                     # connect the asset to the electricity bus
@@ -527,18 +610,6 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     Bus.objects.filter(scenario=scenario, type="Gas").delete()
                 asset.delete()
 
-        #     if form.is_valid():
-        #         # check whether the constraint is already associated to the scenario
-        #         if qs.exists():
-        #             if len(qs) == 1:
-        #                 for name, value in form.cleaned_data.items():
-        #                     if getattr(constraint_instance, name) != value:
-        #                         if qs_sim.exists():
-        #
-        #
-        #         if constraint_type == "net_zero_energy":
-        #
-        #
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
 
 
@@ -546,6 +617,12 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 @require_http_methods(["GET", "POST"])
 def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     project = get_object_or_404(Project, id=proj_id)
+
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
+        raise PermissionDenied
+
     scenario = project.scenario
     messages.info(request, "Please include any relevant constraints for the optimization.")
 
@@ -553,22 +630,14 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
     if qs_options.exists():
         options = qs_options.get()
         es_schema_name = options.schema_name
-        demand = np.array(get_aggregated_demand(community=options.community))
-        peak_demand = demand.max()
-        daily_demand = demand.sum() / 365
-
     else:
         es_schema_name = None
-        peak_demand = None
-        daily_demand = None
 
     context = {
         "proj_id": proj_id,
         "proj_name": project.name,
         "step_id": step_id,
         "scen_id": scenario.id,
-        "daily_demand": daily_demand,
-        "peak_demand": peak_demand,
         "es_schema_name": es_schema_name,
         "step_list": CPN_STEP_VERBOSE,
     }
@@ -613,16 +682,52 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         form = EconomicDataForm(
             instance=project.economic_data, initial={"capex_fix": scenario.capex_fix}, prefix="economic"
         )
+        qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
+
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
             equity_form = EquityDataForm(instance=equity_data, prefix="equity")
         except EquityData.DoesNotExist:
-            equity_form = EquityDataForm(prefix="equity")
+            initial = {}
+            if qs_bm.exists():
+                initial = qs_bm.first().default_fate_values
+            equity_form = EquityDataForm(prefix="equity", initial=initial)
+
+        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+        if qs_demand.exists():
+            demand = json.loads(qs_demand.get().input_timeseries)
+            demand_np = np.array(demand)
+            peak_demand = round(demand_np.max(), 1)
+            daily_demand = round(demand_np.sum() / 365, 1)
+        else:
+            demand = None
+            peak_demand = None
+            daily_demand = None
+
+        qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
+        if qs_pv.exists():
+            pv_timeseries = json.loads(qs_pv.get().input_timeseries)
+        else:
+            pv_timeseries = None
+
+        if qs_bm.exists():
+            bm = qs_bm.get()
+            model_name = B_MODELS[bm.model_name]["Name"].replace("_", " ").capitalize()
+        else:
+            model_name = None
 
         context.update(
             {
                 "form": form,
                 "equity_form": equity_form,
+                "timestamps": [
+                    i for i in range(len(demand))
+                ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
+                "demand": demand,
+                "pv_timeseries": pv_timeseries,
+                "daily_demand": daily_demand,
+                "peak_demand": peak_demand,
+                "model_name": model_name,
             }
         )
 
@@ -639,7 +744,9 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
 
     if request.method == "GET":
@@ -693,7 +800,9 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
 def cpn_model_choice(request, proj_id, step_id=6):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
     context = {
         "scenario": project.scenario,
@@ -745,7 +854,9 @@ def cpn_model_suggestion(request, bm_id):
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
     user_scenarios = [project.scenario]
 
@@ -753,10 +864,13 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
+    # TODO here if there is no simulation or supply setup, tell the user they should define one first
     bus_el_name = Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
     unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
     if unused_pv.exists():
         unused_pv = unused_pv.get().total_flow
+    else:
+        unused_pv = 0
     unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
@@ -943,8 +1057,11 @@ def ajax_update_graph(request):
 def cpn_kpi_results(request, proj_id=None):
     project = get_object_or_404(Project, id=proj_id)
 
-    if (project.user != request.user) and (request.user not in project.viewers.all()):
+    if (project.user != request.user) and (
+        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
+    ):
         raise PermissionDenied
+
     qs = Simulation.objects.filter(scenario=project.scenario)
     if qs.exists():
         sim = qs.get()

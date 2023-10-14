@@ -10,6 +10,7 @@ soc_max,factor
 soc_min,factor
 capex_fix,currency
 opex_var,currency/unit/year
+opex_var_extra,currency/unit/year
 efficiency,factor
 installed_capacity,unit
 lifetime,year

@@ -16,13 +16,17 @@
 			<span class="project">{{ proj_name }}</span>
 			<!--span class="scenario">{% translate "Scenario" %} {{ scenario.name }}</span-->
 		</h1>
-		{% if proj_id %}
-		<!--div class="wizard__back">
+
+		<div class="wizard__back">
 				<div>
-						<a href="{% url 'project_search' proj_id %}">{% translate "My projects" %}</a>
+							{% if proj_id %}
+						<a href="{% url 'projects_list_cpn' proj_id %}">{% translate "My projects" %}</a>
+					{% else %}
+						<a href="{% url 'projects_list_cpn' %}">{% translate "My projects" %}</a>
+							{% endif %}
 				</div>
-		</div-->
-		{% endif %}
+		</div>
+
 		<div class="wizard__steps">
 			<ul>
 				{% for step in step_list %}
@@ -69,11 +73,14 @@
 			{% if step_id > 1 %}
 			<a id="previous-button" class="btn btn--medium btn--hollow btn--previous" href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>
 			{% endif %}
+
 			{% if step_id < step_list|length %}
 			{% block next_btn %}
 			<a id="next-button" class="btn btn--medium" href="{% url 'cpn_steps' proj_id step_id|add:1 %}">{% translate "Next" %}</a>
 			{% endblock next_btn %}
 			{% endif %}
+			{% else %}
+			<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
 			{% endif %}
 		</div>
 		<div class="step-footer__right"></div>

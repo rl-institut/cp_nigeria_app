@@ -4,6 +4,11 @@
 {% load custom_filters %}
 {% load i18n %}
 
+{% block start_body_scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="{% static 'js/traceplot.js' %}"></script>
+{% endblock start_body_scripts %}
+
 
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 {% block progression_content %}
@@ -11,45 +16,111 @@
 
 
 <main>
-<div class="container">
+	<div class="container">
 
-	<section class="project-setup two-columns">
-<form method="POST">
-
-	<div style="display:flex">
-			<div class="left">
-				<div>
-				<div>
-					{% csrf_token %}
-					{{form |crispy }}
-					{{equity_form |crispy }}
-				</div>
-				</div>
-			</div>
-			<div class="right">
-				<div>
-					<p>Shortly explain dispatch hierarchy: prioritize solar > main grid > batt > diesel</p>
-					<div>
-						<div>Avg. daily demand (kWh)</div><div style="background-color: #F2CD5D;padding:1rem;">{{ daily_demand }}</div>
-					<div>Peak demand (kW)</div><div style="background-color: #F2CD5D;padding:1rem;">{{ peak_demand }}</div>
-					</div>
-
-					{% if es_schema_name %}
-					<div style="margin-top:2rem;">
-					<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es">
+		<section class="project-setup two-columns">
+			<form method="POST">
+				<div class="row">
+					{% if pv_timeseries %}
+					<div class="col">
+						<h3>PV normalized timeseries</h3>
+						<div id="pv_trace"></div>
 					</div>
 					{% endif %}
+					<div class="col">
+						<h3>Demand profile (kWh)</h3>
+						<div id="demand_trace"></div>
+					</div>
 				</div>
+				<div style="display:flex">
+					<div class="left">
+						<div>
+							<div>
+								{% csrf_token %}
+								<div style="border-bottom: 1px solid #EFEDEB;">
+									{{form |crispy }}
+								</div>
+								<div class="row cpn-business__info">
+									<h3>
+										<span>Model chosen:</span>
+										<span class="model-chosen">{{ model_name }}</span>
+									</h3>
+								</div>
+								<div>
+									{{equity_form |crispy }}
+								</div>
+
+							</div>
+						</div>
+
+					</div>
+					<div class="right">
 
 
-			</div>
-		</div>
+						<div>
+							<div class="cpn-economic__results">
+								<div class="cpn-economic__results--1">
+                  <span class="title">
+                    Avg. daily demand (kWh)
+                  </span>
+									<span class="value">
+                    <!-- I would round the values if possible -->
+                    {{ daily_demand }}
+                  </span>
+								</div>
+								<div class="cpn-economic__results--2">
+                  <span class="title">
+                    Peak demand (kWh)
+                  </span>
+									<span class="value">
+                    {{ peak_demand }}
+                  </span>
+								</div>
+							</div>
+							<div class="cpn-economic__prio">
+								<p>Prioritize</p>
+								<div class="cpn-economic__prio--1">
+									<span class="number">1</span>
+									<span class="technology">PV plant</span>
+									<img src="{% static 'assets/cp_nigeria/pv_plant_grey.svg' %}" alt="PV plant">
+								</div>
+								<!--div class="cpn-economic__prio--2">
+									<span class="number">2</span>
+									<span class="technology">Main grid</span>
+									<img src="{% static 'assets/cp_nigeria/dso_grey.svg' %}" alt="Main grid">
+								</div-->
+								<div class="cpn-economic__prio--2">
+									<span class="number">2</span>
+									<span class="technology">Battery</span>
+									<img src="{% static 'assets/cp_nigeria/bess_grey.svg' %}" alt="Battery">
+								</div>
+								<div class="cpn-economic__prio--3">
+									<span class="number">3</span>
+									<span class="technology">Diesel generator</span>
+									<img src="{% static 'assets/cp_nigeria/diesel_grey.svg' %}" alt="Diesel generator">
+								</div>
+							</div>
+
+							{% if es_schema_name %}
+							<div class="cpn-economic__system">
+								<img src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="Design system">
+							</div>
+							{% endif %}
+
+
+						</div>
+
+
+
+
+					</div>
+				</div>
 				<button id="submitFormBtn" style="display: none" type="submit">
-			</button>
-		</form>
-	</section>
+				</button>
+			</form>
+		</section>
 
-</div>
+	</div>
 </main>
 
 
@@ -57,8 +128,23 @@
 {% endblock progression_content %}
 
 {% block next_btn %}
-			<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
+<button id="next-button" class="btn btn--medium" onclick="javascript:submitFormBtn.click();">{% translate "Next" %}</button>
 {% endblock next_btn %}
 
 {% block end_body_scripts %}
+{% if demand %}
+<script>
+	var demand = {{ demand }};
+	var timestamps = {{ timestamps }};
+	makePlotly( timestamps, demand, plot_id="demand_trace");
+	// makePlotly( x, y, plot_id="pv_trace");
+</script>
+{% endif %}
+{% if pv_timeseries %}
+<script>
+	var pv_timeseries = {{ pv_timeseries }};
+	var timestamps = {{ timestamps }};
+	makePlotly( timestamps, pv_timeseries, plot_id="pv_trace");
+</script>
+{% endif %}
 {% endblock end_body_scripts %}

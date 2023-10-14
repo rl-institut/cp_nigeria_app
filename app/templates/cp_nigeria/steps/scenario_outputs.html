@@ -277,7 +277,7 @@
 			<div class="col" id="report_items" style="display:flex;flex-direction:column-reverse;">
 				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
-				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries by sector" %}
+				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}
 				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
 				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
 
@@ -449,19 +449,22 @@ function scenario_visualize_timeseries(scen_id=""){
 };
 
 function scenario_visualize_stacked_timeseries(scen_id){
- $.ajax({
-            url: "{% url 'scenario_visualize_stacked_timeseries'%}" +  scen_id,
-            type: "GET",
-            success: async (graphs) => {
-                const parentDiv = document.getElementById("stacked_timeseries");
-                await graphs.map(parameters => {
-                    const newGraph = document.createElement('div');
-                    newGraph.id = "stacked_timeseries" + parameters.id;
-                    parentDiv.appendChild(newGraph);
-                    graph_type_mapping[parameters.type](newGraph.id, parameters);
-                });
-            },
-        });
+	$.ajax({
+		url: "{% url 'scenario_visualize_stacked_timeseries'%}" +  scen_id,
+		type: "GET",
+		success: async (graphs) => {
+			const parentDiv = document.getElementById("stacked_timeseries");
+			await graphs.map(parameters => {
+				if(parameters.id != "Gas") {
+					const newGraph = document.createElement('div');
+					newGraph.id = "stacked_timeseries" + parameters.id;
+					parentDiv.appendChild(newGraph);
+					graph_type_mapping[parameters.type](newGraph.id, parameters);
+					// TODO change plotly title here
+				}
+			});
+		},
+	});
 };
 
 

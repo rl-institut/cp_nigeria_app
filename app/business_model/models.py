@@ -15,7 +15,7 @@ from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
-from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES
+from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES, BM_FATE_DEFAULT_VALUES
 
 
 class BusinessModel(models.Model):
@@ -49,6 +49,10 @@ class BusinessModel(models.Model):
             total_score = None
 
         return total_score
+
+    @property
+    def default_fate_values(self):
+        return BM_FATE_DEFAULT_VALUES.get(self.model_name, {})
 
 
 class BMQuestion(models.Model):

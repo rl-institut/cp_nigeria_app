@@ -380,6 +380,8 @@ class Asset(TopologyNode):
     capex_var = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # specific_costs
     opex_fix = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # specific_costs_om
     opex_var = models.FloatField(null=True, blank=False, validators=[MinValueValidator(0.0)])  # dispatch_price
+    opex_var_extra = models.FloatField(null=True, default=0, blank=True, validators=[MinValueValidator(0.0)])
+
     lifetime = models.IntegerField(null=True, blank=False, validators=[MinValueValidator(0)])
     input_timeseries = models.TextField(null=True, blank=False)  # , validators=[validate_timeseries])
     crate = models.FloatField(null=True, blank=False, default=1, validators=[MinValueValidator(0.0)])

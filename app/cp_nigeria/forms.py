@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.forms.models import modelformset_factory
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
@@ -19,6 +20,7 @@ class ProjectForm(OpenPlanModelForm):
     )
     start_date = forms.DateField(
         label=_("Simulation start"),
+        initial=f"{timezone.now().year}-01-01",
         widget=forms.DateInput(
             format="%Y-%m-%d",
             attrs={
@@ -33,6 +35,10 @@ class ProjectForm(OpenPlanModelForm):
     class Meta:
         model = Project
         exclude = ("country", "user", "viewers", "economic_data")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["description"].required = False
 
     def save(self, *args, **kwargs):
         user = kwargs.pop("user")
@@ -120,22 +126,25 @@ class PVForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        self.fields["optimize_cap"].initial = True
+        asset = kwargs.get("instance", None)
+        if asset is None:
+            default_values = {"lifetime": 8, "capex_var": 368606.52, "opex_fix": 7727.6}
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
 
-        # for field in self.fields:
-
+        self.initial["optimize_cap"] = True
+        self.fields["input_timeseries"].widget = forms.HiddenInput()
         self.fields["input_timeseries"].required = False
 
-        visible_fields = ["opex_var"]
-        for field in self.fields:
-            if field not in visible_fields:
-                pass  # self.fields[field].widget = forms.HiddenInput()
+        self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
+            "(CAPEX)", "(CAPEX). It should include inverter costs."
+        )
 
         for field, value in zip(
             ("name", "renewable_asset", "capex_fix", "opex_var"), (self.asset_type_name, True, 0, 0)
         ):
             self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+            self.initial[field] = value
 
 
 class DieselForm(AssetCreateForm):
@@ -144,27 +153,39 @@ class DieselForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        self.fields["optimize_cap"].initial = True
+        self.initial["optimize_cap"] = True
 
         asset = kwargs.get("instance", None)
         if asset is not None:
             self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
-
+        else:
+            default_values = {"lifetime": 8, "capex_var": 309104, "opex_fix": 19319, "efficiency": 0.25}
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
         visible_fields = ["opex_var"]
         for field in self.fields:
             if field not in visible_fields:
                 pass  # self.fields[field].widget = forms.HiddenInput()
 
-        for field, value in zip(("name", "capex_fix", "opex_fix"), (self.asset_type_name, 0)):
+        for field, value in zip(("name", "capex_fix"), (self.asset_type_name, 0)):
             self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+            self.initial[field] = value
 
         qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
         if qs.exists():
             currency = qs.values_list("economic_data__currency", flat=True).get()
             currency = CURRENCY_SYMBOLS[currency]
+        else:
+            currency = "currency"
 
-        self.fields["opex_var"].label = f"Fuel price ({currency}/l)"
+        help_text = "Average fuel price."
+        question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+        self.fields["opex_var"].label = f"Fuel price ({currency}/l)" + question_icon
+        help_text = "Costs such as lubricant for motor."
+        question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+        self.fields["opex_var_extra"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
+
+        self.fields["efficiency"].label = self.fields["efficiency"].label.replace("Efficiency", "Average efficiency")
 
     def clean_opex_var(self):
         return self.cleaned_data["opex_var"] / ENERGY_DENSITY_DIESEL
@@ -172,17 +193,33 @@ class DieselForm(AssetCreateForm):
 
 class BessForm(StorageForm):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, asset_type="bess", **kwargs)
+        super().__init__(*args, **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        # for field in self.fields:
-        #     self.fields[field].required = False
-        self.fields["optimize_cap"].initial = True
+        asset = kwargs.get("instance", None)
+        if asset is not None:
+            self.initial["soc_min"] = round(1 - asset.soc_min, 3)
+        else:
+            default_values = {
+                "lifetime": 8,
+                "capex_var": 255783.56,
+                "opex_fix": 7727.6,
+                "crate": 1,
+                "soc_min": 0.8,
+                "soc_max": 1,
+                "efficiency": 0.9,
+            }
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
 
+        self.initial["optimize_cap"] = True
         for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
             self.fields[field].widget = forms.HiddenInput()
-            self.fields[field].initial = value
+            self.initial[field] = value
+        self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
+            "(CAPEX)", "(CAPEX). It should include inverter costs."
+        )
 
         # TODO this is a patchy fix to get the tooltips even with the changed labels (copied code from forms), fix properly later
         for field, value in zip(
@@ -197,11 +234,16 @@ class BessForm(StorageForm):
                 help_text = PARAMETERS["c-rate"][":Definition_Short:"]
             else:
                 param_ref = ""
+            if field == "soc_min":
+                help_text = "The fraction of the battery's capacity that is discharged from the battery with regard to its fully charged state."  # source: Wikipedia
             if field != "name":
                 question_icon = f'<a href="{RTD_url}{param_ref}"><span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span></a>'
             else:
                 question_icon = ""
             self.fields[field].label = value + question_icon
+
+    def clean_soc_min(self):
+        return round(1 - self.cleaned_data["soc_min"], 3)
 
 
 class DummyForm(forms.Form):

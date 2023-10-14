@@ -12,6 +12,58 @@ BM_QUESTIONS_CATEGORIES = {
     "financial": _("Financial capacities"),
 }
 
+BM_FATE_DEFAULT_VALUES = {
+    "isolated_cooperative_led": {
+        "grant_share": 70,
+        "debt_share": 30,
+        "equity_share": 0,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 0,
+    },
+    "isolated_operator_led": {
+        "grant_share": 0,
+        "debt_share": 80,
+        "equity_share": 20,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 15,
+    },
+    "interconnected_cooperative_led": {
+        "grant_share": 70,
+        "debt_share": 30,
+        "equity_share": 0,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 0,
+    },
+    "interconnected_operator_led": {
+        "grant_share": 0,
+        "debt_share": 80,
+        "equity_share": 20,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 15,
+    },
+    "interconnected_spv_led": {
+        "grant_share": 0,
+        "debt_share": 50,
+        "equity_share": 50,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 5,
+    },
+    "interconnected_collaborative_spv_led": {
+        "grant_share": 30,
+        "debt_share": 40,
+        "equity_share": 30,
+        "debt_interest_MG": 11,
+        "debt_interest_SHS": 0,
+        "equity_interest_MG": 15,
+    },
+}
+
+
 B_MODELS = {}
 
 if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
