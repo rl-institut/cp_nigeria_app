@@ -27,7 +27,8 @@ from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
 from business_model.helpers import B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
-from dashboard.helpers import KPI_PARAMETERS, B_MODELS
+from dashboard.helpers import KPI_PARAMETERS
+from business_model.helpers import B_MODELS
 from cp_nigeria.helpers import FATEHandler, ReportHandler
 
 logger = logging.getLogger(__name__)
