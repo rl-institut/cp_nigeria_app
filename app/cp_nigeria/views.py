@@ -410,7 +410,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             if qs.exists():
                 existing_asset = qs.get()
                 context["es_assets"].append(asset_type_name)
-                context[f"form_{asset_type_name}"] = form(instance=existing_asset, proj_id=project.id)
+                asset_form = form(instance=existing_asset, proj_id=project.id)
+                if asset_type_name == "diesel_generator":
+                    asset_form["opex_var"].initial = existing_asset.opex_var * ENERGY_DENSITY_DIESEL
+                context[f"form_{asset_type_name}"] = asset_form
+
 
             else:
                 context[f"form_{asset_type_name}"] = form(proj_id=project.id)
@@ -461,6 +465,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             )
             if qs.exists():
                 form = asset_forms[asset_name](request.POST, instance=qs.first(), proj_id=project.id)
+                if asset_type_name == "diesel_generator":
+                    form["opex_var"].initial = qs.first.opex_var * ENERGY_DENSITY_DIESEL
 
             else:
                 form = asset_forms[asset_name](request.POST, proj_id=project.id)
