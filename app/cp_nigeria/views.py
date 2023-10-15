@@ -667,12 +667,55 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         if form_errors is False:
             answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
         else:
+            qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
+
+            try:
+                equity_data = EquityData.objects.get(scenario=scenario)
+                equity_form = EquityDataForm(instance=equity_data, prefix="equity")
+            except EquityData.DoesNotExist:
+                initial = {}
+                if qs_bm.exists():
+                    initial = qs_bm.first().default_fate_values
+                equity_form = EquityDataForm(prefix="equity", initial=initial)
+
+            qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+            if qs_demand.exists():
+                demand = json.loads(qs_demand.get().input_timeseries)
+                demand_np = np.array(demand)
+                peak_demand = round(demand_np.max(), 1)
+                daily_demand = round(demand_np.sum() / 365, 1)
+            else:
+                demand = None
+                peak_demand = None
+                daily_demand = None
+
+            qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
+            if qs_pv.exists():
+                pv_timeseries = json.loads(qs_pv.get().input_timeseries)
+            else:
+                pv_timeseries = None
+
+            if qs_bm.exists():
+                bm = qs_bm.get()
+                model_name = B_MODELS[bm.model_name]["Name"].replace("_", " ").capitalize()
+            else:
+                model_name = None
+
             context.update(
                 {
                     "form": form,
                     "equity_form": equity_form,
+                    "timestamps": [
+                        i for i in range(len(demand))
+                    ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
+                    "demand": demand,
+                    "pv_timeseries": pv_timeseries,
+                    "daily_demand": daily_demand,
+                    "peak_demand": peak_demand,
+                    "model_name": model_name,
                 }
             )
+
             answer = render(
                 request,
                 "cp_nigeria/steps/scenario_system_params.html",
