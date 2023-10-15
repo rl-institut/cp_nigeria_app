@@ -25,14 +25,14 @@ urlpatterns = (
         path("admin/", admin.site.urls),
         path("users/", include("django.contrib.auth.urls")),
         path("users/", include("users.urls")),
-        path("", include("projects.urls")),
+        path("open-plan/", include("projects.urls")),
         path("business/", include("business_model.urls")),
         path("dashboard/", include("dashboard.urls")),
         path("imprint/", imprint, name="imprint"),
         path("privacy/", privacy, name="privacy"),
         path("about/", about, name="about"),
         path("license/", license, name="license"),
-        path("cp_nigeria/", include("cp_nigeria.urls")),
+        path("", include("cp_nigeria.urls")),
     )
     + [re_path(r"^i18n/", include("django.conf.urls.i18n"))]
     + staticfiles_urlpatterns()
