@@ -159,7 +159,13 @@ class DieselForm(AssetCreateForm):
         if asset is not None:
             self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
         else:
-            default_values = {"lifetime": 8, "capex_var": 309104, "opex_fix": 19319, "efficiency": 0.25}
+            default_values = {
+                "lifetime": 8,
+                "capex_var": 309104,
+                "opex_fix": 19319,
+                "opex_var_extra": 23.18,
+                "efficiency": 0.25,
+            }
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
         visible_fields = ["opex_var"]
