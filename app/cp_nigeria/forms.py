@@ -3,6 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.forms.models import modelformset_factory
+from django.core.exceptions import ValidationError
+
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
@@ -12,6 +14,11 @@ from .models import *
 from projects.helpers import PARAMETERS
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
+
+
+def validate_not_zero(value):
+    if value == 0:
+        raise ValidationError(_("This field cannot be equal to 0"))
 
 
 class ProjectForm(OpenPlanModelForm):
@@ -82,6 +89,10 @@ class EconomicDataForm(OpenPlanModelForm):
     class Meta:
         model = EconomicData
         exclude = ("tax", "currency", "duration")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["discount"].validators.append(validate_not_zero)
 
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)
