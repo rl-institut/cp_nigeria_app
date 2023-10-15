@@ -83,6 +83,11 @@ class EconomicDataForm(OpenPlanModelForm):
         model = EconomicData
         exclude = ("tax", "currency", "duration")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["discount"].initial = 0.0000001
+
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)
         scenario = Scenario.objects.filter(project__economic_data=ed)
