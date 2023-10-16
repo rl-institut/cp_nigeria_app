@@ -486,7 +486,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     )
 
                     dso_diesel, _ = Asset.objects.get_or_create(
-                        energy_price="0",
+                        energy_price=asset.opex_var_extra,
                         feedin_tariff="0",
                         renewable_share=0,
                         peak_demand_pricing_period=1,

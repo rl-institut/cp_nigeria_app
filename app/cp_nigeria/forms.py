@@ -168,13 +168,13 @@ class DieselForm(AssetCreateForm):
 
         asset = kwargs.get("instance", None)
         if asset is not None:
-            self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
+            self.initial["opex_var_extra"] = round(asset.opex_var_extra * ENERGY_DENSITY_DIESEL, 3)
         else:
             default_values = {
                 "lifetime": 8,
                 "capex_var": 309104,
                 "opex_fix": 19319,
-                "opex_var_extra": 23.18,
+                "opex_var": 23.18,
                 "efficiency": 0.25,
             }
             for field, initial_value in default_values.items():
@@ -197,15 +197,15 @@ class DieselForm(AssetCreateForm):
 
         help_text = "Average fuel price."
         question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
-        self.fields["opex_var"].label = f"Fuel price ({currency}/l)" + question_icon
+        self.fields["opex_var_extra"].label = f"Fuel price ({currency}/l)" + question_icon
         help_text = "Costs such as lubricant for motor."
         question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
-        self.fields["opex_var_extra"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
+        self.fields["opex_var"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
 
         self.fields["efficiency"].label = self.fields["efficiency"].label.replace("Efficiency", "Average efficiency")
 
-    def clean_opex_var(self):
-        return self.cleaned_data["opex_var"] / ENERGY_DENSITY_DIESEL
+    def clean_opex_var_extra(self):
+        return self.cleaned_data["opex_var_extra"] / ENERGY_DENSITY_DIESEL
 
 
 class BessForm(StorageForm):
