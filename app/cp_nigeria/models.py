@@ -62,6 +62,10 @@ class Options(models.Model):
             name = f"{name}_case.png"
         return name
 
+    @property
+    def has_diesel(self):
+        return "diesel" in self.user_case
+
 
 def copy_energy_system_from_usecase(usecase_name, scenario):
     """Given a scenario, copy the topology of the usecase"""
