@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.translation import gettext_lazy as _
 
@@ -78,10 +79,16 @@ if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
                 description_idx = hdr.index("Description")
                 cat_idx = hdr.index("Category")
                 resp_idx = hdr.index("Responsibilities")
+                adv_idx = hdr.index("Advantages")
+                disadv_idx = hdr.index("Disadvantages")
             else:
                 label = row[label_idx]
-
-                B_MODELS[label] = {k: v for k, v in zip(hdr, row)}
+                B_MODELS[label] = {}
+                for k, v in zip(hdr, row):
+                    if k not in ("Advantages", "Disadvantages"):
+                        B_MODELS[label][k] = v
+                    else:
+                        B_MODELS[label][k] = json.loads(v)
 
 
 def model_score_mapping(score):
