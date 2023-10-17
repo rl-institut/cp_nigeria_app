@@ -1056,6 +1056,8 @@ def ajax_bmodel_infos(request):
                 "model_name": B_MODELS[model]["Name"],
                 "model_image": B_MODELS[model]["Graph"],
                 "model_image_resp": B_MODELS[model]["Responsibilities"],
+                "model_advantages": B_MODELS[model]["Advantages"],
+                "model_disadvantages": B_MODELS[model]["Disadvantages"],
             },
         )
     return None
