@@ -20,10 +20,10 @@
 				{{ form }}
 				{% csrf_token %}
 			</form>
-			{% if recommanded_model %}
+			{% if recommended_model %}
 			<div class="text">
 				<span>
-					{% translate "Recommanded model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>: <strong>{{ recommanded_model }}</strong>
+					{% translate "Recommended model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>: <strong>{{ recommanded_model }}</strong>
 				</span>
 
 			</div>
@@ -43,7 +43,7 @@
 
 
 {% block next_btn %}
-<button {% if not recommanded_model %}disabled="true"{% endif %} id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
+<button {% if not recommended_model %}disabled="true"{% endif %} id="next-button" class="btn btn--medium" onclick="javascript:submitBusinessModelForm()">{% translate "Next" %}</button>
 {% endblock next_btn %}
 
 
