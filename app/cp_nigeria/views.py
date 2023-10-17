@@ -963,6 +963,35 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         es_schema_name = None
 
+    # FATE graphs for demo, will be implemented properly later
+        for name, graph in report_graphs.items():
+
+            data_table = fate_excel[graph["raw_data_sheet"]]
+            graph_data = get_excel_data(graph["raw_data_range"], data_table)
+            trace_labels = (
+                graph["trace_label"]
+                if graph["raw_data_sheet"] == "11. Summary of values"
+                else get_excel_data(graph["trace_labels_range"], data_table)
+            )
+
+            if graph["type"] == "scatter":
+                x_data = get_excel_data(graph["x_axis_range"], data_table)[0]
+                traces = [
+                    go.Scatter(x=x_data, y=row, mode=graph["mode"], name=label[0])
+                    for row, label in zip(graph_data, trace_labels)
+                ]
+
+                layout = go.Layout(
+                    title=graph["verbose"],
+                    xaxis={"title": graph["x_axis_label"]},
+                    yaxis={"title": graph["y_axis_label"]},
+                )
+
+            fig = go.Figure(data=traces, layout=layout)
+            image_file = f"static/assets/cp_nigeria/FATE_graphs/{name}.png"
+            fig.write_image(image_file)
+            html_figs[name] = fig.to_html()
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
