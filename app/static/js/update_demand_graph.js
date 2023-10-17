@@ -108,7 +108,7 @@ function initialPlot () {
 
         var layout = {
             xaxis: {range: ["2022-06-01 00:00:00", "2022-06-08 00:00:00"], type: "date", title: "Time"},
-            yaxis: {autorange: true, title: "kWh"},
+            yaxis: {autorange: true, title: "kW"},
             title: "Total demand"
             };
 
