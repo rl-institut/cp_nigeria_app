@@ -37,7 +37,7 @@ class ProjectForm(OpenPlanModelForm):
             },
         ),
     )
-    duration = forms.IntegerField(label=_("Project lifetime"))
+    duration = forms.IntegerField(label=_("Project lifetime"), initial=25)
 
     class Meta:
         model = Project
@@ -139,7 +139,7 @@ class PVForm(AssetCreateForm):
 
         asset = kwargs.get("instance", None)
         if asset is None:
-            default_values = {"lifetime": 8, "capex_var": 368606.52, "opex_fix": 7727.6}
+            default_values = {"lifetime": 25, "capex_var": 369198, "opex_fix": 7740}
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
 
@@ -172,9 +172,9 @@ class DieselForm(AssetCreateForm):
         else:
             default_values = {
                 "lifetime": 8,
-                "capex_var": 309104,
-                "opex_fix": 19319,
-                "opex_var": 23.18,
+                "capex_var": 309600,
+                "opex_fix": 19350,
+                "opex_var": 23.22,
                 "efficiency": 0.25,
             }
             for field, initial_value in default_values.items():
@@ -220,8 +220,8 @@ class BessForm(StorageForm):
         else:
             default_values = {
                 "lifetime": 8,
-                "capex_var": 255783.56,
-                "opex_fix": 7727.6,
+                "capex_var": 256194,
+                "opex_fix": 7740,
                 "crate": 1,
                 "soc_min": 0.8,
                 "soc_max": 1,
