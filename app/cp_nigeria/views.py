@@ -964,33 +964,22 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         es_schema_name = None
 
     # FATE graphs for demo, will be implemented properly later
-        for name, graph in report_graphs.items():
+    fate_data = pd.read_csv("static/fate_graphs.csv", sep=";", header=0, index_col=0)
+    fate_figs = {}
+    for col in fate_data:
+        x_data = fate_data[col].index.tolist()
+        y_data = fate_data[col]
+        trace = go.Scatter(x=x_data, y=y_data, name=col)
 
-            data_table = fate_excel[graph["raw_data_sheet"]]
-            graph_data = get_excel_data(graph["raw_data_range"], data_table)
-            trace_labels = (
-                graph["trace_label"]
-                if graph["raw_data_sheet"] == "11. Summary of values"
-                else get_excel_data(graph["trace_labels_range"], data_table)
-            )
+        layout = go.Layout(
+            title=col,
+            xaxis={"title": "Year"},
+            yaxis={"title": "NGN"},
+            template="simple_white"
+        )
 
-            if graph["type"] == "scatter":
-                x_data = get_excel_data(graph["x_axis_range"], data_table)[0]
-                traces = [
-                    go.Scatter(x=x_data, y=row, mode=graph["mode"], name=label[0])
-                    for row, label in zip(graph_data, trace_labels)
-                ]
-
-                layout = go.Layout(
-                    title=graph["verbose"],
-                    xaxis={"title": graph["x_axis_label"]},
-                    yaxis={"title": graph["y_axis_label"]},
-                )
-
-            fig = go.Figure(data=traces, layout=layout)
-            image_file = f"static/assets/cp_nigeria/FATE_graphs/{name}.png"
-            fig.write_image(image_file)
-            html_figs[name] = fig.to_html()
+        fig = go.Figure(data=trace, layout=layout)
+        fate_figs[col] = fig.to_html()
 
     context = {
         "proj_id": proj_id,
@@ -1002,6 +991,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "model_name": B_MODELS[model]["Name"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "fate_net_cash_flow": fate_figs["Net Cash Flow"],
+        "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
