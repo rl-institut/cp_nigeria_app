@@ -271,12 +271,36 @@
 				</div>
 			</div>
 		</div>
+		    <div class="row">
+			<div class="col col-md-12">
+				<div class="chart">
+					<div class="chart__header">
+						<div>
+							<span class="title">{% translate "Community characteristics" %}</span>
+						</div>
+					</div>
+					<div class="chart__plot">
+						<table class="table" >
+							<thead><tr><th>Consumer type</th><th>Nr. of consumers</th><th>Total demand</th></tr></thead>
+
+				{% for consumer_type, char in aggregated_cgs.items %}
+							<tr>
+								<td>{{ consumer_type }}</td>
+								<td>{{ char.nr_consumers }}</td>
+								<td>{{ char.total_demand }} kWh</td>
+							</tr>
+							{% endfor %}
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
     <div class="row">
 			<div class="col col-md-12">
 				<div class="chart">
 					<div class="chart__header">
 						<div>
-							<span class="title">{% translate "Fate results" %}</span>
+							<span class="title">{% translate "Economic indicators" %}</span>
 						</div>
 					</div>
 					<div class="chart__plot">
@@ -285,7 +309,6 @@
 							<tbody>
 
 							</tbody>
-
 							<tr>
 								<td>Estimated Tariff [NGN]</td>
 								<td>85</td>
@@ -294,6 +317,19 @@
 								<td>WACC</td>
 								<td>11.68%</td>
 							</tr>
+							<tr>
+								<td>IRR</td>
+								<td>11.61%</td>
+							</tr>
+														<tr>
+								<td>Net profit minus total costs [NGN]</td>
+								<td>629.192.634</td>
+							</tr>
+																	<tr>
+								<td>Total loan and equity volume [NGN]</td>
+								<td>181.132.580</td>
+							</tr>
+
 
 						</table>
 					</div>
