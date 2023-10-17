@@ -39,7 +39,7 @@ class BMQuestionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         qs = kwargs.pop("qs", None)
         super().__init__(*args, **kwargs)
-        for criteria in qs:
+        for criteria in qs.order_by("question"):
             alv = criteria.question.score_allowed_values
             opts = {"label": criteria.question.question_for_user}
             if criteria.score is not None:

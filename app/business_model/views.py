@@ -65,10 +65,16 @@ def help_select_questions(request, bm_id):
                 new_criteria = BMAnswer(**criteria_params)
                 new_criteria.save()
 
-        categories_map = [cat for cat in criterias.values_list("category", flat=True)]
-        categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
+        categories = [cat for cat in BM_QUESTIONS_CATEGORIES.keys()]
 
         form = BMQuestionForm(qs=BMAnswer.objects.filter(business_model=bm))
+
+        categories_map = []
+        for field in form.fields:
+            n = int(field.split("_")[1])
+            cat = BMQuestion.objects.get(pk=n).category
+            categories_map.append(cat)
+
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             answer = render(
                 request,

@@ -136,5 +136,10 @@ def get_category(field_id, categories):
 
 
 @register.filter
+def get_index(a_list, index):
+    return a_list[index]
+
+
+@register.filter
 def is_current_category(field_category, current_category):
     return field_category == current_category
