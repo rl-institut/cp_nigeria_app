@@ -131,6 +131,11 @@ def cpn_project_duplicate(request, proj_id):
 
     answer = project_duplicate(request, proj_id)
     new_proj_id = answer.url.split("/")[-1]
+    options, created = Options.objects.get_or_create(project__id=proj_id)
+    if created is False:
+        options.pk = None
+        options.project = Project.objects.get(pk=new_proj_id)
+        options.save()
 
     return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
 
@@ -146,7 +151,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
     ):
         raise PermissionDenied
 
-    messages.info(request, "Please include information about your connection to the grid.")
+    page_information = "Please include information about your connection to the grid."
 
     bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
     if bm_qs.exists():
@@ -164,6 +169,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
             "step_id": step_id,
             "scen_id": scen_id,
             "step_list": CPN_STEP_VERBOSE,
+            "page_information": page_information,
         },
     )
 
@@ -205,17 +211,20 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         else:
             form = ProjectForm()
-    messages.info(
-        request,
-        "Please input basic project information, such as name, location and duration. You can "
-        "input geographical data by clicking on the desired project location on the map.",
-    )
+    page_information = "Please input basic project information, such as name, location and duration. You can input geographical data by clicking on the desired project location on the map."
     if project is not None:
         proj_name = project.name
     return render(
         request,
         "cp_nigeria/steps/scenario_create.html",
-        {"form": form, "proj_id": proj_id, "proj_name": proj_name, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
+        {
+            "form": form,
+            "proj_id": proj_id,
+            "proj_name": proj_name,
+            "step_id": step_id,
+            "step_list": CPN_STEP_VERBOSE,
+            "page_information": page_information,
+        },
     )
 
 
@@ -326,12 +335,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         else:
             total_demand = []
 
-    messages.info(
-        request,
-        "Please input user group data. This includes user type information about "
-        "households, enterprises and facilities and predicted energy demand tiers as collected from "
-        "survey data or available information about the community.",
-    )
+    page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
 
     return render(
         request,
@@ -345,6 +349,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_list": CPN_STEP_VERBOSE,
             "allow_edition": allow_edition,
             "total_demand": total_demand,
+            "page_information": page_information,
         },
     )
 
@@ -362,12 +367,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
     scenario = project.scenario
 
     if request.method == "GET":
-        messages.info(
-            request,
-            "Select the energy system components you would like to include in the simulation. The "
-            "system can be comprised of a diesel generator, a PV-system, and a battery system (storage) "
-            "in any combination.",
-        )
+        page_information = "Select the energy system components you would like to include in the simulation. The system can be comprised of a diesel generator, a PV-system, and a battery system (storage) in any combination."
 
         qs_options = Options.objects.filter(project=project)
         if qs_options.exists():
@@ -383,6 +383,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
             "es_schema_name": es_schema_name,
+            "page_information": page_information,
         }
 
         asset_type_name = "bess"
@@ -633,14 +634,21 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         raise PermissionDenied
 
     scenario = project.scenario
-    messages.info(request, "Please include any relevant constraints for the optimization.")
+    page_information = (
+        "Please review the following values which are suggested for tariff evaluations based on the model you chose."
+    )
 
+    # TODO if the energy supply options did not select any component warn the user
     qs_options = Options.objects.filter(project=project)
     if qs_options.exists():
         options = qs_options.get()
         es_schema_name = options.schema_name
-    else:
-        es_schema_name = None
+        if es_schema_name == "":
+            messages.warning(
+                request,
+                "You haven't selected any component to your energy system. Please select at least one and click on the 'next' button below.",
+            )
+            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["scenario_setup"]]))
 
     context = {
         "proj_id": proj_id,
@@ -649,6 +657,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         "scen_id": scenario.id,
         "es_schema_name": es_schema_name,
         "step_list": CPN_STEP_VERBOSE,
+        "page_information": page_information,
     }
 
     if request.method == "POST":
