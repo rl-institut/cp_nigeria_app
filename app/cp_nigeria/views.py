@@ -30,6 +30,35 @@ from dashboard.helpers import KPI_PARAMETERS
 logger = logging.getLogger(__name__)
 
 
+def get_aggregated_cgs(project=None, community=None):
+    results_dict = {}
+    # list according to ConsumerType object ids in database
+    consumer_types = ["households", "enterprises", "public", "machinery"]
+    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
+        results_dict[consumer_type] = {}
+        total_demand = 0
+
+        if community is None:
+            # filter consumer group objects for project based on consumer type
+            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
+        else:
+            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
+        # calculate total consumers and total demand as sum of array elements in kWh
+        for group in group_qs:
+            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
+            total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
+            total_consumers = sum(group.number_consumers for group in group_qs)
+
+        # add machinery total demand to enterprise demand without increasing nr. of consumers
+        if consumer_type == "machinery":
+            del results_dict[consumer_type]
+            results_dict["enterprises"]["total_demand"] += total_demand
+        else:
+            results_dict[consumer_type]["nr_consumers"] = total_consumers
+            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
+
+    return results_dict
+
 def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
     if community is not None:
@@ -931,6 +960,7 @@ def cpn_model_suggestion(request, bm_id):
 @require_http_methods(["GET", "POST"])
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -981,6 +1011,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         fig = go.Figure(data=trace, layout=layout)
         fate_figs[col] = fig.to_html()
 
+    # dict for community characteristics table
+    if options.community is not None:
+        aggregated_cgs = get_aggregated_cgs(community=options.community)
+    else:
+        aggregated_cgs = get_aggregated_cgs(project=project)
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
@@ -993,6 +1029,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "model_image_resp": B_MODELS[model]["Responsibilities"],
         "fate_net_cash_flow": fate_figs["Net Cash Flow"],
         "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
+        "aggregated_cgs": aggregated_cgs,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
