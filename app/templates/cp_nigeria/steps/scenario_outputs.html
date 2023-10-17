@@ -279,6 +279,8 @@
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}
 				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
+				{{ fate_cum_net_cash_flow | safe }}
+				{{ fate_net_cash_flow | safe }}
 
 
 			</div>
