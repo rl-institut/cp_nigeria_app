@@ -46,7 +46,11 @@ $(document).ready(function() {
                 modelType = "interconnected";
                 $('#next').attr("disabled", false);
                 sendAjaxCall(modelType);
-            } else if (nextQuestion.attr('id') === ("agreement_yes") || nextQuestion.attr('id') === ("expansion_no") || nextQuestion.attr('id') === ("model_isolated")) {
+            } else if (nextQuestion.attr('id') === ("agreement_yes") ||
+                        nextQuestion.attr('id') === ("expansion_no") ||
+                        nextQuestion.attr('id') === ("iedno_yes") ||
+                        nextQuestion.attr('id') === ("model_isolated")
+                        ) {
                 modelType = "isolated";
                 $('#next').attr("disabled", false);
                 sendAjaxCall(modelType);
