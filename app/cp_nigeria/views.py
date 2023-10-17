@@ -485,8 +485,17 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
                     )
 
+                    equity_data_qs = EquityData.objects.filter(scenario=scenario)
+                    if equity_data_qs.exists():
+                        equity_data = equity_data_qs.get()
+                        diesel_price_kWh = equity_data.compute_average_fuel_price(
+                            initial_fuel_price=asset.opex_var_extra, project_duration=project.economic_data.duration
+                        )
+                    else:
+                        diesel_price_kWh = asset.opex_var_extra
+
                     dso_diesel, _ = Asset.objects.get_or_create(
-                        energy_price=asset.opex_var_extra,
+                        energy_price=diesel_price_kWh,
                         feedin_tariff="0",
                         renewable_share=0,
                         peak_demand_pricing_period=1,
@@ -661,6 +670,22 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             equity_data.debt_start = scenario.start_date.year
             equity_data.scenario = scenario
             equity_data.save()
+
+            # compute the new price and set it to the diesel dso
+            if options.has_diesel is True:
+                diesel_generator = Asset.objects.get(scenario=scenario, asset_type__asset_type="diesel_generator")
+                new_diesel_price_kWh = equity_data.compute_average_fuel_price(
+                    initial_fuel_price=diesel_generator.opex_var_extra, project_duration=project.economic_data.duration
+                )
+
+                dso_diesel = Asset.objects.get(
+                    scenario=scenario,
+                    asset_type__asset_type="gas_dso",
+                    name="diesel_fuel",
+                )
+                dso_diesel.energy_price = new_diesel_price_kWh
+                dso_diesel.save()
+
         else:
             form_errors = True
 

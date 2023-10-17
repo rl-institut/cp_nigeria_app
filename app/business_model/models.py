@@ -78,6 +78,12 @@ class BMAnswer(models.Model):
 class EquityData(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
     debt_start = models.IntegerField()
+    fuel_price_increase = models.FloatField(
+        verbose_name=_("Yearly increase of fuel price (%)"),
+        default=0,
+        blank=True,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
     grant_share = models.FloatField(
         verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
     )
@@ -102,3 +108,13 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         null=True,
     )
+
+    def compute_average_fuel_price(self, initial_fuel_price, project_duration):
+        """
+        Compute the average fuel price over the project lifetime
+        project_duration: in years
+        """
+        annual_increase = np.array(
+            [np.power(1 + (self.fuel_price_increase / 100.0), n) for n in range(project_duration)]
+        )
+        return initial_fuel_price * annual_increase.mean()
