@@ -278,7 +278,6 @@
 				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}
-				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
 				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
 
 
@@ -663,7 +662,7 @@ $(document).ready(function () {
     const proj_id = "{{ proj_id }}";
     // update the kpi table
     update_kpi_table_style(scen_id);
-    scenario_visualize_timeseries(scen_id);
+    //scenario_visualize_timeseries(scen_id);
     scenario_visualize_stacked_timeseries(scen_id);
     scenario_visualize_sankey(scen_id);
     scenario_visualize_capacities(scen_id);
