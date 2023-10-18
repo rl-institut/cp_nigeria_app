@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'cp_nigeria/base_cpn.html' %}
 {% load static %}
 {% load i18n %}
 
@@ -11,12 +11,9 @@
 
     <main class="signup">
         <div class="signup-frame">
-            <div class="signup-frame__img">
-                <img src="{% static 'assets/illustrations/open_plan_hero_hexagon.svg' %}"
-                     alt="open_plan cells">
-            </div>
+
             <div class="signup-frame__heading">
-                {% translate "Welcome to the open-plan-tool" %}
+                {% translate "Welcome to the CP Nigeria tool" %}
             </div>
             <div class="signup-frame__subheading">
                 {% translate "Do you not have an account yet?" %} <a
