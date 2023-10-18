@@ -55,6 +55,10 @@ $(document).ready(function() {
                 $('#next').attr("disabled", false);
                 sendAjaxCall(modelType);
             }
+            else if (nextQuestion.attr('id') === ("agreement_no"))
+            {
+                $('#next').attr("disabled", false);
+            }
         }
     });
 
