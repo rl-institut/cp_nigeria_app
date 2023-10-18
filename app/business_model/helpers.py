@@ -75,6 +75,7 @@ if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
                 hdr = row
                 # Name,Category,Description,Graph,Responsibilities
                 label_idx = hdr.index("Name")
+                verbose_idx = hdr.index("Verbose")
                 graph_idx = hdr.index("Graph")
                 description_idx = hdr.index("Description")
                 cat_idx = hdr.index("Category")

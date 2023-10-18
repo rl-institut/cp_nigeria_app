@@ -31,7 +31,7 @@ class BusinessModel(models.Model):
     decision_tree = models.TextField(null=True, blank=True)
 
     model_name = models.CharField(
-        max_length=60, null=True, blank=False, choices=[(k, k.replace("_", " ").capitalize()) for k in B_MODELS]
+        max_length=60, null=True, blank=False, choices=[(k, B_MODELS[k]["Verbose"]) for k in B_MODELS]
     )
 
     @property

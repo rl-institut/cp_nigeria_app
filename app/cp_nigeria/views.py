@@ -59,6 +59,7 @@ def get_aggregated_cgs(project=None, community=None):
 
     return results_dict
 
+
 def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
     if community is not None:
@@ -760,7 +761,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
             if qs_bm.exists():
                 bm = qs_bm.get()
-                model_name = B_MODELS[bm.model_name]["Name"].replace("_", " ").capitalize()
+                model_name = B_MODELS[bm.model_name]["Verbose"]
             else:
                 model_name = None
 
@@ -819,7 +820,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
         if qs_bm.exists():
             bm = qs_bm.get()
-            model_name = B_MODELS[bm.model_name]["Name"].replace("_", " ").capitalize()
+            model_name = B_MODELS[bm.model_name]["Verbose"]
         else:
             model_name = None
 
@@ -1001,12 +1002,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         y_data = fate_data[col]
         trace = go.Scatter(x=x_data, y=y_data, name=col)
 
-        layout = go.Layout(
-            title=col,
-            xaxis={"title": "Year"},
-            yaxis={"title": "NGN"},
-            template="simple_white"
-        )
+        layout = go.Layout(title=col, xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
 
         fig = go.Figure(data=trace, layout=layout)
         fate_figs[col] = fig.to_html()
@@ -1024,7 +1020,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
-        "model_name": B_MODELS[model]["Name"],
+        "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
         "fate_net_cash_flow": fate_figs["Net Cash Flow"],
@@ -1145,7 +1141,7 @@ def ajax_bmodel_infos(request):
             "cp_nigeria/steps/b_models.html",
             context={
                 "model_description": B_MODELS[model]["Description"],
-                "model_name": B_MODELS[model]["Name"],
+                "model_name": B_MODELS[model]["Verbose"],
                 "model_image": B_MODELS[model]["Graph"],
                 "model_image_resp": B_MODELS[model]["Responsibilities"],
                 "model_advantages": B_MODELS[model]["Advantages"],
