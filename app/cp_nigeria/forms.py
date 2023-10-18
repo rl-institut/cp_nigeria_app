@@ -176,6 +176,7 @@ class DieselForm(AssetCreateForm):
                 "capex_var": 309600,
                 "opex_fix": 19350,
                 "opex_var": 23.22,
+                "opex_var_extra": 626.7,
                 "efficiency": 0.25,
             }
             for field, initial_value in default_values.items():
