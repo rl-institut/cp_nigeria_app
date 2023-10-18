@@ -36,9 +36,7 @@ if DEBUG is True:
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv(
-    "EPA_SECRET_KEY", "v@p9^=@lc3#1u_xtx*^xhrv0l3li1(+8ik^k@g-_bzmexb0$7n"
-)
+SECRET_KEY = os.getenv("EPA_SECRET_KEY", "v@p9^=@lc3#1u_xtx*^xhrv0l3li1(+8ik^k@g-_bzmexb0$7n")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -133,9 +131,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -163,16 +159,14 @@ USE_TZ = False
 AUTH_USER_MODEL = "users.CustomUser"
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "project_search"
-LOGOUT_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "home_cpn"
+LOGOUT_REDIRECT_URL = "home_cpn"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # Please note, we don't use Django's internal email system,
 # we implement our own, using exchangelib
-USE_EXCHANGE_EMAIL_BACKEND = ast.literal_eval(
-    os.getenv("USE_EXCHANGE_EMAIL_BACKEND", "True")
-)
+USE_EXCHANGE_EMAIL_BACKEND = ast.literal_eval(os.getenv("USE_EXCHANGE_EMAIL_BACKEND", "True"))
 # The Exchange account which sends emails
 EXCHANGE_ACCOUNT = os.getenv("EXCHANGE_ACCOUNT", "dummy@dummy.com")
 EXCHANGE_PW = os.getenv("EXCHANGE_PW", "dummypw")
@@ -192,11 +186,7 @@ MESSAGE_TAGS = {
 
 USE_PROXY = ast.literal_eval(os.getenv("USE_PROXY", "True"))
 PROXY_ADDRESS_LINK = os.getenv("PROXY_ADDRESS", "http://proxy:port")
-PROXY_CONFIG = (
-    ({"http://": PROXY_ADDRESS_LINK, "https://": PROXY_ADDRESS_LINK})
-    if USE_PROXY
-    else ({})
-)
+PROXY_CONFIG = ({"http://": PROXY_ADDRESS_LINK, "https://": PROXY_ADDRESS_LINK}) if USE_PROXY else ({})
 
 MVS_API_HOST = os.getenv("MVS_API_HOST", "https://mvs-eland.rl-institut.de")
 MVS_POST_URL = f"{MVS_API_HOST}/sendjson/openplan"
