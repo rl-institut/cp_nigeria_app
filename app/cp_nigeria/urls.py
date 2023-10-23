@@ -31,4 +31,6 @@ urlpatterns = [
     path("ajax/<int:proj_id>/cpn_kpi_results", cpn_kpi_results, name="cpn_kpi_results"),
     path("simulation/cancel/<int:proj_id>", cpn_simulation_cancel, name="cpn_simulation_cancel"),
     path("simulation/request/<int:proj_id>", cpn_simulation_request, name="cpn_simulation_request"),
+    path("<int:proj_id>/fate_outputs", cpn_fate_outputs, name="cpn_fate_outputs"),
+    path("<int:proj_id>/download_report", download_report, name="download_report"),
 ]
