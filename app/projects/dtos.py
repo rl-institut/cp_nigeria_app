@@ -493,16 +493,6 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
             dso_energy_price.value = json.loads(dso_energy_price.value)
             dso_feedin_tariff.value = json.loads(dso_feedin_tariff.value)
 
-        # asset_opex_var = to_value_type(asset, "opex_var")
-        # if asset.asset_type.asset_type == "diesel_generator":
-        #     fuel_costs = asset_opex_var
-        #     asset_opex_var = to_value_type(asset, "opex_var_extra")
-        #     if asset_opex_var is not None:
-        #         if fuel_costs is not None:
-        #             asset_opex_var.value = asset_opex_var.value + fuel_costs.value
-        #     else:
-        #         asset_opex_var = fuel_costs
-
         asset_dto = AssetDto(
             asset.asset_type.asset_type,
             asset.name,
