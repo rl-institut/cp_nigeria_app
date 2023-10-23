@@ -25,37 +25,12 @@
 	<section class="container-lg">
 		<div class="accordion cpn-accordion" id="accordionStep3">
 			<div class="accordion-item">
-				<h2 class="accordion-header" id="step3HeadingTwo">
-					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step3CollapseTwo" aria-expanded="{% if total_demand %} true {%else%} false {% endif %}" aria-controls="step3CollapseTwo">
-						Electricity Demand Summary
-					</button>
-				</h2>
-				<div id="step3CollapseTwo" class="accordion-collapse collapse {% if total_demand %} show {% endif %}" aria-labelledby="step3HeadingTwo" data-bs-parent="#accordionStep3">
-					<div class="accordion-body">
-						<div class="row">
-							<div class="col">
-								<p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
-							</div>
-							<div class="col">
-								<p>Peak demand: <b id="peak_demand"></b> kW</p>
-							</div>
-						</div>
-
-						<div class="row">
-							<div id="demand-aggregate">
-							</div>
-						</div>
-
-					</div>
-				</div>
-			</div>
-			<div class="accordion-item">
 				<h2 class="accordion-header" id="step3HeadingOne">
 					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3CollapseOne" aria-expanded="{% if total_demand %} false {%else%} true {% endif %}" aria-controls="step3CollapseOne">
 						Consumer type data
 					</button>
 				</h2>
-				<div id="step3CollapseOne" class="accordion-collapse collapse {% if not total_demand %} show {% endif %}" aria-labelledby="step3HeadingOne" data-bs-parent="#accordionStep3">
+				<div id="step3CollapseOne" class="accordion-collapse collapse multi-collapse {% if not total_demand %} show {% endif %}" aria-labelledby="step3HeadingOne" data-bs-target=".multi-collapse">
 					<div class="accordion-body">
 						<form method="POST" id="consumer-group-form">
 							{% csrf_token %}
@@ -115,6 +90,32 @@
 					</div>
 				</div>
 			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="step3HeadingTwo">
+					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#demandGraph" aria-expanded="{% if total_demand %} true {%else%} false {% endif %}" aria-controls="demandGraph">
+						Electricity Demand Summary
+					</button>
+				</h2>
+				<div id="demandGraph" class="accordion-collapse collapse multi-collapse {% if total_demand %} show {% endif %}" aria-labelledby="step3HeadingTwo" F>
+					<div class="accordion-body">
+						<div class="row">
+							<div class="col">
+								<p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
+							</div>
+							<div class="col">
+								<p>Peak demand: <b id="peak_demand"></b> kW</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div id="demand-aggregate">
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
 
 		</div>
 		</div>

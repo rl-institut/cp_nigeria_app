@@ -30,6 +30,36 @@ from dashboard.helpers import KPI_PARAMETERS
 logger = logging.getLogger(__name__)
 
 
+def get_aggregated_cgs(project=None, community=None):
+    results_dict = {}
+    # list according to ConsumerType object ids in database
+    consumer_types = ["households", "enterprises", "public", "machinery"]
+    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
+        results_dict[consumer_type] = {}
+        total_demand = 0
+
+        if community is None:
+            # filter consumer group objects for project based on consumer type
+            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
+        else:
+            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
+        # calculate total consumers and total demand as sum of array elements in kWh
+        for group in group_qs:
+            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
+            total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
+            total_consumers = sum(group.number_consumers for group in group_qs)
+
+        # add machinery total demand to enterprise demand without increasing nr. of consumers
+        if consumer_type == "machinery":
+            del results_dict[consumer_type]
+            results_dict["enterprises"]["total_demand"] += total_demand
+        else:
+            results_dict[consumer_type]["nr_consumers"] = total_consumers
+            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
+
+    return results_dict
+
+
 def get_aggregated_demand(proj_id=None, community=None):
     total_demand = []
     if community is not None:
@@ -131,6 +161,11 @@ def cpn_project_duplicate(request, proj_id):
 
     answer = project_duplicate(request, proj_id)
     new_proj_id = answer.url.split("/")[-1]
+    options, created = Options.objects.get_or_create(project__id=proj_id)
+    if created is False:
+        options.pk = None
+        options.project = Project.objects.get(pk=new_proj_id)
+        options.save()
 
     return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
 
@@ -146,7 +181,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
     ):
         raise PermissionDenied
 
-    messages.info(request, "Please include information about your connection to the grid.")
+    page_information = "Please include information about your connection to the grid."
 
     bm_qs = BusinessModel.objects.filter(scenario=project.scenario)
     if bm_qs.exists():
@@ -164,6 +199,7 @@ def cpn_grid_conditions(request, proj_id, scen_id, step_id=STEP_MAPPING["grid_co
             "step_id": step_id,
             "scen_id": scen_id,
             "step_list": CPN_STEP_VERBOSE,
+            "page_information": page_information,
         },
     )
 
@@ -205,17 +241,20 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
 
         else:
             form = ProjectForm()
-    messages.info(
-        request,
-        "Please input basic project information, such as name, location and duration. You can "
-        "input geographical data by clicking on the desired project location on the map.",
-    )
+    page_information = "Please input basic project information, such as name, location and duration. You can input geographical data by clicking on the desired project location on the map."
     if project is not None:
         proj_name = project.name
     return render(
         request,
         "cp_nigeria/steps/scenario_create.html",
-        {"form": form, "proj_id": proj_id, "proj_name": proj_name, "step_id": step_id, "step_list": CPN_STEP_VERBOSE},
+        {
+            "form": form,
+            "proj_id": proj_id,
+            "proj_name": proj_name,
+            "step_id": step_id,
+            "step_list": CPN_STEP_VERBOSE,
+            "page_information": page_information,
+        },
     )
 
 
@@ -326,12 +365,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         else:
             total_demand = []
 
-    messages.info(
-        request,
-        "Please input user group data. This includes user type information about "
-        "households, enterprises and facilities and predicted energy demand tiers as collected from "
-        "survey data or available information about the community.",
-    )
+    page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
 
     return render(
         request,
@@ -345,6 +379,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_list": CPN_STEP_VERBOSE,
             "allow_edition": allow_edition,
             "total_demand": total_demand,
+            "page_information": page_information,
         },
     )
 
@@ -362,12 +397,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
     scenario = project.scenario
 
     if request.method == "GET":
-        messages.info(
-            request,
-            "Select the energy system components you would like to include in the simulation. The "
-            "system can be comprised of a diesel generator, a PV-system, and a battery system (storage) "
-            "in any combination.",
-        )
+        page_information = "Select the energy system components you would like to include in the simulation. The system can be comprised of a diesel generator, a PV-system, and a battery system (storage) in any combination."
 
         qs_options = Options.objects.filter(project=project)
         if qs_options.exists():
@@ -383,6 +413,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "step_list": CPN_STEP_VERBOSE,
             "es_assets": [],
             "es_schema_name": es_schema_name,
+            "page_information": page_information,
         }
 
         asset_type_name = "bess"
@@ -485,8 +516,17 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
                     )
 
+                    equity_data_qs = EquityData.objects.filter(scenario=scenario)
+                    if equity_data_qs.exists():
+                        equity_data = equity_data_qs.get()
+                        diesel_price_kWh = equity_data.compute_average_fuel_price(
+                            initial_fuel_price=asset.opex_var_extra, project_duration=project.economic_data.duration
+                        )
+                    else:
+                        diesel_price_kWh = asset.opex_var_extra
+
                     dso_diesel, _ = Asset.objects.get_or_create(
-                        energy_price="0",
+                        energy_price=diesel_price_kWh,
                         feedin_tariff="0",
                         renewable_share=0,
                         peak_demand_pricing_period=1,
@@ -624,14 +664,21 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         raise PermissionDenied
 
     scenario = project.scenario
-    messages.info(request, "Please include any relevant constraints for the optimization.")
+    page_information = (
+        "Please review the following values which are suggested for tariff evaluations based on the model you chose."
+    )
 
+    # TODO if the energy supply options did not select any component warn the user
     qs_options = Options.objects.filter(project=project)
     if qs_options.exists():
         options = qs_options.get()
         es_schema_name = options.schema_name
-    else:
-        es_schema_name = None
+        if es_schema_name == "":
+            messages.warning(
+                request,
+                "You haven't selected any component to your energy system. Please select at least one and click on the 'next' button below.",
+            )
+            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["scenario_setup"]]))
 
     context = {
         "proj_id": proj_id,
@@ -640,6 +687,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         "scen_id": scenario.id,
         "es_schema_name": es_schema_name,
         "step_list": CPN_STEP_VERBOSE,
+        "page_information": page_information,
     }
 
     if request.method == "POST":
@@ -661,18 +709,77 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             equity_data.debt_start = scenario.start_date.year
             equity_data.scenario = scenario
             equity_data.save()
+
+            # compute the new price and set it to the diesel dso
+            if options.has_diesel is True:
+                diesel_generator = Asset.objects.get(scenario=scenario, asset_type__asset_type="diesel_generator")
+                new_diesel_price_kWh = equity_data.compute_average_fuel_price(
+                    initial_fuel_price=diesel_generator.opex_var_extra, project_duration=project.economic_data.duration
+                )
+
+                dso_diesel = Asset.objects.get(
+                    scenario=scenario,
+                    asset_type__asset_type="gas_dso",
+                    name="diesel_fuel",
+                )
+                dso_diesel.energy_price = new_diesel_price_kWh
+                dso_diesel.save()
+
         else:
             form_errors = True
 
         if form_errors is False:
             answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
         else:
+            qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
+
+            try:
+                equity_data = EquityData.objects.get(scenario=scenario)
+                equity_form = EquityDataForm(instance=equity_data, prefix="equity")
+            except EquityData.DoesNotExist:
+                initial = {}
+                if qs_bm.exists():
+                    initial = qs_bm.first().default_fate_values
+                equity_form = EquityDataForm(prefix="equity", initial=initial)
+
+            qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+            if qs_demand.exists():
+                demand = json.loads(qs_demand.get().input_timeseries)
+                demand_np = np.array(demand)
+                peak_demand = round(demand_np.max(), 1)
+                daily_demand = round(demand_np.sum() / 365, 1)
+            else:
+                demand = None
+                peak_demand = None
+                daily_demand = None
+
+            qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
+            if qs_pv.exists():
+                pv_timeseries = json.loads(qs_pv.get().input_timeseries)
+            else:
+                pv_timeseries = None
+
+            if qs_bm.exists():
+                bm = qs_bm.get()
+                model_name = B_MODELS[bm.model_name]["Verbose"]
+            else:
+                model_name = None
+
             context.update(
                 {
                     "form": form,
                     "equity_form": equity_form,
+                    "timestamps": [
+                        i for i in range(len(demand))
+                    ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
+                    "demand": demand,
+                    "pv_timeseries": pv_timeseries,
+                    "daily_demand": daily_demand,
+                    "peak_demand": peak_demand,
+                    "model_name": model_name,
                 }
             )
+
             answer = render(
                 request,
                 "cp_nigeria/steps/scenario_system_params.html",
@@ -684,13 +791,14 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         )
         qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
+        initial = {}
+        if qs_bm.exists():
+            initial = qs_bm.first().default_fate_values
+
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
-            equity_form = EquityDataForm(instance=equity_data, prefix="equity")
+            equity_form = EquityDataForm(instance=equity_data, prefix="equity", default=initial)
         except EquityData.DoesNotExist:
-            initial = {}
-            if qs_bm.exists():
-                initial = qs_bm.first().default_fate_values
             equity_form = EquityDataForm(prefix="equity", initial=initial)
 
         qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
@@ -712,7 +820,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
         if qs_bm.exists():
             bm = qs_bm.get()
-            model_name = B_MODELS[bm.model_name]["Name"].replace("_", " ").capitalize()
+            model_name = B_MODELS[bm.model_name]["Verbose"]
         else:
             model_name = None
 
@@ -853,6 +961,7 @@ def cpn_model_suggestion(request, bm_id):
 @require_http_methods(["GET", "POST"])
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -885,6 +994,25 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         es_schema_name = None
 
+    # FATE graphs for demo, will be implemented properly later
+    fate_data = pd.read_csv("static/fate_graphs.csv", sep=";", header=0, index_col=0)
+    fate_figs = {}
+    for col in fate_data:
+        x_data = fate_data[col].index.tolist()
+        y_data = fate_data[col]
+        trace = go.Scatter(x=x_data, y=y_data, name=col)
+
+        layout = go.Layout(title=col, xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
+
+        fig = go.Figure(data=trace, layout=layout)
+        fate_figs[col] = fig.to_html()
+
+    # dict for community characteristics table
+    if options.community is not None:
+        aggregated_cgs = get_aggregated_cgs(community=options.community)
+    else:
+        aggregated_cgs = get_aggregated_cgs(project=project)
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
@@ -892,9 +1020,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
-        "model_name": B_MODELS[model]["Name"],
+        "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "fate_net_cash_flow": fate_figs["Net Cash Flow"],
+        "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
+        "aggregated_cgs": aggregated_cgs,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
@@ -1010,9 +1141,11 @@ def ajax_bmodel_infos(request):
             "cp_nigeria/steps/b_models.html",
             context={
                 "model_description": B_MODELS[model]["Description"],
-                "model_name": B_MODELS[model]["Name"],
+                "model_name": B_MODELS[model]["Verbose"],
                 "model_image": B_MODELS[model]["Graph"],
                 "model_image_resp": B_MODELS[model]["Responsibilities"],
+                "model_advantages": B_MODELS[model]["Advantages"],
+                "model_disadvantages": B_MODELS[model]["Disadvantages"],
             },
         )
     return None

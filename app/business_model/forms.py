@@ -39,7 +39,7 @@ class BMQuestionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         qs = kwargs.pop("qs", None)
         super().__init__(*args, **kwargs)
-        for criteria in qs:
+        for criteria in qs.order_by("question"):
             alv = criteria.question.score_allowed_values
             opts = {"label": criteria.question.question_for_user}
             if criteria.score is not None:
@@ -75,9 +75,15 @@ class EquityDataForm(forms.ModelForm):
         exclude = ["scenario", "debt_start"]
 
     def __init__(self, *args, **kwargs):
+        default = kwargs.pop("default", None)
         include_shs = kwargs.pop("include_shs", False)
         super().__init__(*args, **kwargs)
-
+        if default is not None:
+            for field, default_value in default.items():
+                if field in self.fields:
+                    self.fields[field].widget.attrs.update(
+                        {"placeholder": f"your current model suggests {default_value}"}
+                    )
         if not include_shs:
             for field in self.fields:
                 if "SHS" in field:

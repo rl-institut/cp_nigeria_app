@@ -3,6 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.forms.models import modelformset_factory
+from django.core.exceptions import ValidationError
+
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
@@ -12,6 +14,11 @@ from .models import *
 from projects.helpers import PARAMETERS
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
+
+
+def validate_not_zero(value):
+    if value == 0:
+        raise ValidationError(_("This field cannot be equal to 0"))
 
 
 class ProjectForm(OpenPlanModelForm):
@@ -30,7 +37,7 @@ class ProjectForm(OpenPlanModelForm):
             },
         ),
     )
-    duration = forms.IntegerField(label=_("Project lifetime"))
+    duration = forms.IntegerField(label=_("Project lifetime"), initial=25)
 
     class Meta:
         model = Project
@@ -83,6 +90,11 @@ class EconomicDataForm(OpenPlanModelForm):
         model = EconomicData
         exclude = ("tax", "currency", "duration")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["discount"].validators.append(validate_not_zero)
+        self.fields["discount"].initial = 0.0000001
+
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)
         scenario = Scenario.objects.filter(project__economic_data=ed)
@@ -128,7 +140,7 @@ class PVForm(AssetCreateForm):
 
         asset = kwargs.get("instance", None)
         if asset is None:
-            default_values = {"lifetime": 8, "capex_var": 368606.52, "opex_fix": 7727.6}
+            default_values = {"lifetime": 25, "capex_var": 369198, "opex_fix": 7740}
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
 
@@ -157,9 +169,16 @@ class DieselForm(AssetCreateForm):
 
         asset = kwargs.get("instance", None)
         if asset is not None:
-            self.initial["opex_var"] = round(asset.opex_var * ENERGY_DENSITY_DIESEL, 3)
+            self.initial["opex_var_extra"] = round(asset.opex_var_extra * ENERGY_DENSITY_DIESEL, 3)
         else:
-            default_values = {"lifetime": 8, "capex_var": 309104, "opex_fix": 19319, "efficiency": 0.25}
+            default_values = {
+                "lifetime": 8,
+                "capex_var": 309600,
+                "opex_fix": 19350,
+                "opex_var": 23.22,
+                "opex_var_extra": 626.7,
+                "efficiency": 0.25,
+            }
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
         visible_fields = ["opex_var"]
@@ -180,15 +199,15 @@ class DieselForm(AssetCreateForm):
 
         help_text = "Average fuel price."
         question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
-        self.fields["opex_var"].label = f"Fuel price ({currency}/l)" + question_icon
+        self.fields["opex_var_extra"].label = f"Fuel price ({currency}/l)" + question_icon
         help_text = "Costs such as lubricant for motor."
         question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
-        self.fields["opex_var_extra"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
+        self.fields["opex_var"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
 
         self.fields["efficiency"].label = self.fields["efficiency"].label.replace("Efficiency", "Average efficiency")
 
-    def clean_opex_var(self):
-        return self.cleaned_data["opex_var"] / ENERGY_DENSITY_DIESEL
+    def clean_opex_var_extra(self):
+        return self.cleaned_data["opex_var_extra"] / ENERGY_DENSITY_DIESEL
 
 
 class BessForm(StorageForm):
@@ -203,8 +222,8 @@ class BessForm(StorageForm):
         else:
             default_values = {
                 "lifetime": 8,
-                "capex_var": 255783.56,
-                "opex_fix": 7727.6,
+                "capex_var": 256194,
+                "opex_fix": 7740,
                 "crate": 1,
                 "soc_min": 0.8,
                 "soc_max": 1,

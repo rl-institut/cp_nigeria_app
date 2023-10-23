@@ -1,5 +1,6 @@
+/*jshint esversion: 6 */
 // variable to store the timeseries as they are retrieved from the database
-var timeseriesData = {}
+var timeseriesData = {};
 
 $(document).ready(function() {
     // delete empty extra form if necessary
@@ -20,7 +21,7 @@ $(document).ready(function() {
 
 function getTimeseries () {
     // get the new timeseries values from the database when the profile selection changes
-        console.log('timeseries selection changed')
+        console.log('timeseries selection changed');
         var parentTr = $(this).closest('tr');
         // get the unique id of this consumer group to save the current timeseries in a variable
         var formId = $(this).attr('id').split('-')[1];
@@ -30,8 +31,8 @@ function getTimeseries () {
         var nrConsumers = parentTr.find('input[id*="number_consumers"]').val();
 
         if (timeseriesId === null || timeseriesId === '') {
-            console.log('No timeseries selected')
-            return
+            console.log('No timeseries selected');
+            return;
         } else {
             $.ajax({
             headers: {'X-CSRFToken': csrfToken },
@@ -45,7 +46,7 @@ function getTimeseries () {
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
                 var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);
-                console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers')
+                console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
             error: function() {
@@ -66,8 +67,8 @@ function updateNumberConsumers() {
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
                 var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);
-                console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers')
-                updateGraph(newDemand, consumerGroupDemandName, formId)
+                console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers');
+                updateGraph(newDemand, consumerGroupDemandName, formId);
                 }
 }
 
@@ -98,7 +99,7 @@ var timeSeries = generateTimeSeries(startDate, endDate);
 
 // create initial graph
 function initialPlot () {
-        console.log('creating initial plot')
+        console.log('creating initial plot');
         var plot_div = document.getElementById('demand-aggregate');
         var plot_data = [{
             x: timeSeries,
@@ -108,20 +109,20 @@ function initialPlot () {
 
         var layout = {
             xaxis: {range: ["2022-06-01 00:00:00", "2022-06-08 00:00:00"], type: "date", title: "Time"},
-            yaxis: {autorange: true, title: "kWh"},
+            yaxis: {autorange: true, title: "kW"},
             title: "Total demand"
             };
 
-        Plotly.newPlot(plot_div, plot_data, layout)
+        Plotly.newPlot(plot_div, plot_data, layout);
 
             }
 
 
 // data variable to check which traces are already in the graph
-var data = []
+var data = [];
 // update graph
 function updateGraph (newDemand, consumerGroupDemandName, formId){
-        console.log('updating graph for consumergroup: ' + consumerGroupDemandName)
+        console.log('updating graph for consumergroup: ' + consumerGroupDemandName);
         var plot_div = document.getElementById('demand-aggregate');
         var trace = {
             x: timeSeries,
@@ -133,26 +134,28 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
 
         //check if trace already exists in the plot
         var existingTrace = false;
+        var traceIndex = -1;
         for (var i = 0; i < data.length; i++) {
             if (data[i].formId === formId) {
                 existingTrace = true;
                 data[i].y = newDemand;
-                var traceIndex = i+1;
+                traceIndex = i+1;
                 break;
                 }
             }
 
         if (existingTrace) {
         // update the existing demand for this consumer group
-            console.log('existing trace; updating trace with index ' + traceIndex)
+            console.log('existing trace; updating trace with index ' + traceIndex);
             Plotly.restyle(plot_div, {y: [newDemand], name: [consumerGroupDemandName]}, [traceIndex]);
         } else {
         // add the new consumer group to the plot
-            console.log('adding new trace')
+            console.log('adding new trace');
             Plotly.addTraces(plot_div, trace);
             data.push(trace);
-            console.log(data)
+            console.log(data);
         }
+        $('#demandGraph').collapse('show');
 
     // calculate and update peak demand and average daily demand values
     updateKeyParams();
@@ -160,9 +163,9 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
 
 
 function updateKeyParams() {
-    totalDemand = Array(8760).fill(0)
+    totalDemand = Array(8760).fill(0);
     for (var i = 0; i < data.length; i++) {
-        totalDemand = totalDemand.map((e, j) => e + data[i].y[j]); // total demand array in kWh
+        totalDemand = totalDemand.map((e, j) => e + data[i].y[j]);  // jshint ignore:line
     }
 
     var peakDemand = Math.max(...totalDemand);
@@ -174,8 +177,8 @@ function updateKeyParams() {
 function deleteTrace(consumerGroupId) {
     var formId = consumerGroupId.split('-')[1];
     var traceIndex = parseInt(formId)+1;
-    console.log("hiding trace index: " + traceIndex)
+    console.log("hiding trace index: " + traceIndex);
     var plot_div = document.getElementById('demand-aggregate');
 
-    Plotly.restyle(plot_div, {visible: false}, traceIndex)
+    Plotly.restyle(plot_div, {visible: false}, traceIndex);
 }

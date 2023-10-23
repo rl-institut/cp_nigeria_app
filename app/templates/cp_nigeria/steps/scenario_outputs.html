@@ -271,6 +271,71 @@
 				</div>
 			</div>
 		</div>
+		    <div class="row">
+			<div class="col col-md-12">
+				<div class="chart">
+					<div class="chart__header">
+						<div>
+							<span class="title">{% translate "Community characteristics" %}</span>
+						</div>
+					</div>
+					<div class="chart__plot">
+						<table class="table" >
+							<thead><tr><th>Consumer type</th><th>Nr. of consumers</th><th>Total demand</th></tr></thead>
+
+				{% for consumer_type, char in aggregated_cgs.items %}
+							<tr>
+								<td>{{ consumer_type }}</td>
+								<td>{{ char.nr_consumers }}</td>
+								<td>{{ char.total_demand }} kWh</td>
+							</tr>
+							{% endfor %}
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+    <div class="row">
+			<div class="col col-md-12">
+				<div class="chart">
+					<div class="chart__header">
+						<div>
+							<span class="title">{% translate "Economic indicators" %}</span>
+						</div>
+					</div>
+					<div class="chart__plot">
+						<table class="table" >
+							<thead><tr><th>Indicator</th><th>Value</th></tr></thead>
+							<tbody>
+
+							</tbody>
+							<tr>
+								<td>Estimated Tariff [NGN]</td>
+								<td>85</td>
+							</tr>
+							<tr>
+								<td>WACC</td>
+								<td>11.68%</td>
+							</tr>
+							<tr>
+								<td>IRR</td>
+								<td>11.61%</td>
+							</tr>
+														<tr>
+								<td>Net profit minus total costs [NGN]</td>
+								<td>629.192.634</td>
+							</tr>
+																	<tr>
+								<td>Total loan and equity volume [NGN]</td>
+								<td>181.132.580</td>
+							</tr>
+
+
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 		<!-- ES design stop -->
 		<!-- Graphs area start -->
 		<div class="row">
@@ -278,8 +343,9 @@
 				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}
-				{% include "report/graph_template.html" with id="all_timeseries" title="All timeseries" %}
 				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
+				{{ fate_cum_net_cash_flow | safe }}
+				{{ fate_net_cash_flow | safe }}
 
 
 			</div>
@@ -663,7 +729,7 @@ $(document).ready(function () {
     const proj_id = "{{ proj_id }}";
     // update the kpi table
     update_kpi_table_style(scen_id);
-    scenario_visualize_timeseries(scen_id);
+    //scenario_visualize_timeseries(scen_id);
     scenario_visualize_stacked_timeseries(scen_id);
     scenario_visualize_sankey(scen_id);
     scenario_visualize_capacities(scen_id);
