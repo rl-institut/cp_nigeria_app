@@ -23,7 +23,7 @@ from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, 
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
 from projects.views import request_mvs_simulation, simulation_cancel
-from business_model.helpers import model_score_mapping, B_MODELS
+from business_model.helpers import B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS
 
@@ -905,7 +905,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_model_choice(request, proj_id, step_id=6):
+def cpn_model_choice(request, proj_id, step_id=STEP_MAPPING["business_model"]):
     project = get_object_or_404(Project, id=proj_id)
 
     if (project.user != request.user) and (
@@ -933,7 +933,7 @@ def cpn_model_choice(request, proj_id, step_id=6):
 
         recommended = context["form"].fields["model_name"].initial
         if recommended is not None:
-            context["recommanded_model"] = recommended
+            context["recommended_model"] = recommended
             context["form"] = ModelSuggestionForm(instance=bm, initial={"model_name": recommended})
         answer = render(request, html_template, context)
 

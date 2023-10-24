@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import ModelForm
 from .models import *
-from .helpers import model_score_mapping, available_models
+from .helpers import available_models
 
 
 class ModelSuggestionForm(ModelForm):
@@ -32,7 +32,7 @@ class ModelSuggestionForm(ModelForm):
         updated_choices = available_models(score, grid_condition)
         self.fields["model_name"].choices = default_choices + updated_choices
         if len(updated_choices) == 1:
-            self.fields["model_name"].initial = updated_choices[0][0]
+            self.fields["model_name"].initial = updated_choices[0]
 
 
 class BMQuestionForm(forms.Form):

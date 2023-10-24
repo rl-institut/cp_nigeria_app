@@ -20,13 +20,20 @@
 				{{ form }}
 				{% csrf_token %}
 			</form>
-			{% if recommended_model %}
+			{% if score %}
+			{% if score >= 0.7 %}
 			<div class="text">
 				<span>
-					{% translate "Recommended model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>: <strong>{{ recommanded_model }}</strong>
+					{% translate "This project might be suited for a community-led model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}</a>.
 				</span>
-
 			</div>
+			{% else %}
+			<div class="text">
+				<span>
+					{% translate "This project might <b>not</b> be suited for a community-led model based on your answers to the " %} <a onclick="javascript:showQuestionnaire()">{% translate "questionnaire" %}.</a>{% translate " Please manually select your desired business model." %}
+				</span>
+			</div>
+			{% endif %}
 			<div class="text">
 				<form action="{% url 'reset_answers_to_questionnaire' bm.id %}">
 					{% csrf_token %}
