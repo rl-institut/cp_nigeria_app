@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.db.models import Q
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
+from .helpers import *
 from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
@@ -30,55 +31,6 @@ from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResul
 from dashboard.helpers import KPI_PARAMETERS
 
 logger = logging.getLogger(__name__)
-
-
-def get_aggregated_cgs(project=None, community=None):
-    results_dict = {}
-    # list according to ConsumerType object ids in database
-    consumer_types = ["households", "enterprises", "public", "machinery"]
-    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
-        results_dict[consumer_type] = {}
-        total_demand = 0
-        total_consumers = 0
-
-        if community is None:
-            # filter consumer group objects for project based on consumer type
-            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        else:
-            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
-        # calculate total consumers and total demand as sum of array elements in kWh
-        for group in group_qs:
-            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
-            total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
-            total_consumers = sum(group.number_consumers for group in group_qs)
-
-        # add machinery total demand to enterprise demand without increasing nr. of consumers
-        if consumer_type == "machinery":
-            del results_dict[consumer_type]
-            results_dict["enterprises"]["total_demand"] += total_demand
-        else:
-            results_dict[consumer_type]["nr_consumers"] = total_consumers
-            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
-
-    return results_dict
-
-
-def get_aggregated_demand(proj_id=None, community=None):
-    total_demand = []
-    if community is not None:
-        cg_qs = ConsumerGroup.objects.filter(community=community)
-    elif proj_id is not None:
-        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
-    else:
-        cg_qs = []
-
-    for cg in cg_qs:
-        timeseries_values = np.array(cg.timeseries.values)
-        nr_consumers = cg.number_consumers
-        if cg.timeseries.units == "Wh":
-            timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values * nr_consumers)
-    return np.vstack(total_demand).sum(axis=0).tolist()
 
 
 STEP_MAPPING = {
@@ -337,7 +289,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 # update demand if exists
 
                 if qs_demand.exists():
-                    total_demand = get_aggregated_demand(proj_id=project.id)
+                    total_demand = get_aggregated_demand(project=project)
                     demand = qs_demand.get()
                     demand.input_timeseries = json.dumps(total_demand)
                     demand.save()
@@ -364,7 +316,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             if options.community is not None:
                 total_demand = get_aggregated_demand(community=options.community)
             else:
-                total_demand = get_aggregated_demand(proj_id=proj_id)
+                total_demand = get_aggregated_demand(project=project)
         else:
             total_demand = []
 
