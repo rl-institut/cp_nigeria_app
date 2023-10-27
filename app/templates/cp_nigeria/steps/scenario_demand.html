@@ -99,11 +99,20 @@
 				<div id="demandGraph" class="accordion-collapse collapse multi-collapse {% if total_demand %} show {% endif %}" aria-labelledby="step3HeadingTwo" F>
 					<div class="accordion-body">
 						<div class="row">
-							<div class="col">
-								<p>Avg. daily demand: <b id="avg_daily"></b> kWh</p>
-							</div>
-							<div class="col">
-								<p>Peak demand: <b id="peak_demand"></b> kW</p>
+							<div class="cpn-economic__results">
+								<div class="col">
+									<div class="cpn-economic__results--1">
+										<span class="title">Avg. daily demand (kWh)</span>
+										<span class="value" id="avg_daily"></span>
+									</div>
+								</div>
+								<div class="col"></div>
+								<div class="col">
+									<div class="cpn-economic__results--2">
+										<span class="title">Peak demand (kW)</span>
+										<span class="value" id="peak_demand"></span>
+									</div>
+								</div>
 							</div>
 						</div>
 
@@ -115,9 +124,6 @@
 					</div>
 				</div>
 			</div>
-
-
-		</div>
 		</div>
 	</section>
 

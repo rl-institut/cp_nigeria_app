@@ -6,13 +6,13 @@ $(document).ready(function() {
     // delete empty extra form if necessary
     deleteEmptyForm();
     // load timeseries once on page load (to update graph with existing formset data)
-    if (allowEdition == true) {
+    if (allowEdition == 'True') {
         $('select[id*="timeseries"]').each(function() {
         getTimeseries.call(this);
         });
     } else {
-    updateGraph(totalDemand, "Total demand", 1);
-    updateKeyParams();
+        updateGraph(totalDemand, "Total demand", 1);
+        updateKeyParams();
     }
 
     $(document).on('change', 'select[id*="timeseries"]', getTimeseries);
@@ -110,11 +110,11 @@ function initialPlot () {
         var layout = {
             xaxis: {range: ["2022-06-01 00:00:00", "2022-06-08 00:00:00"], type: "date", title: "Time"},
             yaxis: {autorange: true, title: "kW"},
-            title: "Total demand"
+            autosize: true,
+            hovermode:'x unified'
             };
 
         Plotly.newPlot(plot_div, plot_data, layout);
-
             }
 
 
@@ -153,7 +153,6 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
             console.log('adding new trace');
             Plotly.addTraces(plot_div, trace);
             data.push(trace);
-            console.log(data);
         }
         $('#demandGraph').collapse('show');
 
@@ -167,7 +166,6 @@ function updateKeyParams() {
     for (var i = 0; i < data.length; i++) {
         totalDemand = totalDemand.map((e, j) => e + data[i].y[j]);  // jshint ignore:line
     }
-
     var peakDemand = Math.max(...totalDemand);
     var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 365;
     document.getElementById('avg_daily').innerHTML = avgDaily.toFixed(2);
