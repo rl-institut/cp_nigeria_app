@@ -14,6 +14,7 @@ from dashboard.helpers import (
     KPI_PARAMETERS,
     GRAPH_TIMESERIES,
     GRAPH_TIMESERIES_STACKED,
+    GRAPH_TIMESERIES_STACKED_CPN,
     GRAPH_CAPACITIES,
     GRAPH_BAR,
     GRAPH_COSTS,
@@ -185,7 +186,7 @@ def graph_parameters_form_factory(report_type, *args, **kwargs):
     """Linked to dashboard/models.py:ReportItem.fetch_parameters_values"""
     if report_type == GRAPH_TIMESERIES:
         answer = TimeseriesGraphForm(*args, **kwargs)
-    if report_type == GRAPH_TIMESERIES_STACKED:
+    if report_type == GRAPH_TIMESERIES_STACKED or GRAPH_TIMESERIES_STACKED_CPN:
         answer = StackedTimeseriesGraphForm(*args, **kwargs)
     if report_type == GRAPH_CAPACITIES:
         answer = StackedCapacitiesGraphForm(*args, **kwargs)

@@ -19,6 +19,7 @@ from dashboard.helpers import (
     KPI_helper,
     GRAPH_TIMESERIES,
     GRAPH_TIMESERIES_STACKED,
+    GRAPH_TIMESERIES_STACKED_CPN,
     GRAPH_CAPACITIES,
     GRAPH_BAR,
     GRAPH_COSTS,
@@ -944,6 +945,67 @@ def graph_timeseries_stacked(simulations, y_variables, energy_vector):
     return simulations_results
 
 
+def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
+    simulations_results = []
+    for simulation in simulations:
+        qs = FancyResults.objects.filter(simulation=simulation, total_flow__gt=0, energy_vector=energy_vector)
+        if y_variables is None:
+            qs = qs.exclude(Q(asset__contains="@") | Q(asset__contains="inverter"))
+        else:
+            qs = qs.filter(asset__in=y_variables)
+
+        qs = qs.annotate(
+            label=Case(
+                When(
+                    Q(oemof_type="storage") & Q(direction="out"),
+                    then=Concat("asset", Value(" charge")),
+                ),
+                When(
+                    Q(oemof_type="storage") & Q(direction="in"),
+                    then=Concat("asset", Value(" discharge")),
+                ),
+                default="asset",
+            ),
+            unit=Value("kW"),
+            value=F("flow_data"),
+            fill=Case(
+                When(Q(oemof_type="sink") & Q(asset_type__contains="demand"), then=Value("none")),
+                default=Value("tonexty"),
+            ),
+            group=Case(
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("sink")),
+                When(Q(oemof_type="sink"), then=Value("sink")),
+                default=Value("production"),
+            ),
+            mode=Case(
+                When(Q(oemof_type="sink") & Q(asset_type__contains="demand"), then=Value("lines")),
+                default=Value("none"),
+            ),
+            plot_order=Case(
+                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value(1)),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value(1)),
+                default=Value(0),
+            ),
+        )
+        y_values = []
+        # set the stacked lines order, first demand, then storages and finally dsos
+        for y_val in qs.order_by("-plot_order").values(
+            "value", "label", "total_flow", "unit", "fill", "group", "mode"
+        ):
+            y_val["value"] = [val for val in json.loads(y_val["value"])] if "charge" in y_val["group"] else json.loads(y_val["value"])
+            y_values.append(y_val)
+
+        simulations_results.append(
+            simulation_timeseries_to_json(
+                scenario_name=simulation.scenario.name,
+                scenario_id=simulation.scenario.id,
+                scenario_timeseries=y_values[::-1],
+                scenario_timestamps=simulation.scenario.get_timestamps(),
+            )
+        )
+    return simulations_results
+
+
 def graph_capacities(simulations, y_variables):
     simulations_results = []
     multi_scenario = False
@@ -1348,6 +1410,7 @@ def graph_sankey(simulation, energy_vector):
 REPORT_GRAPHS = {
     GRAPH_TIMESERIES: graph_timeseries,
     GRAPH_TIMESERIES_STACKED: graph_timeseries_stacked,
+    GRAPH_TIMESERIES_STACKED_CPN: graph_timeseries_stacked_cpn,
     GRAPH_CAPACITIES: graph_capacities,
     GRAPH_COSTS: graph_costs,
     GRAPH_BAR: "Bar chart",
@@ -1447,6 +1510,15 @@ class ReportItem(models.Model):
             y_variables = parameters.get("y", None)
             if y_variables is not None:
                 return graph_timeseries_stacked(
+                    simulations=self.simulations.all(),
+                    y_variables=y_variables,
+                    energy_vector=parameters.get("energy_vector"),
+                )
+
+        if self.report_type == GRAPH_TIMESERIES_STACKED_CPN:
+            y_variables = parameters.get("y", None)
+            if y_variables is not None:
+                return graph_timeseries_stacked_cpn(
                     simulations=self.simulations.all(),
                     y_variables=y_variables,
                     energy_vector=parameters.get("energy_vector"),

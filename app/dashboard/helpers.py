@@ -371,6 +371,7 @@ KPI_helper = KPIFinder(param_info_dict=KPI_PARAMETERS)
 
 GRAPH_TIMESERIES = "timeseries"
 GRAPH_TIMESERIES_STACKED = "timeseries_stacked"
+GRAPH_TIMESERIES_STACKED_CPN = "timeseries_stacked_cpn"
 GRAPH_CAPACITIES = "capacities"
 GRAPH_BAR = "bar"
 GRAPH_COSTS = "costs"
@@ -387,6 +388,7 @@ COSTS_PER_ASSETS_STACKED = "var4"
 REPORT_TYPES = (
     (GRAPH_TIMESERIES, _("Timeseries graph")),
     (GRAPH_TIMESERIES_STACKED, _("Stacked timeseries graph")),
+    (GRAPH_TIMESERIES_STACKED_CPN, _("Stacked timeseries graph")),
     (GRAPH_CAPACITIES, _("Installed and optimized capacities")),
     (GRAPH_BAR, _("Bar chart")),
     (GRAPH_COSTS, _("Cost breakdown")),
@@ -435,17 +437,17 @@ def report_item_render_to_json(report_item_id="", data=None, title="", report_it
         answer["x_label"] = _("Time")
         answer["y_label"] = _("Energy")
 
-    if report_item_type == GRAPH_TIMESERIES_STACKED:
+    if report_item_type == GRAPH_TIMESERIES_STACKED or GRAPH_TIMESERIES_STACKED_CPN:
         answer["x_label"] = _("Time")
-        answer["y_label"] = _("Energy")
+        answer["y_label"] = _("Energy") + " (kW)"
 
     if report_item_type == GRAPH_CAPACITIES:
         answer["x_label"] = _("Component")
-        answer["y_label"] = _("Capacity") + "(kW)"
+        answer["y_label"] = _("Capacity") + " (kW)"
 
     if report_item_type == GRAPH_COSTS:
         answer["x_label"] = _("Component")
-        answer["y_label"] = _("Costs") + "(currency)"
+        answer["y_label"] = _("Costs") + " (currency)"
 
     return answer
 
@@ -502,6 +504,20 @@ GRAPH_PARAMETERS_SCHEMAS = {
         "additionalProperties": False,
     },
     GRAPH_TIMESERIES_STACKED: {
+        "type": "object",
+        "required": ["y", "energy_vector"],
+        "properties": {
+            "y": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "array", "items": {"type": "string"}},
+                ]
+            },
+            "energy_vector": {"type": "string"},
+        },
+        "additionalProperties": False,
+    },
+    GRAPH_TIMESERIES_STACKED_CPN: {
         "type": "object",
         "required": ["y", "energy_vector"],
         "properties": {
