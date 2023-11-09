@@ -1115,11 +1115,13 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # TODO here workout the results of the scenario and base diesel scenario
 
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
-    opt_caps = qs_res.filter(optimized_capacity__gt=0)
+    opt_caps = qs_res.filter(optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"]).values("asset", "optimized_capacity")
+    for cap in opt_caps:
+        cap["unit"] = AssetType.objects.get(asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]).unit
     # TODO here if there is no simulation or supply setup, tell the user they should define one first
 
     qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
-
+    import pdb;pdb.set_trace()
     if qs_busses.count() == 1:
         el_bus = qs_busses.get()
         unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
@@ -1128,13 +1130,13 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         ac_bus = qs_busses.get(name="ac_bus")
         dc_bus = qs_busses.get(name="dc_bus")
         unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
+        unused_diesel = qs_res.filter(asset=f"{ac_bus.name}_excess")
 
     if unused_pv.exists():
         unused_pv = unused_pv.get().total_flow
     else:
         unused_pv = 0
 
-    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
 
@@ -1394,6 +1396,7 @@ def cpn_kpi_results(request, proj_id=None):
                 }
             )
         table = {"General": kpis}
+        import pdb;pdb.set_trace()
 
         # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
         answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
