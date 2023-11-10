@@ -164,7 +164,6 @@ class KPICostsMatrixResults(models.Model):
 
 class OemofBusResults(pd.DataFrame):  # real results
     def __init__(self, results):
-
         js = json.loads(results)
         mindex = pd.MultiIndex.from_tuples(
             js["columns"],
@@ -204,9 +203,7 @@ class OemofBusResults(pd.DataFrame):  # real results
         return self.loc[:, "investments"]
 
     def asset_optimized_capacity(self, asset_name):
-        optimized_capacity = self.loc[
-            self.index.get_level_values("asset") == asset_name, "investments"
-        ].dropna()
+        optimized_capacity = self.loc[self.index.get_level_values("asset") == asset_name, "investments"].dropna()
         if len(optimized_capacity) == 1:
             optimized_capacity = optimized_capacity[0]
         return optimized_capacity
@@ -216,9 +213,7 @@ class FancyResults(models.Model):
     bus = models.CharField(max_length=60)
     energy_vector = models.CharField(max_length=20, choices=ENERGY_VECTOR)
     direction = models.CharField(max_length=3, default="in", blank=False)
-    asset = models.CharField(
-        max_length=60
-    )  # models.ForeignKey(Asset, on_delete=models.CASCADE)
+    asset = models.CharField(max_length=60)  # models.ForeignKey(Asset, on_delete=models.CASCADE)
     asset_type = models.CharField(max_length=60, choices=ASSET_TYPE)
     oemof_type = models.CharField(max_length=60, choices=MVS_TYPE, default=None)
     flow_data = models.TextField()
@@ -264,9 +259,7 @@ class FlowResults(models.Model):
         df_bus = self.df_flows.loc[bus_name]
         energy_vector = df_bus.index.get_level_values("energy_vector").unique()[0]
         # TODO label charge and discharge for storages
-        df_bus.index = df_bus.index.droplevel(
-            ["asset_type", "energy_vector", "oemof_type"]
-        )
+        df_bus.index = df_bus.index.droplevel(["asset_type", "energy_vector", "oemof_type"])
         df = pd.concat(
             [
                 df_bus.loc[df_bus.index.get_level_values("direction") == "in"].T,
@@ -292,9 +285,7 @@ class FlowResults(models.Model):
                 )
                 for col in df.columns
             ],
-            layout=dict(
-                title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"
-            ),
+            layout=dict(title=f"{bus_name} ({df.energy_vector})", hovermode="x unified"),
         )
 
         return fig.to_dict()
@@ -353,10 +344,7 @@ class FlowResults(models.Model):
         if df is None:
             df = self.all_flows(include_hidden_assets, asset_list)
         fig = go.Figure(
-            data=[
-                go.Scatter(x=df.index.tolist(), y=df.loc[:, col].values, name=col)
-                for col in df.columns
-            ],
+            data=[go.Scatter(x=df.index.tolist(), y=df.loc[:, col].values, name=col) for col in df.columns],
             layout=dict(title=title, hovermode="x unified", yaxis_title="Power (kW)"),
         )
         # import pdb;pdb.set_trace()
@@ -380,12 +368,8 @@ class FlowResults(models.Model):
     #
     #     return fig.to_dict()
 
-    def energy_sector_flows(
-        self, energy_vector, include_hidden_assets=False, asset_list=None
-    ):
-        df = self.df_flows.loc[
-            (self.df_flows.index.get_level_values("energy_vector") == energy_vector)
-        ]
+    def energy_sector_flows(self, energy_vector, include_hidden_assets=False, asset_list=None):
+        df = self.df_flows.loc[(self.df_flows.index.get_level_values("energy_vector") == energy_vector)]
 
         if asset_list is not None:
             include_hidden_assets = True
@@ -438,14 +422,9 @@ class FlowResults(models.Model):
         df=None,
     ):
         if df is None:
-            df = self.energy_sector_flows(
-                energy_vector, include_hidden_assets, asset_list
-            )
+            df = self.energy_sector_flows(energy_vector, include_hidden_assets, asset_list)
         fig = go.Figure(
-            data=[
-                go.Scatter(x=df.index, y=df.loc[:, col].values, name=col)
-                for col in df.columns
-            ],
+            data=[go.Scatter(x=df.index, y=df.loc[:, col].values, name=col) for col in df.columns],
             layout=dict(
                 title=f"{title} {energy_vector}",
                 hovermode="x unified",
@@ -459,10 +438,7 @@ class FlowResults(models.Model):
         df_consumption = (
             self.df_flows.loc[
                 (self.df_flows.index.get_level_values("direction") == "out")
-                & (
-                    self.df_flows.index.get_level_values("energy_vector")
-                    == energy_vector
-                )
+                & (self.df_flows.index.get_level_values("energy_vector") == energy_vector)
             ]
             .groupby(level="asset_type")
             .sum()
@@ -474,10 +450,7 @@ class FlowResults(models.Model):
         df_production = (
             self.df_flows.loc[
                 (self.df_flows.index.get_level_values("direction") == "in")
-                & (
-                    self.df_flows.index.get_level_values("energy_vector")
-                    == energy_vector
-                )
+                & (self.df_flows.index.get_level_values("energy_vector") == energy_vector)
             ]
             .groupby(level="asset_type")
             .sum()
@@ -488,9 +461,7 @@ class FlowResults(models.Model):
             data=[
                 go.Scatter(
                     x=percentage.tolist(),
-                    y=df_production.loc[:, col]
-                    .sort_values(ascending=False)
-                    .values.tolist(),
+                    y=df_production.loc[:, col].sort_values(ascending=False).values.tolist(),
                     name=col,
                     stackgroup="production",
                 )
@@ -503,9 +474,7 @@ class FlowResults(models.Model):
                     name="demand",
                 )
             ],
-            layout=dict(
-                title=f"Load duration curve for {energy_vector}", hovermode="x unified"
-            ),
+            layout=dict(title=f"Load duration curve for {energy_vector}", hovermode="x unified"),
         )
 
         return fig.to_json()
@@ -530,11 +499,10 @@ class FlowResults(models.Model):
                     asset_to_bus_names = []
                     bus_to_asset_names = []
 
-                    bus_inputs = df_bus.loc[
-                        df_bus.index.get_level_values("direction") == "in"
-                    ].index.get_level_values("asset")
+                    bus_inputs = df_bus.loc[df_bus.index.get_level_values("direction") == "in"].index.get_level_values(
+                        "asset"
+                    )
                     for component in bus_inputs:
-
                         asset_to_bus_names.append(component)
 
                     bus_outputs = df_bus.loc[
@@ -554,10 +522,7 @@ class FlowResults(models.Model):
 
                         val = df_bus.loc[
                             (df_bus.index.get_level_values("direction") == "in")
-                            & (
-                                df_bus.index.get_level_values("asset")
-                                == component_label
-                            )
+                            & (df_bus.index.get_level_values("asset") == component_label)
                         ].T.sum()[0]
 
                         if val == 0:
@@ -576,10 +541,7 @@ class FlowResults(models.Model):
 
                         val = df_bus.loc[
                             (df_bus.index.get_level_values("direction") == "out")
-                            & (
-                                df_bus.index.get_level_values("asset")
-                                == component_label
-                            )
+                            & (df_bus.index.get_level_values("asset") == component_label)
                         ].T.sum()
 
                         val = val[0]
@@ -645,8 +607,7 @@ class AssetsResults(models.Model):
     def busses_energy_vector(self):
         if self.__busses_energy_vector is None:
             self.__busses_energy_vector = {
-                b.name: b.type
-                for b in Bus.objects.filter(scenario=self.simulation.scenario.id)
+                b.name: b.type for b in Bus.objects.filter(scenario=self.simulation.scenario.id)
             }
 
         return self.__busses_energy_vector
@@ -687,22 +648,14 @@ class AssetsResults(models.Model):
                         for sub_cat in STORAGE_SUB_CATEGORIES:
                             storage_subasset = asset.get(sub_cat)
                             if storage_subasset is None:
-                                storage_subasset = asset.get(
-                                    MAP_EPA_MVS.get(sub_cat, sub_cat)
-                                )
+                                storage_subasset = asset.get(MAP_EPA_MVS.get(sub_cat, sub_cat))
                             if storage_subasset is not None:
-                                storage_subasset[
-                                    "category"
-                                ] = format_storage_subasset_name(category, sub_cat)
+                                storage_subasset["category"] = format_storage_subasset_name(category, sub_cat)
                                 storage_subasset["type_oemof"] = asset["type_oemof"]
-                                storage_subasset["energy_vector"] = asset[
-                                    "energy_vector"
-                                ]
+                                storage_subasset["energy_vector"] = asset["energy_vector"]
 
                                 self.__available_timeseries[
-                                    format_storage_subasset_name(
-                                        asset["label"], sub_cat
-                                    )
+                                    format_storage_subasset_name(asset["label"], sub_cat)
                                 ] = storage_subasset
                     else:
                         if (
@@ -744,22 +697,14 @@ class AssetsResults(models.Model):
                 for asset in asset_dict[category]:
                     if category == "energy_storage":
                         for sub_cat in ("input_power", "output_power", "capacity"):
-                            if asset_name == format_storage_subasset_name(
-                                asset["label"], sub_cat
-                            ):
+                            if asset_name == format_storage_subasset_name(asset["label"], sub_cat):
                                 storage_subasset = asset.get(sub_cat)
                                 if storage_subasset is None:
-                                    storage_subasset = asset.get(
-                                        MAP_EPA_MVS.get(sub_cat, sub_cat)
-                                    )
+                                    storage_subasset = asset.get(MAP_EPA_MVS.get(sub_cat, sub_cat))
                                 if storage_subasset is not None:
                                     if answer is None:
                                         answer = storage_subasset
-                                        answer[
-                                            "category"
-                                        ] = format_storage_subasset_name(
-                                            category, sub_cat
-                                        )
+                                        answer["category"] = format_storage_subasset_name(category, sub_cat)
                                         answer["energy_vector"] = asset["energy_vector"]
                                         break
                                     else:
@@ -794,9 +739,7 @@ class AssetsResults(models.Model):
             answer = None
         return answer
 
-    def single_asset_timeseries(
-        self, asset_name, asset_category=None, energy_vector=None
-    ):
+    def single_asset_timeseries(self, asset_name, asset_category=None, energy_vector=None):
         """Provided the user name of the asset, return the timeseries linked to this asset"""
 
         asset_results = self.single_asset_results(asset_name, asset_category)
@@ -896,9 +839,7 @@ def graph_timeseries(simulations, y_variables=None):
         for y_val in qs.order_by("-group", "oemof_type", "-asset_type").values(
             "value", "label", "total_flow", "unit", "group"
         ):
-            y_val["value"] = (
-                y_val["group"] * np.array(json.loads(y_val["value"]))
-            ).tolist()
+            y_val["value"] = (y_val["group"] * np.array(json.loads(y_val["value"]))).tolist()
             y_values.append(y_val)
 
         simulations_results.append(
@@ -915,10 +856,7 @@ def graph_timeseries(simulations, y_variables=None):
 def graph_timeseries_stacked(simulations, y_variables, energy_vector):
     simulations_results = []
     for simulation in simulations:
-
-        qs = FancyResults.objects.filter(
-            simulation=simulation, total_flow__gt=0, energy_vector=energy_vector
-        )
+        qs = FancyResults.objects.filter(simulation=simulation, total_flow__gt=0, energy_vector=energy_vector)
         if y_variables is None:
             qs = qs.exclude(Q(asset__contains="@"))
         else:
@@ -949,18 +887,12 @@ def graph_timeseries_stacked(simulations, y_variables, energy_vector):
             fill=Case(
                 When(Q(oemof_type="sink"), then=Value("none")),
                 When(Q(oemof_type="storage") & Q(direction="out"), then=Value("none")),
-                When(
-                    Q(asset_type="heat_pump") & Q(direction="out"), then=Value("none")
-                ),
+                When(Q(asset_type="heat_pump") & Q(direction="out"), then=Value("none")),
                 default=Value("tonexty"),
             ),
             group=Case(
-                When(
-                    Q(oemof_type="storage") & Q(direction="out"), then=Value("demand")
-                ),
-                When(
-                    Q(asset_type="heat_pump") & Q(direction="out"), then=Value("demand")
-                ),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("demand")),
+                When(Q(asset_type="heat_pump") & Q(direction="out"), then=Value("demand")),
                 When(
                     Q(oemof_type="sink"),  # & Q(asset_type__contains="demand"),
                     then=Value("demand"),
@@ -973,19 +905,13 @@ def graph_timeseries_stacked(simulations, y_variables, energy_vector):
                     Q(oemof_type="sink"),  # & Q(asset_type__contains="demand"),
                     then=Value("lines"),
                 ),
-                When(
-                    Q(asset_type="heat_pump") & Q(direction="out"), then=Value("lines")
-                ),
+                When(Q(asset_type="heat_pump") & Q(direction="out"), then=Value("lines")),
                 default=Value("none"),
             ),
             plot_order=Case(
-                When(
-                    Q(oemof_type="sink") & Q(label__contains="_excess"), then=Value(1)
-                ),
+                When(Q(oemof_type="sink") & Q(label__contains="_excess"), then=Value(1)),
                 When(Q(oemof_type__contains="ess"), then=Value(3)),
-                When(
-                    Q(oemof_type="sink") & Q(label__contains="_feedin"), then=Value(2)
-                ),
+                When(Q(oemof_type="sink") & Q(label__contains="_feedin"), then=Value(2)),
                 When(Q(oemof_type="sink"), then=Value(4)),
                 default=Value(0),
             ),
@@ -1087,10 +1013,7 @@ def graph_capacities(simulations, y_variables):
         # read information about the optimized capacity
         qs2 = (
             FancyResults.objects.filter(simulation=simulation)
-            .exclude(
-                (Q(oemof_type="storage") & Q(direction="out"))
-                | Q(asset_type="capacity")
-            )
+            .exclude((Q(oemof_type="storage") & Q(direction="out")) | Q(asset_type="capacity"))
             .annotate(label=Case(default="asset"))
             .filter(
                 # label__in=qs1.values_list("label", flat=True),
@@ -1100,21 +1023,10 @@ def graph_capacities(simulations, y_variables):
             .order_by("label")
         )
 
-        ic = {
-            item[0]: item[1]
-            for item in qs1.filter(label__in=temp).values_list(
-                "label", "installed_capacity"
-            )
-        }
-        oc = {
-            item[0]: item[1]
-            for item in qs2.filter(label__in=temp).values_list(
-                "label", "optimized_capacity"
-            )
-        }
+        ic = {item[0]: item[1] for item in qs1.filter(label__in=temp).values_list("label", "installed_capacity")}
+        oc = {item[0]: item[1] for item in qs2.filter(label__in=temp).values_list("label", "optimized_capacity")}
 
         for asset_name in temp:
-
             if asset_name in ic:
                 installed_cap = ic[asset_name]
             else:
@@ -1144,9 +1056,7 @@ def graph_capacities(simulations, y_variables):
     return simulations_results
 
 
-def graph_costs(
-    simulations, y_variables, arrangement=COSTS_PER_CATEGORY
-):  # COSTS_PER_CATEGORY
+def graph_costs(simulations, y_variables, arrangement=COSTS_PER_CATEGORY):  # COSTS_PER_CATEGORY
     simulations_results = []
     multi_scenario = False
     if len(simulations) > 1:
@@ -1163,21 +1073,13 @@ def graph_costs(
         )
 
     if arrangement in [COSTS_PER_ASSETS_STACKED, COSTS_PER_CATEGORY_STACKED]:
-        x_values = [
-            x
-            for x in Scenario.objects.filter(simulation__in=simulations).values_list(
-                "name", flat=True
-            )
-        ]
+        x_values = [x for x in Scenario.objects.filter(simulation__in=simulations).values_list("name", flat=True)]
         y_values = []
 
     for simulation in simulations:
-
         # read information about the installed capacity
         qs1 = (
-            Asset.objects.filter(scenario__simulation=simulation)
-            .annotate(label=Case(default="name"))
-            .order_by("label")
+            Asset.objects.filter(scenario__simulation=simulation).annotate(label=Case(default="name")).order_by("label")
         )
 
         # read information about the optimized capacity
@@ -1219,21 +1121,11 @@ def graph_costs(
         for el in qs1:
             qs_asset_results = qs2.filter(label=el["label"].lower())
             if qs_asset_results.count() == 1:
-                el.update(
-                    qs_asset_results.values(
-                        "optimized_capacity", "total_flow", "direction"
-                    ).get()
-                )
+                el.update(qs_asset_results.values("optimized_capacity", "total_flow", "direction").get())
             elif qs_asset_results.count() > 1:
-                qs_asset_results = qs_asset_results.filter(
-                    optimized_capacity__isnull=False
-                )
+                qs_asset_results = qs_asset_results.filter(optimized_capacity__isnull=False)
                 if qs_asset_results.count() == 1:
-                    el.update(
-                        qs_asset_results.values(
-                            "optimized_capacity", "total_flow", "direction"
-                        ).get()
-                    )
+                    el.update(qs_asset_results.values("optimized_capacity", "total_flow", "direction").get())
                 elif qs_asset_results.count() > 1:
                     raise ValueError("should not have too much labels")
             records.append(el)
@@ -1250,9 +1142,7 @@ def graph_costs(
             ] = df.loc[
                 (df.parent_asset__name == ess) & (df.direction == "out"),
                 "optimized_capacity",
-            ].values[
-                0
-            ]
+            ].values[0]
 
         df = df.fillna(0)
         # TODO costs for batteries are skewed as battery capacity does not exists in fancy results
@@ -1264,15 +1154,11 @@ def graph_costs(
             / ((1 + wacc) ** x.lifetime - 1),
             axis=1,
         )
-        df["opex_fix_total"] = df.apply(
-            lambda x: (x.installed_capacity + x.optimized_capacity) * x.opex_fix, axis=1
-        )
+        df["opex_fix_total"] = df.apply(lambda x: (x.installed_capacity + x.optimized_capacity) * x.opex_fix, axis=1)
         df["opex_var_total"] = df.apply(lambda x: x.total_flow * x.opex_var, axis=1)
 
         # nur für dso ...
-        df["fuel_costs_total"] = df.apply(
-            lambda x: x.total_flow * x.energy_price, axis=1
-        )
+        df["fuel_costs_total"] = df.apply(lambda x: x.total_flow * x.energy_price, axis=1)
 
         # TODO fuel costs
 
@@ -1289,11 +1175,7 @@ def graph_costs(
 
         # merge the costs of the storages together
         for ess in storages:
-            agr = (
-                df.loc[(df.parent_asset__name == ess)]
-                .groupby(["parent_asset__name"])
-                .sum()
-            )
+            agr = df.loc[(df.parent_asset__name == ess)].groupby(["parent_asset__name"]).sum()
             df = pd.concat([df, agr])
             df.drop(df.loc[(df.parent_asset__name == ess)].index, inplace=True)
         df.drop(columns=["parent_asset__name"], inplace=True)
@@ -1306,14 +1188,10 @@ def graph_costs(
                 y = df.iloc[:, i].values.tolist()
                 y_values.append(
                     {
-                        "base": df.iloc[:, :i].sum(axis=1).values.tolist()
-                        if i > 0
-                        else None,
+                        "base": df.iloc[:, :i].sum(axis=1).values.tolist() if i > 0 else None,
                         "value": y,
                         "text": [name for j in range(len(x_values))],
-                        "name": name
-                        if multi_scenario is False
-                        else name + f" {simulation.scenario.name}",
+                        "name": name if multi_scenario is False else name + f" {simulation.scenario.name}",
                         "hover": "<b>%{text}, </b><br><br>Block value: %{customdata:.2f}$<br>Stacked value: %{y:.2f}$<extra> %{x}</extra>",
                         "customdata": y
                         # https://stackoverflow.com/questions/59057881/python-plotly-how-to-customize-hover-template-on-with-what-information-to-show
@@ -1328,14 +1206,10 @@ def graph_costs(
                 y = df.iloc[i, :].values.tolist()
                 y_values.append(
                     {
-                        "base": df.iloc[:i, :].sum(axis=0).values.tolist()
-                        if i > 0
-                        else None,
+                        "base": df.iloc[:i, :].sum(axis=0).values.tolist() if i > 0 else None,
                         "value": y,
                         "text": [name for j in range(len(x_values))],
-                        "name": name
-                        if multi_scenario is False
-                        else name + f" {simulation.scenario.name}",
+                        "name": name if multi_scenario is False else name + f" {simulation.scenario.name}",
                         "hover": "<b>%{text}</b><br><br>Block value: %{customdata:.2f}$<br>Stacked value: %{y:.2f}$",
                         "customdata": y,
                     }
@@ -1382,9 +1256,7 @@ def graph_sankey(simulation, energy_vector):
 
         sim = simulation
 
-        chp_qs = Asset.objects.filter(
-            scenario=sim.scenario, asset_type__asset_type__in=("chp", "chp_fixed_ratio")
-        )
+        chp_qs = Asset.objects.filter(scenario=sim.scenario, asset_type__asset_type__in=("chp", "chp_fixed_ratio"))
         if chp_qs.exists():
             chp_in_flow = {a.name: {"value": 0, "bus": ""} for a in chp_qs}
         else:
@@ -1397,9 +1269,7 @@ def graph_sankey(simulation, energy_vector):
             labels.append(bus_label)
             colors.append("blue")
 
-            asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list(
-                "asset", "total_flow"
-            )
+            asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "total_flow")
 
             for component_label, val in asset_to_bus_names:
                 # draw link from the component to the bus
@@ -1418,9 +1288,7 @@ def graph_sankey(simulation, energy_vector):
 
                 values.append(val)
 
-            bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list(
-                "asset", "total_flow"
-            )
+            bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "total_flow")
             # TODO potentially rename feedin period and consumption period
             for component_label, val in bus_to_asset_names:
                 # draw link from the bus to the component
@@ -1479,22 +1347,19 @@ REPORT_GRAPHS = {
     GRAPH_SANKEY: graph_sankey,
 }
 
+
 # # TODO change the form from this model to adapt the choices depending on single scenario/compare scenario or sensitivity
 class ReportItem(models.Model):
     title = models.CharField(max_length=120, default="", blank=True)
     report_type = models.CharField(max_length=50, choices=REPORT_TYPES)
     simulations = models.ManyToManyField(Simulation)
-    parameters = models.TextField(
-        default="", blank=True
-    )  # to store the parameter lists
+    parameters = models.TextField(default="", blank=True)  # to store the parameter lists
     initial_simulations = None
 
     def __init__(self, *args, **kwargs):
         if "simulations" in kwargs:
             self.initial_simulations = kwargs.pop("simulations")
-            self.initial_simulations = parse_manytomany_object_list(
-                self.initial_simulations
-            )
+            self.initial_simulations = parse_manytomany_object_list(self.initial_simulations)
         super().__init__(*args, **kwargs)
 
     #
@@ -1519,12 +1384,7 @@ class ReportItem(models.Model):
 
     @property
     def project_id(self):
-        return (
-            self.simulations.all()
-            .values_list("scenario__project", flat=True)
-            .distinct()
-            .get()
-        )
+        return self.simulations.all().values_list("scenario__project", flat=True).distinct().get()
 
     def proof_parameters_follow_schema(self, parameter_dict=None):
         if parameter_dict is None:
@@ -1572,9 +1432,7 @@ class ReportItem(models.Model):
         if self.report_type == GRAPH_TIMESERIES:
             y_variables = parameters.get("y", None)
             if y_variables is not None:
-                return graph_timeseries(
-                    simulations=self.simulations.all(), y_variables=y_variables
-                )
+                return graph_timeseries(simulations=self.simulations.all(), y_variables=y_variables)
 
         if self.report_type == GRAPH_TIMESERIES_STACKED:
             y_variables = parameters.get("y", None)
@@ -1606,9 +1464,7 @@ class ReportItem(models.Model):
         if self.report_type == GRAPH_SANKEY:
             energy_vector = parameters.get("energy_vector", None)
 
-            return graph_sankey(
-                simulation=self.simulations.get(), energy_vector=energy_vector
-            )
+            return graph_sankey(simulation=self.simulations.get(), energy_vector=energy_vector)
 
         if self.report_type == GRAPH_LOAD_DURATION:
             energy_vector = parameters.get("energy_vector", None)
@@ -1617,16 +1473,13 @@ class ReportItem(models.Model):
             # if isinstance(energy_vector, list) is False:
             #     energy_vector = [energy_vector]
             if energy_vector is not None:
-
                 sim = simulation
                 qs = FlowResults.objects.filter(simulation=sim)
                 if qs.exists():
                     flow_results = qs.get()
                     fig_dict = flow_results.load_duration_figure(energy_vector)
                 else:
-                    fig_dict = {
-                        "layout": {"title": "There is an error with this graph."}
-                    }
+                    fig_dict = {"layout": {"title": "There is an error with this graph."}}
 
                 return fig_dict
 
@@ -1652,16 +1505,12 @@ class SensitivityAnalysisGraph(models.Model):
     analysis = models.ForeignKey(SensitivityAnalysis, on_delete=models.CASCADE)
     y = models.CharField(
         max_length=50,
-        choices=[
-            (v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS
-        ],
+        choices=[(v, _(KPI_PARAMETERS_ASSETS[v]["verbose"])) for v in KPI_PARAMETERS_ASSETS],
     )
 
     @property
     def variable_unit(self):
-        return self.analysis.variable_unit.replace(
-            "currency", self.analysis.scenario.get_currency()
-        )
+        return self.analysis.variable_unit.replace("currency", self.analysis.scenario.get_currency())
 
     @property
     def y_unit(self):
