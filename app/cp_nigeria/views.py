@@ -484,6 +484,36 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         ac_bus.save()
         dc_bus.save()
 
+        # Delete potential existing rectifiers
+        Asset.objects.filter(
+            scenario=scenario, asset_type=AssetType.objects.get(asset_type="transformer_station_in"), name="rectifier"
+        ).delete()
+
+        inverter, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
+            name="inverter",
+        )
+        if created is True:
+            inverter.age_installed = 0
+            inverter.installed_capacity = 0
+            inverter.capex_fix = 0
+            inverter.capex_var = 321210
+            inverter.opex_fix = 6424.2
+            inverter.opex_var = 0
+            inverter.lifetime = 15  # project.economic_data.duration,
+            inverter.optimize_cap = True
+            inverter.efficiency = 0.95
+
+        inverter.save()
+
+        ConnectionLink.objects.get_or_create(
+            bus=dc_bus, bus_connection_port="output_1", asset=inverter, flow_direction="B2A", scenario=scenario
+        )
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="input_1", asset=inverter, flow_direction="A2B", scenario=scenario
+        )
+
         asset_type_name = "demand"
 
         demand, created = Asset.objects.get_or_create(
