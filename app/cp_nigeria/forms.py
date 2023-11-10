@@ -132,6 +132,26 @@ class UploadDemandForm(UploadTimeseriesForm):
         }
 
 
+class MainGridForm(AssetCreateForm):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, asset_type="dso", **kwargs)
+        # which fields exists in the form are decided upon AssetType saved in the db
+        self.prefix = self.asset_type_name
+
+        self.fields["feedin_tariff"] = forms.FloatField()
+        asset = kwargs.get("instance", None)
+        if asset is None:
+            default_values = {"name": self.asset_type_name, "energy_price": "23", "feedin_tariff": 0}
+            for field, initial_value in default_values.items():
+                self.initial[field] = initial_value
+
+        show_fields = ["energy_price", "renewable_share"]
+
+        for field in self.fields:
+            if field not in show_fields:
+                self.fields[field].widget = forms.HiddenInput()
+
+
 class PVForm(AssetCreateForm):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, asset_type="pv_plant", **kwargs)

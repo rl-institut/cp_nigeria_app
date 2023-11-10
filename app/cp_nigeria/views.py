@@ -401,9 +401,13 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         qs_options = Options.objects.filter(project=project)
         if qs_options.exists():
-            es_schema_name = qs_options.get().schema_name
+            options = qs_options.get()
+            es_schema_name = options.schema_name
+            grid_availability = options.main_grid
+
         else:
             es_schema_name = None
+            grid_availability = False
 
         context = {
             "proj_id": proj_id,
@@ -414,6 +418,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "es_assets": [],
             "es_schema_name": es_schema_name,
             "page_information": page_information,
+            "grid_availability": grid_availability,
         }
 
         asset_type_name = "bess"
@@ -435,7 +440,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         else:
             context["form_bess"] = BessForm(proj_id=project.id)
 
-        for asset_type_name, form in zip(["pv_plant", "diesel_generator"], [PVForm, DieselForm]):
+        for asset_type_name, form in zip(["dso", "pv_plant", "diesel_generator"], [MainGridForm, PVForm, DieselForm]):
             qs = Asset.objects.filter(scenario=scenario.id, asset_type__asset_type=asset_type_name)
 
             if qs.exists():
@@ -449,18 +454,18 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         return render(request, "cp_nigeria/steps/scenario_components.html", context)
 
     if request.method == "POST":
-        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm)
+        asset_forms = dict(bess=BessForm, pv_plant=PVForm, diesel_generator=DieselForm, dso=MainGridForm)
         # collect the assets selected by the user
         user_assets = request.POST.getlist("es_choice", [])
+
+        grid_availability = request.POST.get("grid_availability", "off")
+        grid_availability = True if grid_availability == "on" else False
 
         # Options
         options, _ = Options.objects.get_or_create(project=project)
         options.user_case = json.dumps(user_assets)
+        options.main_grid = grid_availability
         options.save()
-
-        # TODO add the grid option here
-        grid_option = request.POST.getlist("grid_option", [])
-        # add a form for energy price etc...
 
         qs = Bus.objects.filter(scenario=scenario, type="Electricity")
 
@@ -565,6 +570,83 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     ConnectionLink.objects.get_or_create(
                         bus=ac_bus, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
                     )
+
+                if asset_name == "dso":
+                    asset.pos_x = 50
+                    asset.pos_y = 50
+                    asset.save()
+
+                    if grid_availability is True:
+                        # delete existing direct connection from dso to ac_bus
+                        ConnectionLink.objects.filter(
+                            bus=ac_bus,
+                            bus_connection_port="input_1",
+                            asset=asset,
+                            flow_direction="A2B",
+                            scenario=scenario,
+                        ).delete()
+
+                        bus_dso, _ = Bus.objects.get_or_create(type="Electricity", scenario=scenario, name="dso_bus")
+                        bus_dso.pos_x = 225
+                        bus_dso.pos_y = asset.pos_y
+                        bus_dso.save()
+
+                        dso_availability, created = Asset.objects.get_or_create(
+                            scenario=scenario,
+                            asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
+                            name="dso_availability",
+                        )
+                        if created is True:
+                            dso_availability.age_installed = 0
+                            dso_availability.installed_capacity = 0
+                            dso_availability.capex_fix = 0
+                            dso_availability.capex_var = 0
+                            dso_availability.opex_fix = 0
+                            dso_availability.opex_var = 0
+                            dso_availability.lifetime = 100
+                            dso_availability.optimize_cap = True
+                            dso_availability.efficiency = 1
+
+                        dso_availability.pos_x = 400
+                        dso_availability.pos_y = asset.pos_y
+                        dso_availability.save()
+
+                        # connect the asset to the electricity bus
+                        ConnectionLink.objects.get_or_create(
+                            bus=ac_bus,
+                            bus_connection_port="input_1",
+                            asset=dso_availability,
+                            flow_direction="A2B",
+                            scenario=scenario,
+                        )
+                        ConnectionLink.objects.get_or_create(
+                            bus=bus_dso,
+                            bus_connection_port="output_1",
+                            asset=dso_availability,
+                            flow_direction="B2A",
+                            scenario=scenario,
+                        )
+                        ConnectionLink.objects.get_or_create(
+                            bus=bus_dso,
+                            bus_connection_port="input_1",
+                            asset=asset,
+                            flow_direction="A2B",
+                            scenario=scenario,
+                        )
+                    else:
+                        # delete potential dso availability transformer and bus
+                        bus_dso = Bus.objects.filter(scenario=scenario, name="dso_bus").delete()
+                        dso_availability = Asset.objects.filter(
+                            scenario=scenario,
+                            name="dso_availability",
+                        ).delete()
+                        ConnectionLink.objects.get_or_create(
+                            bus=ac_bus,
+                            bus_connection_port="input_1",
+                            asset=asset,
+                            flow_direction="A2B",
+                            scenario=scenario,
+                        )
 
                 if asset_name == "pv_plant":
                     if options.community is not None:
