@@ -189,7 +189,7 @@ PROXY_ADDRESS_LINK = os.getenv("PROXY_ADDRESS", "http://proxy:port")
 PROXY_CONFIG = ({"http://": PROXY_ADDRESS_LINK, "https://": PROXY_ADDRESS_LINK}) if USE_PROXY else ({})
 
 MVS_API_HOST = os.getenv("MVS_API_HOST", "https://mvs-eland.rl-institut.de")
-MVS_POST_URL = f"{MVS_API_HOST}/sendjson/openplan"
+MVS_POST_URL = f"{MVS_API_HOST}/sendjson/"
 MVS_GET_URL = f"{MVS_API_HOST}/check/"
 MVS_LP_FILE_URL = f"{MVS_API_HOST}/get_lp_file/"
 MVS_SA_POST_URL = f"{MVS_API_HOST}/sendjson/openplan/sensitivity-analysis"
