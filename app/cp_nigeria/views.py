@@ -37,6 +37,7 @@ def get_aggregated_cgs(project=None, community=None):
     for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
         results_dict[consumer_type] = {}
         total_demand = 0
+        total_consumers = 0
 
         if community is None:
             # filter consumer group objects for project based on consumer type
