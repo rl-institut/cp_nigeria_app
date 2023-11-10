@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 def mvs_simulation_request(data: dict):
-
     headers = {"content-type": "application/json"}
     payload = json.dumps(data)
 
@@ -68,9 +67,7 @@ def mvs_simulation_check_status(token):
 
 def mvs_sa_check_status(token):
     try:
-        response = requests.get(
-            MVS_SA_GET_URL + token, proxies=PROXY_CONFIG, verify=False
-        )
+        response = requests.get(MVS_SA_GET_URL + token, proxies=PROXY_CONFIG, verify=False)
         response.raise_for_status()
     except requests.HTTPError as http_err:
         logger.error(f"HTTP error occurred: {http_err}")
@@ -88,15 +85,9 @@ def fetch_mvs_simulation_results(simulation):
         response = mvs_simulation_check_status(token=simulation.mvs_token)
         try:
             simulation.status = response["status"]
-            simulation.errors = (
-                json.dumps(response["results"][ERROR])
-                if simulation.status == ERROR
-                else None
-            )
+            simulation.errors = json.dumps(response["results"][ERROR]) if simulation.status == ERROR else None
             simulation.results = (
-                parse_mvs_results(simulation, response["results"])
-                if simulation.status == DONE
-                else None
+                parse_mvs_results(simulation, response["results"]) if simulation.status == DONE else None
             )
             simulation.mvs_version = response["mvs_version"]
             logger.info(f"The simulation {simulation.id} is finished")
@@ -105,9 +96,7 @@ def fetch_mvs_simulation_results(simulation):
             simulation.results = None
 
         simulation.elapsed_seconds = (datetime.now() - simulation.start_date).seconds
-        simulation.end_date = (
-            datetime.now() if response["status"] in [ERROR, DONE] else None
-        )
+        simulation.end_date = datetime.now() if response["status"] in [ERROR, DONE] else None
         simulation.save()
 
     return simulation.status != PENDING
@@ -145,9 +134,7 @@ def parse_mvs_results(simulation, response_results):
         kpi_scalar.scalar_values = json.dumps(data["kpi"]["scalars"])
         kpi_scalar.save()
     else:
-        KPIScalarResults.objects.create(
-            scalar_values=json.dumps(data["kpi"]["scalars"]), simulation=simulation
-        )
+        KPIScalarResults.objects.create(scalar_values=json.dumps(data["kpi"]["scalars"]), simulation=simulation)
     # Write Cost Matrix KPIs to db
     qs = KPICostsMatrixResults.objects.filter(simulation=simulation)
     if qs.exists():
@@ -155,22 +142,16 @@ def parse_mvs_results(simulation, response_results):
         kpi_costs.cost_values = json.dumps(data["kpi"]["cost_matrix"])
         kpi_costs.save()
     else:
-        KPICostsMatrixResults.objects.create(
-            cost_values=json.dumps(data["kpi"]["cost_matrix"]), simulation=simulation
-        )
+        KPICostsMatrixResults.objects.create(cost_values=json.dumps(data["kpi"]["cost_matrix"]), simulation=simulation)
     # Write Assets to db
-    data_subdict = {
-        category: v for category, v in data.items() if category in asset_key_list
-    }
+    data_subdict = {category: v for category, v in data.items() if category in asset_key_list}
     qs = AssetsResults.objects.filter(simulation=simulation)
     if qs.exists():
         asset_results = qs.first()
         asset_results.asset_list = json.dumps(data_subdict)
         asset_results.save()
     else:
-        AssetsResults.objects.create(
-            assets_list=json.dumps(data_subdict), simulation=simulation
-        )
+        AssetsResults.objects.create(assets_list=json.dumps(data_subdict), simulation=simulation)
 
     qs = FancyResults.objects.filter(simulation=simulation)
     if qs.exists():
@@ -209,7 +190,6 @@ def parse_mvs_results(simulation, response_results):
 
 
 def mvs_sensitivity_analysis_request(data: dict):
-
     headers = {"content-type": "application/json"}
     payload = json.dumps(data)
 
