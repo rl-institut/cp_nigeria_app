@@ -505,6 +505,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             inverter.optimize_cap = True
             inverter.efficiency = 0.95
 
+        inverter.pos_x = dc_bus.pos_x + 175
+        inverter.pos_y = dc_bus.pos_y
         inverter.save()
 
         ConnectionLink.objects.get_or_create(
@@ -519,6 +521,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         demand, created = Asset.objects.get_or_create(
             scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
         )
+        demand.pos_x = 900
+        demand.pos_y = ac_bus.pos_y
+        demand.save()
         if created is True:
             if options.community is not None:
                 total_demand = get_aggregated_demand(community=options.community)
@@ -546,20 +551,19 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
                 asset = form.save(commit=False)
                 # TODO the form save should do some specific things to save the storage correctly
-
                 asset.scenario = scenario
+
                 if asset_name != "bess":
                     asset.asset_type = asset_type
                 else:
                     asset.asset_type = get_object_or_404(AssetType, asset_type="capacity")
-                asset.pos_x = 400
-                asset.pos_y = 150 + i * 150
-                asset.save()
 
                 if asset_name == "diesel_generator":
                     bus_diesel, _ = Bus.objects.get_or_create(
                         type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
                     )
+                    asset.pos_x = 400
+                    asset.pos_y = 200
 
                     equity_data_qs = EquityData.objects.filter(scenario=scenario)
                     if equity_data_qs.exists():
@@ -679,6 +683,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         )
 
                 if asset_name == "pv_plant":
+                    asset.pos_x = 350
+                    asset.pos_y = 350
+                    asset.save()
                     if options.community is not None:
                         community = options.community
                         asset.input_timeseries = community.pv_timeseries.values
@@ -749,6 +756,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     ess_charging_power_asset.save()
                     ess_discharging_power_asset.save()
 
+                    ess_asset.pos_x = 700
+                    ess_asset.pos_y = dc_bus.pos_y + 150
                     ess_asset.save()
 
                     # connect the battery to the electricity bus
