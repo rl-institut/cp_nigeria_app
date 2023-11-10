@@ -190,6 +190,10 @@ class DieselForm(AssetCreateForm):
         asset = kwargs.get("instance", None)
         if asset is not None:
             self.initial["opex_var_extra"] = round(asset.opex_var_extra * ENERGY_DENSITY_DIESEL, 3)
+            if self.initial["soc_min"] is None:
+                self.initial["soc_min"] = 0.0
+            if self.initial["soc_max"] is None:
+                self.initial["soc_max"] = 1.0
         else:
             default_values = {
                 "lifetime": 8,
@@ -198,6 +202,8 @@ class DieselForm(AssetCreateForm):
                 "opex_var": 23.22,
                 "opex_var_extra": 626.7,
                 "efficiency": 0.25,
+                "soc_min": 0.0,
+                "soc_max": 1.0,
             }
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
@@ -223,6 +229,8 @@ class DieselForm(AssetCreateForm):
         help_text = "Costs such as lubricant for motor."
         question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
         self.fields["opex_var"].label = f"Operational variable costs ({currency}/kWh)" + question_icon
+        self.fields["soc_min"].label = "Minimal load"
+        self.fields["soc_max"].label = "Maximal load"
 
         self.fields["efficiency"].label = self.fields["efficiency"].label.replace("Efficiency", "Average efficiency")
 
@@ -273,6 +281,7 @@ class BessForm(StorageForm):
                 help_text = PARAMETERS["c-rate"][":Definition_Short:"]
             else:
                 param_ref = ""
+                help_text = ""
             if field == "soc_min":
                 help_text = "The fraction of the battery's capacity that is discharged from the battery with regard to its fully charged state."  # source: Wikipedia
             if field != "name":
