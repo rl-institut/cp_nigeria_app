@@ -464,11 +464,20 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
         qs = Bus.objects.filter(scenario=scenario, type="Electricity")
 
-        if qs.exists():
-            bus_el = qs.get()
+        if qs.filter(Q(name__contains="ac") & Q(name__contains="dc")).exists():
+            ac_bus = qs.get(name="ac_bus")
+            dc_bus = qs.get(name="dc_bus")
         else:
-            bus_el = Bus(type="Electricity", scenario=scenario, pos_x=600, pos_y=150, name="electricity_bus")
-            bus_el.save()
+            qs.delete()
+            ac_bus = Bus(type="Electricity", scenario=scenario, name="ac_bus")
+            dc_bus = Bus(type="Electricity", scenario=scenario, name="dc_bus")
+
+        ac_bus.pos_x = 700
+        ac_bus.pos_y = 100
+        dc_bus.pos_x = 700
+        dc_bus.pos_y = 450
+        ac_bus.save()
+        dc_bus.save()
 
         asset_type_name = "demand"
 
@@ -482,9 +491,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 total_demand = get_aggregated_demand(project.id)
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
-            ConnectionLink.objects.create(
-                bus=bus_el, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
-            )
+
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
+        )
 
         for i, asset_name in enumerate(user_assets):
             qs = Asset.objects.filter(
@@ -551,6 +561,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         scenario=scenario,
                     )
 
+                    # connect the asset to the electricity bus
+                    ConnectionLink.objects.get_or_create(
+                        bus=ac_bus, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
+                    )
+
                 if asset_name == "pv_plant":
                     if options.community is not None:
                         community = options.community
@@ -565,6 +580,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                                 values = get_pv_output(project.id)
                             asset.input_timeseries = json.dumps(values)
                             asset.save()
+
+                    # connect the asset to the electricity bus
+                    ConnectionLink.objects.get_or_create(
+                        bus=dc_bus, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
+                    )
 
                 if asset_name == "bess":
                     ess_asset, _ = Asset.objects.get_or_create(
@@ -621,28 +641,23 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
 
                     # connect the battery to the electricity bus
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el,
+                        bus=dc_bus,
                         bus_connection_port="input_1",
                         asset=ess_asset,
                         flow_direction="A2B",
                         scenario=scenario,
                     )
                     ConnectionLink.objects.get_or_create(
-                        bus=bus_el,
+                        bus=dc_bus,
                         bus_connection_port="output_1",
                         asset=ess_asset,
                         flow_direction="B2A",
                         scenario=scenario,
                     )
-                else:
-                    # connect the asset to the electricity bus
-                    ConnectionLink.objects.get_or_create(
-                        bus=bus_el, bus_connection_port="input_1", asset=asset, flow_direction="A2B", scenario=scenario
-                    )
 
         # Remove unselected assets
         for asset in Asset.objects.filter(
-            scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator"]
+            scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator", "dso"]
         ):
             if asset.asset_type.asset_type not in user_assets:
                 if asset.asset_type.asset_type == "diesel_generator":
@@ -974,12 +989,23 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(optimized_capacity__gt=0)
     # TODO here if there is no simulation or supply setup, tell the user they should define one first
-    bus_el_name = Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
-    unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
+
+    qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
+
+    if qs_busses.count() == 1:
+        el_bus = qs_busses.get()
+        unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
+
+    elif qs_busses.filter(Q(name__contains="ac") | Q(name__contains="dc")).exists():
+        ac_bus = qs_busses.get(name="ac_bus")
+        dc_bus = qs_busses.get(name="dc_bus")
+        unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
+
     if unused_pv.exists():
         unused_pv = unused_pv.get().total_flow
     else:
         unused_pv = 0
+
     unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
@@ -1205,15 +1231,6 @@ def cpn_kpi_results(request, proj_id=None):
 
         qs_res = FancyResults.objects.filter(simulation=sim)
         opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
-        bus_el_name = (
-            Bus.objects.filter(scenario=project.scenario, type="Electricity").values_list("name", flat=True).get()
-        )
-        unused_pv = qs_res.filter(asset=f"{bus_el_name}_excess")
-        if unused_pv.exists():
-            unused_pv = unused_pv.get().total_flow
-        unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
-        if unused_diesel.exists():
-            unused_diesel = unused_diesel.get().total_flow
 
         kpis_of_interest = [
             "costs_total",
