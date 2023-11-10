@@ -559,11 +559,14 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     asset.asset_type = get_object_or_404(AssetType, asset_type="capacity")
 
                 if asset_name == "diesel_generator":
-                    bus_diesel, _ = Bus.objects.get_or_create(
-                        type="Gas", scenario=scenario, pos_x=300, pos_y=50, name="diesel_bus"
-                    )
                     asset.pos_x = 400
                     asset.pos_y = 200
+                    asset.save()
+
+                    bus_diesel, _ = Bus.objects.get_or_create(type="Gas", scenario=scenario, name="diesel_bus")
+                    bus_diesel.pos_x = 225
+                    bus_diesel.pos_y = asset.pos_y
+                    bus_diesel.save()
 
                     equity_data_qs = EquityData.objects.filter(scenario=scenario)
                     if equity_data_qs.exists():
@@ -574,9 +577,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     else:
                         diesel_price_kWh = asset.opex_var_extra
 
-                    dso_diesel, _ = Asset.objects.get_or_create(
-                        energy_price=diesel_price_kWh,
-                        feedin_tariff="0",
+                    dso_diesel, created = Asset.objects.get_or_create(
                         renewable_share=0,
                         peak_demand_pricing_period=1,
                         peak_demand_pricing=0,
@@ -584,6 +585,11 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         asset_type=AssetType.objects.get(asset_type="gas_dso"),
                         name="diesel_fuel",
                     )
+                    dso_diesel.feedin_tariff = 0
+                    dso_diesel.energy_price = diesel_price_kWh
+                    dso_diesel.pos_x = 50
+                    dso_diesel.pos_y = asset.pos_y
+                    dso_diesel.save()
                     # connect the diesel generator to the diesel bus and the electricity bus
                     ConnectionLink.objects.get_or_create(
                         bus=bus_diesel,
