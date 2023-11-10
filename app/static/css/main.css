@@ -1651,6 +1651,12 @@ nav.navbar {
 .cpn-setup .form-check-input:checked ~ div .img--storage span {
   background-image: url("/static/assets/cp_nigeria/bess_green.svg"); }
 
+.cpn-setup .form-check-input ~ div .img--main-grid span {
+  background-image: url("/static/assets/cp_nigeria/dso_grey.svg"); }
+
+.cpn-setup .form-check-input:checked ~ div .img--main-grid span {
+  background-image: url("/static/assets/cp_nigeria/dso_green.svg"); }
+
 .cpn-economic__prio {
   padding-bottom: 2rem;
   border-bottom: 1px solid #EFEDEB; }

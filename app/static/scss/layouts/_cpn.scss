@@ -58,6 +58,13 @@
     .form-check-input:checked ~ div .img--storage span {
       background-image: url('/static/assets/cp_nigeria/bess_green.svg');
     }
+
+    .form-check-input ~ div .img--main-grid span {
+      background-image: url('/static/assets/cp_nigeria/dso_grey.svg');
+    }
+    .form-check-input:checked ~ div .img--main-grid span {
+      background-image: url('/static/assets/cp_nigeria/dso_green.svg');
+    }
   }
 
   &-economic {
