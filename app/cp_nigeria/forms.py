@@ -200,7 +200,8 @@ class DieselForm(AssetCreateForm):
                 "capex_var": 309600,
                 "opex_fix": 19350,
                 "opex_var": 23.22,
-                "opex_var_extra": 626.7,
+                "opex_var_extra": 626.7,  # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
+                # ie solution with entry in the DB because the date needs to be linked to the price to be updated if the date is different
                 "efficiency": 0.25,
                 "soc_min": 0.0,
                 "soc_max": 1.0,
