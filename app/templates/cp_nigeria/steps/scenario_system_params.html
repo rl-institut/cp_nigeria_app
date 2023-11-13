@@ -46,7 +46,9 @@
 										<span class="model-chosen">{{ model_name }}</span>
 									</h3>
 								</div>
-								<div>
+								<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#equity_params" aria-expanded="false">Expand Equity parameters</a>
+
+								<div class="collapse form-stretch" id="equity_params">
 									{{equity_form |crispy }}
 								</div>
 
