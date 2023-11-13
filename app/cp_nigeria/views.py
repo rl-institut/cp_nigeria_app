@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 import json
 import logging
 import numpy as np
+import os
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -19,6 +20,7 @@ from projects.models import *
 from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from cp_nigeria.models import ConsumerGroup
+from cp_nigeria.helpers import ReportHandler
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
@@ -1594,3 +1596,25 @@ def cpn_business_model(request):
         return JsonResponse({"message": f"{grid_condition} model type"})
 
     return JsonResponse({"message": "Invalid request method"})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def download_report(request, proj_id):
+    project = get_object_or_404(Project, id=proj_id)
+    logging.info("downloading implementation plan")
+    implementation_plan = ReportHandler()
+    implementation_plan.create_cover_sheet(project)
+    implementation_plan.create_report_content(project)
+    # implementation_plan.add_paragraph("For now, this is just a demo")
+    # implementation_plan.add_paragraph("Here are some graphs:")
+    #
+    # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
+    # for graph in os.listdir(graph_dir):
+    #     implementation_plan.add_image(os.path.join(graph_dir, graph))
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    response["Content-Disposition"] = "attachment; filename=report.docx"
+    implementation_plan.save(response)
+
+    return response
