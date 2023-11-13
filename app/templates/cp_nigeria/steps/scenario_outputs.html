@@ -175,187 +175,282 @@
 <!--			</div>-->
 <!--		</div>-->
 		<div class="tab-content" id="js-db-top-section">
-<!--<div class="dashboard-options sticky-top">-->
-<!--	<div>-->
-<!--		<div class="row">-->
-<!--			<div class="dashboard__scenarios">-->
-<!--				<div class="dashboard__select-scenarios dashboard__select-scenarios&#45;&#45;small">-->
-<!--					<label for="results-scenarios" class="form-label">{% translate "Scenario" %}</label>-->
-<!--					<select name="results-single-scenario" id="results-scenarios" placeholder="This is a placeholder" onchange="update_selected_single_scenario(this.value)">-->
-<!--						{% for scenario in scenario_list %}-->
-<!--						<option value="scenario-{{ proj_id }}-{{ scenario.id}}" {% if scenario.id == scen_id %} selected {% endif %} >{{ scenario.name }}</option>-->
-<!--						{% empty %}-->
-<!--						{% translate "You have no scenario with completed simulation, please run simulations to display results" %}-->
-<!--						{% endfor %}-->
-<!--					</select>-->
-<!--				</div>-->
-<!--				{% if scenario_list %}-->
-<!--				<div class="dashboard__add">-->
-<!--					<button class="btn btn&#45;&#45;small btn&#45;&#45;transparent" type="submit" onclick="javascript:showCreateReportItemModal(event)">-->
-<!--						<span class="icon icon-add"></span>-->
-<!--						{% translate "Add chart" %}-->
-<!--					</button>-->
-<!--				</div>-->
-<!--				{% endif %}-->
-<!--			</div>-->
-<!--		</div>-->
-<!--	</div>-->
-<!--</div>-->
-<div class="dashboard">
-	<div>
+			<!--<div class="dashboard-options sticky-top">-->
+			<!--	<div>-->
+			<!--		<div class="row">-->
+			<!--			<div class="dashboard__scenarios">-->
+			<!--				<div class="dashboard__select-scenarios dashboard__select-scenarios&#45;&#45;small">-->
+			<!--					<label for="results-scenarios" class="form-label">{% translate "Scenario" %}</label>-->
+			<!--					<select name="results-single-scenario" id="results-scenarios" placeholder="This is a placeholder" onchange="update_selected_single_scenario(this.value)">-->
+			<!--						{% for scenario in scenario_list %}-->
+			<!--						<option value="scenario-{{ proj_id }}-{{ scenario.id}}" {% if scenario.id == scen_id %} selected {% endif %} >{{ scenario.name }}</option>-->
+			<!--						{% empty %}-->
+			<!--						{% translate "You have no scenario with completed simulation, please run simulations to display results" %}-->
+			<!--						{% endfor %}-->
+			<!--					</select>-->
+			<!--				</div>-->
+			<!--				{% if scenario_list %}-->
+			<!--				<div class="dashboard__add">-->
+			<!--					<button class="btn btn&#45;&#45;small btn&#45;&#45;transparent" type="submit" onclick="javascript:showCreateReportItemModal(event)">-->
+			<!--						<span class="icon icon-add"></span>-->
+			<!--						{% translate "Add chart" %}-->
+			<!--					</button>-->
+			<!--				</div>-->
+			<!--				{% endif %}-->
+			<!--			</div>-->
+			<!--		</div>-->
+			<!--	</div>-->
+			<!--</div>-->
 
-		<div class="row">
-			<div class="col col-md-12">
-				<div class="chart">
-					<div class="chart__header">
-						<!-- style="display: flex;gap: 10px;align-items: center;" -->
-						<div>
-							<span class="title">{% translate "Overview" %}</span>
+			<div class="dashboard">
+				<div>
+					<div class="header-results">
+						<h2 class="title">{% translate "Overview" %}</h2>
+					</div>
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<!-- style="display: flex;gap: 10px;align-items: center;" -->
+									<div>
+										<span class="title">{% translate "Schematic" %}</span> <a href="{% url 'scenario_visualize_results' scen_id %}">open_plan results</a>
+									</div>
+								</div>
+								<div class="chart__plot">
+									<div style="display:flex;justify-content:center;align-content:center;">
+										{% if es_schema_name %}
+										<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es" style="width:400px;">
+										{% endif %}
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
-					<div class="chart__plot">
-						<h3 style="padding-left:5rem"> Energy system</h3>
-								<div style="display:flex;justify-content:center;align-content:center;">
-													{% if es_schema_name %}
-			<img class="img" src="{% static 'assets/gui/' %}{{ es_schema_name }}" alt="example_es" style="width:400px;">
-				{% endif %}
 
-		</div>
-						<h3 style="padding-left:5rem"> Model choosen: {{model_name}}</h3>
-						{{ model_graph}}
-											<div style="display:flex;justify-content:center;align-content:center;">
-			<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<div>
+										<span class="title">{% translate "Community characteristics" %}</span>
+									</div>
+								</div>
+								<div class="chart__plot">
+									<table class="table" >
+										<thead><tr><th>Consumer type</th><th>Nr. of consumers</th><th>Total demand</th></tr></thead>
 
-		</div>
-						<h4 style="padding-left:5rem">Model description</h4>
-						<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
-							{{ model_description}}
+										{% for consumer_type, char in aggregated_cgs.items %}
+										<tr>
+											<td>{{ consumer_type }}</td>
+											<td>{{ char.nr_consumers }}</td>
+											<td>{{ char.total_demand | floatformat | intcomma }} kWh</td>
+										</tr>
+										{% endfor %}
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					{% if scenario_list %}
+					<!-- KPI table start -->
+					<div class="col" id="report_items" style="display:flex;flex-direction:column;">
+						<div class="header-results">
+							<h2 class="title">{% translate "Energy System" %}</h2>
 						</div>
 
+						{% include "report/kpis_template.html" with table_styles=table_styles %}
+						<!-- KPI table end -->
+						<!-- ES design start -->
+
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									<div class="chart__header">
+										<!-- style="display: flex;gap: 10px;align-items: center;" -->
+										<div>
+											<span class="title">{% translate "System size" %}</span>
+										</div>
+									</div>
+									<div class="chart__plot">
+										<table class="table" id="selectedKPITable">
+											<thead><tr><th>Asset</th><th>Size</th></thead>
+											<tbody id="General">
+
+											</tbody>
+											{% for cap in capacities %}
+											<tr>
+												<td>{{ cap.asset }}</td>
+												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>
+											</tr>
+											{% endfor %}
+										</table>
+									</div>
+								</div>
+								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
+							</div>
+
+						</div>
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									<div class="chart__header">
+										<!-- style="display: flex;gap: 10px;align-items: center;" -->
+										<div>
+											<span class="title">{% translate "Total flows" %}</span>
+										</div>
+									</div>
+									<div class="chart__plot">
+										<table class="table" id="totalFlowsTable">
+											<thead><tr><th>Asset</th><th>Total Supply (year)</th><th>Excess generation (year)</th></tr></thead>
+											<tbody>
+
+											</tbody>
+											{% for cap in capacities %}
+											{% if cap.asset == 'inverter' or cap.asset == 'diesel_generator' %}
+											<tr>
+												{% if cap.asset == 'inverter' %}
+												<td>{% if 'B' in es_schema_name %} Solar PV + Battery {% else %} Solar PV {% endif %}</td>
+												{% else %}
+												<td>Diesel generator</td>
+												{% endif %}
+												<td>{{ cap.total_supply | floatformat | intcomma }} kWh </td>
+												<td>{{ excess|get_item:cap.asset | floatformat | intcomma }} kWh </td>
+											</tr>
+											{% endif %}
+											{% endfor %}
+										</table>
+									</div>
+								</div>
+								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
+								{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
+							</div>
+
+						</div>
+						<div class="header-results">
+							<h2 class="title">{% translate "Technoeconomic parameters" %}</h2>
+						</div>
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									<div class="chart__header">
+										<!-- style="display: flex;gap: 10px;align-items: center;" -->
+										<div>
+											<span class="title">{% translate "Costs" %}</span>
+										</div>
+									</div>
+									<div class="chart__plot">
+										<table class="table" id="costsTable">
+											<thead><tr><th>Asset</th><th>First investment</th><th>OM (year)</th></tr></thead>
+											<tbody>
+
+											</tbody>
+											{% for asset, costs in asset_costs.items %}
+											{% if asset == "total" %} <tr style="font-weight:bold"> {% else %} <tr> {% endif %}
+											<td>{{ asset }} </td>
+											<td>{{ costs.costs_upfront_in_year_zero | floatformat | intcomma }} {{ costs.unit }}</td>
+											<td>{{ costs.annuity_om | floatformat | intcomma }} {{ costs.unit }}
+												{% if asset == "diesel_fuel_consumption" %}
+												/ {{ diesel_consumption | floatformat | intcomma }} L
+												{% endif %}</td>
+										</tr>
+											{% endfor %}
+
+										</table>
+									</div>
+								</div>
+								{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
+							</div>
+
+
+
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<div>
+										<span class="title">{% translate "Economic indicators" %}</span>
+									</div>
+								</div>
+								<div class="chart__plot">
+									<table class="table" >
+										<thead><tr><th>Indicator</th><th>Value</th></tr></thead>
+										<tbody>
+
+										</tbody>
+										<!--							<tr>-->
+										<!--								<td>Estimated Tariff [NGN]</td>-->
+										<!--								<td>85</td>-->
+										<!--							</tr>-->
+										<!--							<tr>-->
+										<!--								<td>WACC</td>-->
+										<!--								<td>11.68%</td>-->
+										<!--							</tr>-->
+										<!--							<tr>-->
+										<!--								<td>IRR</td>-->
+										<!--								<td>11.61%</td>-->
+										<!--							</tr>-->
+										<!--														<tr>-->
+										<!--								<td>Net profit minus total costs [NGN]</td>-->
+										<!--								<td>629.192.634</td>-->
+										<!--							</tr>-->
+										<!--																	<tr>-->
+										<!--								<td>Total loan and equity volume [NGN]</td>-->
+										<!--								<td>181.132.580</td>-->
+										<!--							</tr>-->
+
+
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- ES design stop -->
+					<!-- Graphs area start -->
+					<!--		<div class="row">-->
+					<!--			<div class="col" id="report_items" style="display:flex;flex-direction:column-reverse;">-->
+					<!--				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}-->
+					<!--				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}-->
+					<!--				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}-->
+					<!--				{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}-->
+					<!--				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}-->
+
+					<!--				{{ fate_cum_net_cash_flow | safe }}-->
+					<!--				{{ fate_net_cash_flow | safe }}-->
+
+
+					<!--			</div>-->
+					<!--		</div>-->
+					<!-- Graphs area  stop -->
+					{% endif %}
+
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<!-- style="display: flex;gap: 10px;align-items: center;" -->
+									<div>
+										<span class="title">{% translate "Business model" %}</span>
+									</div>
+								</div>
+								<div class="chart__plot">
+									{{ model_graph}}
+									<div style="display:flex;justify-content:center;align-content:center;">
+										<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
+									</div>
+									<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
+										<p><h3> Model chosen: {{model_name}}</h3></p>
+										{{ model_description}}
+									</div>
+
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		{% if scenario_list %}
-		<!-- KPI table start -->
-		{% include "report/kpis_template.html" with table_styles=table_styles %}
-		<!-- KPI table end -->
-		<!-- ES design start -->
-		<div class="row">
-			<div class="col col-md-12">
-				<div class="chart">
-					<div class="chart__header">
-						<!-- style="display: flex;gap: 10px;align-items: center;" -->
-						<div>
-							<span class="title">{% translate "Other results" %}</span>
-						</div>
-					</div>
-					<div class="chart__plot">
-						<table class="table" id="selectedKPITable">
-							<thead><tr><th>Indicator</th><th>Value</th></tr></thead>
-							<tbody id="General">
-
-							</tbody>
-				{% for cap in capacities %}
-							<tr>
-								<td>{{ cap.asset }} optimized capacity</td>
-								<td>{{ cap.optimized_capacity }} {{ cap.unit }}</td>
-							</tr>
-							{% endfor %}
-							<tr>
-								<td>Excess PV</td>
-								<td>{{ pv_excess }} kWh</td>
-							</tr>
-
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-		    <div class="row">
-			<div class="col col-md-12">
-				<div class="chart">
-					<div class="chart__header">
-						<div>
-							<span class="title">{% translate "Community characteristics" %}</span>
-						</div>
-					</div>
-					<div class="chart__plot">
-						<table class="table" >
-							<thead><tr><th>Consumer type</th><th>Nr. of consumers</th><th>Total demand</th></tr></thead>
-
-				{% for consumer_type, char in aggregated_cgs.items %}
-							<tr>
-								<td>{{ consumer_type }}</td>
-								<td>{{ char.nr_consumers }}</td>
-								<td>{{ char.total_demand }} kWh</td>
-							</tr>
-							{% endfor %}
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-    <div class="row">
-			<div class="col col-md-12">
-				<div class="chart">
-					<div class="chart__header">
-						<div>
-							<span class="title">{% translate "Economic indicators" %}</span>
-						</div>
-					</div>
-					<div class="chart__plot">
-						<table class="table" >
-							<thead><tr><th>Indicator</th><th>Value</th></tr></thead>
-							<tbody>
-
-							</tbody>
-<!--							<tr>-->
-<!--								<td>Estimated Tariff [NGN]</td>-->
-<!--								<td>85</td>-->
-<!--							</tr>-->
-<!--							<tr>-->
-<!--								<td>WACC</td>-->
-<!--								<td>11.68%</td>-->
-<!--							</tr>-->
-<!--							<tr>-->
-<!--								<td>IRR</td>-->
-<!--								<td>11.61%</td>-->
-<!--							</tr>-->
-<!--														<tr>-->
-<!--								<td>Net profit minus total costs [NGN]</td>-->
-<!--								<td>629.192.634</td>-->
-<!--							</tr>-->
-<!--																	<tr>-->
-<!--								<td>Total loan and equity volume [NGN]</td>-->
-<!--								<td>181.132.580</td>-->
-<!--							</tr>-->
-
-
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- ES design stop -->
-		<!-- Graphs area start -->
-		<div class="row">
-			<div class="col" id="report_items" style="display:flex;flex-direction:column-reverse;">
-				{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
-				{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
-				{% include "report/graph_template.html" with id="stacked_timeseries" title="Stacked timeseries" %}
-				{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
-				{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
-<!--				{{ fate_cum_net_cash_flow | safe }}-->
-<!--				{{ fate_net_cash_flow | safe }}-->
-
-
-			</div>
-		</div>
-		<!-- Graphs area  stop -->
-		{% endif %}
-	</div>
-</div>
 
 		</div>
 	</section>
