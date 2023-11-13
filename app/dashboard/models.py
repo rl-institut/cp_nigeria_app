@@ -235,6 +235,21 @@ class FancyResults(models.Model):
             pdb.set_trace()
         super().save(*args, **kwargs)
 
+    @property
+    def timeseries(self):
+        if self.flow_data is not None:
+            return json.loads(self.flow_data)
+        else:
+            return None
+
+    @property
+    def load_duration(self):
+        if self.timeseries is not None:
+            answer = np.sort(self.timeseries)[::-1]
+        else:
+            answer = None
+        return answer
+
 
 class FlowResults(models.Model):
     flow_data = models.TextField()  # to store the assets list

@@ -321,6 +321,9 @@
 										</table>
 									</div>
 								</div>
+								<div class="row plot-container plotly">
+								{{ diesel_curve_fig | safe }}
+								</div>
 								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
 								{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 							</div>
