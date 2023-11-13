@@ -1404,9 +1404,9 @@ def cpn_kpi_results(request, proj_id=None):
         opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
 
         kpis_of_interest = [
-            "costs_total",
+            # "costs_total",
             "levelized_costs_of_electricity_equivalent",
-            "total_emissions",
+            # "total_emissions",
             "renewable_factor",
         ]
         kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
@@ -1420,10 +1420,28 @@ def cpn_kpi_results(request, proj_id=None):
             if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
                 factor = 100.0
                 unit = "%"
+                # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
+                if options.community is not None:
+                    scen_values = [
+                        round(
+                            qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
+                            / np.sum(get_aggregated_demand(community=options.community)) * factor,
+                            2,
+                        )
+                    ]
+                else:
+                    scen_values = [
+                        round(
+                            qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
+                            / np.sum(get_aggregated_demand(proj_id=proj_id)) * factor,
+                            2,
+                        )
+                    ]
+
             else:
                 factor = 1.0
+                scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
 
-            scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
             # if kpi not in kpis_of_comparison_diesel:
             #     scen_values[1] = ""
 
