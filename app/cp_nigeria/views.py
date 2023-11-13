@@ -1114,14 +1114,21 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     # TODO here workout the results of the scenario and base diesel scenario
 
+    # get community characteristics
+    if options.community is not None:
+        aggregated_cgs = get_aggregated_cgs(community=options.community)
+    else:
+        aggregated_cgs = get_aggregated_cgs(project=project)
+
+    # get optimized capacities
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
-    opt_caps = qs_res.filter(optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"]).values("asset", "optimized_capacity")
-    for cap in opt_caps:
-        cap["unit"] = AssetType.objects.get(asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]).unit
+    opt_caps = qs_res.filter(
+        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+    ).values("asset", "optimized_capacity", "total_flow")
     # TODO here if there is no simulation or supply setup, tell the user they should define one first
 
+    # get total flows
     qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
-    import pdb;pdb.set_trace()
     if qs_busses.count() == 1:
         el_bus = qs_busses.get()
         unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
@@ -1139,6 +1146,37 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
+    else:
+        unused_diesel = 0
+
+    excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
+
+    total_demand = np.sum([vals["total_demand"] for cg, vals in aggregated_cgs.items()])
+    for cap in opt_caps:
+        if cap["asset"] == "pv_plant":
+            cap["total_supply"] = cap["total_flow"] - unused_pv
+        elif cap["asset"] == "diesel_generator":
+            cap["total_supply"] = cap["total_flow"] - unused_diesel
+        else:
+            cap["total_supply"] = cap["total_flow"]
+
+        cap["unit"] = AssetType.objects.get(
+            asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
+        ).unit
+        cap["supply_percentage"] = cap["total_supply"] / total_demand * 100
+
+    # diesel fuel values
+    if qs_res.filter(asset="diesel_fuel_consumption").exists():
+        diesel_consumption_liter = (
+            qs_res.filter(asset="diesel_fuel_consumption").get().total_flow / ENERGY_DENSITY_DIESEL
+        )
+    # costs values
+    kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
+    asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
+    asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
+    asset_costs["total"] = {col: np.sum(asset_costs_df[col]) for col in asset_costs_df}
+    for asset, costs in asset_costs.items():
+        costs["unit"] = project.economic_data.currency_symbol
 
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
@@ -1172,7 +1210,9 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
-        "pv_excess": round(unused_pv, 2),
+        "asset_costs": asset_costs,
+        "diesel_consumption": diesel_consumption_liter,
+        "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
@@ -1345,6 +1385,7 @@ def ajax_update_graph(request):
 @require_http_methods(["GET"])
 def cpn_kpi_results(request, proj_id=None):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1396,7 +1437,6 @@ def cpn_kpi_results(request, proj_id=None):
                 }
             )
         table = {"General": kpis}
-        import pdb;pdb.set_trace()
 
         # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
         answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
