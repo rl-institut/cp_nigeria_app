@@ -6,6 +6,8 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 import numpy as np
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries
 
+SHS_CONSUMERS = ["Very Low Consumption Estimate"]
+
 
 
 class ReportHandler:
@@ -89,7 +91,6 @@ class ReportHandler:
 def get_aggregated_cgs(project=None, community=None, SHS=True):
     # list according to ConsumerType object ids in database
     consumer_types = ["households", "enterprises", "public", "machinery"]
-    shs_consumers = ["Very Low Consumption Estimate"]
     results_dict = {}
 
     if SHS:
@@ -112,7 +113,7 @@ def get_aggregated_cgs(project=None, community=None, SHS=True):
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
-            if SHS and ts.name in shs_consumers:
+            if SHS and ts.name in SHS_CONSUMERS:
                 total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
                 total_consumers_shs += group.number_consumers
 
@@ -135,7 +136,7 @@ def get_aggregated_cgs(project=None, community=None, SHS=True):
     return results_dict
 
 
-def get_aggregated_demand(project=None, community=None):
+def get_aggregated_demand(project=None, community=None, SHS=True):
     total_demand = []
     if community is not None:
         cg_qs = ConsumerGroup.objects.filter(community=community)
@@ -143,6 +144,10 @@ def get_aggregated_demand(project=None, community=None):
         cg_qs = ConsumerGroup.objects.filter(project=project)
     else:
         cg_qs = []
+
+    # exclude SHS users from aggregated demand for system optimization
+    if SHS is True:
+        cg_qs = cg_qs.exclude(timeseries__name__in=SHS_CONSUMERS)
 
     for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
