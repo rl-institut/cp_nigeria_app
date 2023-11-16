@@ -799,8 +799,14 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         ):
             if asset.asset_type.asset_type not in user_assets:
                 if asset.asset_type.asset_type == "diesel_generator":
-                    Asset.objects.filter(asset_type__asset_type="gas_dso").delete()
+                    Asset.objects.filter(scenario=scenario, asset_type__asset_type="gas_dso").delete()
                     Bus.objects.filter(scenario=scenario, type="Gas").delete()
+                elif asset.asset_type.asset_type == "dso":
+                    Asset.objects.filter(
+                        scenario=scenario,
+                        asset_type__asset_type="transformer_station_in",
+                        name="dso_availability",
+                    ).delete()
                 asset.delete()
 
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
