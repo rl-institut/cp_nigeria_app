@@ -535,6 +535,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
 
+        peak_demand = round(np.array(json.loads(demand.input_timeseries)).max(), 1)
+
         ConnectionLink.objects.get_or_create(
             bus=ac_bus, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
         )
@@ -564,6 +566,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 if asset_name == "diesel_generator":
                     asset.pos_x = 400
                     asset.pos_y = 200
+
+                    # set the maximum diesel generator capacity to the peak demand
+                    asset.maximum_capacity = peak_demand
                     asset.save()
 
                     bus_diesel, _ = Bus.objects.get_or_create(type="Gas", scenario=scenario, name="diesel_bus")
@@ -1220,11 +1225,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     min_load = genset_asset.soc_min
     max_load = genset_asset.soc_max
 
-    percentage = (
-            100
-            * np.arange(1, len(diesel_genset_duration_curve) + 1)
-            / len(diesel_genset_duration_curve)
-    )
+    percentage = 100 * np.arange(1, len(diesel_genset_duration_curve) + 1) / len(diesel_genset_duration_curve)
 
     # Create a scatter plot for the duration curve
     scatter_trace = go.Scatter(
@@ -1282,7 +1283,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         title="Duration Curve for the Diesel Genset Electricity Production",
         xaxis=dict(title="percentage of annual operation [%]"),
         yaxis=dict(title="diesel genset production [kW]"),
-        template="simple_white"
+        template="simple_white",
     )
 
     # Create the figure
@@ -1513,7 +1514,8 @@ def cpn_kpi_results(request, proj_id=None):
                     scen_values = [
                         round(
                             qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
-                            / np.sum(get_aggregated_demand(community=options.community)) * factor,
+                            / np.sum(get_aggregated_demand(community=options.community))
+                            * factor,
                             2,
                         )
                     ]
@@ -1521,7 +1523,8 @@ def cpn_kpi_results(request, proj_id=None):
                     scen_values = [
                         round(
                             qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
-                            / np.sum(get_aggregated_demand(proj_id=proj_id)) * factor,
+                            / np.sum(get_aggregated_demand(proj_id=proj_id))
+                            * factor,
                             2,
                         )
                     ]
