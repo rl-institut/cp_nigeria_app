@@ -624,77 +624,80 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     asset.pos_y = 50
                     asset.save()
 
+                    # delete existing direct connection from dso to ac_bus
+                    ConnectionLink.objects.filter(
+                        bus=ac_bus,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    ).delete()
+
+                    bus_dso, _ = Bus.objects.get_or_create(type="Electricity", scenario=scenario, name="dso_bus")
+                    bus_dso.pos_x = 225
+                    bus_dso.pos_y = asset.pos_y
+                    bus_dso.save()
+
+                    dso_availability, created = Asset.objects.get_or_create(
+                        scenario=scenario,
+                        asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
+                        name="dso_availability",
+                    )
+                    if created is True:
+                        dso_availability.age_installed = 0
+                        dso_availability.installed_capacity = 0
+                        # 300 USD * 774 --> NGN
+                        dso_availability.capex_fix = 232200 * peak_demand
+                        dso_availability.capex_var = 0
+                        dso_availability.opex_fix = 0
+                        dso_availability.opex_var = 0
+                        dso_availability.lifetime = 100
+                        dso_availability.optimize_cap = True
+                        dso_availability.efficiency = 1
+
                     if grid_availability is True:
-                        # delete existing direct connection from dso to ac_bus
-                        ConnectionLink.objects.filter(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        ).delete()
+                        pass  # TODO here affect the efficiency based on user input
 
-                        bus_dso, _ = Bus.objects.get_or_create(type="Electricity", scenario=scenario, name="dso_bus")
-                        bus_dso.pos_x = 225
-                        bus_dso.pos_y = asset.pos_y
-                        bus_dso.save()
+                    dso_availability.pos_x = 400
+                    dso_availability.pos_y = asset.pos_y
+                    dso_availability.save()
 
-                        dso_availability, created = Asset.objects.get_or_create(
-                            scenario=scenario,
-                            asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
-                            name="dso_availability",
-                        )
-                        if created is True:
-                            dso_availability.age_installed = 0
-                            dso_availability.installed_capacity = 0
-                            dso_availability.capex_fix = 0
-                            dso_availability.capex_var = 0
-                            dso_availability.opex_fix = 0
-                            dso_availability.opex_var = 0
-                            dso_availability.lifetime = 100
-                            dso_availability.optimize_cap = True
-                            dso_availability.efficiency = 1
-
-                        dso_availability.pos_x = 400
-                        dso_availability.pos_y = asset.pos_y
-                        dso_availability.save()
-
-                        # connect the asset to the electricity bus
-                        ConnectionLink.objects.get_or_create(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=dso_availability,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
-                        ConnectionLink.objects.get_or_create(
-                            bus=bus_dso,
-                            bus_connection_port="output_1",
-                            asset=dso_availability,
-                            flow_direction="B2A",
-                            scenario=scenario,
-                        )
-                        ConnectionLink.objects.get_or_create(
-                            bus=bus_dso,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
-                    else:
-                        # delete potential dso availability transformer and bus
-                        bus_dso = Bus.objects.filter(scenario=scenario, name="dso_bus").delete()
-                        dso_availability = Asset.objects.filter(
-                            scenario=scenario,
-                            name="dso_availability",
-                        ).delete()
-                        ConnectionLink.objects.get_or_create(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
+                    # connect the asset to the electricity bus
+                    ConnectionLink.objects.get_or_create(
+                        bus=ac_bus,
+                        bus_connection_port="input_1",
+                        asset=dso_availability,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_dso,
+                        bus_connection_port="output_1",
+                        asset=dso_availability,
+                        flow_direction="B2A",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_dso,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    # else:
+                    #     # delete potential dso availability transformer and bus
+                    #     bus_dso = Bus.objects.filter(scenario=scenario, name="dso_bus").delete()
+                    #     dso_availability = Asset.objects.filter(
+                    #         scenario=scenario,
+                    #         name="dso_availability",
+                    #     ).delete()
+                    #     ConnectionLink.objects.get_or_create(
+                    #         bus=ac_bus,
+                    #         bus_connection_port="input_1",
+                    #         asset=asset,
+                    #         flow_direction="A2B",
+                    #         scenario=scenario,
+                    #     )
 
                 if asset_name == "pv_plant":
                     asset.pos_x = 350
