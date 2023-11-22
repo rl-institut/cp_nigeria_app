@@ -154,7 +154,8 @@ function addStackedTimeseriesGraph(graphId, parameters){
                 line: {shape: 'hv'},
                 stackgroup: timeseries.group,
                 fill: timeseries.fill,
-                mode: timeseries.mode
+                mode: timeseries.mode,
+
             };
             trace.name = format_trace_name(scenario.scenario_name, timeseries.label, timeseries.unit, compare=compare);
             data.push(trace);
@@ -452,6 +453,7 @@ function addSensitivityAnalysisGraph(graphId, parameters){
 const graph_type_mapping={
     timeseries: addTimeseriesGraph,
     timeseries_stacked: addStackedTimeseriesGraph,
+    timeseries_stacked_cpn: addStackedTimeseriesGraph,
     capacities: addCapacitiyGraph,
     costs: addCostGraph,
     costsScenarios: addCostScenariosGraph,
@@ -461,6 +463,7 @@ const graph_type_mapping={
 }
 // # GRAPH_TIMESERIES = "timeseries"
 // # GRAPH_TIMESERIES_STACKED = "timeseries_stacked"
+// # GRAPH_TIMESERIES_STACKED = "timeseries_stacked_cpn"
 // # GRAPH_CAPACITIES = "capacities"
 // # GRAPH_BAR = "bar"
 // # GRAPH_PIE = "pie"

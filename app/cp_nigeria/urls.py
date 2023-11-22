@@ -21,6 +21,7 @@ urlpatterns = [
     path("<int:proj_id>/scenario/model/choice", cpn_model_choice, name="cpn_model_choice"),
     path("<int:bm_id>/model/choice", cpn_model_suggestion, name="cpn_model_suggestion"),
     path("<int:proj_id>/outputs", cpn_outputs, name="cpn_outputs"),
+    path("<int:proj_id>/download_report", download_report, name="download_report"),
     # path("<int:proj_id>/update/energy/system/<int:scen_id>", update_energy_system, name="update_energy_system"),
     path("ajax/consumergroup/form/<int:scen_id>", ajax_consumergroup_form, name="ajax_consumergroup_form"),
     path("ajax/load-timeseries", ajax_load_timeseries, name="ajax_load_timeseries"),

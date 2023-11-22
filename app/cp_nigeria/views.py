@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 import json
 import logging
 import numpy as np
+import os
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -19,6 +20,7 @@ from projects.models import *
 from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from cp_nigeria.models import ConsumerGroup
+from cp_nigeria.helpers import ReportHandler
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.services import RenewableNinjas
 from projects.constants import DONE, PENDING, ERROR
@@ -533,6 +535,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
 
+        peak_demand = round(np.array(json.loads(demand.input_timeseries)).max(), 1)
+
         ConnectionLink.objects.get_or_create(
             bus=ac_bus, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
         )
@@ -562,6 +566,9 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                 if asset_name == "diesel_generator":
                     asset.pos_x = 400
                     asset.pos_y = 200
+
+                    # set the maximum diesel generator capacity to the peak demand
+                    asset.maximum_capacity = peak_demand
                     asset.save()
 
                     bus_diesel, _ = Bus.objects.get_or_create(type="Gas", scenario=scenario, name="diesel_bus")
@@ -617,77 +624,80 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                     asset.pos_y = 50
                     asset.save()
 
+                    # delete existing direct connection from dso to ac_bus
+                    ConnectionLink.objects.filter(
+                        bus=ac_bus,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    ).delete()
+
+                    bus_dso, _ = Bus.objects.get_or_create(type="Electricity", scenario=scenario, name="dso_bus")
+                    bus_dso.pos_x = 225
+                    bus_dso.pos_y = asset.pos_y
+                    bus_dso.save()
+
+                    dso_availability, created = Asset.objects.get_or_create(
+                        scenario=scenario,
+                        asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
+                        name="dso_availability",
+                    )
+                    if created is True:
+                        dso_availability.age_installed = 0
+                        dso_availability.installed_capacity = 0
+                        # 300 USD * 774 --> NGN
+                        dso_availability.capex_fix = 232200 * peak_demand
+                        dso_availability.capex_var = 0
+                        dso_availability.opex_fix = 0
+                        dso_availability.opex_var = 0
+                        dso_availability.lifetime = 100
+                        dso_availability.optimize_cap = True
+                        dso_availability.efficiency = 1
+
                     if grid_availability is True:
-                        # delete existing direct connection from dso to ac_bus
-                        ConnectionLink.objects.filter(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        ).delete()
+                        pass  # TODO here affect the efficiency based on user input
 
-                        bus_dso, _ = Bus.objects.get_or_create(type="Electricity", scenario=scenario, name="dso_bus")
-                        bus_dso.pos_x = 225
-                        bus_dso.pos_y = asset.pos_y
-                        bus_dso.save()
+                    dso_availability.pos_x = 400
+                    dso_availability.pos_y = asset.pos_y
+                    dso_availability.save()
 
-                        dso_availability, created = Asset.objects.get_or_create(
-                            scenario=scenario,
-                            asset_type=AssetType.objects.get(asset_type="transformer_station_in"),
-                            name="dso_availability",
-                        )
-                        if created is True:
-                            dso_availability.age_installed = 0
-                            dso_availability.installed_capacity = 0
-                            dso_availability.capex_fix = 0
-                            dso_availability.capex_var = 0
-                            dso_availability.opex_fix = 0
-                            dso_availability.opex_var = 0
-                            dso_availability.lifetime = 100
-                            dso_availability.optimize_cap = True
-                            dso_availability.efficiency = 1
-
-                        dso_availability.pos_x = 400
-                        dso_availability.pos_y = asset.pos_y
-                        dso_availability.save()
-
-                        # connect the asset to the electricity bus
-                        ConnectionLink.objects.get_or_create(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=dso_availability,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
-                        ConnectionLink.objects.get_or_create(
-                            bus=bus_dso,
-                            bus_connection_port="output_1",
-                            asset=dso_availability,
-                            flow_direction="B2A",
-                            scenario=scenario,
-                        )
-                        ConnectionLink.objects.get_or_create(
-                            bus=bus_dso,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
-                    else:
-                        # delete potential dso availability transformer and bus
-                        bus_dso = Bus.objects.filter(scenario=scenario, name="dso_bus").delete()
-                        dso_availability = Asset.objects.filter(
-                            scenario=scenario,
-                            name="dso_availability",
-                        ).delete()
-                        ConnectionLink.objects.get_or_create(
-                            bus=ac_bus,
-                            bus_connection_port="input_1",
-                            asset=asset,
-                            flow_direction="A2B",
-                            scenario=scenario,
-                        )
+                    # connect the asset to the electricity bus
+                    ConnectionLink.objects.get_or_create(
+                        bus=ac_bus,
+                        bus_connection_port="input_1",
+                        asset=dso_availability,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_dso,
+                        bus_connection_port="output_1",
+                        asset=dso_availability,
+                        flow_direction="B2A",
+                        scenario=scenario,
+                    )
+                    ConnectionLink.objects.get_or_create(
+                        bus=bus_dso,
+                        bus_connection_port="input_1",
+                        asset=asset,
+                        flow_direction="A2B",
+                        scenario=scenario,
+                    )
+                    # else:
+                    #     # delete potential dso availability transformer and bus
+                    #     bus_dso = Bus.objects.filter(scenario=scenario, name="dso_bus").delete()
+                    #     dso_availability = Asset.objects.filter(
+                    #         scenario=scenario,
+                    #         name="dso_availability",
+                    #     ).delete()
+                    #     ConnectionLink.objects.get_or_create(
+                    #         bus=ac_bus,
+                    #         bus_connection_port="input_1",
+                    #         asset=asset,
+                    #         flow_direction="A2B",
+                    #         scenario=scenario,
+                    #     )
 
                 if asset_name == "pv_plant":
                     asset.pos_x = 350
@@ -789,8 +799,14 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         ):
             if asset.asset_type.asset_type not in user_assets:
                 if asset.asset_type.asset_type == "diesel_generator":
-                    Asset.objects.filter(asset_type__asset_type="gas_dso").delete()
+                    Asset.objects.filter(scenario=scenario, asset_type__asset_type="gas_dso").delete()
                     Bus.objects.filter(scenario=scenario, type="Gas").delete()
+                elif asset.asset_type.asset_type == "dso":
+                    Asset.objects.filter(
+                        scenario=scenario,
+                        asset_type__asset_type="transformer_station_in",
+                        name="dso_availability",
+                    ).delete()
                 asset.delete()
 
         return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
@@ -1114,12 +1130,21 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     # TODO here workout the results of the scenario and base diesel scenario
 
+    # get community characteristics
+    if options.community is not None:
+        aggregated_cgs = get_aggregated_cgs(community=options.community)
+    else:
+        aggregated_cgs = get_aggregated_cgs(project=project)
+
+    # get optimized capacities
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
-    opt_caps = qs_res.filter(optimized_capacity__gt=0)
+    opt_caps = qs_res.filter(
+        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+    ).values("asset", "optimized_capacity", "total_flow")
     # TODO here if there is no simulation or supply setup, tell the user they should define one first
 
+    # get total flows
     qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
-
     if qs_busses.count() == 1:
         el_bus = qs_busses.get()
         unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
@@ -1128,15 +1153,46 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         ac_bus = qs_busses.get(name="ac_bus")
         dc_bus = qs_busses.get(name="dc_bus")
         unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
+        unused_diesel = qs_res.filter(asset=f"{ac_bus.name}_excess")
 
     if unused_pv.exists():
         unused_pv = unused_pv.get().total_flow
     else:
         unused_pv = 0
 
-    unused_diesel = qs_res.filter(energy_vector="Gas", asset_type="excess")
     if unused_diesel.exists():
         unused_diesel = unused_diesel.get().total_flow
+    else:
+        unused_diesel = 0
+
+    excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
+
+    total_demand = np.sum([vals["total_demand"] for cg, vals in aggregated_cgs.items()])
+    for cap in opt_caps:
+        if cap["asset"] == "pv_plant":
+            cap["total_supply"] = cap["total_flow"] - unused_pv
+        elif cap["asset"] == "diesel_generator":
+            cap["total_supply"] = cap["total_flow"] - unused_diesel
+        else:
+            cap["total_supply"] = cap["total_flow"]
+
+        cap["unit"] = AssetType.objects.get(
+            asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
+        ).unit
+        cap["supply_percentage"] = cap["total_supply"] / total_demand * 100
+
+    # diesel fuel values
+    if qs_res.filter(asset="diesel_fuel_consumption").exists():
+        diesel_consumption_liter = (
+            qs_res.filter(asset="diesel_fuel_consumption").get().total_flow / ENERGY_DENSITY_DIESEL
+        )
+    # costs values
+    kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
+    asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
+    asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
+    asset_costs["total"] = {col: np.sum(asset_costs_df[col]) for col in asset_costs_df}
+    for asset, costs in asset_costs.items():
+        costs["unit"] = project.economic_data.currency_symbol
 
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
@@ -1167,18 +1223,102 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         aggregated_cgs = get_aggregated_cgs(project=project)
 
+    # plot for diesel load curve (for debugging minimal load of genset)
+    dies_ld = qs_res.filter(energy_vector="Electricity", asset_type="diesel_generator").get()
+    genset_asset = Asset.objects.filter(scenario=project.scenario, name="diesel_generator").get()
+    print(dies_ld.load_duration)
+
+    # Sort the power generated by the diesel genset in descending order.
+    diesel_genset_duration_curve = np.sort(dies_ld.load_duration)[::-1]
+    capacity_diesel_genset = opt_caps.filter(asset="diesel_generator").get()["optimized_capacity"]
+    min_load = genset_asset.soc_min
+    max_load = genset_asset.soc_max
+
+    percentage = 100 * np.arange(1, len(diesel_genset_duration_curve) + 1) / len(diesel_genset_duration_curve)
+
+    # Create a scatter plot for the duration curve
+    scatter_trace = go.Scatter(
+        x=percentage,
+        y=diesel_genset_duration_curve,
+        mode="markers + lines",
+        name="Duration Curve",
+    )
+
+    # Create horizontal lines for minimum and maximum load
+    min_load_trace = go.Scatter(
+        x=[0, 100],
+        y=[min_load * capacity_diesel_genset, min_load * capacity_diesel_genset],
+        mode="lines",
+        line=dict(color="crimson", dash="dash"),
+        name="Minimum Load",
+    )
+
+    max_load_trace = go.Scatter(
+        x=[0, 100],
+        y=[max_load * capacity_diesel_genset, max_load * capacity_diesel_genset],
+        mode="lines",
+        line=dict(color="crimson", dash="dash"),
+        name="Maximum Load",
+    )
+
+    # Add annotations for minimum and maximum load
+    annotations = [
+        dict(
+            x=100,
+            y=min_load * capacity_diesel_genset,
+            xref="x",
+            yref="y",
+            text=f"minimum load: {min_load * capacity_diesel_genset:0.2f} kW",
+            showarrow=True,
+            arrowhead=0,
+            ax=0,
+            ay=-15,
+        ),
+        dict(
+            x=100,
+            y=max_load * capacity_diesel_genset,
+            xref="x",
+            yref="y",
+            text=f"maximum load: {max_load * capacity_diesel_genset:0.2f} kW",
+            showarrow=True,
+            arrowhead=0,
+            ax=0,
+            ay=15,
+        ),
+    ]
+
+    # Create the layout
+    layout = dict(
+        title="Duration Curve for the Diesel Genset Electricity Production",
+        xaxis=dict(title="percentage of annual operation [%]"),
+        yaxis=dict(title="diesel genset production [kW]"),
+        template="simple_white",
+    )
+
+    # Create the figure
+    fig = go.Figure(data=[scatter_trace, min_load_trace, max_load_trace], layout=layout)
+
+    # Add annotations to the figure
+    fig.update_layout(annotations=annotations)
+
+    # Show the figure or save it to a file
+    diesel_curve_fig = fig.to_html()
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
-        "pv_excess": round(unused_pv, 2),
+        "asset_costs": asset_costs,
+        "diesel_consumption": diesel_consumption_liter,
+        "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
         "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
-        "fate_net_cash_flow": fate_figs["Net Cash Flow"],
+        "fate_figs": fate_figs["Net Cash Flow"],
         "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
+        "diesel_curve_fig": diesel_curve_fig,
         "aggregated_cgs": aggregated_cgs,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
@@ -1343,6 +1483,7 @@ def ajax_update_graph(request):
 @require_http_methods(["GET"])
 def cpn_kpi_results(request, proj_id=None):
     project = get_object_or_404(Project, id=proj_id)
+    options = get_object_or_404(Options, project=project)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1361,9 +1502,9 @@ def cpn_kpi_results(request, proj_id=None):
         opt_caps = qs_res.filter(optimized_capacity__gt=0).values_list("asset", "asset_type", "optimized_capacity")
 
         kpis_of_interest = [
-            "costs_total",
+            # "costs_total",
             "levelized_costs_of_electricity_equivalent",
-            "total_emissions",
+            # "total_emissions",
             "renewable_factor",
         ]
         kpis_of_comparison_diesel = ["costs_total", "levelized_costs_of_electricity_equivalent", "total_emissions"]
@@ -1377,10 +1518,30 @@ def cpn_kpi_results(request, proj_id=None):
             if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
                 factor = 100.0
                 unit = "%"
+                # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
+                if options.community is not None:
+                    scen_values = [
+                        round(
+                            qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
+                            / np.sum(get_aggregated_demand(community=options.community))
+                            * factor,
+                            2,
+                        )
+                    ]
+                else:
+                    scen_values = [
+                        round(
+                            qs_res.filter(optimized_capacity__gt=0, asset="inverter").get().total_flow
+                            / np.sum(get_aggregated_demand(proj_id=proj_id))
+                            * factor,
+                            2,
+                        )
+                    ]
+
             else:
                 factor = 1.0
+                scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
 
-            scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
             # if kpi not in kpis_of_comparison_diesel:
             #     scen_values[1] = ""
 
@@ -1447,3 +1608,25 @@ def cpn_business_model(request):
         return JsonResponse({"message": f"{grid_condition} model type"})
 
     return JsonResponse({"message": "Invalid request method"})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def download_report(request, proj_id):
+    project = get_object_or_404(Project, id=proj_id)
+    logging.info("downloading implementation plan")
+    implementation_plan = ReportHandler()
+    implementation_plan.create_cover_sheet(project)
+    implementation_plan.create_report_content(project)
+    # implementation_plan.add_paragraph("For now, this is just a demo")
+    # implementation_plan.add_paragraph("Here are some graphs:")
+    #
+    # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
+    # for graph in os.listdir(graph_dir):
+    #     implementation_plan.add_image(os.path.join(graph_dir, graph))
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    response["Content-Disposition"] = "attachment; filename=report.docx"
+    implementation_plan.save(response)
+
+    return response

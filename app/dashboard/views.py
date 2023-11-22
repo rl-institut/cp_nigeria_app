@@ -1048,6 +1048,35 @@ def scenario_visualize_stacked_timeseries(request, scen_id):
     )
 
 
+def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+    if (scenario.project.user != request.user) and (
+        scenario.project.viewers.filter(user__email=request.user.email).exists()
+        is False
+    ):
+        raise PermissionDenied
+
+    results_json = []
+    for energy_vector in scenario.energy_vectors:
+
+        results_json.append(
+            report_item_render_to_json(
+                report_item_id=energy_vector,
+                data=REPORT_GRAPHS[GRAPH_TIMESERIES_STACKED_CPN](
+                    simulations=[scenario.simulation],
+                    y_variables=None,
+                    energy_vector=energy_vector,
+                ),
+                title=energy_vector,
+                report_item_type=GRAPH_TIMESERIES_STACKED_CPN,
+            )
+        )
+
+    return JsonResponse(
+        results_json, status=200, content_type="application/json", safe=False
+    )
+
+
 # TODO exclude sink components
 def scenario_visualize_capacities(request, proj_id, scen_id=None):
 
