@@ -20,7 +20,7 @@
 
 		<section class="project-setup two-columns">
 			<form method="POST">
-				<div class="row">
+				<!--div class="row">
 					{% if pv_timeseries %}
 					<div class="col">
 						<h3>PV normalized timeseries</h3>
@@ -31,7 +31,7 @@
 						<h3>Demand profile (kWh)</h3>
 						<div id="demand_trace"></div>
 					</div>
-				</div>
+				</div-->
 				<div style="display:flex">
 					<div class="left">
 						<div>
@@ -46,7 +46,9 @@
 										<span class="model-chosen">{{ model_name }}</span>
 									</h3>
 								</div>
-								<div>
+								<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#equity_params" aria-expanded="false">Expand Equity parameters</a>
+
+								<div class="collapse form-stretch" id="equity_params">
 									{{equity_form |crispy }}
 								</div>
 
@@ -70,7 +72,7 @@
 								</div>
 								<div class="cpn-economic__results--2">
                   <span class="title">
-                    Peak demand (kWh)
+                    Peak demand (kW)
                   </span>
 									<span class="value">
                     {{ peak_demand }}

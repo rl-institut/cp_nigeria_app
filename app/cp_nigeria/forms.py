@@ -93,7 +93,7 @@ class EconomicDataForm(OpenPlanModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["discount"].validators.append(validate_not_zero)
-        self.fields["discount"].initial = 0.0000001
+        self.initial["discount"] = 0.12
 
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)
@@ -200,7 +200,8 @@ class DieselForm(AssetCreateForm):
                 "capex_var": 309600,
                 "opex_fix": 19350,
                 "opex_var": 23.22,
-                "opex_var_extra": 626.7,
+                "opex_var_extra": 626.7,  # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
+                # ie solution with entry in the DB because the date needs to be linked to the price to be updated if the date is different
                 "efficiency": 0.25,
                 "soc_min": 0.0,
                 "soc_max": 1.0,
