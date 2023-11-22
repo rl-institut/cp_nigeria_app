@@ -1044,6 +1044,7 @@ def cpn_review(request, proj_id, step_id=STEP_MAPPING["simulation"]):
                     "secondsElapsed": simulation.elapsed_seconds,
                     "rating": simulation.user_rating,
                     "mvs_token": simulation.mvs_token,
+                    "mvs_version": simulation.mvs_version,
                 }
             )
 
