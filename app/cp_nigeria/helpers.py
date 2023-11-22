@@ -4,9 +4,29 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 import numpy as np
-from cp_nigeria.models import ConsumerGroup, DemandTimeseries
+from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
+from django.shortcuts import get_object_or_404
 
-SHS_CONSUMERS = ["Very Low Consumption Estimate"]
+
+HOUSEHOLD_TIERS = [
+    ("very_low", "Very Low Consumption Estimate"),
+    ("low", "Low Consumption Estimate"),
+    ("middle", "Middle Consumption Estimate"),
+    ("high", "High Consumption Estimate"),
+    ("very_high", "Very High Consumption Estimate"),
+]
+
+
+def get_shs_threshold(project):
+    options = get_object_or_404(Options, project=project)
+    shs_threshold = options.shs_threshold
+
+    tiers = [tier[0] for tier in HOUSEHOLD_TIERS]
+    tiers_verbose = [tier[1] for tier in HOUSEHOLD_TIERS]
+    threshold_index = tiers.index(shs_threshold)
+    excluded_tiers = tiers_verbose[:threshold_index + 1]
+
+    return excluded_tiers
 
 
 
@@ -94,6 +114,7 @@ def get_aggregated_cgs(project=None, community=None, SHS=True):
     results_dict = {}
 
     if SHS:
+        shs_consumers = get_shs_threshold(project)
         results_dict["SHS"] = {}
         total_demand_shs = 0
         total_consumers_shs = 0
@@ -113,7 +134,7 @@ def get_aggregated_cgs(project=None, community=None, SHS=True):
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
-            if SHS and ts.name in SHS_CONSUMERS:
+            if SHS and ts.name in shs_consumers:
                 total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
                 total_consumers_shs += group.number_consumers
 
@@ -147,7 +168,8 @@ def get_aggregated_demand(project=None, community=None, SHS=True):
 
     # exclude SHS users from aggregated demand for system optimization
     if SHS is True:
-        cg_qs = cg_qs.exclude(timeseries__name__in=SHS_CONSUMERS)
+        shs_consumers = get_shs_threshold(project)
+        cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
 
     for cg in cg_qs:
         timeseries_values = np.array(cg.timeseries.values)
