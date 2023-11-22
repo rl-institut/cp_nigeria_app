@@ -111,6 +111,7 @@ class AssetDto:
         fixed_thermal_losses_absolute: ValueTypeDto = None,
         beta: ValueTypeDto = None,
         investment_bus: str = None,
+        coefficients: ValueTypeDto = None,
     ):
         self.asset_type = asset_type
         self.label = label
@@ -147,6 +148,7 @@ class AssetDto:
         self.fixed_thermal_losses_absolute = fixed_thermal_losses_absolute
         self.beta = beta
         self.investment_bus = investment_bus
+        self.coefficients = coefficients
 
 
 class EssDto:
@@ -484,7 +486,6 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
                             efficiency = (1 / cop) if energy_vector == "Electricity" else (1 - 1 / cop)
 
                         efficiencies.append(efficiency)
-
             # investment in oemof should be on input electrical bus
             optional_parameters["investment_bus"] = inflow_direction[0]
 
@@ -501,6 +502,9 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
         if "dso" in asset.asset_type.asset_type:
             dso_energy_price.value = json.loads(dso_energy_price.value)
             dso_feedin_tariff.value = json.loads(dso_feedin_tariff.value)
+
+        if asset.asset_type.asset_type == "diesel_generator":
+            optional_parameters["coefficients"] = to_value_type(asset, "efficiency_multiple")
 
         asset_dto = AssetDto(
             asset.asset_type.asset_type,

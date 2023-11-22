@@ -1306,6 +1306,43 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         # Show the figure or save it to a file
         diesel_curve_fig = fig.to_html()
 
+        qs_diesel_flow = qs_res.filter(energy_vector="Gas", direction="out", bus="diesel_bus", asset="diesel_generator")
+        sequences_diesel_consumption_kwh = qs_diesel_flow.get().timeseries
+
+        qs_genset_flow = qs_res.filter(energy_vector="Electricity", direction="in", asset="diesel_generator")
+        sequences_diesel_genset = np.array(qs_genset_flow.get().timeseries)
+
+        # Calculate the efficiency of the diesel genset.
+        # If the load is equal to 0, the efficiency will also be 0.
+        # Efficiency is defined here in percentage.
+        efficiency_diesel_genset = np.zeros(len(sequences_diesel_genset))
+        for i in range(len(sequences_diesel_genset)):
+            if sequences_diesel_consumption_kwh[i] != 0:
+                efficiency_diesel_genset[i] = sequences_diesel_genset[i] / sequences_diesel_consumption_kwh[i] * 100
+        load_diesel_genset = sequences_diesel_genset / capacity_diesel_genset * 100
+
+        # Create a scatter plot for the duration curve
+        efficiency_trace = go.Scatter(
+            x=load_diesel_genset,
+            y=efficiency_diesel_genset,
+            mode="markers",
+            name="Efficiency Curve",
+        )
+
+        # Create the layout
+        layout = dict(
+            title="Efficiency Curve for the Diesel Genset",
+            xaxis=dict(title="Diesel Genset load [%]"),
+            yaxis=dict(title="Efficiency of Diesel Genset [%]"),
+            template="simple_white",
+        )
+
+        # Create the figure
+        fig = go.Figure(data=[efficiency_trace], layout=layout)
+
+        # Show the figure or save it to a file
+        diesel_efficiency_fig = fig.to_html()
+
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
@@ -1321,6 +1358,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "fate_figs": fate_figs["Net Cash Flow"],
         "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
         "diesel_curve_fig": diesel_curve_fig,
+        "diesel_efficiency_fig": diesel_efficiency_fig,
         "aggregated_cgs": aggregated_cgs,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,

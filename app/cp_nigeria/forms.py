@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -209,7 +211,10 @@ class DieselForm(AssetCreateForm):
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
 
-        for field, value in zip(("name", "capex_fix", "maximum_capacity"), (self.asset_type_name, 0, 0.0)):
+        for field, value in zip(
+            ("name", "capex_fix", "maximum_capacity", "efficiency_multiple"),
+            (self.asset_type_name, 0, self.initial["maximum_capacity"], "[0,0]"),
+        ):
             self.fields[field].widget = forms.HiddenInput()
             self.initial[field] = value
 
@@ -233,6 +238,24 @@ class DieselForm(AssetCreateForm):
 
     def clean_opex_var_extra(self):
         return self.cleaned_data["opex_var_extra"] / ENERGY_DENSITY_DIESEL
+
+    def clean(self):
+        super().clean()
+
+        min_load = self.cleaned_data["soc_min"]
+        max_load = self.cleaned_data["soc_max"]
+
+        # Specify the minimum and maximum loads and the corresponding efficiencies
+        # for the diesel genset.
+        min_efficiency = 0.20
+        max_efficiency = 0.33
+
+        # Calculate the two polynomial coefficients, i.e. the y-intersection and the
+        # slope of the linear equation.
+        c1 = (max_load / max_efficiency - min_load / min_efficiency) / (max_load - min_load)
+        c0 = min_load * (1 / min_efficiency - c1)
+        self.cleaned_data["efficiency_multiple"] = json.dumps([c0, c1])
+        print(self.cleaned_data["efficiency_multiple"])
 
 
 class BessForm(StorageForm):
