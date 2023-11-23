@@ -12,6 +12,7 @@ from projects.models import Project, EconomicData, Scenario
 from projects.constants import CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 from .models import *
 from projects.helpers import PARAMETERS
+from cp_nigeria.helpers import HOUSEHOLD_TIERS
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
@@ -291,8 +292,16 @@ class BessForm(StorageForm):
         return round(1 - self.cleaned_data["soc_min"], 3)
 
 
-class DummyForm(forms.Form):
-    some_input = forms.ChoiceField(label=_("Some INput"), choices=(("a", "a"), ("b", "b")))
+class SHSTiersForm(forms.Form):
+    help_text = "All households assigned to the selected tier or below will be served by solar home systems."
+    question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+
+    shs_threshold = forms.ChoiceField(
+        widget=forms.Select(attrs={"data-bs-toggle": "tooltip"}),
+        required=False,
+        choices=HOUSEHOLD_TIERS,
+        label="Select a threshold for SHS users" + question_icon
+    )
 
 
 class ConsumerGroupForm(OpenPlanModelForm):

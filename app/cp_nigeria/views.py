@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.db.models import Q
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
+from .helpers import *
 from business_model.forms import *
 from projects.requests import fetch_mvs_simulation_results
 from projects.models import *
@@ -30,55 +31,6 @@ from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResul
 from dashboard.helpers import KPI_PARAMETERS
 
 logger = logging.getLogger(__name__)
-
-
-def get_aggregated_cgs(project=None, community=None):
-    results_dict = {}
-    # list according to ConsumerType object ids in database
-    consumer_types = ["households", "enterprises", "public", "machinery"]
-    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
-        results_dict[consumer_type] = {}
-        total_demand = 0
-        total_consumers = 0
-
-        if community is None:
-            # filter consumer group objects for project based on consumer type
-            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        else:
-            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
-        # calculate total consumers and total demand as sum of array elements in kWh
-        for group in group_qs:
-            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
-            total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
-            total_consumers = sum(group.number_consumers for group in group_qs)
-
-        # add machinery total demand to enterprise demand without increasing nr. of consumers
-        if consumer_type == "machinery":
-            del results_dict[consumer_type]
-            results_dict["enterprises"]["total_demand"] += total_demand
-        else:
-            results_dict[consumer_type]["nr_consumers"] = total_consumers
-            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
-
-    return results_dict
-
-
-def get_aggregated_demand(proj_id=None, community=None):
-    total_demand = []
-    if community is not None:
-        cg_qs = ConsumerGroup.objects.filter(community=community)
-    elif proj_id is not None:
-        cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
-    else:
-        cg_qs = []
-
-    for cg in cg_qs:
-        timeseries_values = np.array(cg.timeseries.values)
-        nr_consumers = cg.number_consumers
-        if cg.timeseries.units == "Wh":
-            timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values * nr_consumers)
-    return np.vstack(total_demand).sum(axis=0).tolist()
 
 
 STEP_MAPPING = {
@@ -282,6 +234,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
         )
 
+        shs_form = SHSTiersForm(request.POST)
+        if shs_form.is_valid():
+            options.shs_threshold = shs_form.cleaned_data["shs_threshold"]
+            options.save()
+
         formset_qs = ConsumerGroup.objects.filter(project=project)
         if options.community is not None:
             formset_qs = ConsumerGroup.objects.filter(community=options.community)
@@ -289,7 +246,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
         if allow_edition is False:
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(community=options.community)
+                total_demand = get_aggregated_demand(project)
                 demand = qs_demand.get()
                 demand.input_timeseries = json.dumps(total_demand)
                 demand.save()
@@ -298,6 +255,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
         else:
             formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+            total_demand = []
 
             for form in formset:
                 # set timeseries queryset so form doesn't throw a validation error
@@ -337,7 +295,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 # update demand if exists
 
                 if qs_demand.exists():
-                    total_demand = get_aggregated_demand(proj_id=project.id)
+                    total_demand = get_aggregated_demand(project)
                     demand = qs_demand.get()
                     demand.input_timeseries = json.dumps(total_demand)
                     demand.save()
@@ -346,10 +304,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
-        options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        if options_qs.exists() and options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
+        shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
+
+        if options.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=options.community)
             allow_edition = False
         formset = ConsumerGroupFormSet(
             queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
@@ -361,10 +320,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     form[field].initial = getattr(obj, field)
 
         if formset_qs.exists():
-            if options.community is not None:
-                total_demand = get_aggregated_demand(community=options.community)
-            else:
-                total_demand = get_aggregated_demand(proj_id=proj_id)
+            total_demand = get_aggregated_demand(project)
         else:
             total_demand = []
 
@@ -375,6 +331,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "cp_nigeria/steps/scenario_demand.html",
         {
             "formset": formset,
+            "shs_form": shs_form,
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
@@ -528,10 +485,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         demand.pos_y = ac_bus.pos_y
         demand.save()
         if created is True:
-            if options.community is not None:
-                total_demand = get_aggregated_demand(community=options.community)
-            else:
-                total_demand = get_aggregated_demand(project.id)
+            total_demand = get_aggregated_demand(project)
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
 
@@ -1218,10 +1172,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         fate_figs[col] = fig.to_html()
 
     # dict for community characteristics table
-    if options.community is not None:
-        aggregated_cgs = get_aggregated_cgs(community=options.community)
-    else:
-        aggregated_cgs = get_aggregated_cgs(project=project)
+    aggregated_cgs = get_aggregated_cgs(project)
 
     qs_genset = opt_caps.filter(asset="diesel_generator")
     diesel_curve_fig = None

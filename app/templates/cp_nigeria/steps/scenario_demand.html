@@ -17,12 +17,14 @@
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
 <script src="{% static 'js/update_demand_graph.js' %}"></script>
 
+
 {% endblock start_body_scripts %}
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
 
 {% block progression_content %}
 <main>
 	<section class="container-lg">
+		<div class="container">
 		<div class="accordion cpn-accordion" id="accordionStep3">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="step3HeadingOne">
@@ -34,6 +36,17 @@
 					<div class="accordion-body">
 						<form method="POST" id="consumer-group-form">
 							{% csrf_token %}
+							<p>
+								Edit SHS threshold (advanced)
+								<label class="switch" data-bs-toggle="collapse" data-bs-target="#SHSForm" for="SHSSwitch">
+									<input type="checkbox" id="SHSSwitch">
+									<span class="slider round"></span>
+								</label>
+							</p>
+							<div id="SHSForm" class="collapse" style="width:300px">
+								{{ shs_form | crispy }}
+							</div>
+
 							{{ formset.management_form | crispy}}
 							<table class="table" id="ug_container" style="margin-bottom: 0">
 								<thead>
