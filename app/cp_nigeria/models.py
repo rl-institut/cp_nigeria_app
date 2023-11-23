@@ -48,7 +48,7 @@ class Options(models.Model):
     user_case = models.TextField(default="")
     main_grid = models.BooleanField(null=True)
     community = models.ForeignKey(Community, on_delete=models.CASCADE, blank=True, null=True)
-    shs_threshold = models.TextField(default="very_low")
+    shs_threshold = models.TextField(default="very_low", blank=True)
 
     @property
     def schema_name(self):

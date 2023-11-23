@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 
 
 HOUSEHOLD_TIERS = [
+    ("", "Remove SHS threshold"),
     ("very_low", "Very Low Consumption Estimate"),
     ("low", "Low Consumption Estimate"),
     ("middle", "Middle Consumption Estimate"),
@@ -27,15 +28,16 @@ def get_shs_threshold(shs_tier):
     return excluded_tiers
 
 
-def get_aggregated_cgs(project, SHS=True):
+def get_aggregated_cgs(project):
     options = get_object_or_404(Options, project=project)
     community = options.community
+    shs_threshold = options.shs_threshold
 
     # list according to ConsumerType object ids in database
     consumer_types = ["households", "enterprises", "public", "machinery"]
     results_dict = {}
 
-    if SHS:
+    if len(shs_threshold) != 0:
         shs_consumers = get_shs_threshold(options.shs_threshold)
         results_dict["SHS"] = {}
         total_demand_shs = 0
@@ -56,7 +58,7 @@ def get_aggregated_cgs(project, SHS=True):
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
-            if SHS and ts.name in shs_consumers:
+            if len(shs_threshold) != 0 and ts.name in shs_consumers:
                 total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
                 total_consumers_shs += group.number_consumers
 
@@ -72,16 +74,17 @@ def get_aggregated_cgs(project, SHS=True):
             results_dict[consumer_type]["nr_consumers"] = total_consumers
             results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
 
-            if SHS:
+            if shs_threshold is not None:
                 results_dict["SHS"]["nr_consumers"] = total_consumers_shs
                 results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
 
     return results_dict
 
 
-def get_aggregated_demand(project, SHS=True):
+def get_aggregated_demand(project):
     options = get_object_or_404(Options, project=project)
     community = options.community
+    shs_threshold = options.shs_threshold
     total_demand = []
     if community is not None:
         cg_qs = ConsumerGroup.objects.filter(community=community)
@@ -91,7 +94,7 @@ def get_aggregated_demand(project, SHS=True):
         cg_qs = []
 
     # exclude SHS users from aggregated demand for system optimization
-    if SHS is True:
+    if len(shs_threshold) != 0:
         shs_consumers = get_shs_threshold(options.shs_threshold)
         cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
 

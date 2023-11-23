@@ -298,6 +298,7 @@ class SHSTiersForm(forms.Form):
 
     shs_threshold = forms.ChoiceField(
         widget=forms.Select(attrs={"data-bs-toggle": "tooltip"}),
+        required=False,
         choices=HOUSEHOLD_TIERS,
         label="Select a threshold for SHS users" + question_icon
     )
