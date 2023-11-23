@@ -17,17 +17,91 @@ HOUSEHOLD_TIERS = [
 ]
 
 
-def get_shs_threshold(project):
-    options = get_object_or_404(Options, project=project)
-    shs_threshold = options.shs_threshold
+def get_shs_threshold(shs_tier):
 
     tiers = [tier[0] for tier in HOUSEHOLD_TIERS]
     tiers_verbose = [tier[1] for tier in HOUSEHOLD_TIERS]
-    threshold_index = tiers.index(shs_threshold)
+    threshold_index = tiers.index(shs_tier)
     excluded_tiers = tiers_verbose[:threshold_index + 1]
 
     return excluded_tiers
 
+
+def get_aggregated_cgs(project, SHS=True):
+    options = get_object_or_404(Options, project=project)
+    community = options.community
+
+    # list according to ConsumerType object ids in database
+    consumer_types = ["households", "enterprises", "public", "machinery"]
+    results_dict = {}
+
+    if SHS:
+        shs_consumers = get_shs_threshold(options.shs_threshold)
+        results_dict["SHS"] = {}
+        total_demand_shs = 0
+        total_consumers_shs = 0
+
+    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
+        results_dict[consumer_type] = {}
+        total_demand = 0
+        total_consumers = 0
+
+        # filter consumer group objects based on consumer type
+        if community is None:
+            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
+        else:
+            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
+
+        # calculate total consumers and total demand as sum of array elements in kWh
+        for group in group_qs:
+            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
+
+            if SHS and ts.name in shs_consumers:
+                total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_consumers_shs += group.number_consumers
+
+            else:
+                total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_consumers += group.number_consumers
+
+        # add machinery total demand to enterprise demand without increasing nr. of consumers
+        if consumer_type == "machinery":
+            del results_dict[consumer_type]
+            results_dict["enterprises"]["total_demand"] += total_demand
+        else:
+            results_dict[consumer_type]["nr_consumers"] = total_consumers
+            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
+
+            if SHS:
+                results_dict["SHS"]["nr_consumers"] = total_consumers_shs
+                results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+
+    return results_dict
+
+
+def get_aggregated_demand(project, SHS=True):
+    options = get_object_or_404(Options, project=project)
+    community = options.community
+    total_demand = []
+    if community is not None:
+        cg_qs = ConsumerGroup.objects.filter(community=community)
+    elif project is not None:
+        cg_qs = ConsumerGroup.objects.filter(project=project)
+    else:
+        cg_qs = []
+
+    # exclude SHS users from aggregated demand for system optimization
+    if SHS is True:
+        shs_consumers = get_shs_threshold(options.shs_threshold)
+        cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
+
+    for cg in cg_qs:
+        timeseries_values = np.array(cg.timeseries.values)
+        nr_consumers = cg.number_consumers
+        if cg.timeseries.units == "Wh":
+            timeseries_values = timeseries_values / 1000
+        total_demand.append(timeseries_values * nr_consumers)
+    return np.vstack(total_demand).sum(axis=0).tolist()
 
 
 class ReportHandler:
@@ -106,75 +180,3 @@ class ReportHandler:
         self.doc.add_paragraph("Here, the community will get information about who best to approach according to their"
                                "current situation (e.g. isolated or interconnected), their DisCo according to "
                                "geographical area etc.")
-
-
-def get_aggregated_cgs(project=None, community=None, SHS=True):
-    # list according to ConsumerType object ids in database
-    consumer_types = ["households", "enterprises", "public", "machinery"]
-    results_dict = {}
-
-    if SHS:
-        shs_consumers = get_shs_threshold(project)
-        results_dict["SHS"] = {}
-        total_demand_shs = 0
-        total_consumers_shs = 0
-
-    for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
-        results_dict[consumer_type] = {}
-        total_demand = 0
-        total_consumers = 0
-
-        # filter consumer group objects based on consumer type
-        if community is None:
-            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        else:
-            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
-
-        # calculate total consumers and total demand as sum of array elements in kWh
-        for group in group_qs:
-            ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
-
-            if SHS and ts.name in shs_consumers:
-                total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
-                total_consumers_shs += group.number_consumers
-
-            else:
-                total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
-                total_consumers += group.number_consumers
-
-        # add machinery total demand to enterprise demand without increasing nr. of consumers
-        if consumer_type == "machinery":
-            del results_dict[consumer_type]
-            results_dict["enterprises"]["total_demand"] += total_demand
-        else:
-            results_dict[consumer_type]["nr_consumers"] = total_consumers
-            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
-
-            if SHS:
-                results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-                results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
-
-    return results_dict
-
-
-def get_aggregated_demand(project=None, community=None, SHS=True):
-    total_demand = []
-    if community is not None:
-        cg_qs = ConsumerGroup.objects.filter(community=community)
-    elif project is not None:
-        cg_qs = ConsumerGroup.objects.filter(project=project)
-    else:
-        cg_qs = []
-
-    # exclude SHS users from aggregated demand for system optimization
-    if SHS is True:
-        shs_consumers = get_shs_threshold(project)
-        cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
-
-    for cg in cg_qs:
-        timeseries_values = np.array(cg.timeseries.values)
-        nr_consumers = cg.number_consumers
-        if cg.timeseries.units == "Wh":
-            timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values * nr_consumers)
-    return np.vstack(total_demand).sum(axis=0).tolist()

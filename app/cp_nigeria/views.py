@@ -246,7 +246,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
         if allow_edition is False:
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(community=options.community)
+                total_demand = get_aggregated_demand(project)
                 demand = qs_demand.get()
                 demand.input_timeseries = json.dumps(total_demand)
                 demand.save()
@@ -295,7 +295,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 # update demand if exists
 
                 if qs_demand.exists():
-                    total_demand = get_aggregated_demand(project=project)
+                    total_demand = get_aggregated_demand(project)
                     demand = qs_demand.get()
                     demand.input_timeseries = json.dumps(total_demand)
                     demand.save()
@@ -321,10 +321,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     form[field].initial = getattr(obj, field)
 
         if formset_qs.exists():
-            if options.community is not None:
-                total_demand = get_aggregated_demand(community=options.community)
-            else:
-                total_demand = get_aggregated_demand(project=project)
+            total_demand = get_aggregated_demand(project)
         else:
             total_demand = []
 
@@ -489,10 +486,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         demand.pos_y = ac_bus.pos_y
         demand.save()
         if created is True:
-            if options.community is not None:
-                total_demand = get_aggregated_demand(community=options.community)
-            else:
-                total_demand = get_aggregated_demand(project.id)
+            total_demand = get_aggregated_demand(project)
             demand.input_timeseries = json.dumps(total_demand)
             demand.save()
 
@@ -1179,10 +1173,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         fate_figs[col] = fig.to_html()
 
     # dict for community characteristics table
-    if options.community is not None:
-        aggregated_cgs = get_aggregated_cgs(community=options.community)
-    else:
-        aggregated_cgs = get_aggregated_cgs(project=project)
+    aggregated_cgs = get_aggregated_cgs(project)
 
     qs_genset = opt_caps.filter(asset="diesel_generator")
     diesel_curve_fig = None
