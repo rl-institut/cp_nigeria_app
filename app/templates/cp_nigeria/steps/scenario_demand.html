@@ -16,19 +16,6 @@
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
 <script src="{% static 'js/update_demand_graph.js' %}"></script>
-<script>
-
-	function toggleCollapsibleDiv(toggleId, divId) {
-    	const toggleSwitch = document.getElementById(toggleId);
-    	const collapsibleDiv = document.getElementById(divId);
-
-    	if (toggleSwitch.checked) {
-        	collapsibleDiv.classList.add('show');
-    	} else {
-        	collapsibleDiv.classList.remove('show');
-    	}
-	}
-</script>
 
 
 {% endblock start_body_scripts %}
@@ -51,12 +38,12 @@
 							{% csrf_token %}
 							<p>
 								Edit SHS threshold (advanced)
-								<label class="switch">
-									<input type="checkbox" id="toggleSwitch" onclick="toggleCollapsibleDiv('toggleSwitch','collapsibleDiv')">
+								<label class="switch" data-bs-toggle="collapse" data-bs-target="#SHSForm" for="SHSSwitch">
+									<input type="checkbox" id="SHSSwitch">
 									<span class="slider round"></span>
 								</label>
 							</p>
-							<div id="collapsibleDiv" class="collapse" style="width:300px">
+							<div id="SHSForm" class="collapse" style="width:300px">
 								{{ shs_form | crispy }}
 							</div>
 
