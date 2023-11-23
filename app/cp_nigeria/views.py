@@ -304,12 +304,11 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
-        options_qs = Options.objects.filter(project=project)
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
         shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
 
-        if options_qs.exists() and options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options_qs.get().community)
+        if options.community is not None:
+            formset_qs = ConsumerGroup.objects.filter(community=options.community)
             allow_edition = False
         formset = ConsumerGroupFormSet(
             queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
