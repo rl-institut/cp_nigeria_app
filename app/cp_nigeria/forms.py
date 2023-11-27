@@ -315,15 +315,7 @@ class ConsumerGroupForm(OpenPlanModelForm):
         allow_edition = kwargs.pop("allow_edition", True)
         super().__init__(*args, **kwargs)
 
-        if allow_edition is False:
-            for field in self.fields:
-                self.fields[field].disabled = True
-
-        if instance is None:
-            self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
-        else:
-            consumer_type_id = instance.consumer_type_id
-            self.fields["timeseries"].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+        self.fields["timeseries"].queryset = DemandTimeseries.objects.none()
 
         if advanced_opt is False:
             for field in ["expected_consumer_increase", "expected_demand_increase"]:

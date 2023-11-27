@@ -257,39 +257,41 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     except (ValueError, TypeError):
                         pass
 
-                if form.is_valid():
-                    # update consumer group if already in database and create new entry if not
-                    try:
-                        group_id = form.cleaned_data["id"].id
-                        consumer_group = ConsumerGroup.objects.get(id=group_id)
-                        if form.cleaned_data["DELETE"] is True:
-                            consumer_group.delete()
-                        else:
-                            for field_name, field_value in form.cleaned_data.items():
-                                if field_name == "id":
-                                    continue
-                            setattr(consumer_group, field_name, field_value)
-                            consumer_group.save()
-
-                    # AttributeError gets thrown when form id field is empty -> not yet in db
-                    except AttributeError:
-                        if form.cleaned_data["DELETE"] is True:
-                            continue
-
-                        consumer_group = form.save(commit=False)
-                        consumer_group.project = project
+            if form.is_valid():
+                # update consumer group if already in database and create new entry if not
+                if len(form.cleaned_data) == 0:
+                    continue
+                try:
+                    group_id = form.cleaned_data["id"].id
+                    consumer_group = ConsumerGroup.objects.get(id=group_id)
+                    if form.cleaned_data["DELETE"] is True:
+                        consumer_group.delete()
+                    else:
+                        for field_name, field_value in form.cleaned_data.items():
+                            if field_name == "id":
+                                continue
+                        setattr(consumer_group, field_name, field_value)
                         consumer_group.save()
 
-            if formset.is_valid():
-                # update demand if exists
-                if qs_demand.exists():
-                    total_demand = get_aggregated_demand(project)
-                    demand = qs_demand.get()
-                    demand.input_timeseries = json.dumps(total_demand)
-                    demand.save()
+                # AttributeError gets thrown when form id field is empty -> not yet in db
+                except AttributeError:
+                    if form.cleaned_data["DELETE"] is True:
+                        continue
 
-                step_id = STEP_MAPPING["demand_profile"] + 1
-                return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
+                    consumer_group = form.save(commit=False)
+                    consumer_group.project = project
+                    consumer_group.save()
+
+        if formset.is_valid():
+            # update demand if exists
+            if qs_demand.exists():
+                total_demand = get_aggregated_demand(project)
+                demand = qs_demand.get()
+                demand.input_timeseries = json.dumps(total_demand)
+                demand.save()
+
+            step_id = STEP_MAPPING["demand_profile"] + 1
+            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
@@ -306,6 +308,9 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             for field in form.fields:
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
+                if field == "timeseries":
+                    consumer_type_id = getattr(obj, "consumer_type").id
+                    form.fields[field].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
 
     page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
 
