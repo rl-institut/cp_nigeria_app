@@ -21,7 +21,7 @@ class ConsumerType(models.Model):
         return self.consumer_type
 
     def natural_key(self):
-        return (self.consumer_type, )
+        return (self.consumer_type,)
 
 
 class DemandTimeseries(Timeseries):
@@ -37,9 +37,8 @@ class CommunityManager(models.Manager):
 
 
 class Community(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=50)
-    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.CASCADE, null=True)
+    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.SET_NULL, null=True)
     lat = models.FloatField(blank=True, null=True)
     lon = models.FloatField(blank=True, null=True)
     objects = CommunityManager()
@@ -48,13 +47,13 @@ class Community(models.Model):
         return self.name
 
     def natural_key(self):
-        return (self.name, )
+        return (self.name,)
 
 
 class ConsumerGroup(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
-    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.CASCADE, null=True)
+    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.SET_NULL, null=True)
     number_consumers = models.IntegerField()
     expected_consumer_increase = models.FloatField(blank=True, null=True)
     expected_demand_increase = models.FloatField(blank=True, null=True)
