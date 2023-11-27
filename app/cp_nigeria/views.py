@@ -224,7 +224,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         raise PermissionDenied
 
     options = get_object_or_404(Options, project=project)
-    allow_edition = True
 
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
@@ -240,22 +239,19 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             options.save()
 
         formset_qs = ConsumerGroup.objects.filter(project=project)
-        if options.community is not None:
-            allow_edition = False
 
-        else:
-            formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+        formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
 
-            for form in formset:
-                # set timeseries queryset so form doesn't throw a validation error
-                if f"{form.prefix}-consumer_type" in form.data:
-                    try:
-                        consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
-                        form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
-                            consumer_type_id=consumer_type_id
-                        )
-                    except (ValueError, TypeError):
-                        pass
+        for form in formset:
+            # set timeseries queryset so form doesn't throw a validation error
+            if f"{form.prefix}-consumer_type" in form.data:
+                try:
+                    consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
+                    form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
+                        consumer_type_id=consumer_type_id
+                    )
+                except (ValueError, TypeError):
+                    pass
 
             if form.is_valid():
                 # update consumer group if already in database and create new entry if not
@@ -270,8 +266,8 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                         for field_name, field_value in form.cleaned_data.items():
                             if field_name == "id":
                                 continue
-                        setattr(consumer_group, field_name, field_value)
-                        consumer_group.save()
+                            setattr(consumer_group, field_name, field_value)
+                            consumer_group.save()
 
                 # AttributeError gets thrown when form id field is empty -> not yet in db
                 except AttributeError:
@@ -297,12 +293,19 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
         shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
 
-        if options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options.community)
-            allow_edition = False
-        formset = ConsumerGroupFormSet(
-            queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
-        )
+        if options.community is not None and not formset_qs.exists():
+            cg_qs = ConsumerGroup.objects.filter(community=options.community)
+            new_cgs = []
+            for cg in cg_qs:
+                cg.pk = None
+                cg.community = None
+                cg.project = project
+                new_cgs.append(cg)
+
+            ConsumerGroup.objects.bulk_create(new_cgs)
+            formset_qs = ConsumerGroup.objects.filter(project=proj_id)
+
+        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
 
         for form, obj in zip(formset, formset_qs):
             for field in form.fields:
@@ -325,7 +328,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
-            "allow_edition": allow_edition,
             "page_information": page_information,
         },
     )
