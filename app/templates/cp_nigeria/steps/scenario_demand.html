@@ -9,7 +9,6 @@
 <script>
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
-    var totalDemand = {{ total_demand }};
     const updateGraphUrl = `{% url 'ajax_update_graph' %}`;
     const allowEdition = `{{ allow_edition }}`;
 </script>

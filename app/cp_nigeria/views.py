@@ -241,21 +241,10 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
         formset_qs = ConsumerGroup.objects.filter(project=project)
         if options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options.community)
             allow_edition = False
 
-        if allow_edition is False:
-            if qs_demand.exists():
-                total_demand = get_aggregated_demand(project)
-                demand = qs_demand.get()
-                demand.input_timeseries = json.dumps(total_demand)
-                demand.save()
-
-            step_id = STEP_MAPPING["demand_profile"] + 1
-            return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
         else:
             formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
-            total_demand = []
 
             for form in formset:
                 # set timeseries queryset so form doesn't throw a validation error
@@ -293,7 +282,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
             if formset.is_valid():
                 # update demand if exists
-
                 if qs_demand.exists():
                     total_demand = get_aggregated_demand(project)
                     demand = qs_demand.get()
@@ -319,11 +307,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
 
-        if formset_qs.exists():
-            total_demand = get_aggregated_demand(project)
-        else:
-            total_demand = []
-
     page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
 
     return render(
@@ -338,7 +321,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "allow_edition": allow_edition,
-            "total_demand": total_demand,
             "page_information": page_information,
         },
     )
@@ -1420,9 +1402,9 @@ def ajax_update_graph(request):
         timeseries = DemandTimeseries.objects.get(id=timeseries_id)
 
         if timeseries.units == "Wh":
-            timeseries_values = timeseries.values
+            timeseries_values = timeseries.values[:168]
         elif timeseries.units == "kWh":
-            timeseries_values = [value / 1000 for value in timeseries.values]
+            timeseries_values = [value / 1000 for value in timeseries.values[:168]]
         else:
             return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
 
