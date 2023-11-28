@@ -40,7 +40,7 @@ function getTimeseries () {
                 // Store the timeseries data in a variable (to avoid making an ajax call when only the consumer nr changes)
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
-                var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);  // why is this division here?
+                var newDemand = data.timeseries_values.map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
@@ -61,7 +61,7 @@ function updateNumberConsumers() {
         var consumerGroupDemandName = parentTr.find('select[id*="timeseries"]').find('option:selected').html();
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
-                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);  // why is this division here?
+                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 }

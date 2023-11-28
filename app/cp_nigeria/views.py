@@ -1413,9 +1413,9 @@ def ajax_update_graph(request):
         qs_timeseries = qs_timeseries.annotate(arr_els=Unnest(F("values"))).values_list("arr_els", flat=True)
 
         if units == "Wh":
-            timeseries_values = [v for v in qs_timeseries[:168]]
+            timeseries_values = [v / 1000 for v in qs_timeseries[:168]]
         elif units == "kWh":
-            timeseries_values = [value / 1000 for value in qs_timeseries[:168]]
+            timeseries_values = [value for value in qs_timeseries[:168]]
         else:
             return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
 
