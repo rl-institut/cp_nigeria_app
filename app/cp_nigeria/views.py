@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, F, Avg, Max
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from .helpers import *
@@ -252,7 +252,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     )
                 except (ValueError, TypeError):
                     pass
-
             if form.is_valid():
                 # update consumer group if already in database and create new entry if not
                 if len(form.cleaned_data) == 0:
@@ -1406,12 +1405,17 @@ def ajax_load_timeseries(request):
 def ajax_update_graph(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         timeseries_id = request.POST.get("timeseries")
-        timeseries = DemandTimeseries.objects.get(id=timeseries_id)
 
-        if timeseries.units == "Wh":
-            timeseries_values = timeseries.values[:168]
-        elif timeseries.units == "kWh":
-            timeseries_values = [value / 1000 for value in timeseries.values[:168]]
+        qs_timeseries = DemandTimeseries.objects.filter(id=timeseries_id)
+
+        units = qs_timeseries.only("units").values_list("units", flat=True).get()
+
+        qs_timeseries = qs_timeseries.annotate(arr_els=Unnest(F("values"))).values_list("arr_els", flat=True)
+
+        if units == "Wh":
+            timeseries_values = [v for v in qs_timeseries[:168]]
+        elif units == "kWh":
+            timeseries_values = [value / 1000 for value in qs_timeseries[:168]]
         else:
             return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
 

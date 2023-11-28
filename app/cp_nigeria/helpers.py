@@ -6,6 +6,12 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 import numpy as np
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from django.shortcuts import get_object_or_404
+from django.db.models import Func
+
+
+class Unnest(Func):
+    subquery = True  # contains_subquery = True for Django > 4.2.7
+    function = "unnest"
 
 
 HOUSEHOLD_TIERS = [
