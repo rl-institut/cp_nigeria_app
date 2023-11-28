@@ -40,7 +40,7 @@ function getTimeseries () {
                 // Store the timeseries data in a variable (to avoid making an ajax call when only the consumer nr changes)
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
-                var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);
+                var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);  // why is this division here?
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
@@ -61,7 +61,7 @@ function updateNumberConsumers() {
         var consumerGroupDemandName = parentTr.find('select[id*="timeseries"]').find('option:selected').html();
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
-                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);
+                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);  // why is this division here?
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 }
@@ -109,7 +109,7 @@ function initialPlot () {
             hovermode:'x unified'
             };
 
-        Plotly.newPlot(plot_div, plot_data, layout);
+        Plotly.newPlot(plot_div, plot_data, layout, {responsive: true});
             }
 
 
@@ -154,7 +154,9 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
         $('#demandGraph').collapse('show');
 
     // calculate and update peak demand and average daily demand values
-    updateKeyParams();
+    // disabled for now because of conflict between displaying less data of the timeseries to save bandwith
+    // and the fact that we need the full year in order to aggregate the timeseries and compute the peak demand
+    // updateKeyParams();
     }
 
 
