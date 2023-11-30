@@ -54,10 +54,7 @@ def get_aggregated_cgs(project):
         total_consumers = 0
 
         # filter consumer group objects based on consumer type
-        if community is None:
-            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        else:
-            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
+        group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
 
         # calculate total consumers and total demand as sum of array elements in kWh
         for group in group_qs:
@@ -68,7 +65,11 @@ def get_aggregated_cgs(project):
                 total_consumers_shs += group.number_consumers
 
             else:
-                total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_demand += (
+                    sum(np.array(ts.values) * group.number_consumers) / 1000
+                    if ts.units == "Wh"
+                    else (sum(np.array(ts.values) * group.number_consumers))
+                )
                 total_consumers += group.number_consumers
 
         # add machinery total demand to enterprise demand without increasing nr. of consumers
@@ -88,30 +89,27 @@ def get_aggregated_cgs(project):
 
 def get_aggregated_demand(project):
     options = get_object_or_404(Options, project=project)
-    community = options.community
     shs_threshold = options.shs_threshold
     # Prevent error if no timeseries are present
     total_demand = [np.zeros(8760)]
-    if community is not None:
-        cg_qs = ConsumerGroup.objects.filter(community=community)
-    elif project is not None:
-        cg_qs = ConsumerGroup.objects.filter(project=project)
+    cg_qs = ConsumerGroup.objects.filter(project=project)
+
+    if cg_qs.exists():
+        # exclude SHS users from aggregated demand for system optimization
+        if len(shs_threshold) != 0:
+            shs_consumers = get_shs_threshold(options.shs_threshold)
+            # TODO need to warn the user if the total_demand is empty due to shs threshold
+            cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
+
+        for cg in cg_qs:
+            timeseries_values = np.array(cg.timeseries.values)
+            nr_consumers = cg.number_consumers
+            if cg.timeseries.units == "Wh":
+                timeseries_values = timeseries_values / 1000
+            total_demand.append(timeseries_values * nr_consumers)
+        return np.vstack(total_demand).sum(axis=0).tolist()
     else:
-        cg_qs = []
-
-    # exclude SHS users from aggregated demand for system optimization
-    if len(shs_threshold) != 0:
-        shs_consumers = get_shs_threshold(options.shs_threshold)
-        # TODO need to warn the user if the total_demand is empty due to shs threshold
-        cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
-
-    for cg in cg_qs:
-        timeseries_values = np.array(cg.timeseries.values)
-        nr_consumers = cg.number_consumers
-        if cg.timeseries.units == "Wh":
-            timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values * nr_consumers)
-    return np.vstack(total_demand).sum(axis=0).tolist()
+        return []
 
 
 class ReportHandler:

@@ -1073,10 +1073,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # TODO here workout the results of the scenario and base diesel scenario
 
     # get community characteristics
-    if options.community is not None:
-        aggregated_cgs = get_aggregated_cgs(community=options.community)
-    else:
-        aggregated_cgs = get_aggregated_cgs(project=project)
+    aggregated_cgs = get_aggregated_cgs(project=project)
 
     # get optimized capacities
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
@@ -1467,26 +1464,23 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
+        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+        if qs_demand.exists():
+            demand = json.loads(qs_demand.get().input_timeseries)
+
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
             if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-                if options.community is not None:
-                    scen_values = [
-                        round(
-                            inverter_flow / np.sum(get_aggregated_demand(community=options.community)) * factor,
-                            2,
-                        )
-                    ]
-                else:
-                    scen_values = [
-                        round(
-                            inverter_flow / np.sum(get_aggregated_demand(proj_id=proj_id)) * factor,
-                            2,
-                        )
-                    ]
+
+                scen_values = [
+                    round(
+                        inverter_flow / np.sum(demand) * factor,
+                        2,
+                    )
+                ]
 
             else:
                 factor = 1.0
