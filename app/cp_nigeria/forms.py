@@ -38,7 +38,7 @@ class ProjectForm(OpenPlanModelForm):
             },
         ),
     )
-    duration = forms.IntegerField(label=_("Project lifetime"), initial=25)
+    duration = forms.IntegerField(label=_("Project lifetime"))
 
     class Meta:
         model = Project
@@ -300,7 +300,7 @@ class SHSTiersForm(forms.Form):
         widget=forms.Select(attrs={"data-bs-toggle": "tooltip"}),
         required=False,
         choices=HOUSEHOLD_TIERS,
-        label="Select a threshold for SHS users" + question_icon
+        label="Select a threshold for SHS users" + question_icon,
     )
 
 

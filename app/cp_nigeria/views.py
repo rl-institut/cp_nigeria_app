@@ -189,7 +189,10 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
-            form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
+            form = ProjectForm(
+                instance=project,
+                initial={"start_date": scenario.start_date, "duration": project.economic_data.duration},
+            )
             qs_options = Options.objects.filter(project=project)
             if qs_options.exists():
                 form["community"].initial = qs_options.get(project=project).community
