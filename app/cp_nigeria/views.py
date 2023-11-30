@@ -1342,8 +1342,11 @@ def get_pv_output(proj_id):
 @require_http_methods(["GET", "POST"])
 def get_community_details(request):
     community_id = request.GET.get("community_id")
-    community = Community.objects.get(pk=community_id)
-    data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
+    if community_id == "":
+        data = {"name": "", "latitude": "", "longitude": ""}
+    else:
+        community = Community.objects.get(pk=community_id)
+        data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
     return JsonResponse(data)
 
 
