@@ -113,7 +113,7 @@ def cpn_project_delete(request, proj_id):
 @require_http_methods(["POST"])
 def cpn_project_duplicate(request, proj_id):
     """Duplicates the selected project along with its associated scenarios"""
-
+    project = get_object_or_404(Project, pk=proj_id)
     answer = project_duplicate(request, proj_id)
     new_proj_id = answer.url.split("/")[-1]
     options, created = Options.objects.get_or_create(project__id=proj_id)
@@ -121,7 +121,21 @@ def cpn_project_duplicate(request, proj_id):
         options.pk = None
         options.project = Project.objects.get(pk=new_proj_id)
         options.save()
-
+    cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
+    for cg in cg_qs:
+        cg.pk = None
+        cg.project = Project.objects.get(pk=new_proj_id)
+        cg.save()
+    bm, created = BusinessModel.objects.get_or_create(scenario=project.scenario)
+    if created is False:
+        bm.pk = None
+        bm.scenario = Project.objects.get(pk=new_proj_id).scenario
+        bm.save()
+    ed, created = EquityData.objects.get_or_create(scenario=project.scenario)
+    if created is False:
+        ed.pk = None
+        ed.scenario = Project.objects.get(pk=new_proj_id).scenario
+        ed.save()
     return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
 
 
