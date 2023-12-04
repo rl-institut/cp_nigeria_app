@@ -1422,19 +1422,8 @@ def ajax_load_timeseries(request):
 def ajax_update_graph(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         timeseries_id = request.POST.get("timeseries")
-
-        qs_timeseries = DemandTimeseries.objects.filter(id=timeseries_id)
-
-        units = qs_timeseries.only("units").values_list("units", flat=True).get()
-
-        qs_timeseries = qs_timeseries.annotate(arr_els=Unnest(F("values"))).values_list("arr_els", flat=True)
-
-        if units == "Wh":
-            timeseries_values = [v / 1000 for v in qs_timeseries[:168]]
-        elif units == "kWh":
-            timeseries_values = [value for value in qs_timeseries[:168]]
-        else:
-            return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
+        timeseries = DemandTimeseries.objects.get(id=timeseries_id)
+        timeseries_values = timeseries.get_values_with_unit("kWh")[:168]
 
         return JsonResponse({"timeseries_values": timeseries_values})
 

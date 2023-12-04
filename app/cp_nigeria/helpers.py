@@ -61,15 +61,11 @@ def get_aggregated_cgs(project):
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
             if len(shs_threshold) != 0 and ts.name in shs_consumers:
-                total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_demand_shs += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers_shs += group.number_consumers
 
             else:
-                total_demand += (
-                    sum(np.array(ts.values) * group.number_consumers) / 1000
-                    if ts.units == "Wh"
-                    else (sum(np.array(ts.values) * group.number_consumers))
-                )
+                total_demand += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers += group.number_consumers
 
         # add machinery total demand to enterprise demand without increasing nr. of consumers
@@ -102,10 +98,8 @@ def get_aggregated_demand(project):
             cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
 
         for cg in cg_qs:
-            timeseries_values = np.array(cg.timeseries.values)
+            timeseries_values = np.array(cg.timeseries.get_values_with_unit("kWh"))
             nr_consumers = cg.number_consumers
-            if cg.timeseries.units == "Wh":
-                timeseries_values = timeseries_values / 1000
             total_demand.append(timeseries_values * nr_consumers)
         return np.vstack(total_demand).sum(axis=0).tolist()
     else:

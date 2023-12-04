@@ -323,8 +323,21 @@ class Timeseries(models.Model):
     def compute_end_time_from_duration(self, duration):
         pass
 
+    def get_values_with_unit(self, target_unit):
+        UNIT_CONVERSIONS = {"Wh": {"Wh": 1, "kWh": 0.001}, "kWh": {"Wh": 1000, "kWh": 1}}
+
+        if self.units not in UNIT_CONVERSIONS or target_unit not in UNIT_CONVERSIONS:
+            raise ValueError("Unsupported units")
+
+        conversion_factor = UNIT_CONVERSIONS[self.units][target_unit]
+        converted_timeseries = (
+            [value * conversion_factor for value in self.values] if self.units != target_unit else self.values
+        )
+
+        return converted_timeseries
+
     def natural_key(self):
-        return (self.name, )
+        return (self.name,)
 
 
 class AssetType(models.Model):
