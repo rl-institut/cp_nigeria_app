@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, F, Avg, Max
 from epa.settings import MVS_GET_URL, MVS_LP_FILE_URL
 from .forms import *
 from .helpers import *
@@ -113,7 +113,7 @@ def cpn_project_delete(request, proj_id):
 @require_http_methods(["POST"])
 def cpn_project_duplicate(request, proj_id):
     """Duplicates the selected project along with its associated scenarios"""
-
+    project = get_object_or_404(Project, pk=proj_id)
     answer = project_duplicate(request, proj_id)
     new_proj_id = answer.url.split("/")[-1]
     options, created = Options.objects.get_or_create(project__id=proj_id)
@@ -121,7 +121,21 @@ def cpn_project_duplicate(request, proj_id):
         options.pk = None
         options.project = Project.objects.get(pk=new_proj_id)
         options.save()
-
+    cg_qs = ConsumerGroup.objects.filter(project__id=proj_id)
+    for cg in cg_qs:
+        cg.pk = None
+        cg.project = Project.objects.get(pk=new_proj_id)
+        cg.save()
+    bm, created = BusinessModel.objects.get_or_create(scenario=project.scenario)
+    if created is False:
+        bm.pk = None
+        bm.scenario = Project.objects.get(pk=new_proj_id).scenario
+        bm.save()
+    ed, created = EquityData.objects.get_or_create(scenario=project.scenario)
+    if created is False:
+        ed.pk = None
+        ed.scenario = Project.objects.get(pk=new_proj_id).scenario
+        ed.save()
     return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
 
 
@@ -189,7 +203,10 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
     elif request.method == "GET":
         if project is not None:
             scenario = Scenario.objects.filter(project=project).last()
-            form = ProjectForm(instance=project, initial={"start_date": scenario.start_date})
+            form = ProjectForm(
+                instance=project,
+                initial={"start_date": scenario.start_date, "duration": project.economic_data.duration},
+            )
             qs_options = Options.objects.filter(project=project)
             if qs_options.exists():
                 form["community"].initial = qs_options.get(project=project).community
@@ -224,7 +241,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         raise PermissionDenied
 
     options = get_object_or_404(Options, project=project)
-    allow_edition = True
 
     # TODO change DB default value to 1
     # TODO include the possibility to display the "expected_consumer_increase", "expected_demand_increase" fields
@@ -240,11 +256,46 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             options.save()
 
         formset_qs = ConsumerGroup.objects.filter(project=project)
-        if options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options.community)
-            allow_edition = False
 
-        if allow_edition is False:
+        formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
+
+        for form in formset:
+            # set timeseries queryset so form doesn't throw a validation error
+            if f"{form.prefix}-consumer_type" in form.data:
+                try:
+                    consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
+                    form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
+                        consumer_type_id=consumer_type_id
+                    )
+                except (ValueError, TypeError):
+                    pass
+            if form.is_valid():
+                # update consumer group if already in database and create new entry if not
+                if len(form.cleaned_data) == 0:
+                    continue
+                try:
+                    group_id = form.cleaned_data["id"].id
+                    consumer_group = ConsumerGroup.objects.get(id=group_id)
+                    if form.cleaned_data["DELETE"] is True:
+                        consumer_group.delete()
+                    else:
+                        for field_name, field_value in form.cleaned_data.items():
+                            if field_name == "id":
+                                continue
+                            setattr(consumer_group, field_name, field_value)
+                            consumer_group.save()
+
+                # AttributeError gets thrown when form id field is empty -> not yet in db
+                except AttributeError:
+                    if form.cleaned_data["DELETE"] is True:
+                        continue
+
+                    consumer_group = form.save(commit=False)
+                    consumer_group.project = project
+                    consumer_group.save()
+
+        if formset.is_valid():
+            # update demand if exists
             if qs_demand.exists():
                 total_demand = get_aggregated_demand(project)
                 demand = qs_demand.get()
@@ -253,76 +304,32 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
 
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
-        else:
-            formset = ConsumerGroupFormSet(request.POST, queryset=formset_qs, initial=[{"number_consumers": 1}])
-            total_demand = []
-
-            for form in formset:
-                # set timeseries queryset so form doesn't throw a validation error
-                if f"{form.prefix}-consumer_type" in form.data:
-                    try:
-                        consumer_type_id = int(form.data.get(f"{form.prefix}-consumer_type"))
-                        form.fields["timeseries"].queryset = DemandTimeseries.objects.filter(
-                            consumer_type_id=consumer_type_id
-                        )
-                    except (ValueError, TypeError):
-                        pass
-
-                if form.is_valid():
-                    # update consumer group if already in database and create new entry if not
-                    try:
-                        group_id = form.cleaned_data["id"].id
-                        consumer_group = ConsumerGroup.objects.get(id=group_id)
-                        if form.cleaned_data["DELETE"] is True:
-                            consumer_group.delete()
-                        else:
-                            for field_name, field_value in form.cleaned_data.items():
-                                if field_name == "id":
-                                    continue
-                            setattr(consumer_group, field_name, field_value)
-                            consumer_group.save()
-
-                    # AttributeError gets thrown when form id field is empty -> not yet in db
-                    except AttributeError:
-                        if form.cleaned_data["DELETE"] is True:
-                            continue
-
-                        consumer_group = form.save(commit=False)
-                        consumer_group.project = project
-                        consumer_group.save()
-
-            if formset.is_valid():
-                # update demand if exists
-
-                if qs_demand.exists():
-                    total_demand = get_aggregated_demand(project)
-                    demand = qs_demand.get()
-                    demand.input_timeseries = json.dumps(total_demand)
-                    demand.save()
-
-                step_id = STEP_MAPPING["demand_profile"] + 1
-                return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
         shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
 
-        if options.community is not None:
-            formset_qs = ConsumerGroup.objects.filter(community=options.community)
-            allow_edition = False
-        formset = ConsumerGroupFormSet(
-            queryset=formset_qs, initial=[{"number_consumers": 1}], form_kwargs={"allow_edition": allow_edition}
-        )
+        if options.community is not None and not formset_qs.exists():
+            cg_qs = ConsumerGroup.objects.filter(community=options.community)
+            new_cgs = []
+            for cg in cg_qs:
+                cg.pk = None
+                cg.community = None
+                cg.project = project
+                new_cgs.append(cg)
+
+            ConsumerGroup.objects.bulk_create(new_cgs)
+            formset_qs = ConsumerGroup.objects.filter(project=proj_id)
+
+        formset = ConsumerGroupFormSet(queryset=formset_qs, initial=[{"number_consumers": 1}])
 
         for form, obj in zip(formset, formset_qs):
             for field in form.fields:
                 if field != "DELETE":
                     form[field].initial = getattr(obj, field)
-
-        if formset_qs.exists():
-            total_demand = get_aggregated_demand(project)
-        else:
-            total_demand = []
+                if field == "timeseries":
+                    consumer_type_id = getattr(obj, "consumer_type").id
+                    form.fields[field].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
 
     page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
 
@@ -337,8 +344,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "step_id": step_id,
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
-            "allow_edition": allow_edition,
-            "total_demand": total_demand,
             "page_information": page_information,
         },
     )
@@ -1085,10 +1090,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # TODO here workout the results of the scenario and base diesel scenario
 
     # get community characteristics
-    if options.community is not None:
-        aggregated_cgs = get_aggregated_cgs(community=options.community)
-    else:
-        aggregated_cgs = get_aggregated_cgs(project=project)
+    aggregated_cgs = get_aggregated_cgs(project=project)
 
     # get optimized capacities
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
@@ -1354,8 +1356,11 @@ def get_pv_output(proj_id):
 @require_http_methods(["GET", "POST"])
 def get_community_details(request):
     community_id = request.GET.get("community_id")
-    community = Community.objects.get(pk=community_id)
-    data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
+    if community_id == "":
+        data = {"name": "", "latitude": "", "longitude": ""}
+    else:
+        community = Community.objects.get(pk=community_id)
+        data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
     return JsonResponse(data)
 
 
@@ -1418,13 +1423,7 @@ def ajax_update_graph(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         timeseries_id = request.POST.get("timeseries")
         timeseries = DemandTimeseries.objects.get(id=timeseries_id)
-
-        if timeseries.units == "Wh":
-            timeseries_values = timeseries.values
-        elif timeseries.units == "kWh":
-            timeseries_values = [value / 1000 for value in timeseries.values]
-        else:
-            return JsonResponse({"error": "timeseries has unsupported unit"}, status=403)
+        timeseries_values = timeseries.get_values_with_unit("kWh")[:168]
 
         return JsonResponse({"timeseries_values": timeseries_values})
 
@@ -1471,26 +1470,23 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
+        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+        if qs_demand.exists():
+            demand = json.loads(qs_demand.get().input_timeseries)
+
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
             if "Factor" in KPI_PARAMETERS[kpi]["unit"]:
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-                if options.community is not None:
-                    scen_values = [
-                        round(
-                            inverter_flow / np.sum(get_aggregated_demand(community=options.community)) * factor,
-                            2,
-                        )
-                    ]
-                else:
-                    scen_values = [
-                        round(
-                            inverter_flow / np.sum(get_aggregated_demand(proj_id=proj_id)) * factor,
-                            2,
-                        )
-                    ]
+
+                scen_values = [
+                    round(
+                        inverter_flow / np.sum(demand) * factor,
+                        2,
+                    )
+                ]
 
             else:
                 factor = 1.0

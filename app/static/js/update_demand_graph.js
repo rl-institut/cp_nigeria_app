@@ -6,14 +6,9 @@ $(document).ready(function() {
     // delete empty extra form if necessary
     deleteEmptyForm();
     // load timeseries once on page load (to update graph with existing formset data)
-    if (allowEdition == 'True') {
-        $('select[id*="timeseries"]').each(function() {
-        getTimeseries.call(this);
-        });
-    } else {
-        updateGraph(totalDemand, "Total demand", 1);
-        updateKeyParams();
-    }
+    $('select[id*="timeseries"]').each(function() {
+    getTimeseries.call(this);
+    });
 
     $(document).on('change', 'select[id*="timeseries"]', getTimeseries);
     $(document).on('click keyup', 'input[id*="number_consumers"]', updateNumberConsumers);
@@ -45,7 +40,7 @@ function getTimeseries () {
                 // Store the timeseries data in a variable (to avoid making an ajax call when only the consumer nr changes)
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
-                var newDemand = data.timeseries_values.map(x => x*nrConsumers / 1000);
+                var newDemand = data.timeseries_values.map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + 'consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 },
@@ -66,7 +61,7 @@ function updateNumberConsumers() {
         var consumerGroupDemandName = parentTr.find('select[id*="timeseries"]').find('option:selected').html();
             // if timeseries data for this form is saved in the timeseriesdata variable, calculate the new demand for this group
             if (timeseriesData[timeseriesVarName] !== undefined) {
-                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers / 1000);
+                var newDemand = timeseriesData[timeseriesVarName].map(x => x*nrConsumers);
                 console.log('updating demand from ' + timeseriesVarName + ' with ' + nrConsumers + ' consumers');
                 updateGraph(newDemand, consumerGroupDemandName, formId);
                 }
@@ -92,7 +87,7 @@ function generateTimeSeries(start, end) {
 
 // Define the start and end dates as Date objects
 var startDate = new Date('2022-01-01T00:00:00Z');
-var endDate = new Date('2023-01-01T00:00:00Z');
+var endDate = new Date('2022-01-07T23:00:00Z');
 
 var timeSeries = generateTimeSeries(startDate, endDate);
 
@@ -108,13 +103,13 @@ function initialPlot () {
                 }];
 
         var layout = {
-            xaxis: {range: ["2022-06-01 00:00:00", "2022-06-08 00:00:00"], type: "date", title: "Time"},
+//            xaxis: {range: ["2022-01-01 00:00:00", "2022-01-08 00:00:00"], type: "date", title: "Time"},
             yaxis: {autorange: true, title: "kW"},
             autosize: true,
             hovermode:'x unified'
             };
 
-        Plotly.newPlot(plot_div, plot_data, layout);
+        Plotly.newPlot(plot_div, plot_data, layout, {responsive: true});
             }
 
 
@@ -153,21 +148,25 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
             console.log('adding new trace');
             Plotly.addTraces(plot_div, trace);
             data.push(trace);
+            plot_div.querySelector('[data-title="Reset axes"]').click();
+
         }
         $('#demandGraph').collapse('show');
 
     // calculate and update peak demand and average daily demand values
-    updateKeyParams();
+    // disabled for now because of conflict between displaying less data of the timeseries to save bandwith
+    // and the fact that we need the full year in order to aggregate the timeseries and compute the peak demand
+    // updateKeyParams();
     }
 
 
 function updateKeyParams() {
-    totalDemand = Array(8760).fill(0);
+    totalDemand = Array(168).fill(0);
     for (var i = 0; i < data.length; i++) {
         totalDemand = totalDemand.map((e, j) => e + data[i].y[j]);  // jshint ignore:line
     }
     var peakDemand = Math.max(...totalDemand);
-    var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 365;
+    var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 7;
     document.getElementById('avg_daily').innerHTML = avgDaily.toFixed(2);
     document.getElementById('peak_demand').innerHTML = peakDemand.toFixed(2);
 }

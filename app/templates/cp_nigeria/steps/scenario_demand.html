@@ -9,7 +9,6 @@
 <script>
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
-    var totalDemand = {{ total_demand }};
     const updateGraphUrl = `{% url 'ajax_update_graph' %}`;
     const allowEdition = `{{ allow_edition }}`;
 </script>
@@ -47,7 +46,7 @@
 								{{ shs_form | crispy }}
 							</div>
 
-							{{ formset.management_form | crispy}}
+							{{ formset.management_form | crispy }}
 							<table class="table" id="ug_container" style="margin-bottom: 0">
 								<thead>
 								<th></th>
@@ -60,7 +59,6 @@
 								{% for form in formset %}
 								<tr id="form-{{ forloop.counter0 }}" class="consumer--group" style="height: fit-content">
 									<td>
-										{% if allow_edition %}
 										<button class="btn dropdown-toggle btn--transparent" type="button" id="dropdownMenuTS" data-bs-toggle="dropdown" aria-expanded="false">
 											<span class="icon icon-more"></span>
 										</button>
@@ -71,7 +69,6 @@
 										</ul>
 
 										<input type="hidden" name="{{ form.prefix }}-DELETE" id="{{ form.prefix }}-DELETE" value="false">
-										{% endif %}
 									</td>
 									{% for field in form %}
 									{% if field.name != 'DELETE' %}
@@ -87,14 +84,12 @@
 								</tbody>
 								<tfoot>
 								<tr>
-									{% if allow_edition %}
 									<td colspan="4" style="text-align: center;padding-top:0">
 										<button class="btn btn--small btn--transparent" type="button" id="add-consumer-group" style="margin-top:0.5rem">
 											<span class="icon icon-add"></span>
 											Add Consumer Group
 										</button>
 									</td>
-									{% endif %}
 								</tr>
 								</tfoot>
 							</table>
@@ -111,7 +106,7 @@
 				</h2>
 				<div id="demandGraph" class="accordion-collapse collapse multi-collapse {% if total_demand %} show {% endif %}" aria-labelledby="step3HeadingTwo" F>
 					<div class="accordion-body">
-						<div class="row">
+						<!--div class="row">
 							<div class="cpn-economic__results">
 								<div class="col">
 									<div class="cpn-economic__results--1">
@@ -127,7 +122,7 @@
 									</div>
 								</div>
 							</div>
-						</div>
+						</div-->
 
 						<div class="row">
 							<div id="demand-aggregate">

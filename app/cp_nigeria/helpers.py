@@ -6,6 +6,12 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 import numpy as np
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from django.shortcuts import get_object_or_404
+from django.db.models import Func
+
+
+class Unnest(Func):
+    subquery = True  # contains_subquery = True for Django > 4.2.7
+    function = "unnest"
 
 
 HOUSEHOLD_TIERS = [
@@ -19,11 +25,10 @@ HOUSEHOLD_TIERS = [
 
 
 def get_shs_threshold(shs_tier):
-
     tiers = [tier[0] for tier in HOUSEHOLD_TIERS]
     tiers_verbose = [tier[1] for tier in HOUSEHOLD_TIERS]
     threshold_index = tiers.index(shs_tier)
-    excluded_tiers = tiers_verbose[:threshold_index + 1]
+    excluded_tiers = tiers_verbose[: threshold_index + 1]
 
     return excluded_tiers
 
@@ -49,21 +54,18 @@ def get_aggregated_cgs(project):
         total_consumers = 0
 
         # filter consumer group objects based on consumer type
-        if community is None:
-            group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        else:
-            group_qs = ConsumerGroup.objects.filter(community=community, consumer_type_id=consumer_type_id)
+        group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
 
         # calculate total consumers and total demand as sum of array elements in kWh
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
             if len(shs_threshold) != 0 and ts.name in shs_consumers:
-                total_demand_shs += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_demand_shs += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers_shs += group.number_consumers
 
             else:
-                total_demand += sum(np.array(ts.values) * group.number_consumers) / 1000
+                total_demand += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers += group.number_consumers
 
         # add machinery total demand to enterprise demand without increasing nr. of consumers
@@ -83,28 +85,25 @@ def get_aggregated_cgs(project):
 
 def get_aggregated_demand(project):
     options = get_object_or_404(Options, project=project)
-    community = options.community
     shs_threshold = options.shs_threshold
-    total_demand = []
-    if community is not None:
-        cg_qs = ConsumerGroup.objects.filter(community=community)
-    elif project is not None:
-        cg_qs = ConsumerGroup.objects.filter(project=project)
+    # Prevent error if no timeseries are present
+    total_demand = [np.zeros(8760)]
+    cg_qs = ConsumerGroup.objects.filter(project=project)
+
+    if cg_qs.exists():
+        # exclude SHS users from aggregated demand for system optimization
+        if len(shs_threshold) != 0:
+            shs_consumers = get_shs_threshold(options.shs_threshold)
+            # TODO need to warn the user if the total_demand is empty due to shs threshold
+            cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
+
+        for cg in cg_qs:
+            timeseries_values = np.array(cg.timeseries.get_values_with_unit("kWh"))
+            nr_consumers = cg.number_consumers
+            total_demand.append(timeseries_values * nr_consumers)
+        return np.vstack(total_demand).sum(axis=0).tolist()
     else:
-        cg_qs = []
-
-    # exclude SHS users from aggregated demand for system optimization
-    if len(shs_threshold) != 0:
-        shs_consumers = get_shs_threshold(options.shs_threshold)
-        cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
-
-    for cg in cg_qs:
-        timeseries_values = np.array(cg.timeseries.values)
-        nr_consumers = cg.number_consumers
-        if cg.timeseries.units == "Wh":
-            timeseries_values = timeseries_values / 1000
-        total_demand.append(timeseries_values * nr_consumers)
-    return np.vstack(total_demand).sum(axis=0).tolist()
+        return []
 
 
 class ReportHandler:
@@ -113,7 +112,7 @@ class ReportHandler:
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
 
         for style in self.doc.styles:
-            if style.type == 1 and style.name.startswith('Heading'):
+            if style.type == 1 and style.name.startswith("Heading"):
                 style.font.color.rgb = RGBColor(0, 135, 83)
 
     def add_heading(self, text, level=1):
@@ -134,10 +133,10 @@ class ReportHandler:
         summary = f"{project.description}"
         try:
             # Set font "Lato" for the entire self.doc
-            self.doc.styles['Normal'].font.name = 'Lato'
+            self.doc.styles["Normal"].font.name = "Lato"
         except ValueError:
             # Handle the exception when "Lato" is not available and set a fallback font
-            self.doc.styles['Normal'].font.name = 'Arial'
+            self.doc.styles["Normal"].font.name = "Arial"
 
         # Add logo in the right top corner
         header = self.doc.sections[0].header
@@ -173,13 +172,17 @@ class ReportHandler:
         self.doc.add_heading("Overview")
         self.doc.add_paragraph("Here we will have some data about the community")
         self.doc.add_heading("Demand estimation")
-        self.doc.add_paragraph("Here there will be information about how the demand was estimated, information about"
-                               "community enterprises, anchor loads, etc. ")
+        self.doc.add_paragraph(
+            "Here there will be information about how the demand was estimated, information about"
+            "community enterprises, anchor loads, etc. "
+        )
         self.doc.add_heading("Supply system")
         self.doc.add_paragraph("Here the optimized system will be described")
         self.doc.add_heading("Technoeconomic data")
         self.doc.add_paragraph("Here we will have information about the project costs, projected tariffs etc")
         self.doc.add_heading("Contact persons")
-        self.doc.add_paragraph("Here, the community will get information about who best to approach according to their"
-                               "current situation (e.g. isolated or interconnected), their DisCo according to "
-                               "geographical area etc.")
+        self.doc.add_paragraph(
+            "Here, the community will get information about who best to approach according to their"
+            "current situation (e.g. isolated or interconnected), their DisCo according to "
+            "geographical area etc."
+        )
