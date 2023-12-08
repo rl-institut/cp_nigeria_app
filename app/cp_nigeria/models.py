@@ -8,11 +8,20 @@ from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 
 
+class ConsumerTypeManager(models.Manager):
+    def get_by_natural_key(self, consumer_type):
+        return self.get(consumer_type=consumer_type)
+
+
 class ConsumerType(models.Model):
     consumer_type = models.CharField(max_length=50)
+    objects = ConsumerTypeManager()
 
     def __str__(self):
         return self.consumer_type
+
+    def natural_key(self):
+        return (self.consumer_type,)
 
 
 class DemandTimeseries(Timeseries):
@@ -22,21 +31,29 @@ class DemandTimeseries(Timeseries):
         return self.name
 
 
+class CommunityManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Community(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=50)
-    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.CASCADE, null=True)
+    pv_timeseries = models.ForeignKey(Timeseries, on_delete=models.SET_NULL, null=True)
     lat = models.FloatField(blank=True, null=True)
     lon = models.FloatField(blank=True, null=True)
+    objects = CommunityManager()
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.name,)
 
 
 class ConsumerGroup(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     consumer_type = models.ForeignKey(ConsumerType, on_delete=models.CASCADE, null=True)
-    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.CASCADE, null=True)
+    timeseries = models.ForeignKey(DemandTimeseries, on_delete=models.SET_NULL, null=True)
     number_consumers = models.IntegerField()
     expected_consumer_increase = models.FloatField(blank=True, null=True)
     expected_demand_increase = models.FloatField(blank=True, null=True)
