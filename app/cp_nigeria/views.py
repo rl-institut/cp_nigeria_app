@@ -1095,7 +1095,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # get optimized capacities
     qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
     opt_caps = qs_res.filter(
-        optimized_capacity__gt=0, asset_type__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
     ).values("asset", "optimized_capacity", "total_flow")
     # TODO here if there is no simulation or supply setup, tell the user they should define one first
 
