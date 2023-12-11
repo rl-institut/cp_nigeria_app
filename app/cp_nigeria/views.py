@@ -1123,7 +1123,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
 
-    total_demand = np.sum([vals["total_demand"] for cg, vals in aggregated_cgs.items()])
     for cap in opt_caps:
         if cap["asset"] == "pv_plant":
             cap["total_supply"] = cap["total_flow"] - unused_pv
@@ -1135,7 +1134,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         cap["unit"] = AssetType.objects.get(
             asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
         ).unit
-        cap["supply_percentage"] = cap["total_supply"] / total_demand * 100
+        cap["supply_percentage"] = cap["total_supply"] / np.sum(get_aggregated_demand(project)) * 100
 
     # diesel fuel values
     if qs_res.filter(asset="diesel_fuel_consumption").exists():
@@ -1145,8 +1144,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # costs values
     kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
     asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
-    asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
-    asset_costs["total"] = {col: np.sum(asset_costs_df[col]) for col in asset_costs_df}
     for asset, costs in asset_costs.items():
         costs["unit"] = project.economic_data.currency_symbol
 
@@ -1160,104 +1157,110 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     else:
         es_schema_name = None
 
-    # FATE graphs for demo, will be implemented properly later
-    fate_data = pd.read_csv("static/fate_graphs.csv", sep=";", header=0, index_col=0)
-    fate_figs = {}
-    for col in fate_data:
-        x_data = fate_data[col].index.tolist()
-        y_data = fate_data[col]
-        trace = go.Scatter(x=x_data, y=y_data, name=col)
+    # Initialize financial tool to calculate financial flows and test output graphs
+    ft = FinancialTool(project, opt_caps, asset_costs)
 
-        layout = go.Layout(title=col, xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
+    capex_df = ft.calculate_capex()
+    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
+    # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
 
-        fig = go.Figure(data=trace, layout=layout)
-        fate_figs[col] = fig.to_html()
+    revenue_flows = ft.revenue_over_lifetime()
+    # traces = []
+    # for ix, row in revenue_flows.iterrows():
+    #     x_data = revenue_flows.columns.tolist()
+    #     y_data = row.values
+    #     traces.append(go.Scatter(x=x_data, y=y_data, name=ix[0]))
+    #
+    # layout = go.Layout(title="Revenue flows", xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
+    # revenue_fig = go.Figure(data=traces, layout=layout).to_html()
 
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(project)
 
-    qs_genset = opt_caps.filter(asset="diesel_generator")
-    diesel_curve_fig = None
-    if qs_genset.exists():
-        # plot for diesel load curve (for debugging minimal load of genset)
-        diesel_genset_duration_curve = (
-            qs_res.filter(energy_vector="Electricity", asset_type="diesel_generator").get().load_duration
-        )
-        genset_asset = Asset.objects.filter(scenario=project.scenario, name="diesel_generator").get()
-
-        capacity_diesel_genset = qs_genset.get()["optimized_capacity"]
-        min_load = genset_asset.soc_min
-        max_load = genset_asset.soc_max
-
-        percentage = 100 * np.arange(1, len(diesel_genset_duration_curve) + 1) / len(diesel_genset_duration_curve)
-
-        # Create a scatter plot for the duration curve
-        scatter_trace = go.Scatter(
-            x=percentage,
-            y=diesel_genset_duration_curve,
-            mode="markers + lines",
-            name="Duration Curve",
-        )
-
-        # Create horizontal lines for minimum and maximum load
-        min_load_trace = go.Scatter(
-            x=[0, 100],
-            y=[min_load * capacity_diesel_genset, min_load * capacity_diesel_genset],
-            mode="lines",
-            line=dict(color="crimson", dash="dash"),
-            name="Minimum Load",
-        )
-
-        max_load_trace = go.Scatter(
-            x=[0, 100],
-            y=[max_load * capacity_diesel_genset, max_load * capacity_diesel_genset],
-            mode="lines",
-            line=dict(color="crimson", dash="dash"),
-            name="Maximum Load",
-        )
-
-        # Add annotations for minimum and maximum load
-        annotations = [
-            dict(
-                x=100,
-                y=min_load * capacity_diesel_genset,
-                xref="x",
-                yref="y",
-                text=f"minimum load: {min_load * capacity_diesel_genset:0.2f} kW",
-                showarrow=True,
-                arrowhead=0,
-                ax=0,
-                ay=-15,
-            ),
-            dict(
-                x=100,
-                y=max_load * capacity_diesel_genset,
-                xref="x",
-                yref="y",
-                text=f"maximum load: {max_load * capacity_diesel_genset:0.2f} kW",
-                showarrow=True,
-                arrowhead=0,
-                ax=0,
-                ay=15,
-            ),
-        ]
-
-        # Create the layout
-        layout = dict(
-            title="Duration Curve for the Diesel Genset Electricity Production",
-            xaxis=dict(title="percentage of annual operation [%]"),
-            yaxis=dict(title="diesel genset production [kW]"),
-            template="simple_white",
-        )
-
-        # Create the figure
-        fig = go.Figure(data=[scatter_trace, min_load_trace, max_load_trace], layout=layout)
-
-        # Add annotations to the figure
-        fig.update_layout(annotations=annotations)
-
-        # Show the figure or save it to a file
-        diesel_curve_fig = fig.to_html()
+    # TODO delete if no longer needed - curve for diesel genset load (minload debugging)
+    # qs_genset = opt_caps.filter(asset="diesel_generator")
+    # diesel_curve_fig = None
+    # if qs_genset.exists():
+    #     # plot for diesel load curve (for debugging minimal load of genset)
+    #     diesel_genset_duration_curve = (
+    #         qs_res.filter(energy_vector="Electricity", asset_type="diesel_generator").get().load_duration
+    #     )
+    #     genset_asset = Asset.objects.filter(scenario=project.scenario, name="diesel_generator").get()
+    #
+    #     capacity_diesel_genset = qs_genset.get()["optimized_capacity"]
+    #     min_load = genset_asset.soc_min
+    #     max_load = genset_asset.soc_max
+    #
+    #     percentage = 100 * np.arange(1, len(diesel_genset_duration_curve) + 1) / len(diesel_genset_duration_curve)
+    #
+    #     # Create a scatter plot for the duration curve
+    #     scatter_trace = go.Scatter(
+    #         x=percentage,
+    #         y=diesel_genset_duration_curve,
+    #         mode="markers + lines",
+    #         name="Duration Curve",
+    #     )
+    #
+    #     # Create horizontal lines for minimum and maximum load
+    #     min_load_trace = go.Scatter(
+    #         x=[0, 100],
+    #         y=[min_load * capacity_diesel_genset, min_load * capacity_diesel_genset],
+    #         mode="lines",
+    #         line=dict(color="crimson", dash="dash"),
+    #         name="Minimum Load",
+    #     )
+    #
+    #     max_load_trace = go.Scatter(
+    #         x=[0, 100],
+    #         y=[max_load * capacity_diesel_genset, max_load * capacity_diesel_genset],
+    #         mode="lines",
+    #         line=dict(color="crimson", dash="dash"),
+    #         name="Maximum Load",
+    #     )
+    #
+    #     # Add annotations for minimum and maximum load
+    #     annotations = [
+    #         dict(
+    #             x=100,
+    #             y=min_load * capacity_diesel_genset,
+    #             xref="x",
+    #             yref="y",
+    #             text=f"minimum load: {min_load * capacity_diesel_genset:0.2f} kW",
+    #             showarrow=True,
+    #             arrowhead=0,
+    #             ax=0,
+    #             ay=-15,
+    #         ),
+    #         dict(
+    #             x=100,
+    #             y=max_load * capacity_diesel_genset,
+    #             xref="x",
+    #             yref="y",
+    #             text=f"maximum load: {max_load * capacity_diesel_genset:0.2f} kW",
+    #             showarrow=True,
+    #             arrowhead=0,
+    #             ax=0,
+    #             ay=15,
+    #         ),
+    #     ]
+    #
+    #     # Create the layout
+    #     layout = dict(
+    #         title="Duration Curve for the Diesel Genset Electricity Production",
+    #         xaxis=dict(title="percentage of annual operation [%]"),
+    #         yaxis=dict(title="diesel genset production [kW]"),
+    #         template="simple_white",
+    #     )
+    #
+    #     # Create the figure
+    #     fig = go.Figure(data=[scatter_trace, min_load_trace, max_load_trace], layout=layout)
+    #
+    #     # Add annotations to the figure
+    #     fig.update_layout(annotations=annotations)
+    #
+    #     # Show the figure or save it to a file
+    #     diesel_curve_fig = fig.to_html()
 
     context = {
         "proj_id": proj_id,
@@ -1271,14 +1274,16 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
-        "fate_figs": fate_figs["Net Cash Flow"],
-        "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
-        "diesel_curve_fig": diesel_curve_fig,
+        # "fate_figs": fate_figs["Net Cash Flow"],
+        # "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
+        # "diesel_curve_fig": diesel_curve_fig,
         "aggregated_cgs": aggregated_cgs,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,
+        "capex_df": capex_df,
+        "revenue_flows": revenue_flows,
     }
 
     return render(request, html_template, context)
