@@ -15,3 +15,8 @@ def getfield(value, arg):
         fields = getattr(value, "fields")
         if str(arg) in fields:
             return str(fields[str(arg)])
+
+
+@register.filter
+def getkey(mapping, key):
+    return mapping.get(key, "")

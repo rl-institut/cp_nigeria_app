@@ -362,12 +362,11 @@
 									</div>
 								</div>
 								{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
+
+								</div>
+
 							</div>
-
-
-
 						</div>
-					</div>
 
 					<div class="row">
 						<div class="col col-md-12">
@@ -378,11 +377,48 @@
 									</div>
 								</div>
 								<div class="chart__plot">
-									<table class="table" >
-										<thead><tr><th>Indicator</th><th>Value</th></tr></thead>
-										<tbody>
+										<table class="table" id="CAPEXTable">
+											<thead><tr><th>Description</th><th>Category</th><th>First investment [NGN]</th></tr></thead>
+											<tbody>
 
-										</tbody>
+											</tbody>
+											{% for index, row in capex_df.iterrows %}
+											<tr>
+											<td>{{ row.Description }} </td>
+											<td>{{ row.Category }}</td>
+											<td>{{ row|getkey:"Total costs [NGN]" | floatformat | intcomma }}</td>
+											</tr>
+											{% endfor %}
+
+										</table>
+									</div>
+																<div class="chart__plot">
+										<table class="table" id="RevenueTable">
+											<thead><tr><th>Revenue</th></tr></thead>
+											<tbody>
+
+											</tbody>
+											{% for index, row in revenue_flows.iterrows %}
+											<tr>
+												<td>
+													{{ index.0 }}
+												</td>
+												{% for cell in row %}
+												<td>
+													{{ cell | floatformat | intcomma}}
+												</td>
+												{% endfor %}
+											</tr>
+											{% endfor %}
+
+										</table>
+									</div>
+<!--								<div class="chart__plot">-->
+<!--									<table class="table" >-->
+<!--										<thead><tr><th>Indicator</th><th>Value</th></tr></thead>-->
+<!--										<tbody>-->
+
+<!--										</tbody>-->
 										<!--							<tr>-->
 										<!--								<td>Estimated Tariff [NGN]</td>-->
 										<!--								<td>85</td>-->
@@ -405,8 +441,8 @@
 										<!--							</tr>-->
 
 
-									</table>
-								</div>
+<!--									</table>-->
+<!--								</div>-->
 							</div>
 						</div>
 					</div>
