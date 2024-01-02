@@ -1143,6 +1143,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         diesel_consumption_liter = (
             qs_res.filter(asset="diesel_fuel_consumption").get().total_flow / ENERGY_DENSITY_DIESEL
         )
+    else:
+        diesel_consumption_liter = 0
     # costs values
     kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
     asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
@@ -1162,12 +1164,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(project, opt_caps, asset_costs)
 
-    capex_df = ft.calculate_capex()
+    capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
     # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
     # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
 
-    revenue_flows = ft.revenue_over_lifetime()
+    revenue_flows = ft.revenue_over_lifetime
     # traces = []
     # for ix, row in revenue_flows.iterrows():
     #     x_data = revenue_flows.columns.tolist()

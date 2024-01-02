@@ -348,7 +348,8 @@ class FinancialTool:
 
         return df
 
-    def calculate_capex(self):
+    @property
+    def capex(self):
         """
         This method takes the given general cost assumptions and merges them with the specific project results
         (asset sizes) by target variable. The system costs from the simulation are appended to the dataframe and the
@@ -393,6 +394,7 @@ class FinancialTool:
 
         return capex_df  # capex_df['Total costs [USD]'].sum() returns gross CAPEX
 
+    @property
     def revenue_over_lifetime(self):
         """
         This method returns a wide table calculating the revenue flows over project lifetime based on the cost
@@ -416,6 +418,7 @@ class FinancialTool:
 
         return revenue_flows
 
+    @property
     def om_costs_over_lifetime(self):
         """
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
@@ -433,6 +436,7 @@ class FinancialTool:
 
         return om_lifetime
 
+    @property
     def debt_service_table(self):
         """
         This method creates a table for the loan debt service based on the loan amount, tenor, grace period and interest
@@ -443,7 +447,7 @@ class FinancialTool:
         """
         tenor = 10
         grace_period = 1
-        amount = self.financial_params["debt_share"][0] * self.calculate_capex()["Total costs [NGN]"].sum()
+        amount = self.financial_params["debt_share"][0] * self.capex["Total costs [NGN]"].sum()
         interest_rate = self.financial_params["debt_interest_MG"][0]
         debt_service = pd.DataFrame(index=["Interest", "Principal", "Balance opening", "Balance closing"])
         debt_service[self.project_start - 1] = [0, 0, amount, amount]
@@ -469,6 +473,7 @@ class FinancialTool:
 
         return debt_service
 
+    @property
     def losses_over_lifetime(self):
         """
         This method first calculates the EBITDA (earnings before interest, tax, depreciation and amortization), then
@@ -476,7 +481,7 @@ class FinancialTool:
         including taxes to get the net income over the project lifetime. The calculate_capex() method is used here.
         """
         depreciation_yrs = 20
-        capex_df = self.calculate_capex()
+        capex_df = self.capex
         gross_capex = capex_df["Total costs [NGN]"].sum()
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
         equity_share = 100 - self.financial_params["grant_share"][0] - self.financial_params["debt_share"][0]
@@ -485,12 +490,12 @@ class FinancialTool:
 
         losses.loc["EBITDA"] = (
             self.revenue_over_lifetime().loc["operating_revenues_total"]
-            - self.om_costs_over_lifetime().loc["costs_om_total"]
+            - self.om_costs_over_lifetime.loc["costs_om_total"]
         )
         losses.loc["Depreciation"] = 0.0
         losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
         losses.loc["Equity interest"] = equity * self.financial_params["equity_interest_MG"][0]
-        losses.loc["Senior loan interest"] = self.debt_service_table().loc["Interest"]
+        losses.loc["Senior loan interest"] = self.debt_service_table.loc["Interest"]
 
         losses.loc["EBT"] = (
             losses.loc["EBITDA"]
@@ -506,14 +511,15 @@ class FinancialTool:
 
         return losses
 
+    @property
     def cash_flow_over_lifetime(self):
         """
         This method calculates the cash flows over system lifetime considering the previously calculated loan debt,
         earnings and financial losses. Both the losses_ver_lifetime() and debt_service_table() are called here.
         """
         cash_flow = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
-        losses = self.losses_over_lifetime()
-        senior_debt_service = self.debt_service_table()
+        losses = self.losses_over_lifetime
+        senior_debt_service = self.debt_service_table
 
         cash_flow.loc["Cash flow from operating activity"] = losses.loc["EBITDA"] - losses.loc["Corporate tax"]
         cash_flow.loc["Cash flow after debt service"] = (
@@ -537,9 +543,9 @@ class FinancialTool:
         This method returns the internal return on investment % based on project CAPEX, grant share and cash flows
         after a given number of project years.
         """
-        gross_capex = self.calculate_capex()["Total costs [NGN]"].sum()
+        gross_capex = self.capex["Total costs [NGN]"].sum()
         grant = self.financial_params["grant_share"][0] * gross_capex
-        cash_flow = self.cash_flow_over_lifetime()
+        cash_flow = self.cash_flow_over_lifetime
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
         cash_flow_irr.insert(0, -gross_capex + grant)
 
