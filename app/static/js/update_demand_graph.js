@@ -1,18 +1,59 @@
 /*jshint esversion: 6 */
 // variable to store the timeseries as they are retrieved from the database
 var timeseriesData = {};
+var householdTraces = {};
+var shsTiers = null;
 
 $(document).ready(function() {
     // delete empty extra form if necessary
     deleteEmptyForm();
-    // load timeseries once on page load (to update graph with existing formset data)
-    $('select[id*="timeseries"]').each(function() {
-    getTimeseries.call(this);
+    // load shs threshold tiers, then load the timeseries
+    getSHSThreshold.call($('select[id*="shs_threshold"]')).then(() => {
+        $('select[id*="timeseries"]').each(function() {
+            getTimeseries.call(this);
+        });
     });
-
+    // set up event handlers for user interactions
     $(document).on('change', 'select[id*="timeseries"]', getTimeseries);
+    $(document).on('change', 'select[id*="shs_threshold"]', function() {
+        getSHSThreshold().then(() => {
+        updateSHSTraces();
+        });
+    });
     $(document).on('click keyup', 'input[id*="number_consumers"]', updateNumberConsumers);
 });
+
+// returns tiers that are excluded from mini grid simulation and saves them to variable
+function getSHSThreshold () {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            headers: {'X-CSRFToken': csrfToken },
+            url: getThresholdUrl, //cp_nigeria/views.py::ajax_shs_tiers
+            method: 'POST',
+            data: { 'shs_tier': $('select[id*="shs_threshold"]').val() },
+            dataType: 'json',
+            success: function(data) {
+                shsTiers = data.excluded_tiers;
+                resolve();
+            },
+            error: function() {
+                    console.error(error);
+                    reject();
+                },
+            });
+        });
+    }
+
+// updates plot traces belonging in SHS tiers by grouping and hatching them
+function updateSHSTraces () {
+    var plot_div = document.getElementById('demand-aggregate');
+    for (var traceIndex in householdTraces) {
+        if (shsTiers.includes(householdTraces[traceIndex])) {
+            Plotly.restyle(plot_div, {fillpattern: {shape: '/'}, legendgroup: 'SHS', legendrank: 100, legendgrouptitle: {text: 'Served by SHS'}}, [traceIndex]);
+        } else {
+            Plotly.restyle(plot_div, {fillpattern: {shape: ''}, legendgroup: '', legendrank: 1000, legendgrouptitle: {text: ''}}, [traceIndex]);
+        }
+    }}
 
 function getTimeseries () {
     // get the new timeseries values from the database when the profile selection changes
@@ -36,7 +77,6 @@ function getTimeseries () {
             data: { 'timeseries': timeseriesId },
             dataType: 'json',
             success: function(data) {
-                console.log('sucessful ajax call');
                 // Store the timeseries data in a variable (to avoid making an ajax call when only the consumer nr changes)
                 timeseriesData[timeseriesVarName] = data.timeseries_values;
                 // calculate the demand by multiplying ts with number of consumers and add it to the total demand
@@ -129,7 +169,6 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
 
         //check if trace already exists in the plot
         var existingTrace = false;
-        var traceIndex = -1;
         for (var i = 0; i < data.length; i++) {
             if (data[i].formId === formId) {
                 existingTrace = true;
@@ -148,8 +187,16 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
             console.log('adding new trace');
             Plotly.addTraces(plot_div, trace);
             data.push(trace);
-            plot_div.querySelector('[data-title="Reset axes"]').click();
+        }
 
+        // save index of household traces (for updating SHS tiers and plot without looping through all traces)
+        if (householdTiers.includes(consumerGroupDemandName)) {
+            if (existingTrace) {
+            householdTraces[traceIndex] = consumerGroupDemandName;
+            } else {
+            householdTraces[data.length] = consumerGroupDemandName;
+            }
+            updateSHSTraces();
         }
         $('#demandGraph').collapse('show');
 
@@ -157,6 +204,7 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
     // disabled for now because of conflict between displaying less data of the timeseries to save bandwith
     // and the fact that we need the full year in order to aggregate the timeseries and compute the peak demand
     // updateKeyParams();
+    plot_div.querySelector('[data-title="Reset axes"]').click();
     }
 
 

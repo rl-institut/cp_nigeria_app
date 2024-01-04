@@ -332,6 +332,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     form.fields[field].queryset = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
 
     page_information = "Please input user group data. This includes user type information about households, enterprises and facilities and predicted energy demand tiers as collected from survey data or available information about the community."
+    household_tiers = json.dumps([tier[1] for tier in HOUSEHOLD_TIERS])
 
     return render(
         request,
@@ -345,6 +346,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             "scen_id": project.scenario.id,
             "step_list": CPN_STEP_VERBOSE,
             "page_information": page_information,
+            "household_tiers": household_tiers,
         },
     )
 
@@ -1431,6 +1433,19 @@ def ajax_update_graph(request):
         timeseries_values = timeseries.get_values_with_unit("kWh")[:168]
 
         return JsonResponse({"timeseries_values": timeseries_values})
+
+    return JsonResponse({"error": request})
+
+
+@login_required
+@json_view
+@require_http_methods(["POST"])
+def ajax_shs_tiers(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        shs_tier = request.POST.get("shs_tier")
+        excluded_tiers = get_shs_threshold(shs_tier)
+
+        return JsonResponse({"excluded_tiers": excluded_tiers})
 
     return JsonResponse({"error": request})
 
