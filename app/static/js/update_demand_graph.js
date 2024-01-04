@@ -221,7 +221,7 @@ function updateKeyParams() {
 
 function deleteTrace(consumerGroupId) {
     var formId = consumerGroupId.split('-')[1];
-    var traceIndex = parseInt(formId)+1;
+    var traceIndex = traces.findIndex(item => item.formId === formId) + 1;
     console.log("hiding trace index: " + traceIndex);
     var plot_div = document.getElementById('demand-aggregate');
 
