@@ -153,8 +153,8 @@ function initialPlot () {
             }
 
 
-// data variable to check which traces are already in the graph
-var data = [];
+// traces variable to check which traces are already in the graph
+var traces = [];
 // update graph
 function updateGraph (newDemand, consumerGroupDemandName, formId){
         console.log('updating graph for consumergroup: ' + consumerGroupDemandName);
@@ -169,10 +169,10 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
 
         //check if trace already exists in the plot
         var existingTrace = false;
-        for (var i = 0; i < data.length; i++) {
-            if (data[i].formId === formId) {
+        for (var i = 0; i < traces.length; i++) {
+            if (traces[i].formId === formId) {
                 existingTrace = true;
-                data[i].y = newDemand;
+                traces[i].y = newDemand;
                 traceIndex = i+1;
                 break;
                 }
@@ -186,7 +186,7 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
         // add the new consumer group to the plot
             console.log('adding new trace');
             Plotly.addTraces(plot_div, trace);
-            data.push(trace);
+            traces.push(trace);
         }
 
         // save index of household traces (for updating SHS tiers and plot without looping through all traces)
@@ -194,7 +194,7 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
             if (existingTrace) {
             householdTraces[traceIndex] = consumerGroupDemandName;
             } else {
-            householdTraces[data.length] = consumerGroupDemandName;
+            householdTraces[traces.length] = consumerGroupDemandName;
             }
             updateSHSTraces();
         }
@@ -210,8 +210,8 @@ function updateGraph (newDemand, consumerGroupDemandName, formId){
 
 function updateKeyParams() {
     totalDemand = Array(168).fill(0);
-    for (var i = 0; i < data.length; i++) {
-        totalDemand = totalDemand.map((e, j) => e + data[i].y[j]);  // jshint ignore:line
+    for (var i = 0; i < traces.length; i++) {
+        totalDemand = totalDemand.map((e, j) => e + traces[i].y[j]);  // jshint ignore:line
     }
     var peakDemand = Math.max(...totalDemand);
     var avgDaily = totalDemand.reduce((partialSum, a) => partialSum + a, 0) / 7;
