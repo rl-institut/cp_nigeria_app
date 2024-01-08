@@ -1,8 +1,11 @@
+import io
+
 from django.contrib.auth.decorators import login_required
 import json
 import logging
 import pandas as pd
 import os
+import base64
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -1547,6 +1550,19 @@ def download_report(request, proj_id):
     # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
     # for graph in os.listdir(graph_dir):
     #     implementation_plan.add_image(os.path.join(graph_dir, graph))
+
+    report_imgs = ["cpn_stacked_timeseriesElectricity"]
+    for img in report_imgs:
+        image_data = request.session.get(img).split(",")[1]
+        if image_data:
+            try:
+                image_bytes = base64.b64decode(image_data)
+                image = io.BytesIO(image_bytes)
+
+                implementation_plan.add_image(image)
+
+            except Exception as e:
+                print(e)
 
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response["Content-Disposition"] = "attachment; filename=report.docx"
