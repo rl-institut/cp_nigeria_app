@@ -1,7 +1,11 @@
 from datetime import date
 from docx import Document
+from docx.table import Table
+from docx.shape import InlineShape
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -149,6 +153,50 @@ class ReportHandler:
 
     def add_image(self, path, width=Inches(6), height=Inches(4)):
         self.doc.add_picture(path, width=width, height=height)
+
+    def add_caption(self, tab_or_figure, caption):
+        target = {Table: "Table", InlineShape: "Figure"}[type(tab_or_figure)]
+
+        # caption type
+        paragraph = self.doc.add_paragraph(f"{target} ", style="Caption")
+
+        # numbering field
+        run = paragraph.add_run()
+
+        fldChar = OxmlElement("w:fldChar")
+        fldChar.set(qn("w:fldCharType"), "begin")
+        run._r.append(fldChar)
+
+        instrText = OxmlElement("w:instrText")
+        instrText.text = f" SEQ {target} \\* ARABIC"
+        run._r.append(instrText)
+
+        fldChar = OxmlElement("w:fldChar")
+        fldChar.set(qn("w:fldCharType"), "end")
+        run._r.append(fldChar)
+
+        # caption text
+        paragraph.add_run(f" {caption}")
+
+    def add_df_as_table(self, df, caption=None):
+        t = self.doc.add_table(df.shape[0] + 1, df.shape[1] + 1)
+
+        # add headers
+        for j in range(df.shape[1]):
+            t.cell(0, j + 1).text = df.columns[j]
+            t.cell(0, j + 1).paragraphs[0].runs[0].font.bold = True
+
+        # add indices
+        for j in range(df.shape[0]):
+            t.cell(j + 1, 0).text = df.index[j]
+            t.cell(j + 1, 0).paragraphs[0].runs[0].font.bold = True
+
+        for i in range(df.shape[0]):
+            for j in range(df.shape[-1]):
+                t.cell(i + 1, j + 1).text = str(df.values[i, j])
+
+        if caption is not None:
+            self.add_caption(t, caption)
 
     def save(self, response):
         self.doc.save(response)

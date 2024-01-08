@@ -1554,6 +1554,12 @@ def ajax_download_report(request):
         # for graph in os.listdir(graph_dir):
         #     implementation_plan.add_image(os.path.join(graph_dir, graph))
 
+        # TODO what is the best way to potentially not recalculate all of the information but reuse it
+        # Add tables
+        aggregated_cgs = get_aggregated_cgs(project)
+        implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
+
+        # Add images
         report_imgs = ["cpn_stacked_timeseriesElectricity"]
         for img in report_imgs:
             image_data = request.session.get(img).split(",")[1]
