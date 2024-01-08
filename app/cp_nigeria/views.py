@@ -1521,6 +1521,18 @@ def cpn_business_model(request):
     return JsonResponse({"message": "Invalid request method"})
 
 
+@json_view
+@login_required
+@require_http_methods(["POST"])
+def save_to_session(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        graph_id = request.POST.get("graph_id")
+        image_url = request.POST.get("image_url")
+        request.session[graph_id] = image_url
+
+        return JsonResponse({"status": "success"})
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def download_report(request, proj_id):

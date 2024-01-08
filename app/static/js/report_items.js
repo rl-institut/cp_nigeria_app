@@ -180,6 +180,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
+    saveToSession(graphId);
 };
 
 function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
@@ -477,6 +478,24 @@ function addFinancialPlot(parameters, plot_id="") {
     // simulate a click on autoscale
     plotDiv.querySelector('[data-title="Autoscale"]').click()
 }
+
+function saveToSession(graphId) {
+    // convert the plot to base64-encoded image
+    const imageDataURL = Plotly.toImage(graphId, {format: 'png', width: 800, height: 500}).then(function(imageUrl) {
+        $.ajax({
+        headers: {'X-CSRFToken': csrfToken},
+        type: 'POST',
+        url: urlSaveToSession,
+        data: {graph_id: graphId, image_url: imageUrl},
+        success: function (response) {
+            console.log(response);
+        },
+        error: function (error) {
+            console.error(error);
+        }
+        });
+    });
+};
 
 
 function addPieChart(parameters, plot_id="") {
