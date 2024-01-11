@@ -5,12 +5,13 @@
 
 
 {% block start_body_scripts %}
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.1.min.js"></script>
 <script>
     const csrfToken = `{{ csrf_token }}`;
 	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
     const updateGraphUrl = `{% url 'ajax_update_graph' %}`;
-    const allowEdition = `{{ allow_edition }}`;
+    const getThresholdUrl = `{% url 'ajax_shs_tiers' %}`;
+	var householdTiers = {{ household_tiers | safe }};
 </script>
 <script src="{% static 'js/consumer_groups.js' %}"></script>
 <script src="{% static 'js/dependent_dropdown.js' %}"></script>
@@ -36,7 +37,7 @@
 						<form method="POST" id="consumer-group-form">
 							{% csrf_token %}
 							<p>
-								Edit SHS threshold (advanced)
+								Edit Solar Home System threshold (advanced)
 								<label class="switch" data-bs-toggle="collapse" data-bs-target="#SHSForm" for="SHSSwitch">
 									<input type="checkbox" id="SHSSwitch">
 									<span class="slider round"></span>
