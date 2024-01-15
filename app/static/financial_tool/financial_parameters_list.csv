@@ -1,0 +1,39 @@
+label,verbose,:Definition_Short:,Category,:Default:,:Unit:,Growth rate,Target
+capex_solar_panels,Solar Panels incl. mounting structure,,Power supply system,477,currency/kWp_cap,,pv_plant_optimized_capacity
+capex_inverter,Power and Battery Inverter ,,Power supply system,415,currency/kVA_cap,,inverter_optimized_capacity
+capex_pv_materials,"Other PV Materials (AC/ DC cabling, Gpas, Monitoring system, Fences, CCTV, etc)",,Power supply system,42,currency/kWp_cap,,pv_plant_optimized_capacity
+capex_battery,Battery,,Power supply system,331,currency/kWh_cap,,battery_optimized_capacity
+capex_genset,Diesel Genset,,Power supply system,400,currency/kW_cap,,diesel_generator_optimized_capacity
+capex_shs,SHS Fosera Ignite incl. Mounting system,,Power supply system,675,currency/SHS consumer,,shs_nr_consumers
+opex_shs,Service & Maintenance SHS,,Power supply system,7,currency/SHS users/year,0.1,
+opex_diesel,Diesel fuel price,,Power supply system,1.111,currency/L,0.038,
+capex_transmission_network,Grid connection,,Transmission network,207,currency/Mini-grid consumer,,mini_grid_nr_consumers
+costs_shipping,Shipping,,Logistics,20,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_customs,Customs clearance costs,,Logistics,3,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_storage,Costs for custom storage,,Logistics,2,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_transport,Local transport,,Logistics,5,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_insurance_construction,Construction,,Insurances,20,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_insurance_transport,Transportation,,Insurances,0,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_insurance_policy,Political risk policy,,Insurances,0,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_insurance_guarantees,Payment Guarantees,,Insurances,0,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_project_development,Planning and development costs,0,Labour and soft costs,,currency,,
+costs_labor_installation,Installation (labour) for system ,0,Labour and soft costs,150,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_labor_devex,"DEVEX (incl feasibility studies, project development, planning)",80,Labour and soft costs,80,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_labor_fees,Financial Fees & DDs,,Labour and soft costs,0,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_labor_management,Project Management during construction,,Labour and soft costs,0,currency/kWp_cap,,pv_plant_optimized_capacity
+costs_labor_contingency,Contingency,,Labour and soft costs,50,currency/kWp_cap,,pv_plant_optimized_capacity
+revenue_metering,Metering and fixed costs,,Revenue,4,currency/Mini-grid user,0.065,mini_grid_nr_consumers
+revenue_connection,Connection fee,,Revenue,7,currency/Mini-grid user,0.065,mini_grid_nr_consumers_new
+revenue_excess_power,Excess power PPA tariff,,Revenue,0.02,currency/kWh,0.015,mini_grid_excess_generation
+revenue_tariff,Community tariff,,Revenue,0.085,currency/kWh,0.07,mini_grid_total_demand
+equity_community,Equity Community,,Equity,,currency,,
+equity_developer,Equity project developer company,,Equity,,currency,,
+equity_ir,Equity Interest Rate,,Equity,0.15,percentage,,
+loan_senior,Senior Loan (mixed sources),,Equity,,currency,,
+loan_senior_ir,Interest Rate,,Equity,0.11,percentage,,
+loan_senior_maturity,Loan Maturity,,Equity,10,years,,
+loan_senior_gp,Grace Period,,Equity,1,years,,
+grant,Grant,,Equity,,currency,,
+grant_maturity,Grant Maturity,,Equity,20,years,,
+grant_gp,Grant Grace Period,,Equity,20,years,,
+wacc,WACC,,Equity,,,,

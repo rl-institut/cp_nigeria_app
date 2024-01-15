@@ -7,6 +7,8 @@ from django.utils.translation import gettext_lazy as _
 from django.forms import ModelForm
 from .models import *
 from .helpers import available_models
+from projects.forms import OpenPlanForm, OpenPlanModelForm, set_parameter_info
+from cp_nigeria.helpers import FINANCIAL_PARAMS
 
 
 class ModelSuggestionForm(ModelForm):
@@ -89,3 +91,19 @@ class EquityDataForm(forms.ModelForm):
                 if "SHS" in field:
                     self.fields[field].widget = forms.HiddenInput()
                     self.fields[field].required = False
+
+
+class FinancialToolInputForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        category = kwargs.pop("category", None)
+
+        super().__init__(*args, **kwargs)
+        for param, value in FINANCIAL_PARAMS.items():
+            if category is None:
+                self.fields[param] = forms.FloatField()
+            else:
+                if isinstance(value, dict) and value["Category"] == category:
+                    self.fields[param] = forms.FloatField()
+
+        for fieldname, field in self.fields.items():
+            set_parameter_info(fieldname, field, parameters=FINANCIAL_PARAMS)

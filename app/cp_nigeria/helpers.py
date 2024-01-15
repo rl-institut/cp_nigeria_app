@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import numpy_financial as npf
 import os
+import csv
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from business_model.models import EquityData
 from dashboard.models import FancyResults
@@ -28,6 +29,20 @@ HOUSEHOLD_TIERS = [
     ("high", "High Consumption Estimate"),
     ("very_high", "Very High Consumption Estimate"),
 ]
+
+FINANCIAL_PARAMS = {}
+if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_list.csv")) is True:
+    with open(staticfiles_storage.path("financial_tool/financial_parameters_list.csv"), encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
+        for i, row in enumerate(csvreader):
+            if i == 0:
+                hdr = row
+                label_idx = hdr.index("label")
+            else:
+                label = row[label_idx]
+                FINANCIAL_PARAMS[label] = {}
+                for k, v in zip(hdr, row):
+                    FINANCIAL_PARAMS[label][k] = v
 
 
 def get_shs_threshold(shs_tier):

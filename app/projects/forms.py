@@ -69,11 +69,11 @@ def set_parameter_info(param_name, field, parameters=PARAMETERS):
     default_value = None
     if param_name == "optimize_cap":
         param_name = "optimize_capacity"
-    if param_name in PARAMETERS:
-        help_text = PARAMETERS[param_name][":Definition_Short:"]
-        unit = PARAMETERS[param_name][":Unit:"]
-        verbose = PARAMETERS[param_name]["verbose"]
-        default_value = PARAMETERS[param_name][":Default:"]
+    if param_name in parameters:
+        help_text = parameters[param_name][":Definition_Short:"]
+        unit = parameters[param_name][":Unit:"]
+        verbose = parameters[param_name]["verbose"]
+        default_value = parameters[param_name][":Default:"]
         if unit == "None" or unit == "":
             unit = None
         elif unit == "Factor":
