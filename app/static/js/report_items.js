@@ -448,6 +448,31 @@ function addSensitivityAnalysisGraph(graphId, parameters){
     Plotly.newPlot(graphId, parameters.data, layout);
 };
 
+function makeFinancialPlot(parameters, plot_id="") {
+	var plotDiv = document.getElementById(plot_id);
+	var layout = {
+//        height: 220,
+        margin:{
+            b:100,
+            l:100,
+            r:100,
+            t:100,
+        },
+        title: parameters.title,
+        xaxis: {title: "Time"},
+        yaxis: {title: "currency"},
+        hovermode:'x unified',
+//        legend: {orientation: "h"}
+        }
+    var traces = [];
+    for (var i = 0; i < parameters.y.length; i++) {
+    	traces.push({ type: "scatter", x: parameters.x, y: parameters.y[i], name: parameters.names[i] })
+    	}
+    Plotly.newPlot(plotDiv, traces, layout, config);
+    // simulate a click on autoscale
+    plotDiv.querySelector('[data-title="Autoscale"]').click()
+}
+
 
 // TODO write functions for other report types
 const graph_type_mapping={

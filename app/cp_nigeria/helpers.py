@@ -527,7 +527,7 @@ class FinancialTool:
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime().loc["operating_revenues_total"]
+            self.revenue_over_lifetime.loc["operating_revenues_total"]
             - self.om_costs_over_lifetime.loc["costs_om_total"]
         )
         losses.loc["Depreciation"] = 0.0

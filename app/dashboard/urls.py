@@ -108,6 +108,16 @@ urlpatterns = [
         scenario_visualize_costs,
         name="scenario_visualize_costs",
     ),
+    re_path(
+        r"^scenario/results/request_cash_flow/(?P<scen_id>\d+)?$",
+        scenario_visualize_cash_flow,
+        name="scenario_visualize_cash_flow",
+    ),
+    re_path(
+        r"^scenario/results/request_revenue/(?P<scen_id>\d+)?$",
+        scenario_visualize_revenue,
+        name="scenario_visualize_revenue",
+    ),
     path(
         "scenario/results/download_scalars/<int:scen_id>",
         download_scalar_results,
