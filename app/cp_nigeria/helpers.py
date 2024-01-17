@@ -252,7 +252,7 @@ class FinancialTool:
         labor will be the PV optimized capacity, which is set as a label in this dataframe to later merge in
         calculate_capex().
         """
-        growth_rate = 0
+        growth_rate = 0.0
         growth_rate_om = 0.015
         asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
 
@@ -318,7 +318,6 @@ class FinancialTool:
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
         financial_params = pd.concat([pd.DataFrame.from_records(qs_eq), pd.DataFrame.from_records(qs_ed)], axis=1)
-
         return financial_params
 
     @staticmethod
@@ -381,8 +380,6 @@ class FinancialTool:
 
         capex_df["Total costs [USD]"] = capex_df["USD/Unit"] * capex_df["value"]
 
-        # TODO double check here that transformer and mounting structure will stay 0 (currencly included in VAT in
-        #  excel but not here)
         vat_costs = (
             capex_df.groupby("Category")["Total costs [USD]"].sum()[["Logistics", "Labour and soft costs"]].sum()
         )
@@ -399,7 +396,7 @@ class FinancialTool:
         system_capex_rows = [
             {
                 "Description": row["supply_source"].replace("_", " ").title(),
-                "Category": "Power Supply System",
+                "Category": "Power supply system",
                 "Total costs [NGN]": row["value"],
             }
             for index, row in self.system_params[self.system_params["category"] == "costs_capex"].iterrows()
@@ -547,7 +544,7 @@ class FinancialTool:
             losses.loc["EBITDA"]
             - losses.loc["Depreciation"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
+            - losses.loc["Debt interest"]
         )
         losses.loc["Corporate tax"] = [
             losses.loc["EBT"][year] * self.financial_params["tax"][0] if losses.loc["EBT"][year] > 0 else 0
@@ -565,21 +562,20 @@ class FinancialTool:
         """
         cash_flow = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
         losses = self.losses_over_lifetime
-        senior_debt_service = self.debt_service_table
 
         cash_flow.loc["Cash flow from operating activity"] = losses.loc["EBITDA"] - losses.loc["Corporate tax"]
         cash_flow.loc["Cash flow after debt service"] = (
             cash_flow.loc["Cash flow from operating activity"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
-            - senior_debt_service.loc["Principal"]
+            - losses.loc["Debt interest"]
+            - losses.loc["Debt repayments"]
         )
         cash_flow.loc["Free cash flow available"] = (
             losses.loc["EBITDA"]
             - losses.loc["Corporate tax"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
-            - senior_debt_service.loc["Principal"]
+            - losses.loc["Debt interest"]
+            - losses.loc["Debt repayments"]
         )
 
         return cash_flow
