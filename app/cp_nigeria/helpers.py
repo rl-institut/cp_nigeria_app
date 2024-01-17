@@ -141,6 +141,32 @@ class ReportHandler:
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
 
+        self.text_parameters = dict(
+            grid_option=True,
+            community_name="Epute-Ipare",
+            community_region="Region",
+            hh_number=10,
+            ent_number=0,
+            pf_number=3,
+            system_assets="[PV modules [size]], [a generator [size]] [and a battery [size]]",
+            system_capacity=290,
+            system_capex=2300,
+            system_opex=3400,
+            model_name="community model led",
+            yearly_production=2000,
+            community_latitude="latitude",
+            community_longitude="longitude",
+            project_name="My project",
+            project_lifetime=20,
+            total_investments=120000,
+            disco="DiscoName",
+        )
+        if self.text_parameters["grid_option"] is False:
+            self.text_parameters["grid_option"] = "is not connected to the national grid"
+        else:
+            self.text_parameters[
+                "grid_option"
+            ] = "connected to the national grid, however, the electricity level provided is insufficient with an average amount of {grid_connection_hours} hours of electricity per day"
         for style in self.doc.styles:
             if style.type == 1 and style.name.startswith("Heading"):
                 style.font.color.rgb = RGBColor(0, 135, 83)
