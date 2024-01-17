@@ -6,6 +6,9 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.oxml.ns import nsdecls
+from docx.oxml import parse_xml
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -172,12 +175,20 @@ class ReportHandler:
                 style.font.color.rgb = RGBColor(0, 135, 83)
 
     def add_heading(self, text, level=1):
-        self.doc.add_heading(text, level)
+        self.doc.add_heading(text.format(**self.text_parameters), level)
 
-    def add_paragraph(self, text=None):
-        self.doc.add_paragraph(text)
+    def add_paragraph(self, text=None, style=None, emph=[]):
+        if text is not None:
+            text = text.format(**self.text_parameters)
+        p = self.doc.add_paragraph(style=style)
+        runner = p.add_run(text)
+        if "italic" in emph:
+            runner.italic = True
+        if "bold" in emph:
+            runner.bold = True
+        return p
 
-    def add_image(self, path, width=Inches(6), height=Inches(4)):
+    def add_image(self, path, width=None, height=None):
         self.doc.add_picture(path, width=width, height=height)
 
     def add_caption(self, tab_or_figure, caption):
@@ -223,6 +234,49 @@ class ReportHandler:
 
         if caption is not None:
             self.add_caption(t, caption)
+
+    def add_table(self, records):
+        table = self.doc.add_table(rows=len(records), cols=len(records[0]))
+        # hdr_cells = table.rows[0].cells
+        # hdr_cells[0].text = 'Qty'
+        # hdr_cells[1].text = 'Id'
+        # hdr_cells[2].text = 'Desc'
+        for j, record in enumerate(records):
+            row_cells = table.rows[j].cells
+            # row_cells = table.add_row().cells
+            for i, item in enumerate(record):
+                row_cells[i].text = item.format(**self.text_parameters)
+
+    def add_financial_table(self, records, title=""):
+        table = self.doc.add_table(rows=1, cols=2)
+        row_cells = table.rows[0].cells
+        row_cells[0].merge(row_cells[-1])
+
+        # Set a cell background (shading) color and align center
+        shading_elm = parse_xml(r'<w:shd {} w:fill="008753"/>'.format(nsdecls("w")))
+        row_cells[0]._tc.get_or_add_tcPr().append(shading_elm)
+        row_cells[0].text = title
+        p = row_cells[0].paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        for j, record in enumerate(records):
+            row_cells = table.add_row().cells
+            for i, item in enumerate(record):
+                row_cells[i].text = item.format(**self.text_parameters)
+
+        # TODO add a thick line
+
+        row_cells = table.add_row().cells
+        row_cells[0].text = "Total"
+        row_cells[0].bold = True
+
+    def add_list(self, list_items, style=None, emph=[]):
+        if isinstance(list_items, str):
+            list_items = [list_items]
+        if style is None:
+            style = "List Bullet"
+        for bullet in list_items:
+            self.add_paragraph(bullet, style=style, emph=emph)
 
     def save(self, response):
         self.doc.save(response)
