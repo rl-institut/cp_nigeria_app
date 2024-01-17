@@ -282,7 +282,7 @@ class ReportHandler:
         self.doc.save(response)
 
     def create_cover_sheet(self, project):
-        title = f"{project.name}: Mini-Grid Implementation Plan"
+        title = f"Mini-Grid Implementation Plan for {project.name}"
         subtitle = f"Date: {date.today().strftime('%d.%m.%Y')}"
         summary = f"{project.description}"
         try:
@@ -299,23 +299,43 @@ class ReportHandler:
         header.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         # Add title
-        title_paragraph = self.doc.add_paragraph()
-        title_paragraph.paragraph_format.space_before = Inches(2.5)
+        title_paragraph = self.add_paragraph()
+        title_paragraph.paragraph_format.space_before = Inches(0.5)
         title_run = title_paragraph.add_run(title)
         title_run.font.size = Pt(20)
         title_run.font.bold = True
         title_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         # Add subtitle
-        subtitle_paragraph = self.doc.add_paragraph()
+        subtitle_paragraph = self.add_paragraph()
         subtitle_run = subtitle_paragraph.add_run(subtitle)
         subtitle_run.font.size = Pt(14)
         subtitle_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
+        # Add project details
+        self.add_heading("Project details", level=2)
+
+        self.add_table(
+            (
+                ("Project name", "{project_name}"),
+                ("Community name", "{community_name}"),
+                ("Location", "{community_region} ({community_latitude} / {community_longitude})"),
+                ("Annual Energy Production", "{yearly_production}"),
+                ("Indicative system size", "{system_capacity}"),
+                ("Indicative total investment costs", "{total_investments}"),
+                ("Designated Distribution Company", "{disco}"),
+                ("Indicative Project Lifetime", "{project_lifetime}"),
+            )
+        )
+
         # Add project summary
-        subtitle_paragraph = self.doc.add_paragraph()
+        self.add_heading("Project summary", level=2)
+        self.add_paragraph(
+            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex}, while overall Opex amount to {system_opex}. Regarding the project implementation, a {model_name} business model approach is suggested."
+        )
+
         subtitle_run = subtitle_paragraph.add_run(summary)
-        subtitle_run.font.size = Pt(14)
+        subtitle_run.font.size = Pt(10)
         subtitle_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         # Add page break
@@ -323,23 +343,88 @@ class ReportHandler:
 
     def create_report_content(self, project):
         # TODO implement properly
-        self.doc.add_heading("Overview")
-        self.doc.add_paragraph("Here we will have some data about the community")
-        self.doc.add_heading("Demand estimation")
-        self.doc.add_paragraph(
-            "Here there will be information about how the demand was estimated, information about"
-            "community enterprises, anchor loads, etc. "
+
+        self.add_heading("Context and Background")
+        self.add_heading("Community Background", level=2)
+        self.add_list(
+            (
+                "The community is located in the {community_region} region",
+                "The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities.",
+            )
         )
-        self.doc.add_heading("Supply system")
-        self.doc.add_paragraph("Here the optimized system will be described")
-        self.doc.add_heading("Technoeconomic data")
-        self.doc.add_paragraph("Here we will have information about the project costs, projected tariffs etc")
-        self.doc.add_heading("Contact persons")
-        self.doc.add_paragraph(
-            "Here, the community will get information about who best to approach according to their"
-            "current situation (e.g. isolated or interconnected), their DisCo according to "
-            "geographical area etc."
+
+        self.add_table(
+            (
+                ("Consumption Level", "Very Low", "Low", "Middle", "High", "Very High"),
+                ("Number of households", "1", "2", "3", "4", "5"),
+            )
         )
+
+        self.add_paragraph(
+            "--------------------------------------\nDear toolbox user, it is recommended to enrich this section, by providing the following information",
+            emph="italic",
+        )
+        self.add_list("Description of the current electricity access situation", emph="italic")
+        self.add_list(
+            ("Use of diesel generators", "Most common cooking practices", "Use of lightening"),
+            style="List Bullet 2",
+            emph="italic",
+        )
+        self.add_list(
+            (
+                "Experiences with community-led projects",
+                "Existing community organizational structures, e.g. (energy) cooperatives, associations, committees, etc.",
+                "Skills of community members in the context of energy/electricity supply",
+            ),
+            emph="italic",
+        )
+
+        self.add_heading("CP-Nigeria Toolbox Context", level=2)
+        self.add_paragraph(
+            "This implementation plan is the output of an open source online toolbox LINK. The toolbox has been developed within the frame of the project CP Nigeria: Communities of Practice as driver of a bottom-up energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). \nThe overall objective of the project is to achieve a climate-friendly energy supply through decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must play a driving role. The project therefore aims to create exemplary civil society nuclei ('Communities of Practice') and to empower them to plan and implement DRE projects (local level). Based on this, it works transdisciplinary on improving the political framework for local decentralized RE projects (national level). In this way, civil society can be empowered to implement DRE independently and make a significant contribution to the achievement of climate change mitigation goals.  https://www.international-climate-initiative.com/en/project/communities-of-practice-as-driver-of-a-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/."
+        )
+
+        self.add_heading("Methodology", level=2)
+
+        self.add_heading("Electricity Demand Profile")
+        self.add_list("Table or graph with")
+        self.add_list(
+            (
+                "Number of total consumers",
+                "Number of each consumer type (public, commercial, household)",
+                "Households: share of each demand TIER",
+                "Enterprises: share of each enterprise type",
+                "Public: share of each public type",
+            ),
+            style="List Bullet 2",
+        )
+
+        self.add_list(
+            "Show weekly load profile, with different colors for each consumer type (Below show total demand per day, month and year)"
+        )
+
+        self.add_list(
+            "Demand increase: show growth rate / year in % and absolute yearly demand values in year 5, 10, 15 and 20"
+        )
+
+        self.add_heading("Business Model of the Mini-grid Project")
+        self.add_paragraph(
+            "For the successful implementation of this mini-project, a cooperative-led model is proposed. Hence, the {community_name} community aims to create a cooperative (co-op) to lead the development and governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. The co-op together with the undergrid community is responsible for project planning, development, and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, the installation of generation, storage, and distribution assets as well as respective responsibilities related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration of the business model is displayed in the figure below and indicative roles and responsibilities by the co-op and operator company are displayed in the table below. A cooperative-led model is an innovative approach in Nigeria that strongly enhances local awareness and engagement and that can achieve affordable tariffs for customers in the community. Challenging, however, will be the provision of adequate financial resources, therefore the community is now reaching out to commercial and concessional financiers."
+        )
+
+        self.add_image("static/assets/cp_nigeria/business_models/interconnected_operator_led.png", width=Inches(2.5))
+        self.add_image("static/assets/cp_nigeria/business_models/interconnected_operator_led_resp.png", width=Inches(5))
+
+        self.add_heading("Financial Analysis")
+
+        self.add_heading("Capital Expenditure (CAPEX)", level=2)
+
+        self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
+
+        self.add_heading("Operational Expenditure (OPEX)", level=2)
+        self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
+
+        self.add_heading("Next Steps")
 
 
 class FinancialTool:
