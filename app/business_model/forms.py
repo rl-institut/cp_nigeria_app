@@ -79,6 +79,8 @@ class EquityDataForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
         include_shs = kwargs.pop("include_shs", False)
+        instance = kwargs.pop("instance", None)
+        initial = kwargs.pop("initial", {})
         super().__init__(*args, **kwargs)
         if default is not None:
             for field, default_value in default.items():
@@ -86,11 +88,27 @@ class EquityDataForm(forms.ModelForm):
                     self.fields[field].widget.attrs.update(
                         {"placeholder": f"your current model suggests {default_value}"}
                     )
+
+        if instance is not None:
+            for field in self.fields:
+                initial_value = getattr(instance, field)
+                if initial_value is not None:
+                    self.fields[field].initial = initial_value * 100
+
         if not include_shs:
             for field in self.fields:
                 if "SHS" in field:
                     self.fields[field].widget = forms.HiddenInput()
                     self.fields[field].required = False
+
+    def clean(self):
+        """Convert the percentage values into values ranging from 0 to 1 (for further calculations)"""
+        super().clean()
+        for record, value in self.cleaned_data.items():
+            if value is not None:
+                self.cleaned_data[record] = value / 100
+
+        return self.cleaned_data
 
 
 class FinancialToolInputForm(forms.Form):
