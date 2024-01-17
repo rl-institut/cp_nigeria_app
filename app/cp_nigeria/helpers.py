@@ -424,8 +424,9 @@ class FinancialTool:
             how="left",
         )
 
-        revenue_lifetime = self.growth_over_lifetime_table(
-            revenue_df, "USD/Unit", "Growth rate", ["Description", "Target"]
+        revenue_lifetime = (
+            self.growth_over_lifetime_table(revenue_df, "USD/Unit", "Growth rate", ["Description", "Target"])
+            * self.exchange_rate
         )
 
         revenue_flows = revenue_lifetime.mul(self.system_lifetime, level=1)
@@ -451,32 +452,24 @@ class FinancialTool:
 
         return om_lifetime
 
-    @property
-    def debt_service_table(self):
-        """
-        This method creates a table for the loan debt service based on the loan amount, tenor, grace period and interest
-        rate. As of now this method assumes that there will be one loan according to the given debt share and project
-        CAPEX, but the method can easily be adapted to handle multiple loans by passing the parameters as arguments
-        instead (in the original excel table, both senior and junior loan exist). The calculate_capex() method is used
-        to calculate the loan amount.
-        """
-        tenor = 10
-        grace_period = 1
-        amount = self.financial_params["debt_share"][0] * self.capex["Total costs [NGN]"].sum()
-        interest_rate = self.financial_params["debt_interest_MG"][0]
-        debt_service = pd.DataFrame(index=["Interest", "Principal", "Balance opening", "Balance closing"])
-        debt_service[self.project_start - 1] = [0, 0, amount, amount]
+    def debt_service_table(self, amount, tenor, gp, ir, debt_start):
+        debt_service = pd.DataFrame(
+            index=["Interest", "Principal", "Balance opening", "Balance closing", "Capital service"],
+            columns=range(self.project_start - 1, self.project_start + self.project_duration),
+            data=0.0,
+        )
+        debt_service[debt_start - 1] = [0, 0, amount, amount, 0]
 
-        for index, year in enumerate(range(self.project_start, self.project_start + self.project_duration), 1):
-            per = index - grace_period
-            nper = tenor - grace_period
+        for index, year in enumerate(range(debt_start, debt_start + tenor), 1):
+            per = index - gp
+            nper = tenor - gp
             if index <= tenor:
-                if index > grace_period:
-                    debt_service.at["Principal", year] = -npf.ppmt(interest_rate, per, nper, amount)
+                if index > gp:
+                    debt_service.at["Principal", year] = -npf.ppmt(ir, per, nper, amount)
                 else:
                     debt_service.at["Principal", year] = 0
                 debt_service.at["Balance opening", year] = debt_service.loc["Balance closing", year - 1]
-                debt_service.at["Interest", year] = debt_service.loc["Balance opening", year] * interest_rate
+                debt_service.at["Interest", year] = debt_service.loc["Balance opening", year] * ir
                 debt_service.at["Balance closing", year] = (
                     debt_service.loc["Balance opening", year] - debt_service.at["Principal", year]
                 )
@@ -489,6 +482,39 @@ class FinancialTool:
         return debt_service
 
     @property
+    def initial_loan_table(self):
+        """
+        This method creates a table for the initial CAPEX debt according to the debt share (CAPEX - grant and equity).
+        """
+        tenor = 10
+        grace_period = 1
+        amount = self.financial_params["debt_share"][0] * self.capex["Total costs [NGN]"].sum()
+        interest_rate = self.financial_params["debt_interest_MG"][0]
+        debt_start = self.project_start
+
+        return self.debt_service_table(
+            amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
+        )
+
+    @property
+    def replacement_loan_table(self):
+        """
+        This method creates a table for the replacement costs debt (accounts for replacing battery, inverter and diesel
+        generator after 10 years).
+        """
+        # TODO should this always be 10 or depending on given shortest component lifetime
+        replacement_components = ["Battery", "Inverter", "Diesel Generator"]
+        tenor = 10
+        debt_start = self.project_start + 10
+        grace_period = 1
+        amount = self.capex[self.capex["Description"].isin(replacement_components)]["Total costs [NGN]"].sum()
+        interest_rate = self.financial_params["equity_interest_MG"][0]  # TODO find out why
+
+        return self.debt_service_table(
+            amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
+        )
+
+    @property
     def losses_over_lifetime(self):
         """
         This method first calculates the EBITDA (earnings before interest, tax, depreciation and amortization), then
@@ -499,7 +525,7 @@ class FinancialTool:
         capex_df = self.capex
         gross_capex = capex_df["Total costs [NGN]"].sum()
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
-        equity_share = 100 - self.financial_params["grant_share"][0] - self.financial_params["debt_share"][0]
+        equity_share = 1 - self.financial_params["grant_share"][0] - self.financial_params["debt_share"][0]
         equity = equity_share * gross_capex
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
@@ -510,7 +536,12 @@ class FinancialTool:
         losses.loc["Depreciation"] = 0.0
         losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
         losses.loc["Equity interest"] = equity * self.financial_params["equity_interest_MG"][0]
-        losses.loc["Senior loan interest"] = self.debt_service_table.loc["Interest"]
+        losses.loc["Debt interest"] = (
+            self.initial_loan_table.loc["Interest"] + self.replacement_loan_table.loc["Interest"]
+        )
+        losses.loc["Debt repayments"] = (
+            self.initial_loan_table.loc["Principal"] + self.replacement_loan_table.loc["Principal"]
+        )
 
         losses.loc["EBT"] = (
             losses.loc["EBITDA"]
