@@ -15,7 +15,8 @@ import numpy_financial as npf
 import os
 import csv
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
-from business_model.models import EquityData
+from business_model.models import EquityData, BusinessModel
+from business_model.helpers import B_MODELS
 from dashboard.models import FancyResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
@@ -87,7 +88,6 @@ def get_aggregated_cgs(project):
 
         # filter consumer group objects based on consumer type
         group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-
         # calculate total consumers and total demand as sum of array elements in kWh
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
@@ -140,28 +140,45 @@ def get_aggregated_demand(project):
 
 
 class ReportHandler:
-    def __init__(self):
+    def __init__(self, project):
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
 
+        options = Options.objects.get(project=project)
+        if options.community is not None:
+            community_name = options.community.name
+        else:
+            community_name = project.name
+        self.bm = BusinessModel.objects.get(scenario=project.scenario)
+        self.bm_name = self.bm.model_name
+
+        self.project = project
+        self.image_path = dict(
+            es_schema="static/assets/gui/" + options.schema_name,
+            bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],
+            bm_resp="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Responsibilities"],
+        )
+
+        self.aggregated_cgs = get_aggregated_cgs(self.project)
+
         self.text_parameters = dict(
-            grid_option=True,
-            community_name="Epute-Ipare",
+            grid_option=options.main_grid,
+            bm_name=B_MODELS[self.bm_name]["Verbose"],
+            community_name=community_name,
             community_region="Region",
-            hh_number=10,
-            ent_number=0,
-            pf_number=3,
+            hh_number=self.aggregated_cgs["households"]["nr_consumers"],
+            ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
+            pf_number=self.aggregated_cgs["public"]["nr_consumers"],
             system_assets="[PV modules [size]], [a generator [size]] [and a battery [size]]",
-            system_capacity=290,
-            system_capex=2300,
-            system_opex=3400,
-            model_name="community model led",
-            yearly_production=2000,
-            community_latitude="latitude",
-            community_longitude="longitude",
-            project_name="My project",
-            project_lifetime=20,
-            total_investments=120000,
+            system_capacity="XXXX",
+            system_capex="XXXX",
+            system_opex="XXXX",
+            yearly_production="XXXX",
+            community_latitude=self.project.latitude,
+            community_longitude=self.project.longitude,
+            project_name=self.project.name,
+            project_lifetime=self.project.economic_data.duration,
+            total_investments="XXXX",
             disco="DiscoName",
         )
         if self.text_parameters["grid_option"] is False:
@@ -281,10 +298,10 @@ class ReportHandler:
     def save(self, response):
         self.doc.save(response)
 
-    def create_cover_sheet(self, project):
-        title = f"Mini-Grid Implementation Plan for {project.name}"
+    def create_cover_sheet(self):
+        title = f"Mini-Grid Implementation Plan for {self.project.name}"
         subtitle = f"Date: {date.today().strftime('%d.%m.%Y')}"
-        summary = f"{project.description}"
+        summary = f"{self.project.description}"
         try:
             # Set font "Lato" for the entire self.doc
             self.doc.styles["Normal"].font.name = "Lato"
@@ -331,7 +348,7 @@ class ReportHandler:
         # Add project summary
         self.add_heading("Project summary", level=2)
         self.add_paragraph(
-            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex}, while overall Opex amount to {system_opex}. Regarding the project implementation, a {model_name} business model approach is suggested."
+            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex}, while overall Opex amount to {system_opex}. Regarding the project implementation, an {bm_name} business model approach is suggested."
         )
 
         subtitle_run = subtitle_paragraph.add_run(summary)
@@ -341,7 +358,7 @@ class ReportHandler:
         # Add page break
         self.doc.add_page_break()
 
-    def create_report_content(self, project):
+    def create_report_content(self):
         # TODO implement properly
 
         self.add_heading("Context and Background")
@@ -356,7 +373,7 @@ class ReportHandler:
         self.add_table(
             (
                 ("Consumption Level", "Very Low", "Low", "Middle", "High", "Very High"),
-                ("Number of households", "1", "2", "3", "4", "5"),
+                ("Number of households", "XX", "XX", "XX", "XX", "XX"),
             )
         )
 
@@ -385,7 +402,7 @@ class ReportHandler:
         )
 
         self.add_heading("Methodology", level=2)
-
+        self.doc.add_page_break()
         self.add_heading("Electricity Demand Profile")
         self.add_list("Table or graph with")
         self.add_list(
@@ -406,15 +423,21 @@ class ReportHandler:
         self.add_list(
             "Demand increase: show growth rate / year in % and absolute yearly demand values in year 5, 10, 15 and 20"
         )
+        self.doc.add_page_break()
+        self.add_heading("Electricity Supply System Size and Composition")
+        self.add_image(self.image_path["es_schema"], width=Inches(3))
 
+        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+        self.doc.add_page_break()
         self.add_heading("Business Model of the Mini-grid Project")
         self.add_paragraph(
-            "For the successful implementation of this mini-project, a cooperative-led model is proposed. Hence, the {community_name} community aims to create a cooperative (co-op) to lead the development and governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. The co-op together with the undergrid community is responsible for project planning, development, and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, the installation of generation, storage, and distribution assets as well as respective responsibilities related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration of the business model is displayed in the figure below and indicative roles and responsibilities by the co-op and operator company are displayed in the table below. A cooperative-led model is an innovative approach in Nigeria that strongly enhances local awareness and engagement and that can achieve affordable tariffs for customers in the community. Challenging, however, will be the provision of adequate financial resources, therefore the community is now reaching out to commercial and concessional financiers."
+            "For the successful implementation of this mini-project, an {bm_name} is proposed. Hence, the {community_name} community aims to create a cooperative (co-op) to lead the development and governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. The co-op together with the undergrid community is responsible for project planning, development, and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, the installation of generation, storage, and distribution assets as well as respective responsibilities related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration of the business model is displayed in the figure below and indicative roles and responsibilities by the co-op and operator company are displayed in the table below. A cooperative-led model is an innovative approach in Nigeria that strongly enhances local awareness and engagement and that can achieve affordable tariffs for customers in the community. Challenging, however, will be the provision of adequate financial resources, therefore the community is now reaching out to commercial and concessional financiers."
         )
 
-        self.add_image("static/assets/cp_nigeria/business_models/interconnected_operator_led.png", width=Inches(2.5))
-        self.add_image("static/assets/cp_nigeria/business_models/interconnected_operator_led_resp.png", width=Inches(5))
+        self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
+        self.add_image(self.image_path["bm_resp"], width=Inches(5))
 
+        self.doc.add_page_break()
         self.add_heading("Financial Analysis")
 
         self.add_heading("Capital Expenditure (CAPEX)", level=2)
@@ -424,6 +447,7 @@ class ReportHandler:
         self.add_heading("Operational Expenditure (OPEX)", level=2)
         self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
 
+        self.doc.add_page_break()
         self.add_heading("Next Steps")
 
 

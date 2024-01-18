@@ -1544,9 +1544,9 @@ def ajax_download_report(request):
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         logging.info("downloading implementation plan")
-        implementation_plan = ReportHandler()
-        implementation_plan.create_cover_sheet(project)
-        implementation_plan.create_report_content(project)
+        implementation_plan = ReportHandler(project)
+        implementation_plan.create_cover_sheet()
+        implementation_plan.create_report_content()
         # implementation_plan.add_paragraph("For now, this is just a demo")
         # implementation_plan.add_paragraph("Here are some graphs:")
         #
@@ -1556,8 +1556,8 @@ def ajax_download_report(request):
 
         # TODO what is the best way to potentially not recalculate all of the information but reuse it
         # Add tables
-        aggregated_cgs = get_aggregated_cgs(project)
-        implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
+        # aggregated_cgs = get_aggregated_cgs(project)
+        # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
 
         # Add images
         report_imgs = ["cpn_stacked_timeseriesElectricity"]
