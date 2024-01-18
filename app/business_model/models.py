@@ -57,6 +57,7 @@ class BusinessModel(models.Model):
 
 class BMQuestion(models.Model):
     question_for_user = models.TextField(null=False)
+    sub_question_to = models.IntegerField(null=True)
     criteria = models.TextField(null=False)
     criteria_weight = models.FloatField(null=False, verbose_name="Criteria weight")
     score_allowed_values = models.TextField(null=True)
