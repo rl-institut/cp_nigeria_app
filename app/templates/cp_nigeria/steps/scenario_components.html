@@ -36,7 +36,30 @@
 		<form method="POST" action="{% url 'cpn_scenario' proj_id %}">
 			{% csrf_token %}
 			<button id="submitFormBtn" style="display: none;" class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
-
+			<div class="row">
+				<div class="col-md-4"></div>
+				<div class="col-md-4">
+					<div class="cpn-economic__results">
+						<div class="cpn-economic__results--1">
+                  <span class="title">
+                    Avg. daily demand (kWh)
+                  </span>
+							<span class="value">
+                    {{ daily_demand }}
+                  </span>
+						</div>
+						<div class="cpn-economic__results--2">
+                  <span class="title">
+                    Peak demand (kW)
+                  </span>
+							<span class="value">
+                    {{ peak_demand }}
+                  </span>
+						</div>
+					</div>
+				</div>
+<!--				<div class="col-md-4"></div>-->
+			</div>
 			<div class="row">
 				<div class="col-md-4">
 					<div>
