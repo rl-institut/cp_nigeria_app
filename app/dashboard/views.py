@@ -1086,7 +1086,7 @@ def scenario_visualize_revenue(request, scen_id):
 
     y = [
         revenue.loc["operating_revenues_total"].tolist(),
-        costs.loc["costs_om_total"].tolist(),
+        costs.loc["opex_total"].tolist(),
     ]
 
     x = revenue.columns.tolist()

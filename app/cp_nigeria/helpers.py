@@ -14,6 +14,7 @@ from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
 from django.db.models import Func
 from django.contrib.staticfiles.storage import staticfiles_storage
+from dashboard.models import get_costs
 
 
 class Unnest(Func):
@@ -214,7 +215,7 @@ class ReportHandler:
 class FinancialTool:
     cost_assumptions = pd.read_csv(staticfiles_storage.path("financial_tool/cost_assumptions.csv"), sep=";")
 
-    def __init__(self, project, opt_caps, asset_costs):
+    def __init__(self, project):
         """
         The financial tool object should be initialized with the opt_caps and asset_costs objects created in the results
         page. When a financial tool object is initialized, the project start and duration are set, the relevant economic
@@ -231,7 +232,7 @@ class FinancialTool:
         self.project_duration = project.economic_data.duration
 
         self.financial_params = self.collect_financial_params()
-        self.system_params = self.collect_system_params(opt_caps, asset_costs)
+        self.system_params = self.collect_system_params()
 
         # calculate the system growth over the project lifetime and add rows for new mg and shs consumers per year
         system_lifetime = self.growth_over_lifetime_table(
@@ -259,45 +260,39 @@ class FinancialTool:
         # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
         #  simulation (which is the average over project lifetime) - discuss the best approach for results display here
         if self.financial_params["fuel_price_increase"][0] != 0:
-            asset_costs_df.at["diesel_fuel_consumption", "annuity_om"] = self.yearly_increase(
-                asset_costs_df.loc["diesel_fuel_consumption", "annuity_om"],
+            costs.at["diesel_generator", "fuel_costs_total"] = self.yearly_increase(
+                costs.loc["diesel_generator", "fuel_costs_total"],
                 self.financial_params["fuel_price_increase"][0],
-                round(self.project_duration / 2, 0),
+                -int(self.project_duration / 2),
             )
-
-        costs = []
-        for cat, col in zip(
-            ["costs_om", "costs_capex", "costs_replacement"],
-            ["annuity_om", "costs_upfront_in_year_zero", "replacement_costs_during_project_lifetime"],
-        ):
-            costs += [
-                {"supply_source": "battery" if index == "battery capacity" else index, "category": cat, "value": costs}
-                for index, costs in asset_costs_df[col].items()
-            ]
 
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
         asset_sizes = pd.DataFrame.from_records(opt_caps)
+        assets = pd.concat([asset_sizes.set_index("asset"), costs], axis=1)
 
         system_params = pd.concat(
             [
-                pd.melt(asset_sizes, id_vars=["asset"], var_name=["category"]).rename(
-                    columns={"asset": "supply_source"}
+                pd.melt(assets.reset_index(), id_vars=["index"], var_name=["category"]).rename(
+                    columns={"index": "supply_source"}
                 ),
                 pd.melt(total_demand.reset_index(), id_vars=["supply_source"], var_name=["category"]),
-                pd.DataFrame(costs),
             ],
             ignore_index=True,
         )
 
+        system_params.drop(system_params[system_params.value == 0].index, inplace=True)
+
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
-        system_params.loc[system_params["category"] == "costs_om", "growth_rate"] = growth_rate_om
         system_params.loc[
-            system_params["supply_source"] == "diesel_fuel_consumption", "growth_rate"
-        ] = self.financial_params["fuel_price_increase"][0]
+            system_params["category"].isin(["opex_fix_total", "opex_var_total"]), "growth_rate"
+        ] = growth_rate_om
+        system_params.loc[system_params["category"] == "fuel_costs_total", "growth_rate"] = self.financial_params[
+            "fuel_price_increase"
+        ][0]
         system_params["label"] = system_params["supply_source"] + "_" + system_params["category"]
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
@@ -399,7 +394,7 @@ class FinancialTool:
                 "Category": "Power supply system",
                 "Total costs [NGN]": row["value"],
             }
-            for index, row in self.system_params[self.system_params["category"] == "costs_capex"].iterrows()
+            for index, row in self.system_params[self.system_params["category"] == "capex_initial"].iterrows()
         ]
 
         capex_df = pd.concat([capex_df, pd.DataFrame(system_capex_rows)], ignore_index=True)
@@ -438,14 +433,14 @@ class FinancialTool:
         the system together with the annual cost increase assumptions.
         """
         shs_costs_om = 7 * self.exchange_rate
-        costs_om_df = self.system_params[self.system_params["category"] == "costs_om"]
+        costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", "growth_rate", "label")
 
         # multiply the unit prices by the amount
-        om_lifetime.loc["costs_om_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
-        om_lifetime.loc["costs_om_total"] = om_lifetime.sum()
+        om_lifetime.loc["opex_total"] = om_lifetime.sum()
 
         return om_lifetime
 
