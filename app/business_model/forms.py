@@ -74,13 +74,12 @@ class BMQuestionForm(forms.Form):
 class EquityDataForm(forms.ModelForm):
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start"]
+        exclude = ["scenario", "debt_start", "debt_share"]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
         include_shs = kwargs.pop("include_shs", False)
         instance = kwargs.pop("instance", None)
-        initial = kwargs.pop("initial", {})
         super().__init__(*args, **kwargs)
         if default is not None:
             for field, default_value in default.items():
@@ -93,7 +92,10 @@ class EquityDataForm(forms.ModelForm):
             for field in self.fields:
                 initial_value = getattr(instance, field)
                 if initial_value is not None:
-                    self.fields[field].initial = initial_value * 100
+                    if "amount" in field:
+                        self.fields[field].initial = initial_value / 1000000
+                    else:
+                        self.fields[field].initial = initial_value * 100
 
         if not include_shs:
             for field in self.fields:
@@ -106,7 +108,10 @@ class EquityDataForm(forms.ModelForm):
         super().clean()
         for record, value in self.cleaned_data.items():
             if value is not None:
-                self.cleaned_data[record] = value / 100
+                if "amount" in record:
+                    self.cleaned_data[record] = value * 1000000
+                else:
+                    self.cleaned_data[record] = value / 100
 
         return self.cleaned_data
 

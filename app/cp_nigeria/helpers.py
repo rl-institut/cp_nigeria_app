@@ -313,11 +313,12 @@ class FinancialTool:
             "debt_start",
             "fuel_price_increase",
             "grant_share",
-            "debt_share",
             "debt_interest_MG",
             "debt_interest_SHS",
             "equity_interest_MG",
             "equity_interest_SHS",
+            "equity_community_amount",
+            "equity_developer_amount",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
         financial_params = pd.concat([pd.DataFrame.from_records(qs_eq), pd.DataFrame.from_records(qs_ed)], axis=1)
@@ -488,7 +489,7 @@ class FinancialTool:
         """
         tenor = 10
         grace_period = 1
-        amount = self.financial_params["debt_share"][0] * self.capex["Total costs [NGN]"].sum()
+        amount = self.initial_loan
         interest_rate = self.financial_params["debt_interest_MG"][0]
         debt_start = self.project_start
 
@@ -523,15 +524,14 @@ class FinancialTool:
         """
         depreciation_yrs = 20
         capex_df = self.capex
-        gross_capex = capex_df["Total costs [NGN]"].sum()
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
-        equity_share = 1 - self.financial_params["grant_share"][0] - self.financial_params["debt_share"][0]
-        equity = equity_share * gross_capex
+        equity = (
+            self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
+        )
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime.loc["operating_revenues_total"]
-            - self.om_costs_over_lifetime.loc["costs_om_total"]
+            self.revenue_over_lifetime.loc["operating_revenues_total"] - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
         losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
@@ -599,3 +599,13 @@ class FinancialTool:
     # TODO see if we can implement the goal seek function to find the tariff
     def tariff_goal_seek(self):
         pass
+
+    @property
+    def initial_loan(self):
+        gross_capex = self.capex["Total costs [NGN]"].sum()
+        total_equity = (
+            self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
+        )
+        total_grant = self.financial_params["grant_share"][0] * gross_capex
+        amount = gross_capex - total_grant - total_equity
+        return amount

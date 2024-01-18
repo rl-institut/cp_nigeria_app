@@ -109,6 +109,12 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         null=True,
     )
+    equity_community_amount = models.FloatField(
+        verbose_name=_("Amount of equity the community would be " "able to mobilize (Million NGN)"), default=0
+    )
+    equity_developer_amount = models.FloatField(
+        verbose_name=_("Amount of equity the project developer would be " "able to mobilize (Million NGN)"), default=0
+    )
 
     def compute_average_fuel_price(self, initial_fuel_price, project_duration):
         """
