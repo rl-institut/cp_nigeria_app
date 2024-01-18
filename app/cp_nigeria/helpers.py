@@ -243,7 +243,7 @@ class FinancialTool:
         )
         self.system_lifetime = self.add_diff_rows(system_lifetime)
 
-    def collect_system_params(self, opt_caps, asset_costs):
+    def collect_system_params(self):
         """
         This method takes the optimized capacities and cost results as inputs and returns a dataframe with all the
         relevant system and cost parameters for the results (capex, opex, replacement costs and asset sizes). The
@@ -255,7 +255,15 @@ class FinancialTool:
         """
         growth_rate = 0.0
         growth_rate_om = 0.015
-        asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
+
+        # get capacities and cost results
+        qs_res = FancyResults.objects.filter(simulation__scenario=self.project.scenario)
+        opt_caps = qs_res.filter(
+            optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+        ).values("asset", "optimized_capacity", "total_flow")
+        costs = get_costs(self.project.scenario.simulation)
+        costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
+        costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
         # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
         #  simulation (which is the average over project lifetime) - discuss the best approach for results display here

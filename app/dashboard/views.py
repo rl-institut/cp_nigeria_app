@@ -1038,18 +1038,9 @@ def scenario_visualize_sankey(request, scen_id):
 
 def scenario_visualize_cash_flow(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-    kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=scenario).cost_values)
-    asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
-    for asset, costs in asset_costs.items():
-        costs["unit"] = scenario.project.economic_data.currency_symbol
-
-    qs_res = FancyResults.objects.filter(simulation__scenario=scenario)
-    opt_caps = qs_res.filter(
-        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
-    ).values("asset", "optimized_capacity", "total_flow")
 
     # Initialize financial tool to calculate financial flows and test output graphs
-    ft = FinancialTool(scenario.project, opt_caps, asset_costs)
+    ft = FinancialTool(scenario.project)
     initial_loan = ft.initial_loan_table
     replacement_loan = ft.replacement_loan_table
 
@@ -1068,19 +1059,9 @@ def scenario_visualize_cash_flow(request, scen_id):
 
 def scenario_visualize_revenue(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-    # TODO handle this better so ft doesnt have to be created multiple times
-    kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=scenario).cost_values)
-    asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
-    for asset, costs in asset_costs.items():
-        costs["unit"] = scenario.project.economic_data.currency_symbol
-
-    qs_res = FancyResults.objects.filter(simulation__scenario=scenario)
-    opt_caps = qs_res.filter(
-        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
-    ).values("asset", "optimized_capacity", "total_flow")
 
     # Initialize financial tool to calculate financial flows and test output graphs
-    ft = FinancialTool(scenario.project, opt_caps, asset_costs)
+    ft = FinancialTool(scenario.project)
     revenue = ft.revenue_over_lifetime
     costs = ft.om_costs_over_lifetime
 
