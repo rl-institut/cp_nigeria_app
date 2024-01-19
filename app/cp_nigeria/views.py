@@ -1162,7 +1162,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
     # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
 
-    revenue_flows = ft.revenue_over_lifetime
+    revenue_flows = ft.revenue_over_lifetime()
     # traces = []
     # for ix, row in revenue_flows.iterrows():
     #     x_data = revenue_flows.columns.tolist()

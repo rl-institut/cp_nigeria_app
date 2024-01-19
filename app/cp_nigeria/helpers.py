@@ -410,12 +410,18 @@ class FinancialTool:
 
         return capex_df  # capex_df['Total costs [USD]'].sum() returns gross CAPEX
 
-    @property
-    def revenue_over_lifetime(self):
+    def revenue_over_lifetime(self, custom_tariff=None):
         """
         This method returns a wide table calculating the revenue flows over project lifetime based on the cost
         assumptions for revenue together with the number of consumers and total demand of the system.
         """
+
+        # set the tariff to the already calculated tariff if the function is not being called from goal seek
+        if custom_tariff is not None:
+            self.cost_assumptions.loc[
+                self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"
+            ] = custom_tariff
+
         revenue_df = pd.merge(
             self.cost_assumptions[self.cost_assumptions["Category"] == "Revenue"],
             self.system_params[["label", "value", "growth_rate"]],
@@ -515,8 +521,7 @@ class FinancialTool:
             amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
         )
 
-    @property
-    def losses_over_lifetime(self):
+    def losses_over_lifetime(self, custom_tariff=None):
         """
         This method first calculates the EBITDA (earnings before interest, tax, depreciation and amortization), then
         the financial losses through depreciation, interest payments to get the EBT (earnings before tax) and finally
@@ -531,7 +536,8 @@ class FinancialTool:
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime.loc["operating_revenues_total"] - self.om_costs_over_lifetime.loc["opex_total"]
+            self.revenue_over_lifetime(custom_tariff).loc["operating_revenues_total"]
+            - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
         losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
@@ -557,14 +563,13 @@ class FinancialTool:
 
         return losses
 
-    @property
-    def cash_flow_over_lifetime(self):
+    def cash_flow_over_lifetime(self, custom_tariff=None):
         """
         This method calculates the cash flows over system lifetime considering the previously calculated loan debt,
         earnings and financial losses. Both the losses_ver_lifetime() and debt_service_table() are called here.
         """
         cash_flow = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
-        losses = self.losses_over_lifetime
+        losses = self.losses_over_lifetime(custom_tariff)
 
         cash_flow.loc["Cash flow from operating activity"] = losses.loc["EBITDA"] - losses.loc["Corporate tax"]
         cash_flow.loc["Cash flow after debt service"] = (
@@ -590,15 +595,17 @@ class FinancialTool:
         """
         gross_capex = self.capex["Total costs [NGN]"].sum()
         grant = self.financial_params["grant_share"][0] * gross_capex
-        cash_flow = self.cash_flow_over_lifetime
+        cash_flow = self.cash_flow_over_lifetime()
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
         cash_flow_irr.insert(0, -gross_capex + grant)
 
         return npf.irr(cash_flow_irr[: (years + 1)])
 
-    # TODO see if we can implement the goal seek function to find the tariff
-    def tariff_goal_seek(self):
-        pass
+    def goal_seek_helper(self, custom_tariff):
+        cashflow_helper = np.sum(
+            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:4]
+        )
+        return cashflow_helper
 
     @property
     def initial_loan(self):
@@ -609,3 +616,91 @@ class FinancialTool:
         total_grant = self.financial_params["grant_share"][0] * gross_capex
         amount = gross_capex - total_grant - total_equity
         return amount
+
+    def get_tariff(self):
+        return GoalSeek(self.goal_seek_helper, 0, 0.175)
+
+
+def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
+    """
+    code taken from https://github.com/DrTol/GoalSeek_Python
+    Copyright (c) 2019 Hakan İbrahim Tol
+    """
+    # Goal Seek function of Excel
+    #   via use of Line Search and Bisection Methods
+
+    # Inputs
+    #   fun     : Function to be evaluated
+    #   goal    : Expected result/output
+    #   x0      : Initial estimate/Starting point
+
+    # Initial check
+    if fun(x0) == goal:
+        print("Exact solution found")
+        return x0
+
+    # Line Search Method
+    step_sizes = np.logspace(-1, 4, 6)
+    scopes = np.logspace(1, 5, 5)
+
+    vFun = np.vectorize(fun)
+
+    for scope in scopes:
+        break_nested = False
+        for step_size in step_sizes:
+            cApos = np.linspace(x0, x0 + step_size * scope, int(scope))
+            cAneg = np.linspace(x0, x0 - step_size * scope, int(scope))
+
+            cA = np.concatenate((cAneg[::-1], cApos[1:]), axis=0)
+
+            fA = vFun(cA) - goal
+
+            if np.any(np.diff(np.sign(fA))):
+                index_lb = np.nonzero(np.diff(np.sign(fA)))
+
+                if len(index_lb[0]) == 1:
+                    index_ub = index_lb + np.array([1])
+
+                    x_lb = np.ndarray.item(np.array(cA)[index_lb])
+                    x_ub = np.ndarray.item(np.array(cA)[index_ub])
+                    break_nested = True
+                    break
+                else:  # Two or more roots possible
+                    index_ub = index_lb + np.array([1])
+
+                    print("Other solution possible at around, x0 = ", np.array(cA)[index_lb[0][1]])
+
+                    x_lb = np.ndarray.item()(np.array(cA)[index_lb[0][0]])
+                    x_ub = np.ndarray.item()(np.array(cA)[index_ub[0][0]])
+                    break_nested = True
+                    break
+
+        if break_nested:
+            break
+    if not x_lb or not x_ub:
+        print("No Solution Found")
+        return
+
+    # Bisection Method
+    iter_num = 0
+    error = 10
+
+    while iter_num < MaxIter and fTol < error:
+        x_m = (x_lb + x_ub) / 2
+        f_m = fun(x_m) - goal
+
+        error = abs(f_m)
+
+        if (fun(x_lb) - goal) * (f_m) < 0:
+            x_ub = x_m
+        elif (fun(x_ub) - goal) * (f_m) < 0:
+            x_lb = x_m
+        elif f_m == 0:
+            print("Exact spolution found")
+            return x_m
+        else:
+            print("Failure in Bisection Method")
+
+        iter_num += 1
+
+    return x_m
