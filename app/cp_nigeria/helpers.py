@@ -437,7 +437,7 @@ class FinancialTool:
         )
 
         revenue_flows = revenue_lifetime.mul(self.system_lifetime, level=1)
-        revenue_flows.loc["operating_revenues_total"] = revenue_flows.sum()
+        revenue_flows.loc[("Total operating revenues", "operating_revenues_total"), :] = revenue_flows.sum()
 
         return revenue_flows
 
@@ -536,7 +536,7 @@ class FinancialTool:
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime(custom_tariff).loc["operating_revenues_total"]
+            self.revenue_over_lifetime(custom_tariff).loc[("Total operating revenues", "operating_revenues_total"), :]
             - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0

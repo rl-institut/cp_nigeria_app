@@ -1068,7 +1068,7 @@ def scenario_visualize_revenue(request, scen_id):
     costs = ft.om_costs_over_lifetime
 
     y = [
-        revenue.loc["operating_revenues_total"].tolist(),
+        revenue.loc[("Total operating revenues", "operating_revenues_total"), :].tolist(),
         costs.loc["opex_total"].tolist(),
     ]
 
