@@ -89,7 +89,9 @@ class EquityData(models.Model):
         verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
     )
     debt_share = models.FloatField(
-        verbose_name=_("Share of the external debt (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+        verbose_name=_("Share of the external debt (%)"),
+        default=0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external loan: mini-grid (%)"),
