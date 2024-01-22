@@ -618,7 +618,13 @@ class FinancialTool:
         return amount
 
     def get_tariff(self):
-        return GoalSeek(self.goal_seek_helper, 0, 0.175)
+        x = np.arange(0.1, 0.2, 0.01)
+        # compute the sum of the cashflow for the first 4 years for different tariff (x)
+        # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
+        # for which the sum of the cashflow for the first 4 years is 0
+        m, h = np.polyfit(x, [self.goal_seek_helper(xi) for xi in x], deg=1)
+        x0 = -h / m
+        return x0
 
 
 def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
