@@ -475,7 +475,7 @@ function makeFinancialPlot(parameters, plot_id="") {
 
 
 // TODO write functions for other report types
-const graph_type_mapping={
+var graph_type_mapping={
     timeseries: addTimeseriesGraph,
     timeseries_stacked: addStackedTimeseriesGraph,
     timeseries_stacked_cpn: addStackedTimeseriesGraph,
@@ -497,13 +497,14 @@ const graph_type_mapping={
 
 
 var existingReportItemsData = JSON.parse(document.getElementById('existingReportItemsData').textContent);
-existingReportItemsData.forEach(reportItem => {
-    var graphId = addReportItemGraphToDOM(reportItem);
-    if(reportItem.type in graph_type_mapping){
-        graph_type_mapping[reportItem.type](graphId, reportItem);
-    }
-    else{
-        console.log("the report type '" + reportItem.type + "' is not yet supported, sorry");
-    }
+if(existingReportItemsData != "") {
+    existingReportItemsData.forEach(reportItem => {
+        var graphId = addReportItemGraphToDOM(reportItem);
+        if (reportItem.type in graph_type_mapping) {
+            graph_type_mapping[reportItem.type](graphId, reportItem);
+        } else {
+            console.log("the report type '" + reportItem.type + "' is not yet supported, sorry");
+        }
 
-});
+    });
+}
