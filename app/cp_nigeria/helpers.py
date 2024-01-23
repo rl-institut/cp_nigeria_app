@@ -338,13 +338,15 @@ class FinancialTool:
         """
         lifetime_df = pd.DataFrame(
             {
-                self.project_start + year: self.yearly_increase(df[base_col], df[growth_col], year)
+                self.project_start
+                + year: self.yearly_increase(base_amount=df[base_col], growth_rate=df[growth_col], year=year)
                 for year in range(self.project_duration)
             }
         )
 
         if index_col is not None:
             if isinstance(index_col, list):
+                # Create a MultiIndex with the provided list
                 lifetime_df.index = [np.array(df[col]) for col in index_col]
             else:
                 lifetime_df.index = df[index_col]
@@ -415,7 +417,6 @@ class FinancialTool:
         This method returns a wide table calculating the revenue flows over project lifetime based on the cost
         assumptions for revenue together with the number of consumers and total demand of the system.
         """
-
         # set the tariff to the already calculated tariff if the function is not being called from goal seek
         if custom_tariff is not None:
             self.cost_assumptions.loc[
@@ -432,10 +433,13 @@ class FinancialTool:
         )
 
         revenue_lifetime = (
-            self.growth_over_lifetime_table(revenue_df, "USD/Unit", "Growth rate", ["Description", "Target"])
+            self.growth_over_lifetime_table(
+                revenue_df, "USD/Unit", growth_col="Growth rate", index_col=["Description", "Target"]
+            )
             * self.exchange_rate
         )
 
+        # here level is set to 1 because above "Target" column of the revenue_df is on level 1 of the MultiIndex of revenue_lifetime
         revenue_flows = revenue_lifetime.mul(self.system_lifetime, level=1)
         revenue_flows.loc[("Total operating revenues", "operating_revenues_total"), :] = revenue_flows.sum()
 
@@ -449,7 +453,7 @@ class FinancialTool:
         """
         shs_costs_om = 7 * self.exchange_rate
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
-        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", "growth_rate", "label")
+        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
         # multiply the unit prices by the amount
         om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
