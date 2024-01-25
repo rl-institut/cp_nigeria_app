@@ -7,6 +7,8 @@ from django.utils.translation import gettext_lazy as _
 from django.forms import ModelForm
 from .models import *
 from .helpers import available_models
+from projects.forms import OpenPlanForm, OpenPlanModelForm, set_parameter_info
+from cp_nigeria.helpers import FINANCIAL_PARAMS
 
 
 class ModelSuggestionForm(ModelForm):
@@ -72,11 +74,12 @@ class BMQuestionForm(forms.Form):
 class EquityDataForm(forms.ModelForm):
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start"]
+        exclude = ["scenario", "debt_start", "debt_share"]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
         include_shs = kwargs.pop("include_shs", False)
+        instance = kwargs.pop("instance", None)
         super().__init__(*args, **kwargs)
         if default is not None:
             for field, default_value in default.items():
@@ -84,8 +87,46 @@ class EquityDataForm(forms.ModelForm):
                     self.fields[field].widget.attrs.update(
                         {"placeholder": f"your current model suggests {default_value}"}
                     )
+
+        if instance is not None:
+            for field in self.fields:
+                initial_value = getattr(instance, field)
+                if initial_value is not None:
+                    if "amount" in field:
+                        self.fields[field].initial = initial_value / 1000000
+                    else:
+                        self.fields[field].initial = initial_value * 100
+
         if not include_shs:
             for field in self.fields:
                 if "SHS" in field:
                     self.fields[field].widget = forms.HiddenInput()
                     self.fields[field].required = False
+
+    def clean(self):
+        """Convert the percentage values into values ranging from 0 to 1 (for further calculations)"""
+        super().clean()
+        for record, value in self.cleaned_data.items():
+            if value is not None:
+                if "amount" in record:
+                    self.cleaned_data[record] = value * 1000000
+                else:
+                    self.cleaned_data[record] = value / 100
+
+        return self.cleaned_data
+
+
+class FinancialToolInputForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        category = kwargs.pop("category", None)
+
+        super().__init__(*args, **kwargs)
+        for param, value in FINANCIAL_PARAMS.items():
+            if category is None:
+                self.fields[param] = forms.FloatField()
+            else:
+                if isinstance(value, dict) and value["Category"] == category:
+                    self.fields[param] = forms.FloatField()
+
+        for fieldname, field in self.fields.items():
+            set_parameter_info(fieldname, field, parameters=FINANCIAL_PARAMS)

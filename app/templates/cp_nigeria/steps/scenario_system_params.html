@@ -40,17 +40,12 @@
 								<div style="border-bottom: 1px solid #EFEDEB;">
 									{{form |crispy }}
 								</div>
-								<div class="row cpn-business__info">
-									<h3>
-										<span>Model chosen:</span>
-										<span class="model-chosen">{{ model_name }}</span>
-									</h3>
-								</div>
-								<a role="button" class="btn btn--small btn--hollow" data-bs-toggle="collapse" data-bs-target="#equity_params" aria-expanded="false">Expand Equity parameters</a>
 
-								<div class="collapse form-stretch" id="equity_params">
+<!--								<a role="button" class="btn btn&#45;&#45;small btn&#45;&#45;hollow" data-bs-toggle="collapse" data-bs-target="#equity_params" aria-expanded="false">Expand Equity parameters</a>-->
+
+<!--								<div class="collapse form-stretch" id="equity_params">-->
 									{{equity_form |crispy }}
-								</div>
+<!--								</div>-->
 
 							</div>
 						</div>
@@ -60,25 +55,6 @@
 
 
 						<div-->
-							<div class="cpn-economic__results">
-								<div class="cpn-economic__results--1">
-                  <span class="title">
-                    Avg. daily demand (kWh)
-                  </span>
-									<span class="value">
-                    <!-- I would round the values if possible -->
-                    {{ daily_demand }}
-                  </span>
-								</div>
-								<div class="cpn-economic__results--2">
-                  <span class="title">
-                    Peak demand (kW)
-                  </span>
-									<span class="value">
-                    {{ peak_demand }}
-                  </span>
-								</div>
-							</div>
 							<!--div class="cpn-economic__prio">
 								<p>Prioritize</p>
 								<div class="cpn-economic__prio--1">
@@ -102,6 +78,12 @@
 									<img src="{% static 'assets/cp_nigeria/diesel_grey.svg' %}" alt="Diesel generator">
 								</div>
 							</div-->
+							<div class="row cpn-business__info">
+								<h3>
+									<span>Model chosen:</span>
+									<span class="model-chosen">{{ model_name }}</span>
+								</h3>
+							</div>
 
 							{% if es_schema_name %}
 							<div class="cpn-economic__system">

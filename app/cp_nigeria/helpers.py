@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import numpy_financial as npf
 import os
+import csv
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from business_model.models import EquityData
 from dashboard.models import FancyResults
@@ -13,6 +14,7 @@ from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
 from django.db.models import Func
 from django.contrib.staticfiles.storage import staticfiles_storage
+from dashboard.models import get_costs
 
 
 class Unnest(Func):
@@ -28,6 +30,20 @@ HOUSEHOLD_TIERS = [
     ("high", "High Consumption Estimate"),
     ("very_high", "Very High Consumption Estimate"),
 ]
+
+FINANCIAL_PARAMS = {}
+if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_list.csv")) is True:
+    with open(staticfiles_storage.path("financial_tool/financial_parameters_list.csv"), encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
+        for i, row in enumerate(csvreader):
+            if i == 0:
+                hdr = row
+                label_idx = hdr.index("label")
+            else:
+                label = row[label_idx]
+                FINANCIAL_PARAMS[label] = {}
+                for k, v in zip(hdr, row):
+                    FINANCIAL_PARAMS[label][k] = v
 
 
 def get_shs_threshold(shs_tier):
@@ -199,7 +215,7 @@ class ReportHandler:
 class FinancialTool:
     cost_assumptions = pd.read_csv(staticfiles_storage.path("financial_tool/cost_assumptions.csv"), sep=";")
 
-    def __init__(self, project, opt_caps, asset_costs):
+    def __init__(self, project):
         """
         The financial tool object should be initialized with the opt_caps and asset_costs objects created in the results
         page. When a financial tool object is initialized, the project start and duration are set, the relevant economic
@@ -216,7 +232,7 @@ class FinancialTool:
         self.project_duration = project.economic_data.duration
 
         self.financial_params = self.collect_financial_params()
-        self.system_params = self.collect_system_params(opt_caps, asset_costs)
+        self.system_params = self.collect_system_params()
 
         # calculate the system growth over the project lifetime and add rows for new mg and shs consumers per year
         system_lifetime = self.growth_over_lifetime_table(
@@ -227,7 +243,7 @@ class FinancialTool:
         )
         self.system_lifetime = self.add_diff_rows(system_lifetime)
 
-    def collect_system_params(self, opt_caps, asset_costs):
+    def collect_system_params(self):
         """
         This method takes the optimized capacities and cost results as inputs and returns a dataframe with all the
         relevant system and cost parameters for the results (capex, opex, replacement costs and asset sizes). The
@@ -237,52 +253,54 @@ class FinancialTool:
         labor will be the PV optimized capacity, which is set as a label in this dataframe to later merge in
         calculate_capex().
         """
-        growth_rate = 0
+        growth_rate = 0.0
         growth_rate_om = 0.015
-        asset_costs_df = pd.DataFrame.from_dict(asset_costs, orient="index")
+
+        # get capacities and cost results
+        qs_res = FancyResults.objects.filter(simulation__scenario=self.project.scenario)
+        opt_caps = qs_res.filter(
+            optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+        ).values("asset", "optimized_capacity", "total_flow")
+        costs = get_costs(self.project.scenario.simulation)
+        costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
+        costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
         # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
         #  simulation (which is the average over project lifetime) - discuss the best approach for results display here
         if self.financial_params["fuel_price_increase"][0] != 0:
-            asset_costs_df.at["diesel_fuel_consumption", "annuity_om"] = self.yearly_increase(
-                asset_costs_df.loc["diesel_fuel_consumption", "annuity_om"],
+            costs.at["diesel_generator", "fuel_costs_total"] = self.yearly_increase(
+                costs.loc["diesel_generator", "fuel_costs_total"],
                 self.financial_params["fuel_price_increase"][0],
-                round(self.project_duration / 2, 0),
+                -int(self.project_duration / 2),
             )
-
-        costs = []
-        for cat, col in zip(
-            ["costs_om", "costs_capex", "costs_replacement"],
-            ["annuity_om", "costs_upfront_in_year_zero", "replacement_costs_during_project_lifetime"],
-        ):
-            costs += [
-                {"supply_source": "battery" if index == "battery capacity" else index, "category": cat, "value": costs}
-                for index, costs in asset_costs_df[col].items()
-            ]
 
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
         asset_sizes = pd.DataFrame.from_records(opt_caps)
+        assets = pd.concat([asset_sizes.set_index("asset"), costs], axis=1)
 
         system_params = pd.concat(
             [
-                pd.melt(asset_sizes, id_vars=["asset"], var_name=["category"]).rename(
-                    columns={"asset": "supply_source"}
+                pd.melt(assets.reset_index(), id_vars=["index"], var_name=["category"]).rename(
+                    columns={"index": "supply_source"}
                 ),
                 pd.melt(total_demand.reset_index(), id_vars=["supply_source"], var_name=["category"]),
-                pd.DataFrame(costs),
             ],
             ignore_index=True,
         )
 
+        system_params.drop(system_params[system_params.value == 0].index, inplace=True)
+
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
-        system_params.loc[system_params["category"] == "costs_om", "growth_rate"] = growth_rate_om
         system_params.loc[
-            system_params["supply_source"] == "diesel_fuel_consumption", "growth_rate"
-        ] = self.financial_params["fuel_price_increase"][0]
+            system_params["category"].isin(["opex_fix_total", "opex_var_total"]), "growth_rate"
+        ] = growth_rate_om
+        system_params.loc[system_params["category"] == "fuel_costs_total", "growth_rate"] = self.financial_params[
+            "fuel_price_increase"
+        ][0]
         system_params["label"] = system_params["supply_source"] + "_" + system_params["category"]
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
@@ -295,15 +313,15 @@ class FinancialTool:
             "debt_start",
             "fuel_price_increase",
             "grant_share",
-            "debt_share",
             "debt_interest_MG",
             "debt_interest_SHS",
             "equity_interest_MG",
             "equity_interest_SHS",
+            "equity_community_amount",
+            "equity_developer_amount",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
         financial_params = pd.concat([pd.DataFrame.from_records(qs_eq), pd.DataFrame.from_records(qs_ed)], axis=1)
-
         return financial_params
 
     @staticmethod
@@ -320,13 +338,15 @@ class FinancialTool:
         """
         lifetime_df = pd.DataFrame(
             {
-                self.project_start + year: self.yearly_increase(df[base_col], df[growth_col], year)
+                self.project_start
+                + year: self.yearly_increase(base_amount=df[base_col], growth_rate=df[growth_col], year=year)
                 for year in range(self.project_duration)
             }
         )
 
         if index_col is not None:
             if isinstance(index_col, list):
+                # Create a MultiIndex with the provided list
                 lifetime_df.index = [np.array(df[col]) for col in index_col]
             else:
                 lifetime_df.index = df[index_col]
@@ -348,7 +368,8 @@ class FinancialTool:
 
         return df
 
-    def calculate_capex(self):
+    @property
+    def capex(self):
         """
         This method takes the given general cost assumptions and merges them with the specific project results
         (asset sizes) by target variable. The system costs from the simulation are appended to the dataframe and the
@@ -365,8 +386,6 @@ class FinancialTool:
 
         capex_df["Total costs [USD]"] = capex_df["USD/Unit"] * capex_df["value"]
 
-        # TODO double check here that transformer and mounting structure will stay 0 (currencly included in VAT in
-        #  excel but not here)
         vat_costs = (
             capex_df.groupby("Category")["Total costs [USD]"].sum()[["Logistics", "Labour and soft costs"]].sum()
         )
@@ -383,21 +402,27 @@ class FinancialTool:
         system_capex_rows = [
             {
                 "Description": row["supply_source"].replace("_", " ").title(),
-                "Category": "Power Supply System",
+                "Category": "Power supply system",
                 "Total costs [NGN]": row["value"],
             }
-            for index, row in self.system_params[self.system_params["category"] == "costs_capex"].iterrows()
+            for index, row in self.system_params[self.system_params["category"] == "capex_initial"].iterrows()
         ]
 
         capex_df = pd.concat([capex_df, pd.DataFrame(system_capex_rows)], ignore_index=True)
 
         return capex_df  # capex_df['Total costs [USD]'].sum() returns gross CAPEX
 
-    def revenue_over_lifetime(self):
+    def revenue_over_lifetime(self, custom_tariff=None):
         """
         This method returns a wide table calculating the revenue flows over project lifetime based on the cost
         assumptions for revenue together with the number of consumers and total demand of the system.
         """
+        # set the tariff to the already calculated tariff if the function is not being called from goal seek
+        if custom_tariff is not None:
+            self.cost_assumptions.loc[
+                self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"
+            ] = custom_tariff
+
         revenue_df = pd.merge(
             self.cost_assumptions[self.cost_assumptions["Category"] == "Revenue"],
             self.system_params[["label", "value", "growth_rate"]],
@@ -407,57 +432,55 @@ class FinancialTool:
             how="left",
         )
 
-        revenue_lifetime = self.growth_over_lifetime_table(
-            revenue_df, "USD/Unit", "Growth rate", ["Description", "Target"]
+        revenue_lifetime = (
+            self.growth_over_lifetime_table(
+                revenue_df, "USD/Unit", growth_col="Growth rate", index_col=["Description", "Target"]
+            )
+            * self.exchange_rate
         )
 
+        # here level is set to 1 because above "Target" column of the revenue_df is on level 1 of the MultiIndex of revenue_lifetime
         revenue_flows = revenue_lifetime.mul(self.system_lifetime, level=1)
-        revenue_flows.loc["operating_revenues_total"] = revenue_flows.sum()
+        revenue_flows.loc[("Total operating revenues", "operating_revenues_total"), :] = revenue_flows.sum()
 
         return revenue_flows
 
+    @property
     def om_costs_over_lifetime(self):
         """
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
         shs_costs_om = 7 * self.exchange_rate
-        costs_om_df = self.system_params[self.system_params["category"] == "costs_om"]
-        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", "growth_rate", "label")
+        costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
+        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
         # multiply the unit prices by the amount
-        om_lifetime.loc["costs_om_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
-        om_lifetime.loc["costs_om_total"] = om_lifetime.sum()
+        om_lifetime.loc["opex_total"] = om_lifetime.sum()
 
         return om_lifetime
 
-    def debt_service_table(self):
-        """
-        This method creates a table for the loan debt service based on the loan amount, tenor, grace period and interest
-        rate. As of now this method assumes that there will be one loan according to the given debt share and project
-        CAPEX, but the method can easily be adapted to handle multiple loans by passing the parameters as arguments
-        instead (in the original excel table, both senior and junior loan exist). The calculate_capex() method is used
-        to calculate the loan amount.
-        """
-        tenor = 10
-        grace_period = 1
-        amount = self.financial_params["debt_share"][0] * self.calculate_capex()["Total costs [NGN]"].sum()
-        interest_rate = self.financial_params["debt_interest_MG"][0]
-        debt_service = pd.DataFrame(index=["Interest", "Principal", "Balance opening", "Balance closing"])
-        debt_service[self.project_start - 1] = [0, 0, amount, amount]
+    def debt_service_table(self, amount, tenor, gp, ir, debt_start):
+        debt_service = pd.DataFrame(
+            index=["Interest", "Principal", "Balance opening", "Balance closing", "Capital service"],
+            columns=range(self.project_start - 1, self.project_start + self.project_duration),
+            data=0.0,
+        )
+        debt_service[debt_start - 1] = [0, 0, amount, amount, 0]
 
-        for index, year in enumerate(range(self.project_start, self.project_start + self.project_duration), 1):
-            per = index - grace_period
-            nper = tenor - grace_period
+        for index, year in enumerate(range(debt_start, debt_start + tenor), 1):
+            per = index - gp
+            nper = tenor - gp
             if index <= tenor:
-                if index > grace_period:
-                    debt_service.at["Principal", year] = -npf.ppmt(interest_rate, per, nper, amount)
+                if index > gp:
+                    debt_service.at["Principal", year] = -npf.ppmt(ir, per, nper, amount)
                 else:
                     debt_service.at["Principal", year] = 0
                 debt_service.at["Balance opening", year] = debt_service.loc["Balance closing", year - 1]
-                debt_service.at["Interest", year] = debt_service.loc["Balance opening", year] * interest_rate
+                debt_service.at["Interest", year] = debt_service.loc["Balance opening", year] * ir
                 debt_service.at["Balance closing", year] = (
                     debt_service.loc["Balance opening", year] - debt_service.at["Principal", year]
                 )
@@ -469,34 +492,72 @@ class FinancialTool:
 
         return debt_service
 
-    def losses_over_lifetime(self):
+    @property
+    def initial_loan_table(self):
+        """
+        This method creates a table for the initial CAPEX debt according to the debt share (CAPEX - grant and equity).
+        """
+        tenor = 10
+        grace_period = 1
+        amount = self.initial_loan
+        interest_rate = self.financial_params["debt_interest_MG"][0]
+        debt_start = self.project_start
+
+        return self.debt_service_table(
+            amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
+        )
+
+    @property
+    def replacement_loan_table(self):
+        """
+        This method creates a table for the replacement costs debt (accounts for replacing battery, inverter and diesel
+        generator after 10 years).
+        """
+        # TODO should this always be 10 or depending on given shortest component lifetime
+        replacement_components = ["Battery", "Inverter", "Diesel Generator"]
+        tenor = 10  # this should be an argument or attribute
+        debt_start = self.project_start + 10  #  shouldn't it be tenor here?
+        grace_period = 1
+        amount = self.capex[self.capex["Description"].isin(replacement_components)]["Total costs [NGN]"].sum()
+        interest_rate = self.financial_params["equity_interest_MG"][0]  # TODO find out why
+
+        return self.debt_service_table(
+            amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
+        )
+
+    def losses_over_lifetime(self, custom_tariff=None):
         """
         This method first calculates the EBITDA (earnings before interest, tax, depreciation and amortization), then
         the financial losses through depreciation, interest payments to get the EBT (earnings before tax) and finally
         including taxes to get the net income over the project lifetime. The calculate_capex() method is used here.
         """
         depreciation_yrs = 20
-        capex_df = self.calculate_capex()
-        gross_capex = capex_df["Total costs [NGN]"].sum()
+        capex_df = self.capex
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
-        equity_share = 100 - self.financial_params["grant_share"][0] - self.financial_params["debt_share"][0]
-        equity = equity_share * gross_capex
+        equity = (
+            self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
+        )
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime().loc["operating_revenues_total"]
-            - self.om_costs_over_lifetime().loc["costs_om_total"]
+            self.revenue_over_lifetime(custom_tariff).loc[("Total operating revenues", "operating_revenues_total"), :]
+            - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
         losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
         losses.loc["Equity interest"] = equity * self.financial_params["equity_interest_MG"][0]
-        losses.loc["Senior loan interest"] = self.debt_service_table().loc["Interest"]
+        losses.loc["Debt interest"] = (
+            self.initial_loan_table.loc["Interest"] + self.replacement_loan_table.loc["Interest"]
+        )
+        losses.loc["Debt repayments"] = (
+            self.initial_loan_table.loc["Principal"] + self.replacement_loan_table.loc["Principal"]
+        )
 
         losses.loc["EBT"] = (
             losses.loc["EBITDA"]
             - losses.loc["Depreciation"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
+            - losses.loc["Debt interest"]
         )
         losses.loc["Corporate tax"] = [
             losses.loc["EBT"][year] * self.financial_params["tax"][0] if losses.loc["EBT"][year] > 0 else 0
@@ -506,28 +567,27 @@ class FinancialTool:
 
         return losses
 
-    def cash_flow_over_lifetime(self):
+    def cash_flow_over_lifetime(self, custom_tariff=None):
         """
         This method calculates the cash flows over system lifetime considering the previously calculated loan debt,
         earnings and financial losses. Both the losses_ver_lifetime() and debt_service_table() are called here.
         """
         cash_flow = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
-        losses = self.losses_over_lifetime()
-        senior_debt_service = self.debt_service_table()
+        losses = self.losses_over_lifetime(custom_tariff)
 
         cash_flow.loc["Cash flow from operating activity"] = losses.loc["EBITDA"] - losses.loc["Corporate tax"]
         cash_flow.loc["Cash flow after debt service"] = (
             cash_flow.loc["Cash flow from operating activity"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
-            - senior_debt_service.loc["Principal"]
+            - losses.loc["Debt interest"]
+            - losses.loc["Debt repayments"]
         )
         cash_flow.loc["Free cash flow available"] = (
             losses.loc["EBITDA"]
             - losses.loc["Corporate tax"]
             - losses.loc["Equity interest"]
-            - losses.loc["Senior loan interest"]
-            - senior_debt_service.loc["Principal"]
+            - losses.loc["Debt interest"]
+            - losses.loc["Debt repayments"]
         )
 
         return cash_flow
@@ -537,7 +597,7 @@ class FinancialTool:
         This method returns the internal return on investment % based on project CAPEX, grant share and cash flows
         after a given number of project years.
         """
-        gross_capex = self.calculate_capex()["Total costs [NGN]"].sum()
+        gross_capex = self.capex["Total costs [NGN]"].sum()
         grant = self.financial_params["grant_share"][0] * gross_capex
         cash_flow = self.cash_flow_over_lifetime()
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
@@ -545,6 +605,112 @@ class FinancialTool:
 
         return npf.irr(cash_flow_irr[: (years + 1)])
 
-    # TODO see if we can implement the goal seek function to find the tariff
-    def tariff_goal_seek(self):
-        pass
+    def goal_seek_helper(self, custom_tariff):
+        cashflow_helper = np.sum(
+            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:4]
+        )
+        return cashflow_helper
+
+    @property
+    def initial_loan(self):
+        gross_capex = self.capex["Total costs [NGN]"].sum()
+        total_equity = (
+            self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
+        )
+        total_grant = self.financial_params["grant_share"][0] * gross_capex
+        amount = gross_capex - total_grant - total_equity
+        return amount
+
+    def get_tariff(self):
+        x = np.arange(0.1, 0.2, 0.01)
+        # compute the sum of the cashflow for the first 4 years for different tariff (x)
+        # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
+        # for which the sum of the cashflow for the first 4 years is 0
+        m, h = np.polyfit(x, [self.goal_seek_helper(xi) for xi in x], deg=1)
+        x0 = -h / m
+        return x0
+
+
+def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
+    """
+    code taken from https://github.com/DrTol/GoalSeek_Python
+    Copyright (c) 2019 Hakan İbrahim Tol
+    """
+    # Goal Seek function of Excel
+    #   via use of Line Search and Bisection Methods
+
+    # Inputs
+    #   fun     : Function to be evaluated
+    #   goal    : Expected result/output
+    #   x0      : Initial estimate/Starting point
+
+    # Initial check
+    if fun(x0) == goal:
+        print("Exact solution found")
+        return x0
+
+    # Line Search Method
+    step_sizes = np.logspace(-1, 4, 6)
+    scopes = np.logspace(1, 5, 5)
+
+    vFun = np.vectorize(fun)
+
+    for scope in scopes:
+        break_nested = False
+        for step_size in step_sizes:
+            cApos = np.linspace(x0, x0 + step_size * scope, int(scope))
+            cAneg = np.linspace(x0, x0 - step_size * scope, int(scope))
+
+            cA = np.concatenate((cAneg[::-1], cApos[1:]), axis=0)
+
+            fA = vFun(cA) - goal
+
+            if np.any(np.diff(np.sign(fA))):
+                index_lb = np.nonzero(np.diff(np.sign(fA)))
+
+                if len(index_lb[0]) == 1:
+                    index_ub = index_lb + np.array([1])
+
+                    x_lb = np.ndarray.item(np.array(cA)[index_lb])
+                    x_ub = np.ndarray.item(np.array(cA)[index_ub])
+                    break_nested = True
+                    break
+                else:  # Two or more roots possible
+                    index_ub = index_lb + np.array([1])
+
+                    print("Other solution possible at around, x0 = ", np.array(cA)[index_lb[0][1]])
+
+                    x_lb = np.ndarray.item()(np.array(cA)[index_lb[0][0]])
+                    x_ub = np.ndarray.item()(np.array(cA)[index_ub[0][0]])
+                    break_nested = True
+                    break
+
+        if break_nested:
+            break
+    if not x_lb or not x_ub:
+        print("No Solution Found")
+        return
+
+    # Bisection Method
+    iter_num = 0
+    error = 10
+
+    while iter_num < MaxIter and fTol < error:
+        x_m = (x_lb + x_ub) / 2
+        f_m = fun(x_m) - goal
+
+        error = abs(f_m)
+
+        if (fun(x_lb) - goal) * (f_m) < 0:
+            x_ub = x_m
+        elif (fun(x_ub) - goal) * (f_m) < 0:
+            x_lb = x_m
+        elif f_m == 0:
+            print("Exact spolution found")
+            return x_m
+        else:
+            print("Failure in Bisection Method")
+
+        iter_num += 1
+
+    return x_m

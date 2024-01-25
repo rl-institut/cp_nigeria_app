@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 import logging
-import numpy as np
+import pandas as pd
 import os
 from django.http import JsonResponse
 from jsonview.decorators import json_view
@@ -376,6 +376,17 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             es_schema_name = None
             grid_availability = False
 
+        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+        if qs_demand.exists():
+            demand = json.loads(qs_demand.get().input_timeseries)
+            demand_np = np.array(demand)
+            peak_demand = round(demand_np.max(), 1)
+            daily_demand = round(demand_np.sum() / 365, 1)
+        else:
+            demand = None
+            peak_demand = None
+            daily_demand = None
+
         context = {
             "proj_id": proj_id,
             "proj_name": project.name,
@@ -386,6 +397,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             "es_schema_name": es_schema_name,
             "page_information": page_information,
             "grid_availability": grid_availability,
+            "peak_demand": peak_demand,
+            "daily_demand": daily_demand,
         }
 
         asset_type_name = "bess"
@@ -816,6 +829,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             equity_data = EquityData.objects.get(scenario=scenario)
             equity_form = EquityDataForm(request.POST, instance=equity_data, prefix="equity")
         except EquityData.DoesNotExist:
+            equity_data = None
             equity_form = EquityDataForm(request.POST, prefix="equity")
 
         form_errors = False
@@ -825,9 +839,12 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             form_errors = True
 
         if equity_form.is_valid():
-            equity_data = equity_form.save(commit=False)
-            equity_data.debt_start = scenario.start_date.year
-            equity_data.scenario = scenario
+            if equity_data is not None:
+                [setattr(equity_data, name, value) for name, value in equity_form.cleaned_data.items()]
+            else:
+                equity_data = equity_form.save(commit=False)
+                equity_data.debt_start = scenario.start_date.year
+                equity_data.scenario = scenario
             equity_data.save()
 
             # compute the new price and set it to the diesel dso
@@ -921,23 +938,6 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         except EquityData.DoesNotExist:
             equity_form = EquityDataForm(prefix="equity", initial=initial)
 
-        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-        if qs_demand.exists():
-            demand = json.loads(qs_demand.get().input_timeseries)
-            demand_np = np.array(demand)
-            peak_demand = round(demand_np.max(), 1)
-            daily_demand = round(demand_np.sum() / 365, 1)
-        else:
-            demand = None
-            peak_demand = None
-            daily_demand = None
-
-        qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
-        if qs_pv.exists():
-            pv_timeseries = json.loads(qs_pv.get().input_timeseries)
-        else:
-            pv_timeseries = None
-
         if qs_bm.exists():
             bm = qs_bm.get()
             model_name = B_MODELS[bm.model_name]["Verbose"]
@@ -948,13 +948,6 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             {
                 "form": form,
                 "equity_form": equity_form,
-                "timestamps": [
-                    i for i in range(len(demand))
-                ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
-                "demand": demand,
-                "pv_timeseries": pv_timeseries,
-                "daily_demand": daily_demand,
-                "peak_demand": peak_demand,
                 "model_name": model_name,
             }
         )
@@ -1143,6 +1136,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         diesel_consumption_liter = (
             qs_res.filter(asset="diesel_fuel_consumption").get().total_flow / ENERGY_DENSITY_DIESEL
         )
+    else:
+        diesel_consumption_liter = 0
     # costs values
     kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
     asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
@@ -1160,14 +1155,38 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         es_schema_name = None
 
     # Initialize financial tool to calculate financial flows and test output graphs
-    ft = FinancialTool(project, opt_caps, asset_costs)
+    ft = FinancialTool(project)
+    tariff = ft.get_tariff()
 
-    capex_df = ft.calculate_capex()
+    capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+
+    capex_assumptions = {}
+    for cat in capex_df.Category.unique():
+        sub_capex = capex_df.loc[capex_df.Category == cat]
+        sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
+        sub_capex.set_index("Description", inplace=True)
+        sub_capex.fillna(0, inplace=True)
+        sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
+            ["Total costs [USD]", "Total costs [NGN]"]
+        ].sum()
+        sub_capex.fillna("", inplace=True)
+        capex_assumptions[cat] = sub_capex
+
+        # import pdb;pdb.set_trace()
     # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
     # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
 
-    revenue_flows = ft.revenue_over_lifetime()
+    revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+
+    revenue_flows.index = revenue_flows.index.droplevel(1)
+    losses = ft.losses_over_lifetime(custom_tariff=tariff)
+    senior_debt = ft.initial_loan_table
+    cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+    cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
+        losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
+    )
+
     # traces = []
     # for ix, row in revenue_flows.iterrows():
     #     x_data = revenue_flows.columns.tolist()
@@ -1285,7 +1304,16 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,
         "capex_df": capex_df,
+        "capex_assumptions": capex_assumptions,
         "revenue_flows": revenue_flows,
+        "revenue_flows_html": revenue_flows.to_html(),
+        "senior_debt": senior_debt,
+        "remplacement_debt": ft.replacement_loan_table,
+        "cash_flow": cash_flow,
+        "opex_costs": ft.om_costs_over_lifetime,
+        "losses": losses,
+        "tariff_NGN": tariff * ft.exchange_rate,
+        "tariff_USD": tariff,
     }
 
     return render(request, html_template, context)

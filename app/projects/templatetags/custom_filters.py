@@ -1,4 +1,6 @@
 from math import floor
+import pandas as pd
+from django.utils.safestring import mark_safe
 
 from django import template
 from django.db.models import Q
@@ -20,6 +22,16 @@ def convert_seconds_to_intuitive_string(value):
 
     except Exception as e:
         return str(e)
+
+
+@register.filter(name="df_to_html")
+def df_to_html(df: pd.DataFrame):
+    return mark_safe(df.to_html())
+
+
+@register.filter(name="fill_spaces")
+def fill_spaces(string: str):
+    return string.replace(" ", "_")
 
 
 @register.filter(name="scenario_list")

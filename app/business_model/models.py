@@ -89,7 +89,9 @@ class EquityData(models.Model):
         verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
     )
     debt_share = models.FloatField(
-        verbose_name=_("Share of the external debt (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+        verbose_name=_("Share of the external debt (%)"),
+        default=0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external loan: mini-grid (%)"),
@@ -108,6 +110,12 @@ class EquityData(models.Model):
         verbose_name=_("Interest rate for external equity: SHS (%)"),
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         null=True,
+    )
+    equity_community_amount = models.FloatField(
+        verbose_name=_("Amount of equity the community would be " "able to mobilize (Million NGN)"), default=0
+    )
+    equity_developer_amount = models.FloatField(
+        verbose_name=_("Amount of equity the project developer would be " "able to mobilize (Million NGN)"), default=0
     )
 
     def compute_average_fuel_price(self, initial_fuel_price, project_duration):
