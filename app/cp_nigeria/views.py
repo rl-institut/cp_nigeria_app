@@ -839,9 +839,12 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             form_errors = True
 
         if equity_form.is_valid():
-            equity_data = equity_form.save(commit=False)
-            equity_data.debt_start = scenario.start_date.year
-            equity_data.scenario = scenario
+            if equity_data is not None:
+                [setattr(equity_data, name, value) for name, value in equity_form.cleaned_data.items()]
+            else:
+                equity_data = equity_form.save(commit=False)
+                equity_data.debt_start = scenario.start_date.year
+                equity_data.scenario = scenario
             equity_data.save()
 
             # compute the new price and set it to the diesel dso
