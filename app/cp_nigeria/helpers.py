@@ -515,8 +515,8 @@ class FinancialTool:
         """
         # TODO should this always be 10 or depending on given shortest component lifetime
         replacement_components = ["Battery", "Inverter", "Diesel Generator"]
-        tenor = 10
-        debt_start = self.project_start + 10
+        tenor = 10  # this should be an argument or attribute
+        debt_start = self.project_start + 10  #  shouldn't it be tenor here?
         grace_period = 1
         amount = self.capex[self.capex["Description"].isin(replacement_components)]["Total costs [NGN]"].sum()
         interest_rate = self.financial_params["equity_interest_MG"][0]  # TODO find out why

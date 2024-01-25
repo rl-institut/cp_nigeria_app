@@ -231,6 +231,51 @@
 						<div class="col col-md-12">
 							<div class="chart">
 								<div class="chart__header">
+									<!-- style="display: flex;gap: 10px;align-items: center;" -->
+									<div>
+										<span class="title">{% translate "Important financial KPIS from financial model" %}</span>
+									</div>
+								</div>
+
+								<div class="chart__plot">
+									<div style="display:flex;justify-content:center;align-content:center;">
+										Tariff: {{ tariff_NGN | floatformat | intcomma}} ₦ ({{ tariff_USD | floatformat | intcomma}} USD)
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="header-results">
+						<h2 class="title">{% translate "Assumption CAPEX" %}</h2>
+					</div>
+					{% for cat, df in capex_assumptions.items %}
+						{% include "report/table_template.html" with id="Table"|add:cat title=cat df=df %}
+					{% endfor %}
+
+					<div class="header-results">
+						<h2 class="title">{% translate "Cash Flow Calculation" %}</h2>
+					</div>
+					{% include "report/table_template.html" with id="TableRevenue" title="Revenue" df=revenue_flows %}
+					{% include "report/table_template.html" with id="TableOpex" title="Opex" df=opex_costs %}
+					{% include "report/table_template.html" with id="TableLosses" title="Losses" df=losses %}
+
+					{% include "report/table_template.html" with id="TableCashFlow" title="CashFlow" df=cash_flow %}
+
+					<div class="header-results">
+						<h2 class="title">{% translate "Senior Debt Service" %}</h2>
+					</div>
+					{% include "report/table_template.html" with id="TableSeniorDebt" title="Senior Debt" df=senior_debt %}
+					{% include "report/table_template.html" with id="TableReplacementDebt" title="Replacement Debt" df=remplacement_debt %}
+
+
+
+
+
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
 									<div>
 										<span class="title">{% translate "Community characteristics" %}</span>
 									</div>
@@ -386,27 +431,6 @@
 												<td>{{ row.Description }} </td>
 												<td>{{ row.Category }}</td>
 												<td>{{ row|getkey:"Total costs [NGN]" | floatformat | intcomma }}</td>
-											</tr>
-											{% endfor %}
-
-										</table>
-									</div>
-									<div class="chart__plot">
-										<table class="table" id="RevenueTable">
-											<thead><tr><th>Revenue</th></tr></thead>
-											<tbody>
-
-											</tbody>
-											{% for index, row in revenue_flows.iterrows %}
-											<tr>
-												<td>
-													{{ index.0 }}
-												</td>
-												{% for cell in row %}
-												<td>
-													{{ cell | floatformat | intcomma}}
-												</td>
-												{% endfor %}
 											</tr>
 											{% endfor %}
 

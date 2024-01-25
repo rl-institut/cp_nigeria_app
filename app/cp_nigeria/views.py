@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 import logging
-import numpy as np
+import pandas as pd
 import os
 from django.http import JsonResponse
 from jsonview.decorators import json_view
@@ -1153,13 +1153,37 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(project)
+    tariff = ft.get_tariff()
 
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+
+    capex_assumptions = {}
+    for cat in capex_df.Category.unique():
+        sub_capex = capex_df.loc[capex_df.Category == cat]
+        sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
+        sub_capex.set_index("Description", inplace=True)
+        sub_capex.fillna(0, inplace=True)
+        sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
+            ["Total costs [USD]", "Total costs [NGN]"]
+        ].sum()
+        sub_capex.fillna("", inplace=True)
+        capex_assumptions[cat] = sub_capex
+
+        # import pdb;pdb.set_trace()
     # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
     # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
 
-    revenue_flows = ft.revenue_over_lifetime()
+    revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+
+    revenue_flows.index = revenue_flows.index.droplevel(1)
+    losses = ft.losses_over_lifetime(custom_tariff=tariff)
+    senior_debt = ft.initial_loan_table
+    cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+    cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
+        losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
+    )
+
     # traces = []
     # for ix, row in revenue_flows.iterrows():
     #     x_data = revenue_flows.columns.tolist()
@@ -1277,7 +1301,16 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,
         "capex_df": capex_df,
+        "capex_assumptions": capex_assumptions,
         "revenue_flows": revenue_flows,
+        "revenue_flows_html": revenue_flows.to_html(),
+        "senior_debt": senior_debt,
+        "remplacement_debt": ft.replacement_loan_table,
+        "cash_flow": cash_flow,
+        "opex_costs": ft.om_costs_over_lifetime,
+        "losses": losses,
+        "tariff_NGN": tariff * ft.exchange_rate,
+        "tariff_USD": tariff,
     }
 
     return render(request, html_template, context)

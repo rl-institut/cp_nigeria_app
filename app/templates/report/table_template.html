@@ -1,0 +1,59 @@
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% comment %}
+Here is a list of the parameters one can provide to this template
+
+id:
+the id of the table (should be unique to the modal within same html template
+title:
+the text display in the title bar of the object
+df:
+a dataframe to display in the table
+{% endcomment %}
+
+
+<div class="row">
+	<div class="col col-md-12">
+		<div class="chart">
+			<div class="chart__header">
+				<div>
+					<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_{{ id|fill_spaces }}" role="button" aria-expanded="false" aria-controls="container_{{ id }}">
+    {% translate title %}
+  </a></span>
+				</div>
+			</div>
+			<div class="chart__plot collapse show" style="overflow: scroll;" id="container_{{ id|fill_spaces }}">
+				<table class="table table-bordered table-hover" id="{{ id|fill_spaces }}">
+					<thead style="position: sticky;top: 0" class="thead-dark">
+					<tr>
+						<th class="header_table" scope="col"></th>
+						{% for col in df.columns %}
+						<th class="header_table" scope="col">
+							{{ col }}
+						</th>
+						{% endfor %}
+					</tr>
+					</thead>
+
+					<tbody>
+					{% for index, row in df.iterrows %}
+					<tr>
+						<td>
+							{{ index }}
+						</td>
+						{% for cell in row %}
+						<td>
+							{{ cell | floatformat | intcomma}}
+						</td>
+						{% endfor %}
+					</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
