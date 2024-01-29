@@ -118,6 +118,11 @@ urlpatterns = [
         scenario_visualize_revenue,
         name="scenario_visualize_revenue",
     ),
+    re_path(
+        r"^scenario/results/request_capex/(?P<scen_id>\d+)?$",
+        scenario_visualize_capex,
+        name="scenario_visualize_capex",
+    ),
     path(
         "scenario/results/download_scalars/<int:scen_id>",
         download_scalar_results,

@@ -1078,6 +1078,18 @@ def scenario_visualize_revenue(request, scen_id):
     return JsonResponse({"x": x, "y": y, "names": names, "title": title})
 
 
+def scenario_visualize_capex(request, scen_id):
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    ft = FinancialTool(scenario.project)
+    capex_df = ft.capex
+    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    categories = capex_by_category.index.tolist()
+    total_costs = capex_by_category.values.tolist()
+    title = "Total investment costs"
+    return JsonResponse({"categories": categories, "costs": total_costs, "title": title})
+
+
 @login_required
 @require_http_methods(["GET"])
 def download_scalar_results(request, scen_id):

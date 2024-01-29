@@ -253,6 +253,7 @@
 
 					{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
 					{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
+					{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
 
 					<div class="header-results">
 						<h2 class="title">{% translate "Assumption CAPEX" %}</h2>
@@ -805,6 +806,16 @@
             });
     };
 
+	function scenario_visualize_capex(scen_id=""){
+     $.ajax({
+                url: "{% url 'scenario_visualize_capex' %}" + scen_id,
+                type: "GET",
+                success: async (parameters) => {
+                    await makePieChart(parameters, plot_id="capex");
+                },
+            });
+    };
+
 </script>
 
 
@@ -967,6 +978,7 @@ document.querySelectorAll("#results-analysis-links a").forEach(el => {el.classLi
         scenario_visualize_costs(scen_id);
         scenario_visualize_cash_flow(scen_id);
         scenario_visualize_revenue(scen_id);
+        scenario_visualize_capex(scen_id);
         // Highlight only the selected scenario
         //$(".scenario-select__item").map((i, item) => {item.classList.remove("selected");});
         // todo select the correct_scenario
