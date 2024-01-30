@@ -89,17 +89,37 @@ class EconomicDataForm(OpenPlanModelForm):
 
     class Meta:
         model = EconomicData
-        exclude = ("tax", "currency", "duration")
+        exclude = ("currency", "duration")
 
     def __init__(self, *args, **kwargs):
+        instance = kwargs.get("instance", None)
+        initial = kwargs.get("initial", {})
+        if instance is not None:
+            for field in ["discount", "tax"]:
+                initial_value = getattr(instance, field)
+                if initial_value is not None:
+                    initial[field] = initial_value * 100
+
+        kwargs["initial"] = initial
+
         super().__init__(*args, **kwargs)
         self.fields["discount"].validators.append(validate_not_zero)
-        self.initial["discount"] = 0.12
+        self.initial["discount"] = 12.0
+        self.initial["tax"] = 8.0
 
     def save(self, *args, **kwargs):
         ed = super().save(*args, **kwargs)
         scenario = Scenario.objects.filter(project__economic_data=ed)
         scenario.update(capex_fix=self.cleaned_data["capex_fix"])
+
+    def clean(self):
+        """Convert the percentage values into values ranging from 0 to 1 (for further calculations)"""
+        super().clean()
+        for field, value in self.cleaned_data.items():
+            if field in ["discount", "tax"]:
+                self.cleaned_data[field] = value / 100
+
+        return self.cleaned_data
 
 
 class CPNLocationForm(ProjectCreateForm):
