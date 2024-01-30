@@ -214,6 +214,7 @@ class ReportHandler:
 
 class FinancialTool:
     cost_assumptions = pd.read_csv(staticfiles_storage.path("financial_tool/cost_assumptions.csv"), sep=";")
+    loan_assumptions = {"Tenor": 10, "Grace period": 1, "Cum. replacement years": 10}
 
     def __init__(self, project):
         """
@@ -254,7 +255,7 @@ class FinancialTool:
         calculate_capex().
         """
         growth_rate = 0.0
-        growth_rate_om = 0.015
+        growth_rate_om = self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].values[0]
 
         # get capacities and cost results
         qs_res = FancyResults.objects.filter(simulation__scenario=self.project.scenario)
@@ -373,7 +374,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[self.cost_assumptions["Category"] != "Revenue"],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Opex"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -386,6 +387,7 @@ class FinancialTool:
         vat_costs = (
             capex_df.groupby("Category")["Total costs [USD]"].sum()[["Logistics", "Labour and soft costs"]].sum()
         )
+        # TODO put VAT tax percentage in financial params view
         vat_percentage = self.financial_params["tax"][0]
         capex_df.loc[len(capex_df)] = {
             "Description": "VAT",
@@ -448,7 +450,12 @@ class FinancialTool:
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
-        shs_costs_om = 7 * self.exchange_rate
+        shs_costs_om = (
+            self.cost_assumptions.loc[
+                self.cost_assumptions["Description"] == "SHS Fosera Ignite incl. Mounting system", "USD/Unit"
+            ].values[0]
+            * self.exchange_rate
+        )
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
@@ -494,8 +501,8 @@ class FinancialTool:
         """
         This method creates a table for the initial CAPEX debt according to the debt share (CAPEX - grant and equity).
         """
-        tenor = 10
-        grace_period = 1
+        tenor = self.loan_assumptions["Tenor"]
+        grace_period = self.loan_assumptions["Grace period"]
         amount = self.financial_kpis["Initial loan amount"]
         interest_rate = self.financial_params["debt_interest_MG"][0]
         debt_start = self.project_start
@@ -511,11 +518,10 @@ class FinancialTool:
         generator after 10 years).
         """
         # TODO should this always be 10 or depending on given shortest component lifetime
-        replacement_components = ["Battery", "Inverter", "Diesel Generator"]
-        tenor = 10  # this should be an argument or attribute
-        debt_start = self.project_start + 10  #  shouldn't it be tenor here?
-        grace_period = 1
-        amount = self.capex[self.capex["Description"].isin(replacement_components)]["Total costs [NGN]"].sum()
+        tenor = self.loan_assumptions["Tenor"]
+        debt_start = self.project_start + self.loan_assumptions["Cum. replacement years"]
+        grace_period = self.loan_assumptions["Grace period"]
+        amount = self.financial_kpis["Replacement loan amount"]
         interest_rate = self.financial_params["equity_interest_MG"][0]  # TODO find out why
 
         return self.debt_service_table(
@@ -528,7 +534,7 @@ class FinancialTool:
         the financial losses through depreciation, interest payments to get the EBT (earnings before tax) and finally
         including taxes to get the net income over the project lifetime. The calculate_capex() method is used here.
         """
-        depreciation_yrs = 20
+        depreciation_yrs = self.project_duration
         capex_df = self.capex
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
         equity = (
@@ -615,12 +621,16 @@ class FinancialTool:
             self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
         )
         total_grant = self.financial_params["grant_share"][0] * gross_capex
-        amount = gross_capex - total_grant - total_equity
+        initial_amount = gross_capex - total_grant - total_equity
+        replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
+            "Total costs [NGN]"
+        ].sum()
         financial_kpis = {
-            "Total costs [NGN]": gross_capex,
+            "Total investment costs": gross_capex,
             "Total equity": total_equity,
             "Total grant": total_grant,
-            "Initial loan amount": amount,
+            "Initial loan amount": initial_amount,
+            "Replacement loan amount": replacement_amount,
         }
 
         return financial_kpis
