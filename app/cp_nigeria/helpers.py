@@ -291,13 +291,10 @@ class FinancialTool:
         )
 
         system_params.drop(system_params[system_params.value == 0].index, inplace=True)
-
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
-        system_params.loc[
-            system_params["category"].isin(["opex_fix_total", "opex_var_total"]), "growth_rate"
-        ] = growth_rate_om
+        system_params.loc[system_params["category"] == "opex_total", "growth_rate"] = growth_rate_om
         system_params.loc[system_params["category"] == "fuel_costs_total", "growth_rate"] = self.financial_params[
             "fuel_price_increase"
         ][0]
