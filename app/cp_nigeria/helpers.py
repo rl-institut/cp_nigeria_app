@@ -499,7 +499,7 @@ class FinancialTool:
         """
         tenor = 10
         grace_period = 1
-        amount = self.initial_loan
+        amount = self.financial_kpis["Initial loan amount"]
         interest_rate = self.financial_params["debt_interest_MG"][0]
         debt_start = self.project_start
 
@@ -612,14 +612,21 @@ class FinancialTool:
         return cashflow_helper
 
     @property
-    def initial_loan(self):
+    def financial_kpis(self):
         gross_capex = self.capex["Total costs [NGN]"].sum()
         total_equity = (
             self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
         )
         total_grant = self.financial_params["grant_share"][0] * gross_capex
         amount = gross_capex - total_grant - total_equity
-        return amount
+        financial_kpis = {
+            "Total costs [NGN]": gross_capex,
+            "Total equity": total_equity,
+            "Total grant": total_grant,
+            "Initial loan amount": amount,
+        }
+
+        return financial_kpis
 
     def get_tariff(self):
         x = np.arange(0.1, 0.2, 0.01)
@@ -631,6 +638,7 @@ class FinancialTool:
         return x0
 
 
+# TODO if linear fit yields same results this can be deleted
 def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
     """
     code taken from https://github.com/DrTol/GoalSeek_Python

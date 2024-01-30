@@ -1186,7 +1186,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
-
+    financial_kpis = ft.financial_kpis
     # traces = []
     # for ix, row in revenue_flows.iterrows():
     #     x_data = revenue_flows.columns.tolist()
@@ -1314,6 +1314,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "losses": losses,
         "tariff_NGN": tariff * ft.exchange_rate,
         "tariff_USD": tariff,
+        "financial_kpis": financial_kpis,
     }
 
     return render(request, html_template, context)
