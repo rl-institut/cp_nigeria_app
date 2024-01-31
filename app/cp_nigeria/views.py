@@ -380,12 +380,12 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         if qs_demand.exists():
             demand = json.loads(qs_demand.get().input_timeseries)
             demand_np = np.array(demand)
-            peak_demand = round(demand_np.max(), 1)
-            daily_demand = round(demand_np.sum() / 365, 1)
+
         else:
-            demand = None
-            peak_demand = None
-            daily_demand = None
+            demand_np = np.array(get_aggregated_demand(project))
+
+        peak_demand = round(demand_np.max(), 1)
+        daily_demand = round(demand_np.sum() / 365, 1)
 
         context = {
             "proj_id": proj_id,
