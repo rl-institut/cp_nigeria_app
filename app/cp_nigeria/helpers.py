@@ -635,7 +635,8 @@ class FinancialTool:
 
         return financial_kpis
 
-    def get_tariff(self):
+    @property
+    def tariff(self):
         x = np.arange(0.1, 0.2, 0.01)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
