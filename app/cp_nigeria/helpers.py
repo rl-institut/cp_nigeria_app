@@ -66,9 +66,12 @@ def get_aggregated_cgs(project):
 
     if len(shs_threshold) != 0:
         shs_consumers = get_shs_threshold(options.shs_threshold)
-        results_dict["SHS"] = {}
-        total_demand_shs = 0
-        total_consumers_shs = 0
+    else:
+        shs_consumers = None
+
+    results_dict["SHS"] = {}
+    total_demand_shs = 0
+    total_consumers_shs = 0
 
     for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
         results_dict[consumer_type] = {}
@@ -82,7 +85,7 @@ def get_aggregated_cgs(project):
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
-            if len(shs_threshold) != 0 and ts.name in shs_consumers:
+            if shs_consumers is not None and ts.name in shs_consumers:
                 total_demand_shs += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers_shs += group.number_consumers
 
@@ -99,10 +102,9 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
-            if shs_threshold is not None:
-                results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-                results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
-                results_dict["SHS"]["supply_source"] = "shs"
+        results_dict["SHS"]["nr_consumers"] = total_consumers_shs
+        results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+        results_dict["SHS"]["supply_source"] = "shs"
 
     return results_dict
 
@@ -234,7 +236,6 @@ class FinancialTool:
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
-
         # calculate the system growth over the project lifetime and add rows for new mg and shs consumers per year
         system_lifetime = self.growth_over_lifetime_table(
             self.system_params[self.system_params["category"].isin(["nr_consumers", "total_demand"])],
@@ -290,8 +291,6 @@ class FinancialTool:
             ],
             ignore_index=True,
         )
-
-        system_params.drop(system_params[system_params.value == 0].index, inplace=True)
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
