@@ -20,3 +20,12 @@ def getfield(value, arg):
 @register.filter
 def getkey(mapping, key):
     return mapping.get(key, "")
+
+
+@register.filter
+def field_to_title(value):
+    if isinstance(value, str):
+        value = value.replace("_", " ")
+        return value.title()
+    else:
+        return value
