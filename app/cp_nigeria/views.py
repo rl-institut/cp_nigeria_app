@@ -1154,6 +1154,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     ].copy()
     system_costs.drop(columns=["growth_rate", "label"], inplace=True)
     system_costs = system_costs.pivot(columns="category", index="supply_source")
+    system_costs.columns = [col[1] for col in system_costs.columns]
 
     capex_assumptions = {}
     for cat in capex_df.Category.unique():
@@ -1180,6 +1181,9 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(project)
+    cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+    cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
+    cgs_df.drop(columns=["supply_source"], inplace=True)
 
     currency_symbol = project.economic_data.currency_symbol
 
@@ -1196,7 +1200,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         # "fate_figs": fate_figs["Net Cash Flow"],
         # "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
         # "diesel_curve_fig": diesel_curve_fig,
-        "aggregated_cgs": aggregated_cgs,
+        "cgs_df": cgs_df,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
