@@ -117,6 +117,7 @@ class EquityData(models.Model):
     equity_developer_amount = models.FloatField(
         verbose_name=_("Amount of equity the project developer would be " "able to mobilize (Million NGN)"), default=0
     )
+    estimated_tariff = models.FloatField(blank=True, null=True)
 
     def compute_average_fuel_price(self, initial_fuel_price, project_duration):
         """

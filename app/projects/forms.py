@@ -254,7 +254,7 @@ class ProjectCreateForm(OpenPlanForm):
         ),
     )
     discount = forms.FloatField(
-        label=_("Discount Factor"),
+        label=_("Discount Factor (%)"),
         widget=forms.NumberInput(
             attrs={
                 "placeholder": _("eg. 0.1"),
@@ -269,7 +269,7 @@ class ProjectCreateForm(OpenPlanForm):
         ),
     )
     tax = forms.FloatField(
-        label=_("Tax"),
+        label=_("Tax (%)"),
         widget=forms.HiddenInput(
             attrs={
                 "placeholder": _("eg. 0.3"),

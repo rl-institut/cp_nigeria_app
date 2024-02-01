@@ -237,14 +237,24 @@
 								<div class="chart__header">
 									<!-- style="display: flex;gap: 10px;align-items: center;" -->
 									<div>
-										<span class="title">{% translate "Important financial KPIS from financial model" %}</span>
+										<span class="title">{% translate "Financial KPIs" %}</span>
 									</div>
 								</div>
 
 								<div class="chart__plot">
-									<div style="display:flex;justify-content:center;align-content:center;">
-										Tariff: {{ tariff_NGN | floatformat | intcomma}} ₦ ({{ tariff_USD | floatformat | intcomma}} USD)
-									</div>
+									<table class="table">
+										<thead><tr><th>Description</th><th>Value</th></tr></thead>
+									<tr>
+										<td>Tariff:</td>
+										<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+									</tr>
+									{% for kpi, value in financial_kpis.items %}
+									<tr>
+										<td>{{ kpi }}</td>
+										<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
+									</tr>
+									{% endfor %}
+									</table>
 								</div>
 							</div>
 						</div>
@@ -253,6 +263,7 @@
 
 					{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
 					{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
+					{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
 
 					<div class="header-results">
 						<h2 class="title">{% translate "Assumption CAPEX" %}</h2>
@@ -312,31 +323,7 @@
 						<div class="row">
 							<div class="col col-md-12">
 								<div class="chart">
-									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
-										<div>
-											<span class="title">{% translate "Costs" %}</span>
-										</div>
-									</div>
-									<div class="chart__plot">
-										<table class="table" id="costsTable">
-											<thead><tr><th>Asset</th><th>First investment</th><th>OM (year)</th></tr></thead>
-											<tbody>
-
-											</tbody>
-											{% for asset, costs in asset_costs.items %}
-											{% if asset == "total" %} <tr style="font-weight:bold"> {% else %} <tr> {% endif %}
-											<td>{{ asset }} </td>
-											<td>{{ costs.costs_upfront_in_year_zero | floatformat | intcomma }} {{ costs.unit }}</td>
-											<td>{{ costs.annuity_om | floatformat | intcomma }} {{ costs.unit }}
-												{% if asset == "diesel_fuel_consumption" %}
-												/ {{ diesel_consumption | floatformat | intcomma }} L
-												{% endif %}</td>
-										</tr>
-											{% endfor %}
-
-										</table>
-									</div>
+									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs %}
 								</div>
 
 							</div>
@@ -805,6 +792,16 @@
             });
     };
 
+	function scenario_visualize_capex(scen_id=""){
+     $.ajax({
+                url: "{% url 'scenario_visualize_capex' %}" + scen_id,
+                type: "GET",
+                success: async (parameters) => {
+                    await makePieChart(parameters, plot_id="capex");
+                },
+            });
+    };
+
 </script>
 
 
@@ -967,6 +964,7 @@ document.querySelectorAll("#results-analysis-links a").forEach(el => {el.classLi
         scenario_visualize_costs(scen_id);
         scenario_visualize_cash_flow(scen_id);
         scenario_visualize_revenue(scen_id);
+        scenario_visualize_capex(scen_id);
         // Highlight only the selected scenario
         //$(".scenario-select__item").map((i, item) => {item.classList.remove("selected");});
         // todo select the correct_scenario

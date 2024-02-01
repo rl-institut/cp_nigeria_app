@@ -74,12 +74,34 @@ class BMQuestionForm(forms.Form):
 class EquityDataForm(forms.ModelForm):
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start", "debt_share"]
+        exclude = ["scenario", "debt_start", "debt_share", "estimated_tariff"]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
         include_shs = kwargs.pop("include_shs", False)
-        instance = kwargs.pop("instance", None)
+        instance = kwargs.get("instance", None)
+        initial = kwargs.get("initial", {})
+
+        if instance is not None:
+            for field in [
+                "fuel_price_increase",
+                "grant_share",
+                "debt_share",
+                "debt_interest_MG",
+                "debt_interest_SHS",
+                "equity_interest_MG",
+                "equity_interest_SHS",
+                "equity_community_amount",
+                "equity_developer_amount",
+            ]:
+                initial_value = getattr(instance, field)
+                if initial_value is not None:
+                    if "amount" in field:
+                        initial[field] = initial_value / 1000000
+                    else:
+                        initial[field] = initial_value * 100
+            kwargs["initial"] = initial
+
         super().__init__(*args, **kwargs)
         if default is not None:
             for field, default_value in default.items():
@@ -87,15 +109,6 @@ class EquityDataForm(forms.ModelForm):
                     self.fields[field].widget.attrs.update(
                         {"placeholder": f"your current model suggests {default_value}"}
                     )
-
-        if instance is not None:
-            for field in self.fields:
-                initial_value = getattr(instance, field)
-                if initial_value is not None:
-                    if "amount" in field:
-                        self.fields[field].initial = initial_value / 1000000
-                    else:
-                        self.fields[field].initial = initial_value * 100
 
         if not include_shs:
             for field in self.fields:

@@ -2,6 +2,7 @@ Description;Category;Qty;USD/Unit;Unit;Growth rate;Target
 Mounting Structure ;Power supply system;1;;kWp;;pv_plant_optimized_capacity
 Others PV Materials (AC/ DC cabling, Gpas, Monitoring system, Fences, CCTV, etc);Power supply system;1;42;kWp;;pv_plant_optimized_capacity
 SHS Fosera Ignite incl. Mounting system;Power supply system;1;675;SHS consumers;;shs_nr_consumers
+SHS operational expenditures;Opex;1;7;SHS consumers;0.015;shs_nr_consumers
 Transformer on-site;Transmission network;0;120;;;
 Substation for grid connection;Transmission network;0;0;;;
 Grid connection;Transmission network;1;207;Mini-grid consumers;;mini_grid_nr_consumers
@@ -21,4 +22,4 @@ Contingency;Labour and soft costs;1;50;kWp;;pv_plant_optimized_capacity
 Metering and fixed costs;Revenue;1;4;Mini-grid users;0.065;mini_grid_nr_consumers
 Connection fee;Revenue;1;7;Mini-grid users;0.065;mini_grid_nr_consumers_new
 Excess power PPA tariff;Revenue;1;0.02;kWh;0.015;mini_grid_excess_generation
-Community tariff;Revenue;1;0.085;kWh;0.07;mini_grid_total_demand
+Community tariff;Revenue;1;0.175;kWh;0.07;mini_grid_total_demand

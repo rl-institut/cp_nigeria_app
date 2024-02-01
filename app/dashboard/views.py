@@ -49,6 +49,7 @@ from dashboard.models import (
     STORAGE_SUB_CATEGORIES,
     OUTPUT_POWER,
 )
+from business_model.models import EquityData
 from projects.scenario_topology_helpers import load_scenario_topology_from_db
 from dashboard.forms import (
     ReportItemForm,
@@ -1043,7 +1044,7 @@ def scenario_visualize_cash_flow(request, scen_id):
     ft = FinancialTool(scenario.project)
     initial_loan = ft.initial_loan_table
     replacement_loan = ft.replacement_loan_table
-    custom_tariff = ft.get_tariff()
+    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
 
     y = [
         ft.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist(),
@@ -1063,7 +1064,7 @@ def scenario_visualize_revenue(request, scen_id):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(scenario.project)
-    custom_tariff = ft.get_tariff()
+    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
     revenue = ft.revenue_over_lifetime(custom_tariff)
     costs = ft.om_costs_over_lifetime
 
@@ -1076,6 +1077,18 @@ def scenario_visualize_revenue(request, scen_id):
     names = ["Operating revenues net", "Operating expenses"]
     title = "Operating revenues"
     return JsonResponse({"x": x, "y": y, "names": names, "title": title})
+
+
+def scenario_visualize_capex(request, scen_id):
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    ft = FinancialTool(scenario.project)
+    capex_df = ft.capex
+    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    categories = capex_by_category.index.tolist()
+    total_costs = capex_by_category.values.tolist()
+    title = "Total investment costs"
+    return JsonResponse({"categories": categories, "costs": total_costs, "title": title})
 
 
 @login_required

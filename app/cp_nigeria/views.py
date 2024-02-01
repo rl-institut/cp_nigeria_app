@@ -380,12 +380,12 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         if qs_demand.exists():
             demand = json.loads(qs_demand.get().input_timeseries)
             demand_np = np.array(demand)
-            peak_demand = round(demand_np.max(), 1)
-            daily_demand = round(demand_np.sum() / 365, 1)
+
         else:
-            demand = None
-            peak_demand = None
-            daily_demand = None
+            demand_np = np.array(get_aggregated_demand(project))
+
+        peak_demand = round(demand_np.max(), 1)
+        daily_demand = round(demand_np.sum() / 365, 1)
 
         context = {
             "proj_id": proj_id,
@@ -839,12 +839,9 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             form_errors = True
 
         if equity_form.is_valid():
-            if equity_data is not None:
-                [setattr(equity_data, name, value) for name, value in equity_form.cleaned_data.items()]
-            else:
-                equity_data = equity_form.save(commit=False)
-                equity_data.debt_start = scenario.start_date.year
-                equity_data.scenario = scenario
+            equity_data = equity_form.save(commit=False)
+            equity_data.debt_start = scenario.start_date.year
+            equity_data.scenario = scenario
             equity_data.save()
 
             # compute the new price and set it to the diesel dso
@@ -1131,19 +1128,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         ).unit
         cap["supply_percentage"] = cap["total_supply"] / np.sum(get_aggregated_demand(project)) * 100
 
-    # diesel fuel values
-    if qs_res.filter(asset="diesel_fuel_consumption").exists():
-        diesel_consumption_liter = (
-            qs_res.filter(asset="diesel_fuel_consumption").get().total_flow / ENERGY_DENSITY_DIESEL
-        )
-    else:
-        diesel_consumption_liter = 0
-    # costs values
-    kpi_cost_results = json.loads(KPICostsMatrixResults.objects.get(simulation__scenario=project.scenario).cost_values)
-    asset_costs = {asset: costs for asset, costs in kpi_cost_results.items() if costs.get("costs_total") > 0}
-    for asset, costs in asset_costs.items():
-        costs["unit"] = project.economic_data.currency_symbol
-
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
     html_template = "cp_nigeria/steps/scenario_outputs.html"
@@ -1156,10 +1140,20 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(project)
-    tariff = ft.get_tariff()
+    tariff = ft.tariff
+
+    ed = EquityData.objects.get(scenario=project.scenario)
+    ed.estimated_tariff = tariff
+    ed.save()
 
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+
+    system_costs = ft.system_params[
+        ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
+    ].copy()
+    system_costs.drop(columns=["growth_rate", "label"], inplace=True)
+    system_costs = system_costs.pivot(columns="category", index="supply_source")
 
     capex_assumptions = {}
     for cat in capex_df.Category.unique():
@@ -1173,10 +1167,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         sub_capex.fillna("", inplace=True)
         capex_assumptions[cat] = sub_capex
 
-        # import pdb;pdb.set_trace()
-    # TODO dont make the plots in this view but set up an async ajax call in scenario_outputs (like with the other plots)
-    # capex_fig = go.Figure(data=[go.Pie(labels=capex_by_category.index, values=capex_by_category.values)]).to_html()
-
     revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
 
     revenue_flows.index = revenue_flows.index.droplevel(1)
@@ -1186,108 +1176,16 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
-
-    # traces = []
-    # for ix, row in revenue_flows.iterrows():
-    #     x_data = revenue_flows.columns.tolist()
-    #     y_data = row.values
-    #     traces.append(go.Scatter(x=x_data, y=y_data, name=ix[0]))
-    #
-    # layout = go.Layout(title="Revenue flows", xaxis={"title": "Year"}, yaxis={"title": "NGN"}, template="simple_white")
-    # revenue_fig = go.Figure(data=traces, layout=layout).to_html()
+    financial_kpis = ft.financial_kpis
 
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(project)
 
-    # TODO delete if no longer needed - curve for diesel genset load (minload debugging)
-    # qs_genset = opt_caps.filter(asset="diesel_generator")
-    # diesel_curve_fig = None
-    # if qs_genset.exists():
-    #     # plot for diesel load curve (for debugging minimal load of genset)
-    #     diesel_genset_duration_curve = (
-    #         qs_res.filter(energy_vector="Electricity", asset_type="diesel_generator").get().load_duration
-    #     )
-    #     genset_asset = Asset.objects.filter(scenario=project.scenario, name="diesel_generator").get()
-    #
-    #     capacity_diesel_genset = qs_genset.get()["optimized_capacity"]
-    #     min_load = genset_asset.soc_min
-    #     max_load = genset_asset.soc_max
-    #
-    #     percentage = 100 * np.arange(1, len(diesel_genset_duration_curve) + 1) / len(diesel_genset_duration_curve)
-    #
-    #     # Create a scatter plot for the duration curve
-    #     scatter_trace = go.Scatter(
-    #         x=percentage,
-    #         y=diesel_genset_duration_curve,
-    #         mode="markers + lines",
-    #         name="Duration Curve",
-    #     )
-    #
-    #     # Create horizontal lines for minimum and maximum load
-    #     min_load_trace = go.Scatter(
-    #         x=[0, 100],
-    #         y=[min_load * capacity_diesel_genset, min_load * capacity_diesel_genset],
-    #         mode="lines",
-    #         line=dict(color="crimson", dash="dash"),
-    #         name="Minimum Load",
-    #     )
-    #
-    #     max_load_trace = go.Scatter(
-    #         x=[0, 100],
-    #         y=[max_load * capacity_diesel_genset, max_load * capacity_diesel_genset],
-    #         mode="lines",
-    #         line=dict(color="crimson", dash="dash"),
-    #         name="Maximum Load",
-    #     )
-    #
-    #     # Add annotations for minimum and maximum load
-    #     annotations = [
-    #         dict(
-    #             x=100,
-    #             y=min_load * capacity_diesel_genset,
-    #             xref="x",
-    #             yref="y",
-    #             text=f"minimum load: {min_load * capacity_diesel_genset:0.2f} kW",
-    #             showarrow=True,
-    #             arrowhead=0,
-    #             ax=0,
-    #             ay=-15,
-    #         ),
-    #         dict(
-    #             x=100,
-    #             y=max_load * capacity_diesel_genset,
-    #             xref="x",
-    #             yref="y",
-    #             text=f"maximum load: {max_load * capacity_diesel_genset:0.2f} kW",
-    #             showarrow=True,
-    #             arrowhead=0,
-    #             ax=0,
-    #             ay=15,
-    #         ),
-    #     ]
-    #
-    #     # Create the layout
-    #     layout = dict(
-    #         title="Duration Curve for the Diesel Genset Electricity Production",
-    #         xaxis=dict(title="percentage of annual operation [%]"),
-    #         yaxis=dict(title="diesel genset production [kW]"),
-    #         template="simple_white",
-    #     )
-    #
-    #     # Create the figure
-    #     fig = go.Figure(data=[scatter_trace, min_load_trace, max_load_trace], layout=layout)
-    #
-    #     # Add annotations to the figure
-    #     fig.update_layout(annotations=annotations)
-    #
-    #     # Show the figure or save it to a file
-    #     diesel_curve_fig = fig.to_html()
+    currency_symbol = project.economic_data.currency_symbol
 
     context = {
         "proj_id": proj_id,
         "capacities": opt_caps,
-        "asset_costs": asset_costs,
-        "diesel_consumption": diesel_consumption_liter,
         "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
@@ -1314,6 +1212,9 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
         "losses": losses,
         "tariff_NGN": tariff * ft.exchange_rate,
         "tariff_USD": tariff,
+        "financial_kpis": financial_kpis,
+        "system_costs": system_costs,
+        "currency_symbol": currency_symbol,
     }
 
     return render(request, html_template, context)

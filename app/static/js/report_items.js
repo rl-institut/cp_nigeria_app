@@ -458,7 +458,6 @@ function makeFinancialPlot(parameters, plot_id="") {
             r:100,
             t:100,
         },
-        title: parameters.title,
         xaxis: {title: "Time"},
         yaxis: {title: "currency"},
         hovermode:'x unified',
@@ -471,6 +470,35 @@ function makeFinancialPlot(parameters, plot_id="") {
     Plotly.newPlot(plotDiv, traces, layout, config);
     // simulate a click on autoscale
     plotDiv.querySelector('[data-title="Autoscale"]').click()
+}
+
+
+function makePieChart(parameters, plot_id="") {
+	var plotDiv = document.getElementById(plot_id);
+    var labels = parameters.categories;
+    var costs = parameters.costs;
+
+    // Create a Plotly Pie Chart
+    var data = [{
+        labels: labels,
+        values: costs,
+        type: 'pie',
+        textinfo: 'label',
+        textposition: 'outside',
+        automargin: true
+    }];
+
+    var layout = {
+        margin:{
+            'b':100,
+            'l':100,
+            'r':100,
+            't':100,
+        },
+        showlegend: true,
+    };
+
+    Plotly.newPlot(plotDiv, data, layout);
 }
 
 

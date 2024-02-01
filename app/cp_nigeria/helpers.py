@@ -66,9 +66,12 @@ def get_aggregated_cgs(project):
 
     if len(shs_threshold) != 0:
         shs_consumers = get_shs_threshold(options.shs_threshold)
-        results_dict["SHS"] = {}
-        total_demand_shs = 0
-        total_consumers_shs = 0
+    else:
+        shs_consumers = None
+
+    results_dict["SHS"] = {}
+    total_demand_shs = 0
+    total_consumers_shs = 0
 
     for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
         results_dict[consumer_type] = {}
@@ -82,7 +85,7 @@ def get_aggregated_cgs(project):
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
-            if len(shs_threshold) != 0 and ts.name in shs_consumers:
+            if shs_consumers is not None and ts.name in shs_consumers:
                 total_demand_shs += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
                 total_consumers_shs += group.number_consumers
 
@@ -99,10 +102,9 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
-            if shs_threshold is not None:
-                results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-                results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
-                results_dict["SHS"]["supply_source"] = "shs"
+        results_dict["SHS"]["nr_consumers"] = total_consumers_shs
+        results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+        results_dict["SHS"]["supply_source"] = "shs"
 
     return results_dict
 
@@ -214,6 +216,7 @@ class ReportHandler:
 
 class FinancialTool:
     cost_assumptions = pd.read_csv(staticfiles_storage.path("financial_tool/cost_assumptions.csv"), sep=";")
+    loan_assumptions = {"Tenor": 10, "Grace period": 1, "Cum. replacement years": 10}
 
     def __init__(self, project):
         """
@@ -233,7 +236,6 @@ class FinancialTool:
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
-
         # calculate the system growth over the project lifetime and add rows for new mg and shs consumers per year
         system_lifetime = self.growth_over_lifetime_table(
             self.system_params[self.system_params["category"].isin(["nr_consumers", "total_demand"])],
@@ -254,7 +256,7 @@ class FinancialTool:
         calculate_capex().
         """
         growth_rate = 0.0
-        growth_rate_om = 0.015
+        growth_rate_om = self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].values[0]
 
         # get capacities and cost results
         qs_res = FancyResults.objects.filter(simulation__scenario=self.project.scenario)
@@ -289,15 +291,10 @@ class FinancialTool:
             ],
             ignore_index=True,
         )
-
-        system_params.drop(system_params[system_params.value == 0].index, inplace=True)
-
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
-        system_params.loc[
-            system_params["category"].isin(["opex_fix_total", "opex_var_total"]), "growth_rate"
-        ] = growth_rate_om
+        system_params.loc[system_params["category"] == "opex_total", "growth_rate"] = growth_rate_om
         system_params.loc[system_params["category"] == "fuel_costs_total", "growth_rate"] = self.financial_params[
             "fuel_price_increase"
         ][0]
@@ -376,7 +373,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[self.cost_assumptions["Category"] != "Revenue"],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Opex"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -389,6 +386,7 @@ class FinancialTool:
         vat_costs = (
             capex_df.groupby("Category")["Total costs [USD]"].sum()[["Logistics", "Labour and soft costs"]].sum()
         )
+        # TODO put VAT tax percentage in financial params view
         vat_percentage = self.financial_params["tax"][0]
         capex_df.loc[len(capex_df)] = {
             "Description": "VAT",
@@ -451,7 +449,12 @@ class FinancialTool:
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
-        shs_costs_om = 7 * self.exchange_rate
+        shs_costs_om = (
+            self.cost_assumptions.loc[
+                self.cost_assumptions["Description"] == "SHS Fosera Ignite incl. Mounting system", "USD/Unit"
+            ].values[0]
+            * self.exchange_rate
+        )
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
@@ -497,9 +500,9 @@ class FinancialTool:
         """
         This method creates a table for the initial CAPEX debt according to the debt share (CAPEX - grant and equity).
         """
-        tenor = 10
-        grace_period = 1
-        amount = self.initial_loan
+        tenor = self.loan_assumptions["Tenor"]
+        grace_period = self.loan_assumptions["Grace period"]
+        amount = self.financial_kpis["Initial loan amount"]
         interest_rate = self.financial_params["debt_interest_MG"][0]
         debt_start = self.project_start
 
@@ -514,11 +517,10 @@ class FinancialTool:
         generator after 10 years).
         """
         # TODO should this always be 10 or depending on given shortest component lifetime
-        replacement_components = ["Battery", "Inverter", "Diesel Generator"]
-        tenor = 10  # this should be an argument or attribute
-        debt_start = self.project_start + 10  #  shouldn't it be tenor here?
-        grace_period = 1
-        amount = self.capex[self.capex["Description"].isin(replacement_components)]["Total costs [NGN]"].sum()
+        tenor = self.loan_assumptions["Tenor"]
+        debt_start = self.project_start + self.loan_assumptions["Cum. replacement years"]
+        grace_period = self.loan_assumptions["Grace period"]
+        amount = self.financial_kpis["Replacement loan amount"]
         interest_rate = self.financial_params["equity_interest_MG"][0]  # TODO find out why
 
         return self.debt_service_table(
@@ -531,7 +533,7 @@ class FinancialTool:
         the financial losses through depreciation, interest payments to get the EBT (earnings before tax) and finally
         including taxes to get the net income over the project lifetime. The calculate_capex() method is used here.
         """
-        depreciation_yrs = 20
+        depreciation_yrs = self.project_duration
         capex_df = self.capex
         system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
         equity = (
@@ -612,16 +614,28 @@ class FinancialTool:
         return cashflow_helper
 
     @property
-    def initial_loan(self):
+    def financial_kpis(self):
         gross_capex = self.capex["Total costs [NGN]"].sum()
         total_equity = (
             self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
         )
         total_grant = self.financial_params["grant_share"][0] * gross_capex
-        amount = gross_capex - total_grant - total_equity
-        return amount
+        initial_amount = gross_capex - total_grant - total_equity
+        replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
+            "Total costs [NGN]"
+        ].sum()
+        financial_kpis = {
+            "Total investment costs": gross_capex,
+            "Total equity": total_equity,
+            "Total grant": total_grant,
+            "Initial loan amount": initial_amount,
+            "Replacement loan amount": replacement_amount,
+        }
 
-    def get_tariff(self):
+        return financial_kpis
+
+    @property
+    def tariff(self):
         x = np.arange(0.1, 0.2, 0.01)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
@@ -631,6 +645,7 @@ class FinancialTool:
         return x0
 
 
+# TODO if linear fit yields same results this can be deleted
 def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
     """
     code taken from https://github.com/DrTol/GoalSeek_Python
