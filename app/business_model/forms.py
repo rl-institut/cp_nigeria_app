@@ -81,24 +81,26 @@ class EquityDataForm(forms.ModelForm):
         include_shs = kwargs.pop("include_shs", False)
         instance = kwargs.get("instance", None)
         initial = kwargs.get("initial", {})
-        for field in [
-            "fuel_price_increase",
-            "grant_share",
-            "debt_share",
-            "debt_interest_MG",
-            "debt_interest_SHS",
-            "equity_interest_MG",
-            "equity_interest_SHS",
-            "equity_community_amount",
-            "equity_developer_amount",
-        ]:
-            initial_value = getattr(instance, field)
-            if initial_value is not None:
-                if "amount" in field:
-                    initial[field] = initial_value / 1000000
-                else:
-                    initial[field] = initial_value * 100
-        kwargs["initial"] = initial
+
+        if instance is not None:
+            for field in [
+                "fuel_price_increase",
+                "grant_share",
+                "debt_share",
+                "debt_interest_MG",
+                "debt_interest_SHS",
+                "equity_interest_MG",
+                "equity_interest_SHS",
+                "equity_community_amount",
+                "equity_developer_amount",
+            ]:
+                initial_value = getattr(instance, field)
+                if initial_value is not None:
+                    if "amount" in field:
+                        initial[field] = initial_value / 1000000
+                    else:
+                        initial[field] = initial_value * 100
+            kwargs["initial"] = initial
 
         super().__init__(*args, **kwargs)
         if default is not None:
