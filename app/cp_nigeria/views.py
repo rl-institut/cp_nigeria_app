@@ -1141,6 +1141,11 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(project)
     tariff = ft.tariff
+
+    ed = EquityData.objects.get(scenario=project.scenario)
+    ed.estimated_tariff = tariff
+    ed.save()
+
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
 

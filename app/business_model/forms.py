@@ -74,7 +74,7 @@ class BMQuestionForm(forms.Form):
 class EquityDataForm(forms.ModelForm):
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start", "debt_share"]
+        exclude = ["scenario", "debt_start", "debt_share", "estimated_tariff"]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
