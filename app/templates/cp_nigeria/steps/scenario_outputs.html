@@ -334,24 +334,7 @@
 					<div class="row">
 						<div class="col col-md-12">
 							<div class="chart">
-								<div class="chart__header">
-									<div>
-										<span class="title">{% translate "Community characteristics" %}</span>
-									</div>
-								</div>
-								<div class="chart__plot">
-									<table class="table" >
-										<thead><tr><th>Consumer type</th><th>Nr. of consumers</th><th>Total demand</th></tr></thead>
-
-										{% for consumer_type, char in aggregated_cgs.items %}
-										<tr>
-											<td>{{ consumer_type }}</td>
-											<td>{{ char.nr_consumers }}</td>
-											<td>{{ char.total_demand | floatformat | intcomma }} kWh</td>
-										</tr>
-										{% endfor %}
-									</table>
-								</div>
+									{% include "report/table_template.html" with id="CommunitySummary" title="Community demand summary" df=cgs_df %}
 							</div>
 						</div>
 					</div>
