@@ -1069,7 +1069,13 @@ def cpn_model_suggestion(request, bm_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
+def cpn_complex_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
+    return cpn_outputs(request, proj_id, step_id=step_id, complex=True)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False):
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
 
@@ -1130,8 +1136,10 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
-    html_template = "cp_nigeria/steps/scenario_outputs.html"
-
+    if complex is True:
+        html_template = "cp_nigeria/steps/scenario_outputs.html"
+    else:
+        html_template = "cp_nigeria/steps/scenario_outputs_light.html"
     qs_options = Options.objects.filter(project=project)
     if qs_options.exists():
         es_schema_name = qs_options.get().schema_name
