@@ -358,19 +358,19 @@ class ReportHandler:
             (
                 ("Project name", "{project_name}"),
                 ("Community name", "{community_name}"),
-                ("Location", "{community_region} ({community_latitude} / {community_longitude})"),
-                ("Annual Energy Production", "{yearly_production}"),
-                ("Indicative system size", "{system_capacity}"),
-                ("Indicative total investment costs", "{total_investments}"),
+                ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
+                ("Annual Energy Production", "{yearly_production} kWh"),
+                ("Indicative system size", "{system_capacity} kW"),
+                ("Indicative total investment costs", "{total_investments} NGN"),
                 ("Designated Distribution Company", "{disco}"),
-                ("Indicative Project Lifetime", "{project_lifetime}"),
+                ("Indicative Project Lifetime", "{project_lifetime} years"),
             )
         )
 
         # Add project summary
         self.add_heading("Project summary", level=2)
         self.add_paragraph(
-            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex}, while overall Opex amount to {system_opex}. Regarding the project implementation, an {bm_name} business model approach is suggested."
+            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex:.0f} NGN, while overall Opex amount to {system_opex:.0f} NGN. Regarding the project implementation, an {bm_name} business model approach is suggested."
         )
 
         subtitle_run = subtitle_paragraph.add_run(summary)
@@ -392,12 +392,12 @@ class ReportHandler:
             )
         )
 
-        self.add_table(
-            (
-                ("Consumption Level", "Very Low", "Low", "Middle", "High", "Very High"),
-                ("Number of households", "XX", "XX", "XX", "XX", "XX"),
-            )
-        )
+        # self.add_table(
+        #     (
+        #         ("Consumption Level", "Very Low", "Low", "Middle", "High", "Very High"),
+        #         ("Number of households", "XX", "XX", "XX", "XX", "XX"),
+        #     )
+        # )
 
         self.add_paragraph(
             "--------------------------------------\nDear toolbox user, it is recommended to enrich this section, by providing the following information",
@@ -426,6 +426,32 @@ class ReportHandler:
         self.add_heading("Methodology", level=2)
         self.doc.add_page_break()
         self.add_heading("Electricity Demand Profile")
+
+        self.add_paragraph(
+            "The total electricity demand is estimated by assigning demand profiles to the households, enterprises and public facilities present in the community, based on demand profiles constructed within the PeopleSun project HYPERLINK, which were derived from surveys and appliance audits conducted within electrified communities. As the demand is based on proxy data for already electrified communities, the system doesn't consider any demand increase over project lifetime, but instead assumes that the proposed supply system would be able to satisfy future demand."
+        )
+        self.add_paragraph(
+            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all households, enterprises, facilities and machinery selected for the simulation."
+        )
+
+        # TODO display all consumer groups
+        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+
+        self.add_paragraph(
+            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home Systems instead, all households assigned to the {shs_threshold} tier and below are excluded from the supply system optimization. In this case, {shs_number} households were assumed to be served by SHS. "
+        )
+        self.add_paragraph(
+            "The estimated yearly demand for the {community_name} community is {total_demand:.1f} kWh/year. The average daily demand is {avg_daily_demand:.1f} kWh/day, while the peak demand for the simulated year is {peak_demand:.1f} kW. The demand is divided between households, enterprises and public facilities as follows:"
+        )
+
+        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+
+        self.add_paragraph(
+            "The following graph displays how the cumulated demand is aggregated based on the given community characteristics."
+        )
+
+        # TODO demand graph
+
         self.add_list("Table or graph with")
         self.add_list(
             (
@@ -449,7 +475,26 @@ class ReportHandler:
         self.add_heading("Electricity Supply System Size and Composition")
         self.add_image(self.image_path["es_schema"], width=Inches(3))
 
-        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+        self.add_paragraph(
+            "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with the following components: {energy_system_components_string}. To optimize the system, the following costs and characteristics were assumed:"
+        )
+
+        # - {Table with supply system parameters (form contents from page 4)}
+
+        self.add_paragraph(
+            "Additionally, a diesel price increase of {diesel_price_increase}% a year on average was assumed. Based on the given system setup, the following asset sizes would be best suited to satisfy the demand:"
+        )
+
+        # - {Table with optimized capacities}
+
+        self.add_paragraph(
+            "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, with {renewable_share}% of the generation coming from renewable sources. "
+        )
+
+        self.add_paragraph(
+            "In total, the investment costs for the power supply system amount to {system_capex} NGN. More detailed information regarding investment costs and financial considerations can be found in chapter 5. The operational expenditures for the simulated year amount to {opex_total} NGN, with an estimated annual increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs} NGN are attributed to fuel costs, of which {fuel_consumption_liter}L are consumed during the simulation. The following graph displays the power flow for the system during one week:"
+        )
+
         self.doc.add_page_break()
         self.add_heading("Business Model of the Mini-grid Project")
         self.add_paragraph(
