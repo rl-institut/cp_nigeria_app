@@ -680,7 +680,7 @@
                 url: "{% url 'scenario_visualize_cash_flow' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makeFinancialPlot(parameters, plot_id="cash_flow");
+                    await addFinancialPlot(parameters, plot_id="cash_flow");
                 },
             });
     };
@@ -690,7 +690,7 @@
                 url: "{% url 'scenario_visualize_revenue' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makeFinancialPlot(parameters, plot_id="revenue");
+                    await addFinancialPlot(parameters, plot_id="revenue");
                 },
             });
     };
@@ -700,7 +700,7 @@
                 url: "{% url 'scenario_visualize_capex' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makePieChart(parameters, plot_id="capex");
+                    await addPieChart(parameters, plot_id="capex");
                 },
             });
     };

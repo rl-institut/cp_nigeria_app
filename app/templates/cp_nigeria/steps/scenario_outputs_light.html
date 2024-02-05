@@ -120,95 +120,14 @@
 </div>
 
 <main>
-	<!--	<section class="header">-->
-	<!--		<div>-->
-	<!--			<div class="header__left"></div>-->
-	<!--			<h1 class="header__title">{% translate "Simulation results" %}</h1>-->
-	<!--			<div class="header__back">-->
-	<!--				<a href="{% url 'back_to_scenario_review' proj_id %}">{% translate "To scenario" %}</a>-->
-	<!--			</div>-->
-	<!--		</div>-->
-	<!--	</section>-->
-	<!--	<section class="header-results">-->
-	<!--		<div>-->
-	<!--			<div class="header-results__scenario">-->
-	<!--				<div class="project-title">-->
-	<!--					{% translate "Project" %}-->
-	<!--				</div>-->
-	<!--				<div class="project-name">-->
-	<!--					<form action="{% url 'result_change_project' %}" method="POST">-->
-	<!--						{% csrf_token %}-->
-	<!--						<select name="proj_id" class="form-select" aria-label="Default select example" onchange="this.form.submit()">-->
-	<!--							{% for project in project_list %}-->
-	<!--							<option value="{{ project.id }}" {% if project.id == proj_id %} selected {% endif %}> {{ project.label }} </option>-->
-	<!--							{% endfor %}-->
-	<!--						</select>-->
-	<!--					</form>-->
-	<!--				</div>-->
-	<!--			</div>-->
-	<!--			<div class="header-results__export">-->
-	<!--				{% block export-results %}-->
-	<!--				<a type="button" class="btn btn-small" href="{% url 'redirect_download_timeseries_results' proj_id %}"><span class="icon icon-export"></span>{% translate "Download Timeseries" %}</a>-->
-	<!--				<a type="button" class="btn btn-small" href="{% url 'download_scalar_results' scen_id %}"><span class="icon icon-export"></span>{% translate "Download KPIs" %}</a>-->
-	<!--				<a type="button" class="btn btn-small" href="{% url 'download_cost_results' scen_id %}"><span class="icon icon-export"></span>{% translate "Download Component Costs" %}</a>-->
-	<!--				{% endblock export-results %}-->
-	<!--			</div>-->
-	<!--		</div>-->
-	<!--	</section>-->
-
-
 	<!-- insert tabs here, previous class result-selector -->
 	<section>
-		<!--		<div class=" dashboard-tabs">-->
-		<!--			<div>-->
-		<!--				<ul class="dashboard-tabs nav nav-tabs" id="results-analysis-links">-->
-		<!--					<li class="nav-item">-->
-		<!--						<a class="nav-link" id="single-scenario-link" href="{% url 'project_visualize_results' proj_id %}">{% translate "Single scenarios" %}</a>-->
-		<!--					</li>-->
-		<!--					<li class="nav-item">-->
-		<!--						<a class="nav-link" id="compare-scenario-link" href="{% url 'project_compare_results' proj_id %}">{% translate "Compare scenarios" %}</a>-->
-		<!--					</li>-->
-		<!--					<li class="nav-item">-->
-		<!--						<a class="nav-link" id="sensitivity-analysis-link" href="{% url 'project_sensitivity_analysis' proj_id %}">{% translate "Sensitivity Analysis" %}</a>-->
-		<!--					</li>-->
-		<!--				</ul>-->
-		<!--			</div>-->
-		<!--		</div>-->
 		<div class="tab-content" id="js-db-top-section">
-			<!--<div class="dashboard-options sticky-top">-->
-			<!--	<div>-->
-			<!--		<div class="row">-->
-			<!--			<div class="dashboard__scenarios">-->
-			<!--				<div class="dashboard__select-scenarios dashboard__select-scenarios&#45;&#45;small">-->
-			<!--					<label for="results-scenarios" class="form-label">{% translate "Scenario" %}</label>-->
-			<!--					<select name="results-single-scenario" id="results-scenarios" placeholder="This is a placeholder" onchange="update_selected_single_scenario(this.value)">-->
-			<!--						{% for scenario in scenario_list %}-->
-			<!--						<option value="scenario-{{ proj_id }}-{{ scenario.id}}" {% if scenario.id == scen_id %} selected {% endif %} >{{ scenario.name }}</option>-->
-			<!--						{% empty %}-->
-			<!--						{% translate "You have no scenario with completed simulation, please run simulations to display results" %}-->
-			<!--						{% endfor %}-->
-			<!--					</select>-->
-			<!--				</div>-->
-			<!--				{% if scenario_list %}-->
-			<!--				<div class="dashboard__add">-->
-			<!--					<button class="btn btn&#45;&#45;small btn&#45;&#45;transparent" type="submit" onclick="javascript:showCreateReportItemModal(event)">-->
-			<!--						<span class="icon icon-add"></span>-->
-			<!--						{% translate "Add chart" %}-->
-			<!--					</button>-->
-			<!--				</div>-->
-			<!--				{% endif %}-->
-			<!--			</div>-->
-			<!--		</div>-->
-			<!--	</div>-->
-			<!--</div>-->
 			<div>
 				<a href="{% url 'cpn_complex_output' proj_id step_id %}">To complex output version (this link will not be there in the final version, it is only for proofing financial tool)</a>
 			</div>
 			<div class="dashboard">
 				<div>
-					<div class="header-results">
-						<button class="title" onclick="collapseTables()">{% translate "Collapse all tables" %}</button>
-					</div>
 					<div class="header-results">
 						<h2 class="title">{% translate "Overview" %}</h2>
 					</div>
@@ -247,7 +166,7 @@
 									<table class="table">
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
 									<tr>
-										<td>Tariff:</td>
+										<td>Estimated tariff:</td>
 										<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
 									</tr>
 									{% for kpi, value in financial_kpis.items %}
@@ -259,104 +178,27 @@
 									</table>
 								</div>
 							</div>
+								{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
+								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
+								{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
+
 						</div>
-					</div>
-					<div class="header-results">
-						<h2 class="title">{% translate "Technoeconomic parameters" %}</h2>
 					</div>
 					<div class="row">
 						<div class="col col-md-12">
 							<div class="chart">
-								{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}
+									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
 							</div>
 						</div>
 					</div>
 
-					{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
 
 
-					{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-					{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
-					{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
-
-					<div class="header-results">
-						<h2 class="title">{% translate "Assumption CAPEX" %}</h2>
-					</div>
-					{% for cat, df in capex_assumptions.items %}
-						{% include "report/table_template.html" with id="Table"|add:cat title=cat df=df %}
-					{% endfor %}
-
-					<div class="header-results">
-						<h2 class="title">{% translate "Cash Flow Calculation" %}</h2>
-					</div>
-					{% include "report/table_template.html" with id="TableRevenue" title="Revenue" df=revenue_flows %}
-					{% include "report/table_template.html" with id="TableOpex" title="Opex" df=opex_costs %}
-					{% include "report/table_template.html" with id="TableLosses" title="Losses" df=losses %}
-
-					{% include "report/table_template.html" with id="TableCashFlow" title="CashFlow" df=cash_flow %}
-
-					<div class="header-results">
-						<h2 class="title">{% translate "Senior Debt Service" %}</h2>
-					</div>
-					{% include "report/table_template.html" with id="TableSeniorDebt" title="Senior Debt" df=senior_debt %}
-					{% include "report/table_template.html" with id="TableReplacementDebt" title="Replacement Debt" df=remplacement_debt %}
-
-
-					<div class="row">
-							<div class="col col-md-12">
-								<div class="chart">
-									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
-										<div>
-											<span class="title">{% translate "Business model" %}</span>
-										</div>
-									</div>
-									<div class="chart__plot">
-										{{ model_graph}}
-										<div style="display:flex;justify-content:center;align-content:center;">
-											<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
-										</div>
-										<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
-											<p><h3> Model chosen: {{model_name}}</h3></p>
-											{{ model_description}}
-										</div>
-									</div>
-								</div>
-								<div style="display:flex;justify-content:center">
-									<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
-										Download report
-									</a>
-								</div>
-							</div>
-						</div>
-
-
-											<div class="header-results">
-							<h2 class="title">{% translate "Technoeconomic parameters" %}</h2>
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
-								<div class="chart">
-									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs %}
-								</div>
-
-							</div>
-
-						</div>
-					{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
-
-					<div class="row">
-						<div class="col col-md-12">
-							<div class="chart">
-									{% include "report/table_template.html" with id="CommunitySummary" title="Community demand summary" df=cgs_df %}
-							</div>
-						</div>
-					</div>
 					{% if scenario_list %}
 					<!-- KPI table start -->
 					<div class="col" id="report_items" style="display:flex;flex-direction:column;">
 						<div class="header-results">
-							<h2 class="title">{% translate "Energy System" %}</h2>
+							<h2 class="title">{% translate "Power Supply System" %}</h2>
 						</div>
 
 						{% include "report/kpis_template.html" with table_styles=table_styles %}
@@ -380,7 +222,7 @@
 											</tbody>
 											{% for cap in capacities %}
 											<tr>
-												<td>{{ cap.asset }}</td>
+												<td>{{ cap.asset | field_to_title }}</td>
 												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>
 											</tr>
 											{% endfor %}
@@ -389,7 +231,14 @@
 								</div>
 								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 							</div>
-
+						</div>
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}
+								</div>
+								{% include "report/graph_template.html" with id="system_costs" title="System costs in first year" %}
+							</div>
 						</div>
 						<div class="row">
 							<div class="col col-md-12">
@@ -424,13 +273,46 @@
 								</div>
 
 								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
-								{% include "report/graph_template.html" with id="sankey" title="Sankey diagram" %}
 							</div>
 
 						</div>
 
+					<div class="row">
+							<div class="col col-md-12">
+								<div class="header-results">
+									<h2 class="title">{% translate "Business model" %}</h2>
+								</div>
+								<div class="chart">
+									<div class="chart__header">
+										<!-- style="display: flex;gap: 10px;align-items: center;" -->
+										<div>
+											<span class="title">{% translate "Business model" %}</span>
+										</div>
+									</div>
+									<div class="chart__plot">
+										{{ model_graph}}
+										<div style="display:flex;justify-content:center;align-content:center;">
+											<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
+										</div>
+										<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
+											<p><h3> Model chosen: {{model_name}}</h3></p>
+											{{ model_description}}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+
 						<!-- Graphs area  stop -->
 						{% endif %}
+					</div>
+
+					<div style="display:flex;justify-content:center">
+						<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
+							Download report
+						</a>
 					</div>
 				</div>
 			</div>
@@ -692,7 +574,7 @@
                 url: "{% url 'scenario_visualize_cash_flow' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makeFinancialPlot(parameters, plot_id="cash_flow");
+                    await addFinancialPlot(parameters, plot_id="cash_flow");
                 },
             });
     };
@@ -702,7 +584,7 @@
                 url: "{% url 'scenario_visualize_revenue' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makeFinancialPlot(parameters, plot_id="revenue");
+                    await addFinancialPlot(parameters, plot_id="revenue");
                 },
             });
     };
@@ -712,10 +594,21 @@
                 url: "{% url 'scenario_visualize_capex' %}" + scen_id,
                 type: "GET",
                 success: async (parameters) => {
-                    await makePieChart(parameters, plot_id="capex");
+                    await addPieChart(parameters, plot_id="capex");
                 },
             });
     };
+
+	function scenario_visualize_system_costs(scen_id=""){
+     $.ajax({
+                url: "{% url 'scenario_visualize_system_costs' %}" + scen_id,
+                type: "GET",
+                success: async (parameters) => {
+                    await addCostsChart(parameters, plot_id="system_costs");
+                },
+            });
+    };
+
 
 </script>
 
@@ -871,14 +764,12 @@ document.querySelectorAll("#results-analysis-links a").forEach(el => {el.classLi
         const proj_id = "{{ proj_id }}";
         // update the kpi table
         update_kpi_table_style(scen_id);
-        //scenario_visualize_timeseries(scen_id);
-        //scenario_visualize_stacked_timeseries(scen_id);
         scenario_visualize_cpn_stacked_timeseries(scen_id);
-        scenario_visualize_sankey(scen_id);
         scenario_visualize_capacities(scen_id);
         scenario_visualize_costs(scen_id);
         scenario_visualize_cash_flow(scen_id);
         scenario_visualize_revenue(scen_id);
+        scenario_visualize_system_costs(scen_id, system_costs);
         scenario_visualize_capex(scen_id);
         // Highlight only the selected scenario
         //$(".scenario-select__item").map((i, item) => {item.classList.remove("selected");});
@@ -904,7 +795,6 @@ document.querySelectorAll("#results-analysis-links a").forEach(el => {el.classLi
                     scenario_visualize_timeseries(scen_id);
                     // scenario_visualize_stacked_timeseries(scen_id);
                     scenario_visualize_cpn_stacked_timeseries(scen_id);
-                    scenario_visualize_sankey(scen_id);
                     scenario_visualize_capacities(scen_id);
                     scenario_visualize_costs(scen_id);
                 },
