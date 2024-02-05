@@ -1079,6 +1079,24 @@ def scenario_visualize_revenue(request, scen_id):
     return JsonResponse({"x": x, "y": y, "names": names, "title": title})
 
 
+def scenario_visualize_system_costs(request, scen_id):
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+
+    # Initialize financial tool to calculate financial flows and test output graphs
+    ft = FinancialTool(scenario.project)
+    system_costs = ft.system_params[
+        ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
+    ].copy()
+    system_costs.drop(columns=["growth_rate", "label"], inplace=True)
+    system_costs = system_costs.pivot(columns="category", index="supply_source")
+    system_costs.columns = [col[1] for col in system_costs.columns]
+
+    labels = system_costs.columns.tolist()
+    assets = system_costs.index.tolist()
+    costs = system_costs.T.values.tolist()
+    return JsonResponse({"labels": labels, "assets": assets, "costs": costs})
+
+
 def scenario_visualize_capex(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
 
