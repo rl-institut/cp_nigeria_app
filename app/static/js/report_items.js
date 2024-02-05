@@ -83,14 +83,19 @@ function nester(el, n) {
 }
 
 function format_trace_name(scenario_name, label, unit, compare=false){
-    clean_label = (label.charAt(0).toUpperCase() + label.slice(1)).replace(/_/g, ' ');
-    console.log(clean_label)
-    var trace_name = clean_label + ' (' + unit + ')' ;
+    title_label = format_as_title(label);
+    var trace_name = title_label + ' (' + unit + ')' ;
     if(compare == true){
         trace_name = scenario_name + ' ' + trace_name;
     }
     return trace_name;
 
+}
+
+
+function format_as_title(label){
+    title_string = (label.charAt(0).toUpperCase() + label.slice(1)).replace(/_/g, ' ');
+    return title_string;
 }
 
 
@@ -518,7 +523,7 @@ function addCostsChart(parameters, plot_id="") {
         var trace = {
           x: assets,
           y: costs[i],
-          name: format_trace_name(labels[i]),
+          name: format_as_title(labels[i]),
           type: 'bar',
           marker: {color:color, pattern:{shape: patterns[i]}}
         };
