@@ -13,11 +13,14 @@ import pandas as pd
 import numpy as np
 import numpy_financial as npf
 import os
+import json
 import csv
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
+from projects.models import Asset
+from projects.constants import ENERGY_DENSITY_DIESEL
 from business_model.models import EquityData, BusinessModel
 from business_model.helpers import B_MODELS
-from dashboard.models import FancyResults
+from dashboard.models import FancyResults, KPIScalarResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
 from django.db.models import Func
@@ -88,6 +91,10 @@ def get_aggregated_cgs(project):
 
         # filter consumer group objects based on consumer type
         group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
+        if consumer_type_id == "households":
+            import pdb
+
+            pdb.set_trace()
         # calculate total consumers and total demand as sum of array elements in kWh
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
@@ -174,12 +181,47 @@ class ReportHandler:
         self.bm = BusinessModel.objects.get(scenario=project.scenario)
         self.bm_name = self.bm.model_name
 
+        # get optimized capacities
+        qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
+        opt_caps = qs_res.filter(
+            optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+        )
+
+        opt_caps = opt_caps.values("asset", "optimized_capacity", "total_flow")
+
+        # Make a sentence with system assets and their optimized capacities
+        system_assets = []
+        for asset in opt_caps.values_list("asset", "optimized_capacity"):
+            if asset[0] != "inverter":
+                unit = "kW"
+                if asset[0] == "battery":
+                    unit = "kWh"
+                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1],1)} {unit}]")
+        if len(system_assets) == 1:
+            system_assets = "a {}".format(system_assets[0])
+        else:
+            system_assets = (
+                "a {}, " * (len(system_assets) - 2) + "a {}" * (len(system_assets) > 1) + " and a {}"
+            ).format(*system_assets)
+
         self.project = project
         self.image_path = dict(
             es_schema="static/assets/gui/" + options.schema_name,
             bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],
             bm_resp="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Responsibilities"],
         )
+
+        scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
+
+        lcoe = round(scenario_results["levelized_costs_of_electricity_equivalent"], 2)
+
+        ft = FinancialTool(project)
+
+        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+
+        inverter_aggregated_flow = ft.system_params.loc[
+            (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
+        ].iloc[0]
 
         self.aggregated_cgs = get_aggregated_cgs(self.project)
 
@@ -191,16 +233,29 @@ class ReportHandler:
             hh_number=self.aggregated_cgs["households"]["nr_consumers"],
             ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
             pf_number=self.aggregated_cgs["public"]["nr_consumers"],
-            system_assets="[PV modules [size]], [a generator [size]] [and a battery [size]]",
-            system_capacity="XXXX",
-            system_capex="XXXX",
-            system_opex="XXXX",
-            yearly_production="XXXX",
+            shs_number=self.aggregated_cgs["SHS"]["nr_consumers"],
+            shs_threshold=options.shs_threshold,
+            system_assets=system_assets,
+            system_capacity="XXXX (???what is the definition of system size???)",
+            system_capex=ft.total_capex("NGN"),
+            system_opex=ft.total_opex(),
+            yearly_production=ft.yearly_production_electricity,
+            total_demand=total_demand,
+            avg_daily_demand=daily_demand,
+            peak_demand=peak_demand,
+            diesel_price_increase=ft.financial_params.loc[0, "fuel_price_increase"],
+            renewable_share=inverter_aggregated_flow / total_demand,
+            lcoe=lcoe,
+            opex_total=ft.total_opex(),
+            opex_growth_rate=ft.opex_growth_rate,
+            fuel_costs=ft.fuel_costs,
+            fuel_consumption_liter=ft.fuel_consumption_liter,
+            energy_system_components_string=options.component_list,
             community_latitude=self.project.latitude,
             community_longitude=self.project.longitude,
             project_name=self.project.name,
             project_lifetime=self.project.economic_data.duration,
-            total_investments="XXXX",
+            total_investments=ft.total_capex("NGN"),
             disco="DiscoName",
         )
         if self.text_parameters["grid_option"] is False:
@@ -598,13 +653,35 @@ class FinancialTool:
         # TODO replace this with custom consumer/demand increase when it is included in tool GUI - maybe not prio since
         #  we are already considering a future demand scenario
         system_params["growth_rate"] = growth_rate
-        system_params.loc[system_params["category"] == "opex_total", "growth_rate"] = growth_rate_om
+        system_params.loc[system_params["category"] == "opex_total", "growth_rate"] = self.opex_growth_rate
         system_params.loc[system_params["category"] == "fuel_costs_total", "growth_rate"] = self.financial_params[
             "fuel_price_increase"
         ][0]
         system_params["label"] = system_params["supply_source"] + "_" + system_params["category"]
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
+
+    @property
+    def yearly_production_electricity(self):
+        flow_df = self.system_params[self.system_params["category"] == "total_flow"]
+        return flow_df[flow_df["supply_source"].isin(["diesel_generator", "pv_plant", "dso"])].value.sum()
+
+    @property
+    def fuel_costs(self):
+        return self.system_params[
+            (self.system_params["supply_source"] == "diesel_generator")
+            & (self.system_params["category"] == "fuel_costs_total")
+        ].value.iloc[0]
+
+    @property
+    def fuel_consumption_liter(self):
+        return (
+            self.system_params[
+                (self.system_params["supply_source"] == "diesel_generator")
+                & (self.system_params["category"] == "total_flow")
+            ].value.iloc[0]
+            / ENERGY_DENSITY_DIESEL
+        )
 
     def collect_financial_params(self):
         """
@@ -713,6 +790,21 @@ class FinancialTool:
         capex_df = pd.concat([capex_df, pd.DataFrame(system_capex_rows)], ignore_index=True)
 
         return capex_df  # capex_df['Total costs [USD]'].sum() returns gross CAPEX
+
+    def total_capex(self, currency="NGN"):
+        """Sum of all capex costs"""
+        print("capex table\t", self.capex[f"Total costs [{currency}]"].sum())
+        capex_df = self.system_params[self.system_params["category"].isin(["capex_initial", "capex_replacement"])]
+        print("system params\t", capex_df.value.sum())
+        return self.capex[f"Total costs [{currency}]"].sum()
+
+    def total_opex(self):
+        costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
+        return costs_om_df.value.sum()
+
+    @property
+    def opex_growth_rate(self):
+        return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
 
     def revenue_over_lifetime(self, custom_tariff=None):
         """
