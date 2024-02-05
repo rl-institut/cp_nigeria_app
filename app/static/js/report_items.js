@@ -497,6 +497,25 @@ function saveToSession(graphId) {
     });
 };
 
+function downloadReport(proj_id) {
+        $.ajax({
+        headers: {'X-CSRFToken': csrfToken},
+        type: 'POST',
+        url: urlDownloadReport,
+        data: {proj_id: proj_id},
+        xhrFields: {responseType: 'blob'},
+        success: function (response) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(response);
+            link.download = 'report.docx';
+            link.click();
+        },
+        error: function (error) {
+            console.error(error);
+        }
+    });
+};
+
 
 function addPieChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);

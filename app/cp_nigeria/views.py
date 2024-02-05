@@ -1536,36 +1536,39 @@ def save_to_session(request):
         return JsonResponse({"status": "success"})
 
 
+@json_view
 @login_required
-@require_http_methods(["GET", "POST"])
-def download_report(request, proj_id):
-    project = get_object_or_404(Project, id=proj_id)
-    logging.info("downloading implementation plan")
-    implementation_plan = ReportHandler()
-    implementation_plan.create_cover_sheet(project)
-    implementation_plan.create_report_content(project)
-    # implementation_plan.add_paragraph("For now, this is just a demo")
-    # implementation_plan.add_paragraph("Here are some graphs:")
-    #
-    # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
-    # for graph in os.listdir(graph_dir):
-    #     implementation_plan.add_image(os.path.join(graph_dir, graph))
+@require_http_methods(["POST"])
+def ajax_download_report(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        proj_id = int(request.POST.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        logging.info("downloading implementation plan")
+        implementation_plan = ReportHandler()
+        implementation_plan.create_cover_sheet(project)
+        implementation_plan.create_report_content(project)
+        # implementation_plan.add_paragraph("For now, this is just a demo")
+        # implementation_plan.add_paragraph("Here are some graphs:")
+        #
+        # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
+        # for graph in os.listdir(graph_dir):
+        #     implementation_plan.add_image(os.path.join(graph_dir, graph))
 
-    report_imgs = ["cpn_stacked_timeseriesElectricity"]
-    for img in report_imgs:
-        image_data = request.session.get(img).split(",")[1]
-        if image_data:
-            try:
-                image_bytes = base64.b64decode(image_data)
-                image = io.BytesIO(image_bytes)
+        report_imgs = ["cpn_stacked_timeseriesElectricity"]
+        for img in report_imgs:
+            image_data = request.session.get(img).split(",")[1]
+            if image_data:
+                try:
+                    image_bytes = base64.b64decode(image_data)
+                    image = io.BytesIO(image_bytes)
 
-                implementation_plan.add_image(image)
+                    implementation_plan.add_image(image)
 
-            except Exception as e:
-                print(e)
+                except Exception as e:
+                    print(e)
 
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    response["Content-Disposition"] = "attachment; filename=report.docx"
-    implementation_plan.save(response)
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response["Content-Disposition"] = "attachment; filename=report.docx"
+        implementation_plan.save(response)
 
-    return response
+        return response
