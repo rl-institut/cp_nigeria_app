@@ -859,6 +859,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         if form_errors is False:
             answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
         else:
+            # TODO this seems to redirect to wrong page is the form is wrong
             qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
             try:
