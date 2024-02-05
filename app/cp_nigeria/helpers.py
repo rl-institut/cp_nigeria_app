@@ -273,7 +273,11 @@ class ReportHandler:
 
     def add_paragraph(self, text=None, style=None, emph=[]):
         if text is not None:
-            text = text.format(**self.text_parameters)
+            try:
+                text = text.format(**self.text_parameters)
+            except ValueError as e:
+                print(text)
+                raise (e)
         p = self.doc.add_paragraph(style=style)
         runner = p.add_run(text)
         if "italic" in emph:
@@ -339,7 +343,11 @@ class ReportHandler:
             row_cells = table.rows[j].cells
             # row_cells = table.add_row().cells
             for i, item in enumerate(record):
-                row_cells[i].text = item.format(**self.text_parameters)
+                try:
+                    row_cells[i].text = item.format(**self.text_parameters)
+                except ValueError as e:
+                    print(item)
+                    raise (e)
 
     def add_financial_table(self, records, title=""):
         table = self.doc.add_table(rows=1, cols=2)
@@ -356,7 +364,11 @@ class ReportHandler:
         for j, record in enumerate(records):
             row_cells = table.add_row().cells
             for i, item in enumerate(record):
-                row_cells[i].text = item.format(**self.text_parameters)
+                try:
+                    row_cells[i].text = item.format(**self.text_parameters)
+                except ValueError as e:
+                    print(item)
+                    raise (e)
 
         # TODO add a thick line
 
