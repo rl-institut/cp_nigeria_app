@@ -232,6 +232,10 @@ class ReportHandler:
 
         self.aggregated_cgs = get_aggregated_cgs(self.project)
 
+        self.consumer_groups = ConsumerGroup.objects.filter(project=project).values_list(
+            "consumer_type__consumer_type", "timeseries__name", "number_consumers"
+        )
+
         self.text_parameters = dict(
             grid_option=options.main_grid,
             bm_name=B_MODELS[self.bm_name]["Verbose"],
@@ -320,41 +324,58 @@ class ReportHandler:
         # caption text
         paragraph.add_run(f" {caption}")
 
-    def add_df_as_table(self, df, caption=None):
-        t = self.doc.add_table(df.shape[0] + 1, df.shape[1] + 1)
+    def add_df_as_table(self, df, caption=None, index=True):
+        if index is True:
+            start_idx = 1
+        else:
+            start_idx = 0
+
+        t = self.doc.add_table(df.shape[0] + 1, df.shape[1] + start_idx)
+
+        # add indices
+        if index is True:
+            for j in range(df.shape[0]):
+                t.cell(j + 1, 0).text = df.index[j]
+                t.cell(j + 1, 0).paragraphs[0].runs[0].font.bold = True
 
         # add headers
         for j in range(df.shape[1]):
-            t.cell(0, j + 1).text = df.columns[j]
-            t.cell(0, j + 1).paragraphs[0].runs[0].font.bold = True
-
-        # add indices
-        for j in range(df.shape[0]):
-            t.cell(j + 1, 0).text = df.index[j]
-            t.cell(j + 1, 0).paragraphs[0].runs[0].font.bold = True
+            t.cell(0, j + start_idx).text = df.columns[j]
+            t.cell(0, j + start_idx).paragraphs[0].runs[0].font.bold = True
 
         for i in range(df.shape[0]):
             for j in range(df.shape[-1]):
-                t.cell(i + 1, j + 1).text = str(df.values[i, j])
+                t.cell(i + 1, j + start_idx).text = str(df.values[i, j])
 
         if caption is not None:
             self.add_caption(t, caption)
 
-    def add_table(self, records):
-        table = self.doc.add_table(rows=len(records), cols=len(records[0]))
-        # hdr_cells = table.rows[0].cells
-        # hdr_cells[0].text = 'Qty'
-        # hdr_cells[1].text = 'Id'
-        # hdr_cells[2].text = 'Desc'
+    def add_table(self, records, columns=None):
+        tot_rows = len(records)
+        col_spacer = 0
+        if columns is not None:
+            tot_rows += 1
+            col_spacer = 1
+
+        table = self.doc.add_table(rows=tot_rows, cols=len(records[0]))
+
+        if columns is not None:
+            hdr_cells = table.rows[0].cells
+            for i, item in enumerate(columns):
+                hdr_cells[i].text = item.format(**self.text_parameters)
+
         for j, record in enumerate(records):
-            row_cells = table.rows[j].cells
+            row_cells = table.rows[j + col_spacer].cells
             # row_cells = table.add_row().cells
             for i, item in enumerate(record):
-                try:
-                    row_cells[i].text = item.format(**self.text_parameters)
-                except ValueError as e:
-                    print(item)
-                    raise (e)
+                if isinstance(item, str):
+                    try:
+                        row_cells[i].text = item.format(**self.text_parameters)
+                    except ValueError as e:
+                        print(item)
+                        raise (e)
+                else:
+                    row_cells[i].text = str(item)
 
     def add_financial_table(self, records, title=""):
         table = self.doc.add_table(rows=1, cols=2)
@@ -508,8 +529,13 @@ class ReportHandler:
             "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all households, enterprises, facilities and machinery selected for the simulation."
         )
 
-        # TODO display all consumer groups
-        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+        self.add_df_as_table(
+            pd.DataFrame.from_records(
+                self.consumer_groups, columns=["Consumer Type", "Demand Profile", "Nr. of Consumers"]
+            ),
+            caption="Consumer groups",
+            index=False,
+        )
 
         self.add_paragraph(
             "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home Systems instead, all households assigned to the {shs_threshold} tier and below are excluded from the supply system optimization. In this case, {shs_number} households were assumed to be served by SHS. "
