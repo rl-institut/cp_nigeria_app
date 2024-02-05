@@ -25,6 +25,7 @@ from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
 from django.db.models import Func
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.templatetags.static import static
 from dashboard.models import get_costs
 
 
@@ -55,6 +56,12 @@ if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_
                 FINANCIAL_PARAMS[label] = {}
                 for k, v in zip(hdr, row):
                     FINANCIAL_PARAMS[label][k] = v
+
+
+def help_icon(help_text=""):
+    return "<a data-bs-toggle='tooltip' title='' data-bs-original-title='{}' data-bs-placement='right'><img style='height: 1.2rem;margin-left:.5rem' alt='info icon' src='{}'></a>".format(
+        help_text, static("assets/icons/i_info.svg")
+    )
 
 
 def get_shs_threshold(shs_tier):

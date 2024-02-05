@@ -137,7 +137,7 @@
 								<div class="chart__header">
 									<!-- style="display: flex;gap: 10px;align-items: center;" -->
 									<div>
-										<span class="title">{% translate "Schematic" %}</span> <a href="{% url 'scenario_visualize_results' scen_id %}">open_plan results</a>
+										<span class="title">{% translate "Schematic" %}</span>
 									</div>
 								</div>
 
@@ -166,12 +166,12 @@
 									<table class="table">
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
 									<tr>
-										<td>Estimated tariff:</td>
+										<td>Estimated tariff <a data-bs-toggle="tooltip" title="" data-bs-original-title="tariff help text" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a></td>
 										<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
 									</tr>
 									{% for kpi, value in financial_kpis.items %}
 									<tr>
-										<td>{{ kpi }}</td>
+										<td>{{ kpi | safe}}</td>
 										<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
 									</tr>
 									{% endfor %}

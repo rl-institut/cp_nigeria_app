@@ -1172,12 +1172,23 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
     financial_kpis = ft.financial_kpis
+    help_texts = {
+        "Total investment costs": help_icon("All upfront investment costs"),
+        "Total equity": help_icon("Total equity help text"),
+        "Total grant": help_icon("Total grant help text"),
+        "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
+        "Replacement loan amount": help_icon("Amount needed to replace the system components"),
+    }
+
+    for k in help_texts:
+        financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
 
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(project)
     cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
     cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
     cgs_df.drop(columns=["supply_source"], inplace=True)
+    cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
 
     currency_symbol = project.economic_data.currency_symbol
 
@@ -1417,7 +1428,7 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
-        total_demand, peak_demand, daily_demand = get_demand_indicators()
+        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
