@@ -139,6 +139,28 @@ def get_aggregated_demand(project):
         return []
 
 
+def get_demand_indicators(project, with_timeseries=False):
+    """Provide the aggregated, peak and daily averaged demand
+
+    :param with_timeseries: when True return the full timeseries as well
+    """
+    qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+    if qs_demand.exists():
+        demand = json.loads(qs_demand.get().input_timeseries)
+        demand_np = np.array(demand)
+
+    else:
+        demand_np = np.array(get_aggregated_demand(project))
+
+    total_demand = demand_np.sum()
+    peak_demand = round(demand_np.max(), 1)
+    daily_demand = round(total_demand / 365, 1)
+    if with_timeseries is True:
+        return (demand, total_demand, peak_demand, daily_demand)
+    else:
+        return (total_demand, peak_demand, daily_demand)
+
+
 class ReportHandler:
     def __init__(self, project):
         self.doc = Document()

@@ -379,16 +379,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             es_schema_name = None
             grid_availability = False
 
-        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-        if qs_demand.exists():
-            demand = json.loads(qs_demand.get().input_timeseries)
-            demand_np = np.array(demand)
-
-        else:
-            demand_np = np.array(get_aggregated_demand(project))
-
-        peak_demand = round(demand_np.max(), 1)
-        daily_demand = round(demand_np.sum() / 365, 1)
+        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         context = {
             "proj_id": proj_id,
@@ -879,16 +870,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                     initial = qs_bm.first().default_fate_values
                 equity_form = EquityDataForm(prefix="equity", initial=initial)
 
-            qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-            if qs_demand.exists():
-                demand = json.loads(qs_demand.get().input_timeseries)
-                demand_np = np.array(demand)
-                peak_demand = round(demand_np.max(), 1)
-                daily_demand = round(demand_np.sum() / 365, 1)
-            else:
-                demand = None
-                peak_demand = None
-                daily_demand = None
+            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(with_timeseries=True)
 
             qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
             if qs_pv.exists():
@@ -1434,9 +1416,7 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
-        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-        if qs_demand.exists():
-            demand = json.loads(qs_demand.get().input_timeseries)
+        total_demand, peak_demand, daily_demand = get_demand_indicators()
 
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
@@ -1447,7 +1427,7 @@ def cpn_kpi_results(request, proj_id=None):
 
                 scen_values = [
                     round(
-                        inverter_flow / np.sum(demand) * factor,
+                        inverter_flow / total_demand * factor,
                         2,
                     )
                 ]
