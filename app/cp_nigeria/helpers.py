@@ -890,7 +890,7 @@ class FinancialTool:
         """
         shs_costs_om = (
             self.cost_assumptions.loc[
-                self.cost_assumptions["Description"] == "SHS Fosera Ignite incl. Mounting system", "USD/Unit"
+                self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
             ].values[0]
             * self.exchange_rate
         )
