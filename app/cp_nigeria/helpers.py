@@ -1054,11 +1054,12 @@ class FinancialTool:
 
     @property
     def financial_kpis(self):
+        usable_grant = 0.75  # this factor assumes that 25% of the grant is directly used for loan interest payments
         gross_capex = self.capex["Total costs [NGN]"].sum()
         total_equity = (
             self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
         )
-        total_grant = self.financial_params["grant_share"][0] * gross_capex
+        total_grant = self.financial_params["grant_share"][0] * gross_capex * usable_grant
         initial_amount = max(gross_capex - total_grant - total_equity, 0)
         replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
             "Total costs [NGN]"
