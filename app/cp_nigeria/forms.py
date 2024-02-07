@@ -38,7 +38,6 @@ class ProjectForm(OpenPlanModelForm):
             },
         ),
     )
-    duration = forms.IntegerField(label=_("Project lifetime"))
 
     class Meta:
         model = Project
@@ -55,13 +54,6 @@ class ProjectForm(OpenPlanModelForm):
 
         # The project does not exist yet so we created it as well as a scenario
         if pr.id is None:
-            economic_data = EconomicData.objects.create(
-                duration=self.cleaned_data["duration"],
-                currency="NGN",
-                discount=0,
-                tax=0,
-            )
-            pr.economic_data = economic_data
             pr.user = user
             pr.country = "NIGERIA"
             pr.save()
@@ -74,9 +66,6 @@ class ProjectForm(OpenPlanModelForm):
             )
         # The project does exist and we update simply its values
         else:
-            economic_data = EconomicData.objects.filter(id=pr.economic_data.id)
-            economic_data.update(duration=self.cleaned_data["duration"])
-
             scenario = Scenario.objects.filter(project=pr)
             scenario.update(start_date=self.cleaned_data["start_date"])
             pr.save()
@@ -84,12 +73,22 @@ class ProjectForm(OpenPlanModelForm):
         return pr
 
 
+class EconomicProjectForm(OpenPlanModelForm):
+    class Meta:
+        model = EconomicData
+        fields = ["duration", "currency", "exchange_rate"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["currency"].initial = "NGN"
+
+
 class EconomicDataForm(OpenPlanModelForm):
     capex_fix = forms.FloatField(label=_("Fix project costs"), validators=[MinValueValidator(0.0)])
 
     class Meta:
         model = EconomicData
-        exclude = ("currency", "duration")
+        exclude = ("currency", "duration", "exchange_rate")
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get("instance", None)

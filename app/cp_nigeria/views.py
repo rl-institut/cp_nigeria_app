@@ -193,10 +193,18 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         project = None
 
     if request.method == "POST":
-        form = ProjectForm(request.POST, instance=project) if project is not None else ProjectForm(request.POST)
+        if project is not None:
+            form = ProjectForm(request.POST, instance=project)
+            economic_data = EconomicProjectForm(request.POST, instance=project.economic_data)
+        else:
+            form = ProjectForm(request.POST)
+            economic_data = EconomicProjectForm(request.POST)
+        if form.is_valid() and economic_data.is_valid():
+            economic_data = economic_data.save()
+            project = form.save(user=request.user, commit=False)
+            project.economic_data = economic_data
+            project.save()
 
-        if form.is_valid():
-            project = form.save(user=request.user)
             options, _ = Options.objects.get_or_create(project=project)
             options.community = form.cleaned_data["community"]
             options.save()
@@ -210,12 +218,14 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
                 instance=project,
                 initial={"start_date": scenario.start_date, "duration": project.economic_data.duration},
             )
+            economic_data = EconomicProjectForm(instance=project.economic_data)
             qs_options = Options.objects.filter(project=project)
             if qs_options.exists():
                 form["community"].initial = qs_options.get(project=project).community
 
         else:
             form = ProjectForm()
+            economic_data = EconomicProjectForm()
     page_information = "Please input basic project information, such as name, location and duration. You can input geographical data by clicking on the desired project location on the map."
     if project is not None:
         proj_name = project.name
@@ -224,6 +234,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         "cp_nigeria/steps/scenario_create.html",
         {
             "form": form,
+            "economic_data": economic_data,
             "proj_id": proj_id,
             "proj_name": proj_name,
             "step_id": step_id,
