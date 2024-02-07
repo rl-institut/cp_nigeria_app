@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.forms.models import modelformset_factory
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 
 from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
@@ -160,8 +161,14 @@ class MainGridForm(AssetCreateForm):
 
         self.fields["feedin_tariff"] = forms.FloatField()
         asset = kwargs.get("instance", None)
+        proj_id = kwargs.get("proj_id", None)
+        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
         if asset is None:
-            default_values = {"name": self.asset_type_name, "energy_price": "23", "feedin_tariff": 0}
+            default_values = {
+                "name": self.asset_type_name,
+                "energy_price": str(round((0.03 * exchange_rate), 2)),
+                "feedin_tariff": 0,
+            }
             for field, initial_value in default_values.items():
                 self.initial[field] = initial_value
 
@@ -179,10 +186,15 @@ class PVForm(AssetCreateForm):
         self.prefix = self.asset_type_name
 
         asset = kwargs.get("instance", None)
+        proj_id = kwargs.get("proj_id", None)
+        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
         if asset is None:
-            default_values = {"lifetime": 25, "capex_var": 369198, "opex_fix": 7740}
+            default_values = {"lifetime": 25, "capex_var": 477, "opex_fix": 10}
             for field, initial_value in default_values.items():
-                self.initial[field] = initial_value
+                if field in ["capex_var", "opex_fix"]:
+                    self.initial[field] = round((initial_value * exchange_rate), 2)
+                else:
+                    self.initial[field] = initial_value
 
         self.initial["optimize_cap"] = True
         self.fields["input_timeseries"].widget = forms.HiddenInput()
@@ -208,6 +220,8 @@ class DieselForm(AssetCreateForm):
         self.initial["optimize_cap"] = True
 
         asset = kwargs.get("instance", None)
+        proj_id = kwargs.get("proj_id", None)
+        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
         if asset is not None:
             self.initial["opex_var_extra"] = round(asset.opex_var_extra * ENERGY_DENSITY_DIESEL, 3)
             if self.initial["soc_min"] is None:
@@ -217,17 +231,21 @@ class DieselForm(AssetCreateForm):
         else:
             default_values = {
                 "lifetime": 8,
-                "capex_var": 309600,
-                "opex_fix": 19350,
-                "opex_var": 23.22,
-                "opex_var_extra": 626.7,  # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
+                "capex_var": 400,
+                "opex_fix": 25,
+                "opex_var": 0.03,
+                "opex_var_extra": 1.11,  # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
                 # ie solution with entry in the DB because the date needs to be linked to the price to be updated if the date is different
                 "efficiency": 0.25,
                 "soc_min": 0.0,
                 "soc_max": 1.0,
             }
+
             for field, initial_value in default_values.items():
-                self.initial[field] = initial_value
+                if field in ["capex_var", "opex_fix", "opex_var", "opex_var_extra"]:
+                    self.initial[field] = round((initial_value * exchange_rate), 2)
+                else:
+                    self.initial[field] = initial_value
 
         for field, value in zip(("name", "capex_fix", "maximum_capacity"), (self.asset_type_name, 0, 0.0)):
             self.fields[field].widget = forms.HiddenInput()
@@ -262,20 +280,26 @@ class BessForm(StorageForm):
         self.prefix = self.asset_type_name
 
         asset = kwargs.get("instance", None)
+        proj_id = kwargs.get("proj_id", None)
+        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
+
         if asset is not None:
             self.initial["soc_min"] = round(1 - asset.soc_min, 3)
         else:
             default_values = {
                 "lifetime": 8,
-                "capex_var": 256194,
-                "opex_fix": 7740,
+                "capex_var": 331,
+                "opex_fix": 10,
                 "crate": 1,
                 "soc_min": 0.8,
                 "soc_max": 1,
                 "efficiency": 0.9,
             }
             for field, initial_value in default_values.items():
-                self.initial[field] = initial_value
+                if field in ["capex_var", "opex_fix"]:
+                    self.initial[field] = round((initial_value * exchange_rate), 2)
+                else:
+                    self.initial[field] = initial_value
 
         self.initial["optimize_cap"] = True
         for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
