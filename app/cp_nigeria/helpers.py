@@ -743,6 +743,7 @@ class FinancialTool:
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
         financial_params = pd.concat([pd.DataFrame.from_records(qs_eq), pd.DataFrame.from_records(qs_ed)], axis=1)
+        financial_params["capex_fix"] = self.project.scenario.capex_fix
         return financial_params
 
     @staticmethod
@@ -810,7 +811,7 @@ class FinancialTool:
         vat_costs = (
             capex_df.groupby("Category")["Total costs [USD]"].sum()[["Logistics", "Labour and soft costs"]].sum()
         )
-        # TODO put VAT tax percentage in financial params view
+
         vat_percentage = self.financial_params["tax"][0]
         capex_df.loc[len(capex_df)] = {
             "Description": "VAT",
@@ -819,6 +820,14 @@ class FinancialTool:
             "Total costs [USD]": vat_costs * vat_percentage,
         }
         capex_df["Total costs [NGN]"] = capex_df["Total costs [USD]"] * self.exchange_rate
+
+        # add fix project costs from economic data view to capex dataframe
+        capex_df.loc[len(capex_df)] = {
+            "Description": "Planning and development costs",
+            "Category": "Fix project costs",
+            "Qty": 1,
+            "Total costs [NGN]": self.financial_params["capex_fix"][0],
+        }
 
         # Add the power supply system capex from the sim results (accounts for custom cost parameters instead of static)
         system_capex_rows = [
