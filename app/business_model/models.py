@@ -102,8 +102,19 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         null=True,
     )
+    loan_maturity = models.IntegerField(
+        help_text=_("Number of years to repay the loan"),
+        validators=[MinValueValidator(0)],
+        default=10,
+    )
+    grace_period = models.IntegerField(
+        help_text=_("Number of years to the first repayment of principal"),
+        validators=[MinValueValidator(0.0)],
+        default=1,
+    )
     equity_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external equity: mini-grid (%)"),
+        default=0,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     equity_interest_SHS = models.FloatField(
@@ -115,7 +126,7 @@ class EquityData(models.Model):
         verbose_name=_("Amount of equity the community would be " "able to mobilize (Million NGN)"), default=0
     )
     equity_developer_amount = models.FloatField(
-        verbose_name=_("Amount of equity the project developer would be " "able to mobilize (Million NGN)"), default=0
+        verbose_name=_("Amount of equity the mini-grid company would be " "able to mobilize (Million NGN)"), default=0
     )
     estimated_tariff = models.FloatField(blank=True, null=True)
 
