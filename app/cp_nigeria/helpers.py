@@ -658,7 +658,6 @@ class FinancialTool:
         calculate_capex().
         """
         growth_rate = 0.0
-        growth_rate_om = self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].values[0]
 
         # get capacities and cost results
         qs_res = FancyResults.objects.filter(simulation__scenario=self.project.scenario)
@@ -906,7 +905,8 @@ class FinancialTool:
             ].values[0]
             * self.exchange_rate
         )
-        costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
+        costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
+        costs_om_df = costs_om_df[costs_om_df["value"] != 0]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
         # multiply the unit prices by the amount
