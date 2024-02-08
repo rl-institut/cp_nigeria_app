@@ -1,6 +1,7 @@
 {% load static %}
 {% load i18n %}
 {% load custom_filters %}
+{% load custom_template_tags %}
 {% load humanize %}
 
 {% comment %}
@@ -12,6 +13,8 @@ title:
 the text display in the title bar of the object
 df:
 a dataframe to display in the table
+unit:
+the unit to display in the table cells
 {% endcomment %}
 
 
@@ -32,7 +35,7 @@ a dataframe to display in the table
 						<th class="header_table" scope="col"></th>
 						{% for col in df.columns %}
 						<th class="header_table" scope="col">
-							{{ col }}
+							{{ col | field_to_title }}
 						</th>
 						{% endfor %}
 					</tr>
@@ -42,11 +45,11 @@ a dataframe to display in the table
 					{% for index, row in df.iterrows %}
 					<tr>
 						<td>
-							{{ index }}
+							{{ index | field_to_title }}
 						</td>
 						{% for cell in row %}
 						<td>
-							{{ cell | floatformat | intcomma}}
+							{{ cell | floatformat | intcomma}} {% if unit %} {{ unit }} {% endif %}
 						</td>
 						{% endfor %}
 					</tr>

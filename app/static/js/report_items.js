@@ -83,13 +83,19 @@ function nester(el, n) {
 }
 
 function format_trace_name(scenario_name, label, unit, compare=false){
-
-    var trace_name = label + ' (' + unit + ')' ;
+    title_label = format_as_title(label);
+    var trace_name = title_label + ' (' + unit + ')' ;
     if(compare == true){
         trace_name = scenario_name + ' ' + trace_name;
     }
     return trace_name;
 
+}
+
+
+function format_as_title(label){
+    title_string = (label.charAt(0).toUpperCase() + label.slice(1)).replace(/_/g, ' ');
+    return title_string;
 }
 
 
@@ -448,7 +454,7 @@ function addSensitivityAnalysisGraph(graphId, parameters){
     Plotly.newPlot(graphId, parameters.data, layout);
 };
 
-function makeFinancialPlot(parameters, plot_id="") {
+function addFinancialPlot(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
 	var layout = {
 //        height: 220,
@@ -473,15 +479,17 @@ function makeFinancialPlot(parameters, plot_id="") {
 }
 
 
-function makePieChart(parameters, plot_id="") {
+function addPieChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
     var labels = parameters.categories;
     var costs = parameters.costs;
+    var colors = [ "B21E2A", "2168AA", "874287", "#2A8449", "CC7D00", "8C8680"]
 
     // Create a Plotly Pie Chart
     var data = [{
         labels: labels,
         values: costs,
+        marker: {colors: colors},
         type: 'pie',
         textinfo: 'label',
         textposition: 'outside',
@@ -496,6 +504,40 @@ function makePieChart(parameters, plot_id="") {
             't':100,
         },
         showlegend: true,
+    };
+
+    Plotly.newPlot(plotDiv, data, layout);
+}
+
+
+function addCostsChart(parameters, plot_id="") {
+	var plotDiv = document.getElementById(plot_id);
+    var assets = parameters.assets;
+    var labels = parameters.labels;
+    var costs = parameters.costs;
+    var data = []
+    var color = "#008753";
+    var patterns = ["", ".", "/", "x", "+", "-"]
+
+    for(var i=0; i < labels.length; i++){
+        var trace = {
+          x: assets,
+          y: costs[i],
+          name: format_as_title(labels[i]),
+          type: 'bar',
+          marker: {color:color, pattern:{shape: patterns[i]}}
+        };
+        data.push(trace)
+    }
+
+    var layout = {
+        margin:{
+            'b':100,
+            'l':100,
+            'r':100,
+            't':100,
+        },
+        barmode: 'stack',
     };
 
     Plotly.newPlot(plotDiv, data, layout);

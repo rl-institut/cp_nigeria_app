@@ -620,7 +620,7 @@ class FinancialTool:
             self.financial_params["equity_community_amount"][0] + self.financial_params["equity_developer_amount"][0]
         )
         total_grant = self.financial_params["grant_share"][0] * gross_capex
-        initial_amount = gross_capex - total_grant - total_equity
+        initial_amount = max(gross_capex - total_grant - total_equity, 0)
         replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
             "Total costs [NGN]"
         ].sum()
