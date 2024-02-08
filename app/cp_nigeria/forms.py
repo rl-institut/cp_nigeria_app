@@ -190,21 +190,9 @@ class PVForm(AssetCreateForm):
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
 
-        asset = kwargs.get("instance", None)
-        proj_id = kwargs.get("proj_id", None)
-        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
-        if asset is None:
-            default_values = {"lifetime": 25, "capex_var": 477, "opex_fix": 10}
-            for field, initial_value in default_values.items():
-                if field in ["capex_var", "opex_fix"]:
-                    self.initial[field] = round((initial_value * exchange_rate), 2)
-                else:
-                    self.initial[field] = initial_value
-
         self.initial["optimize_cap"] = True
         self.fields["input_timeseries"].widget = forms.HiddenInput()
         self.fields["input_timeseries"].required = False
-
         self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
             "(CAPEX)", "(CAPEX). It should include inverter costs."
         )
@@ -221,36 +209,14 @@ class DieselForm(AssetCreateForm):
         super().__init__(*args, asset_type="diesel_generator", **kwargs)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
-
         self.initial["optimize_cap"] = True
 
         asset = kwargs.get("instance", None)
-        proj_id = kwargs.get("proj_id", None)
-        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
         if asset is not None:
-            self.initial["opex_var_extra"] = round(asset.opex_var_extra * ENERGY_DENSITY_DIESEL, 3)
             if self.initial["soc_min"] is None:
                 self.initial["soc_min"] = 0.0
             if self.initial["soc_max"] is None:
                 self.initial["soc_max"] = 1.0
-        else:
-            default_values = {
-                "lifetime": 8,
-                "capex_var": 400,
-                "opex_fix": 25,
-                "opex_var": 0.03,
-                "opex_var_extra": 1.11,  # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
-                # ie solution with entry in the DB because the date needs to be linked to the price to be updated if the date is different
-                "efficiency": 0.25,
-                "soc_min": 0.0,
-                "soc_max": 1.0,
-            }
-
-            for field, initial_value in default_values.items():
-                if field in ["capex_var", "opex_fix", "opex_var", "opex_var_extra"]:
-                    self.initial[field] = round((initial_value * exchange_rate), 2)
-                else:
-                    self.initial[field] = initial_value
 
         for field, value in zip(("name", "capex_fix", "maximum_capacity"), (self.asset_type_name, 0, 0.0)):
             self.fields[field].widget = forms.HiddenInput()
@@ -285,26 +251,9 @@ class BessForm(StorageForm):
         self.prefix = self.asset_type_name
 
         asset = kwargs.get("instance", None)
-        proj_id = kwargs.get("proj_id", None)
-        exchange_rate = get_object_or_404(Project, id=proj_id).economic_data.exchange_rate
 
         if asset is not None:
             self.initial["soc_min"] = round(1 - asset.soc_min, 3)
-        else:
-            default_values = {
-                "lifetime": 8,
-                "capex_var": 331,
-                "opex_fix": 10,
-                "crate": 1,
-                "soc_min": 0.8,
-                "soc_max": 1,
-                "efficiency": 0.9,
-            }
-            for field, initial_value in default_values.items():
-                if field in ["capex_var", "opex_fix"]:
-                    self.initial[field] = round((initial_value * exchange_rate), 2)
-                else:
-                    self.initial[field] = initial_value
 
         self.initial["optimize_cap"] = True
         for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 0)):
