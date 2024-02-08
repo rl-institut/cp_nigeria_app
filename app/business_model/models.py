@@ -135,7 +135,5 @@ class EquityData(models.Model):
         Compute the average fuel price over the project lifetime
         project_duration: in years
         """
-        annual_increase = np.array(
-            [np.power(1 + (self.fuel_price_increase / 100.0), n) for n in range(project_duration)]
-        )
+        annual_increase = np.array([np.power(1 + self.fuel_price_increase, n) for n in range(project_duration)])
         return initial_fuel_price * annual_increase.mean()
