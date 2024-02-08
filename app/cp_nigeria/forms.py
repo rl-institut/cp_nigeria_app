@@ -10,6 +10,7 @@ from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 from projects.models import Project, EconomicData, Scenario
+from business_model.models import EquityData
 from projects.constants import CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 from .models import *
 from projects.helpers import PARAMETERS
@@ -207,6 +208,17 @@ class PVForm(AssetCreateForm):
 class DieselForm(AssetCreateForm):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, asset_type="diesel_generator", **kwargs)
+        # add fuel price increase field to form and set form field immediately after fuel price field
+        field_order = [field for field in self.fields]
+        field_order.insert((field_order.index("opex_var_extra") + 1), "fuel_price_increase")
+        ed = EquityData.objects.filter(scenario__project_id=kwargs.get("proj_id"))
+        initial_increase = ed.first().fuel_price_increase if ed.exists() else 0
+        self.fields["fuel_price_increase"] = forms.FloatField(
+            help_text=_("Estimated annual fuel price increase (%)"),
+            initial=initial_increase,
+            validators=[MinValueValidator(0.0)],
+        )
+        self.order_fields(field_order=field_order)
         # which fields exists in the form are decided upon AssetType saved in the db
         self.prefix = self.asset_type_name
         self.initial["optimize_cap"] = True
@@ -242,6 +254,19 @@ class DieselForm(AssetCreateForm):
 
     def clean_opex_var_extra(self):
         return self.cleaned_data["opex_var_extra"] / ENERGY_DENSITY_DIESEL
+
+    def save(self, commit=True, *args, **kwargs):
+        kwargs["commit"] = commit
+        asset = super().save(*args, **kwargs)
+        if commit is True:
+            scenario = Scenario.objects.get(id=asset.scenario_id)
+            equity_data, created = EquityData.objects.get_or_create(
+                scenario=scenario, defaults={"debt_start": scenario.start_date.year, "scenario": scenario}
+            )
+            equity_data.fuel_price_increase = self.cleaned_data["fuel_price_increase"]
+            equity_data.save()
+
+        return asset
 
 
 class BessForm(StorageForm):

@@ -85,7 +85,14 @@ class EquityDataForm(forms.ModelForm):
 
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start", "debt_share", "estimated_tariff", "equity_interest_MG"]
+        exclude = [
+            "scenario",
+            "debt_start",
+            "debt_share",
+            "estimated_tariff",
+            "equity_interest_MG",
+            "fuel_price_increase",
+        ]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
