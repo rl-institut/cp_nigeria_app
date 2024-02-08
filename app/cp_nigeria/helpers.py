@@ -6,7 +6,6 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import nsdecls
 from docx.oxml import parse_xml
 import pandas as pd
@@ -98,10 +97,7 @@ def get_aggregated_cgs(project):
 
         # filter consumer group objects based on consumer type
         group_qs = ConsumerGroup.objects.filter(project=project, consumer_type_id=consumer_type_id)
-        if consumer_type_id == "households":
-            import pdb
 
-            pdb.set_trace()
         # calculate total consumers and total demand as sum of array elements in kWh
         for group in group_qs:
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
