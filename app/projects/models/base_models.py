@@ -43,8 +43,14 @@ class Feedback(models.Model):
 class EconomicData(models.Model):
     duration = models.PositiveSmallIntegerField()
     currency = models.CharField(max_length=3, choices=CURRENCY)
-    discount = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    discount = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0)
     tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0)
+    # TODO make the initial exchange rate dynamic based on https://www.cbn.gov.ng/rates/exchratebycurrency.asp
+    exchange_rate = models.FloatField(
+        validators=[MinValueValidator(0.0)],
+        default=774,
+        help_text=_("Price of the given currency in relation to USD"),
+    )
 
     @property
     def currency_symbol(self):

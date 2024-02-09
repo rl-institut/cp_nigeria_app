@@ -632,9 +632,7 @@ class FinancialTool:
         # TODO there are a number of loose variables (unclear if default or missing in tool) - see list in PR and
         #  discuss along with best approach to display results
         self.project = project
-
-        # TODO create a dictionary with exchange rates according to economicdata.currency - see issue #87
-        self.exchange_rate = 774  # NGN per USD
+        self.exchange_rate = project.economic_data.exchange_rate
         self.project_start = project.scenario.start_date.year
         self.project_duration = project.economic_data.duration
 
