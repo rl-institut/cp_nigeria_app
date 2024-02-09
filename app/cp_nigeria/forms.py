@@ -13,6 +13,7 @@ from projects.models import Project, EconomicData, Scenario
 from projects.constants import CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 from .models import *
 from projects.helpers import PARAMETERS
+from projects.requests import request_exchange_rate
 from cp_nigeria.helpers import HOUSEHOLD_TIERS
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
@@ -80,8 +81,12 @@ class EconomicProjectForm(OpenPlanModelForm):
         fields = ["duration", "currency", "exchange_rate"]
 
     def __init__(self, *args, **kwargs):
+        instance = kwargs.get("instance", None)
         super().__init__(*args, **kwargs)
         self.fields["currency"].initial = "NGN"
+
+        if instance is None:
+            self.fields["exchange_rate"].initial = request_exchange_rate("NGN")
 
 
 class EconomicDataForm(OpenPlanModelForm):
