@@ -24,7 +24,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings as django_settings
 from projects.models import *
-from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS, CURRENCY_SYMBOLS
+from projects.constants import MAP_EPA_MVS, RENEWABLE_ASSETS, CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 
 from dashboard.helpers import KPI_PARAMETERS_ASSETS, KPIFinder
 from projects.helpers import (
@@ -625,6 +625,8 @@ class BusForm(OpenPlanModelForm):
 
 
 class AssetCreateForm(OpenPlanModelForm):
+    currency_fields = ["capex_var", "opex_fix", "opex_var", "opex_var_extra"]
+
     def __init__(self, *args, **kwargs):
         self.asset_type_name = kwargs.pop("asset_type", None)
         proj_id = kwargs.pop("proj_id", None)
@@ -655,6 +657,7 @@ class AssetCreateForm(OpenPlanModelForm):
             if qs.exists():
                 currency = qs.values_list("economic_data__currency", flat=True).get()
                 currency = CURRENCY_SYMBOLS[currency]
+                self.exchange_rate = qs.values_list("economic_data__exchange_rate", flat=True).get()
 
         self.fields["inputs"] = forms.CharField(widget=forms.HiddenInput(), required=False)
 
@@ -743,6 +746,51 @@ class AssetCreateForm(OpenPlanModelForm):
 
         """ ----------------------------------------------------- """
 
+        """ Display cost values in form according to given exchange rate, costs will be saved as USD in the database.
+        Set default cost values depending on the asset type"""
+        # TODO add main grid to this when implemented (needs some special care because energy price is saved as string)
+        cp_nigeria_defaults = {
+            "pv_plant": {"lifetime": 25, "capex_var": 477, "opex_fix": 10},
+            "diesel_generator": {
+                "lifetime": 8,
+                "capex_var": 400,
+                "opex_fix": 25,
+                "opex_var": 0.03,
+                "opex_var_extra": 1.11,
+                # TODO connect to https://www.globalpetrolprices.com/Nigeria/diesel_prices/ and use this as value once per day
+                # ie solution with entry in the DB because the date needs to be linked to the price to be updated if the date is different
+                "efficiency": 0.25,
+                "soc_min": 0.0,
+                "soc_max": 1.0,
+            },
+            "capacity": {
+                "lifetime": 8,
+                "capex_var": 331,
+                "opex_fix": 10,
+                "crate": 1,
+                "soc_min": 0.8,
+                "soc_max": 1,
+                "efficiency": 0.9,
+            },
+        }
+
+        if self.asset_type_name in cp_nigeria_defaults:
+            if self.existing_asset is None:
+                default_values = cp_nigeria_defaults[self.asset_type_name]
+                for field, initial_value in default_values.items():
+                    if field in self.currency_fields:
+                        self.initial[field] = round((initial_value * self.exchange_rate), 2)
+                    else:
+                        self.initial[field] = initial_value
+            else:
+                for field in self.currency_fields:
+                    if hasattr(self.existing_asset, field):
+                        self.initial[field] = getattr(self.existing_asset, field) * self.exchange_rate
+                        if field == "opex_var_extra":
+                            self.initial[field] = self.initial["opex_var_extra"] * ENERGY_DENSITY_DIESEL
+
+                        self.initial[field] = round(self.initial[field], 2)
+
     def is_input_timeseries_empty(self):
         if self.existing_asset is not None:
             return self.existing_asset.is_input_timeseries_empty()
@@ -822,6 +870,10 @@ class AssetCreateForm(OpenPlanModelForm):
                     self.add_error("feedin_tariff", msg)
                 self.timeseries_same_as_timestamps(feedin_tariff, "feedin_tariff")
                 self.timeseries_same_as_timestamps(energy_price, "energy_price")
+
+        for field in self.currency_fields:
+            if field in cleaned_data:
+                cleaned_data[field] /= self.exchange_rate
 
         return cleaned_data
 

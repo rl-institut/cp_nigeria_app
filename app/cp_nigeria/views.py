@@ -1,8 +1,11 @@
+import io
+
 from django.contrib.auth.decorators import login_required
 import json
 import logging
 import pandas as pd
 import os
+import base64
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -190,10 +193,18 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         project = None
 
     if request.method == "POST":
-        form = ProjectForm(request.POST, instance=project) if project is not None else ProjectForm(request.POST)
+        if project is not None:
+            form = ProjectForm(request.POST, instance=project)
+            economic_data = EconomicProjectForm(request.POST, instance=project.economic_data)
+        else:
+            form = ProjectForm(request.POST)
+            economic_data = EconomicProjectForm(request.POST)
+        if form.is_valid() and economic_data.is_valid():
+            economic_data = economic_data.save()
+            project = form.save(user=request.user, commit=False)
+            project.economic_data = economic_data
+            project.save()
 
-        if form.is_valid():
-            project = form.save(user=request.user)
             options, _ = Options.objects.get_or_create(project=project)
             options.community = form.cleaned_data["community"]
             options.save()
@@ -207,12 +218,14 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
                 instance=project,
                 initial={"start_date": scenario.start_date, "duration": project.economic_data.duration},
             )
+            economic_data = EconomicProjectForm(instance=project.economic_data)
             qs_options = Options.objects.filter(project=project)
             if qs_options.exists():
                 form["community"].initial = qs_options.get(project=project).community
 
         else:
             form = ProjectForm()
+            economic_data = EconomicProjectForm()
     page_information = "Please input basic project information, such as name, location and duration. You can input geographical data by clicking on the desired project location on the map."
     if project is not None:
         proj_name = project.name
@@ -221,6 +234,7 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
         "cp_nigeria/steps/scenario_create.html",
         {
             "form": form,
+            "economic_data": economic_data,
             "proj_id": proj_id,
             "proj_name": proj_name,
             "step_id": step_id,
@@ -376,16 +390,7 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             es_schema_name = None
             grid_availability = False
 
-        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-        if qs_demand.exists():
-            demand = json.loads(qs_demand.get().input_timeseries)
-            demand_np = np.array(demand)
-
-        else:
-            demand_np = np.array(get_aggregated_demand(project))
-
-        peak_demand = round(demand_np.max(), 1)
-        daily_demand = round(demand_np.sum() / 365, 1)
+        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         context = {
             "proj_id": proj_id,
@@ -865,6 +870,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
         if form_errors is False:
             answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id + 1]))
         else:
+            # TODO this seems to redirect to wrong page is the form is wrong
             qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
             try:
@@ -876,16 +882,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                     initial = qs_bm.first().default_fate_values
                 equity_form = EquityDataForm(prefix="equity", initial=initial)
 
-            qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-            if qs_demand.exists():
-                demand = json.loads(qs_demand.get().input_timeseries)
-                demand_np = np.array(demand)
-                peak_demand = round(demand_np.max(), 1)
-                daily_demand = round(demand_np.sum() / 365, 1)
-            else:
-                demand = None
-                peak_demand = None
-                daily_demand = None
+            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(with_timeseries=True)
 
             qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
             if qs_pv.exists():
@@ -1186,12 +1183,23 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
     financial_kpis = ft.financial_kpis
+    help_texts = {
+        "Total investment costs": help_icon("All upfront investment costs"),
+        "Total equity": help_icon("Total equity help text"),
+        "Total grant": help_icon("Total grant help text"),
+        "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
+        "Replacement loan amount": help_icon("Amount needed to replace the system components"),
+    }
+
+    for k in help_texts:
+        financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
 
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(project)
     cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
     cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
     cgs_df.drop(columns=["supply_source"], inplace=True)
+    cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
 
     currency_symbol = project.economic_data.currency_symbol
 
@@ -1431,9 +1439,7 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
-        qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
-        if qs_demand.exists():
-            demand = json.loads(qs_demand.get().input_timeseries)
+        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
@@ -1444,7 +1450,7 @@ def cpn_kpi_results(request, proj_id=None):
 
                 scen_values = [
                     round(
-                        inverter_flow / np.sum(demand) * factor,
+                        inverter_flow / total_demand * factor,
                         2,
                     )
                 ]
@@ -1521,14 +1527,70 @@ def cpn_business_model(request):
     return JsonResponse({"message": "Invalid request method"})
 
 
+@json_view
 @login_required
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["POST"])
+def save_to_session(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        graph_id = request.POST.get("graph_id")
+        image_url = request.POST.get("image_url")
+        request.session[graph_id] = image_url
+
+        return JsonResponse({"status": "success"})
+
+
+@json_view
+@login_required
+@require_http_methods(["POST"])
+def ajax_download_report(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        proj_id = int(request.POST.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        logging.info("downloading implementation plan")
+        implementation_plan = ReportHandler(project)
+        implementation_plan.create_cover_sheet()
+        implementation_plan.create_report_content()
+        # implementation_plan.add_paragraph("For now, this is just a demo")
+        # implementation_plan.add_paragraph("Here are some graphs:")
+        #
+        # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
+        # for graph in os.listdir(graph_dir):
+        #     implementation_plan.add_image(os.path.join(graph_dir, graph))
+
+        # TODO what is the best way to potentially not recalculate all of the information but reuse it
+        # Add tables
+        # aggregated_cgs = get_aggregated_cgs(project)
+        # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
+
+        # Add images
+        report_imgs = ["cpn_stacked_timeseriesElectricity"]
+        for img in report_imgs:
+            image_data = request.session.get(img).split(",")[1]
+            if image_data:
+                try:
+                    image_bytes = base64.b64decode(image_data)
+                    image = io.BytesIO(image_bytes)
+
+                    implementation_plan.add_image(image)
+
+                except Exception as e:
+                    print(e)
+
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response["Content-Disposition"] = "attachment; filename=report.docx"
+        implementation_plan.save(response)
+
+        return response
+
+
+@login_required
+@require_http_methods(["GET"])
 def download_report(request, proj_id):
     project = get_object_or_404(Project, id=proj_id)
     logging.info("downloading implementation plan")
-    implementation_plan = ReportHandler()
-    implementation_plan.create_cover_sheet(project)
-    implementation_plan.create_report_content(project)
+    implementation_plan = ReportHandler(project)
+    implementation_plan.create_cover_sheet()
+    implementation_plan.create_report_content()
     # implementation_plan.add_paragraph("For now, this is just a demo")
     # implementation_plan.add_paragraph("Here are some graphs:")
     #
@@ -1536,8 +1598,27 @@ def download_report(request, proj_id):
     # for graph in os.listdir(graph_dir):
     #     implementation_plan.add_image(os.path.join(graph_dir, graph))
 
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    response["Content-Disposition"] = "attachment; filename=report.docx"
+    # TODO what is the best way to potentially not recalculate all of the information but reuse it
+    # Add tables
+    # aggregated_cgs = get_aggregated_cgs(project)
+    # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
+
+    # # Add images
+    # report_imgs = ["cpn_stacked_timeseriesElectricity"]
+    # for img in report_imgs:
+    #     image_data = request.session.get(img).split(",")[1]
+    #     if image_data:
+    #         try:
+    #             image_bytes = base64.b64decode(image_data)
+    #             image = io.BytesIO(image_bytes)
+    #
+    #             implementation_plan.add_image(image)
+    #
+    #         except Exception as e:
+    #             print(e)
+
+    response = "debug.docx"
     implementation_plan.save(response)
 
+    response = HttpResponse("Hello")
     return response

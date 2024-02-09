@@ -34,6 +34,7 @@
                                 {{ field | as_crispy_field }}
                             {% endif %}
                         {% endfor %}
+                        {{ economic_data | crispy }}
                         <button id="submitFormBtn" style="display: none;" type="submit">
                         </button>
                     </form>

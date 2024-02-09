@@ -4,13 +4,7 @@ import json
 import numpy as np
 
 # from requests.exceptions import HTTPError
-from epa.settings import (
-    PROXY_CONFIG,
-    MVS_POST_URL,
-    MVS_GET_URL,
-    MVS_SA_POST_URL,
-    MVS_SA_GET_URL,
-)
+from epa.settings import PROXY_CONFIG, MVS_POST_URL, MVS_GET_URL, MVS_SA_POST_URL, MVS_SA_GET_URL, EXCHANGE_RATES_URL
 from dashboard.models import (
     FancyResults,
     AssetsResults,
@@ -22,6 +16,21 @@ from projects.constants import DONE, PENDING, ERROR
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def request_exchange_rate(currency):
+    try:
+        response = requests.get(EXCHANGE_RATES_URL)
+        response.raise_for_status()
+
+    except requests.HTTPError as http_err:
+        logger.info("Current exchange rate could not be fetched. Setting default value.")
+        exchange_rate = 774
+    else:
+        data = response.json()
+        exchange_rate = round(data["conversion_rates"][currency], 2)
+
+    return exchange_rate
 
 
 def mvs_simulation_request(data: dict):
