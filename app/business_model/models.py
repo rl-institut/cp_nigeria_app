@@ -80,13 +80,14 @@ class EquityData(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
     debt_start = models.IntegerField()
     fuel_price_increase = models.FloatField(
-        verbose_name=_("Yearly increase of fuel price (%)"),
+        help_text=_("Assumed yearly increase of fuel price (%)"),
         default=0,
         blank=True,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     grant_share = models.FloatField(
-        verbose_name=_("Share of grant for assets (%)"),
+        verbose_name=_("Grant share (%)"),
+        help_text=_("Share of grant for assets provided by REA or other institutions"),
         default=0.6,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
@@ -96,7 +97,8 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_interest_MG = models.FloatField(
-        verbose_name=_("Interest rate for external loan: mini-grid (%)"),
+        verbose_name=_("Interest rate for external loan (%)"),
+        help_text=_("Assumed interest rate for project loan"),
         default=0.11,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
@@ -126,10 +128,14 @@ class EquityData(models.Model):
         null=True,
     )
     equity_community_amount = models.FloatField(
-        verbose_name=_("Amount of equity the community would be " "able to mobilize (Million NGN)"), default=0
+        verbose_name=_("Community equity (Million NGN)"),
+        help_text=_("Amount of equity the community would be able to mobilize"),
+        default=0,
     )
     equity_developer_amount = models.FloatField(
-        verbose_name=_("Amount of equity the mini-grid company would be " "able to mobilize (Million NGN)"), default=0
+        verbose_name=_("Mini-grid company equity (Million NGN)"),
+        help_text=_("Amount of equity the mini-grid company would be able to mobilize"),
+        default=0,
     )
     estimated_tariff = models.FloatField(blank=True, null=True)
 

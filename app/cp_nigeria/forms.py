@@ -91,8 +91,6 @@ class EconomicProjectForm(OpenPlanModelForm):
 
 
 class EconomicDataForm(OpenPlanModelForm):
-    capex_fix = forms.FloatField(label=_("Fix project costs"), validators=[MinValueValidator(0.0)])
-
     class Meta:
         model = EconomicData
         exclude = ("currency", "duration", "exchange_rate")
