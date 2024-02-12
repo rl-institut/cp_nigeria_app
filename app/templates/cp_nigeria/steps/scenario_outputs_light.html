@@ -164,29 +164,29 @@
 								<div class="chart__plot">
 									<table class="table">
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
-									<tr>
-										<td>Estimated tariff <a data-bs-toggle="tooltip" title="" data-bs-original-title="tariff help text" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a></td>
-										<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
-									</tr>
-									{% for kpi, value in financial_kpis.items %}
-									<tr>
-										<td>{{ kpi | safe}}</td>
-										<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
-									</tr>
-									{% endfor %}
+										<tr>
+											<td>Estimated tariff <a data-bs-toggle="tooltip" title="" data-bs-original-title="tariff help text" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a></td>
+											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+										</tr>
+										{% for kpi, value in financial_kpis.items %}
+										<tr>
+											<td>{{ kpi | safe}}</td>
+											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
+										</tr>
+										{% endfor %}
 									</table>
 								</div>
 							</div>
-								{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
-								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-								{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
+							{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
+							{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
+							{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
 
 						</div>
 					</div>
 					<div class="row">
 						<div class="col col-md-12">
 							<div class="chart">
-									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
+								{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
 							</div>
 						</div>
 					</div>
@@ -276,7 +276,7 @@
 
 						</div>
 
-					<div class="row">
+						<div class="row">
 							<div class="col col-md-12">
 								<div class="header-results">
 									<h2 class="title">{% translate "Business model" %}</h2>
@@ -340,19 +340,28 @@
 	const urlNotImplemented = `{% url 'not_implemented' %}?url={{ request.get_full_path }}`;
     const urlCopyReportItem = "#";
     const urlDeleteReportItem = `{% url 'report_delete_item' proj_id %}`;
+    const urlSaveToSession = `{% url 'save_to_session' %}`;
 
+	var createReportItemModalDOM = document.getElementById("createReportItemModal");
+	var createReportItemModal = new bootstrap.Modal(createReportItemModalDOM);
+	var createReportItemForm = createReportItemModalDOM.querySelector("form");
+	var reportItemTitleDOM = createReportItemForm.querySelector('input[id="id_title"]');
+	var reportItemTitle = ''
+	var reportItemScenariosDOM = createReportItemForm.querySelector('input[id="id_scenarios"]');
+	var reportItemScenarios = [];
 
-		// $(function() {
-  	// 	$("RevenueTable2").stickyTableHeaders();
-		// });
+	const urlUpdatedSingleScenario = `{% url 'update_selected_single_scenario' proj_id %}` + {{ scen_id }};
+	const urlKpiResults = `{% url 'cpn_kpi_results' proj_id=proj_id %}`;
+	const urlVisualizeTimeseries = `{% url 'scenario_visualize_timeseries' proj_id=proj_id %}` + {{ scen_id }};
+	const urlVisualizeStackedTimeseries = `{% url 'scenario_visualize_cpn_stacked_timeseries' %}` + {{ scen_id }};
+	const urlVisualizeCapacities = `{% url 'scenario_visualize_capacities' proj_id=proj_id %}` + {{ scen_id }};
+	const urlVisualizeCosts = `{% url 'scenario_visualize_costs' proj_id=proj_id %}` + {{ scen_id }};
+	const urlVisualizeCashFlow = `{% url 'scenario_visualize_cash_flow' %}` + {{ scen_id }};
+	const urlVisualizeRevenue = `{% url 'scenario_visualize_revenue' %}` + {{ scen_id }};
+	const urlVisualizeCapex = `{% url 'scenario_visualize_capex' %}` + {{ scen_id }};
+	const urlVisualizeSystemCosts = `{% url 'scenario_visualize_system_costs' %}` + {{ scen_id }};
 
-		function collapseTables(){
-			var elements = document.getElementsByClassName('chart__plot collapse show');
-		for (let i = 0; i < elements.length; i++) {
-			console.log(elements[i].id);
-			$('#'+elements[i].id).collapse();
-		}
-    // elements[i].addEventListener('touchstart', drag, false);)
+	const srcInfoIcon = `{% static 'assets/icons/i_info.svg' %}`
 
 </script>
 <script src="{% static 'js/report_items.js' %}"></script>

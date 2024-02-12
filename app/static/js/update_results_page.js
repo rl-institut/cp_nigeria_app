@@ -3,16 +3,28 @@ $(document).ready(function () {
     $('#kpiTable').DataTable();
     const scen_id = "{{ scen_id }}";
     const proj_id = "{{ proj_id }}";
-    // update the kpi table
+
+    // load the scenario plots
     update_kpi_table_style(scen_id);
     scenario_visualize_cpn_stacked_timeseries(scen_id);
     scenario_visualize_capacities(scen_id);
-    scenario_visualize_costs(scen_id);
+//    scenario_visualize_costs(scen_id);
     scenario_visualize_cash_flow(scen_id);
     scenario_visualize_revenue(scen_id);
     scenario_visualize_system_costs(scen_id, system_costs);
     scenario_visualize_capex(scen_id);
 });
+
+
+// allow to collapse the dataframe tables
+function collapseTables(){
+    var elements = document.getElementsByClassName('chart__plot collapse show');
+        for (let i = 0; i < elements.length; i++) {
+            console.log(elements[i].id);
+            $('#'+elements[i].id).collapse();
+            }
+// elements[i].addEventListener('touchstart', drag, false);)
+    };
 
 
 function update_selected_single_scenario(target){
@@ -23,7 +35,7 @@ function update_selected_single_scenario(target){
     if(scen_id != null){
 
         $.ajax({
-            url: "{% url 'update_selected_single_scenario' proj_id %}" + scen_id,
+            url: urlUpdatedSingleScenario,
             type: "GET",
             success: async (data) => {
 
@@ -49,11 +61,12 @@ function update_selected_single_scenario(target){
     }
 }
 
+
 // Functions to visualize tables/charts
 function update_kpi_table_style(scen_id=""){
 
     $.ajax({
-        url: "{% url 'cpn_kpi_results' proj_id=proj_id %}",
+        url: urlKpiResults,
         type: "GET",
         success: async (table_data) => {
 
@@ -69,7 +82,7 @@ function update_kpi_table_style(scen_id=""){
         table_headers.map(hdr =>
             {
                 var tableHdr = document.createElement('th');
-                tableHdr.innerHTML = `{% blocktranslate %}` + hdr + `{% endblocktranslate %}`;
+                tableHdr.innerHTML = hdr;
                 tableHeadContent.appendChild(tableHdr);
             }
         );
@@ -96,7 +109,7 @@ function update_kpi_table_style(scen_id=""){
             table_data.data[subBody].map(param =>{
                 var tableSubSectionParamRow = document.createElement('tr');
                 var cell = tableSubSectionParamRow.insertCell(0);
-                cell.innerHTML = `{% blocktranslate %}` + param.name +`{% endblocktranslate %} (` + param.unit +  `) <a data-bs-toggle="tooltip" title="" data-bs-original-title="${param.description}" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a>`;
+                cell.innerHTML = param.name + " (" + param.unit + `) <a data-bs-toggle="tooltip" title="" data-bs-original-title="${param.description}" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="${srcInfoIcon}"></a>`;
                 //cell.setAttribute("title", param.description)
                 //cell.append(" just to see");
                 // todo for loop over scenario values
@@ -142,7 +155,7 @@ function update_kpi_table_style(scen_id=""){
 
 function scenario_visualize_timeseries(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_timeseries' proj_id=proj_id %}" + scen_id,
+            url: urlVisualizeTimeseries,
             type: "GET",
             success: async (parameters) => {
                 await graph_type_mapping[parameters.type](parameters.id, parameters);
@@ -150,34 +163,14 @@ function scenario_visualize_timeseries(scen_id=""){
         });
 };
 
-function scenario_visualize_stacked_timeseries(scen_id){
-    $.ajax({
-        url: "{% url 'scenario_visualize_stacked_timeseries'%}" +  scen_id,
-        type: "GET",
-        success: async (graphs) => {
-            const parentDiv = document.getElementById("stacked_timeseries");
-            await graphs.map(parameters => {
-                if(parameters.id != "Gas") {
-                    const newGraph = document.createElement('div');
-                    newGraph.id = "stacked_timeseries" + parameters.id;
-                    parentDiv.appendChild(newGraph);
-                    graph_type_mapping[parameters.type](newGraph.id, parameters);
-                    // TODO change plotly title here
-                }
-            });
-        },
-    });
-};
-
 function scenario_visualize_cpn_stacked_timeseries(scen_id){
     $.ajax({
-        url: "{% url 'scenario_visualize_cpn_stacked_timeseries'%}" +  scen_id,
+        url: urlVisualizeStackedTimeseries,
         type: "GET",
         success: async (graphs) => {
             const parentDiv = document.getElementById("cpn_stacked_timeseries");
             await graphs.map(parameters => {
                 if(parameters.id != "Gas") {
-                    console.log(parameters)
                     const newGraph = document.createElement('div');
                     newGraph.id = "cpn_stacked_timeseries" + parameters.id;
                     parentDiv.appendChild(newGraph);
@@ -189,20 +182,19 @@ function scenario_visualize_cpn_stacked_timeseries(scen_id){
     });
 };
 
-
-function scenario_visualize_sankey(scen_id){
- $.ajax({
-            url: "{% url 'scenario_visualize_sankey' %}" + scen_id,
-            type: "GET",
-            success: async (parameters) => {
-                await graph_type_mapping[parameters.type](parameters.id, parameters);
-            },
-        });
-};
+//function scenario_visualize_sankey(scen_id){
+// $.ajax({
+//            url: "{% url 'scenario_visualize_sankey' %}" + scen_id,
+//            type: "GET",
+//            success: async (parameters) => {
+//                await graph_type_mapping[parameters.type](parameters.id, parameters);
+//            },
+//        });
+//};
 
 function scenario_visualize_capacities(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_capacities' proj_id=proj_id %}" + scen_id,
+            url: urlVisualizeCapacities,
             type: "GET",
             success: async (parameters) => {
                 await graph_type_mapping[parameters.type](parameters.id, parameters);;
@@ -210,29 +202,29 @@ function scenario_visualize_capacities(scen_id=""){
         });
 };
 
-function scenario_visualize_costs(scen_id=""){
- $.ajax({
-            url: "{% url 'scenario_visualize_costs' proj_id=proj_id %}" + scen_id,
-            type: "GET",
-            success: async (graphs) => {
-                                const parentDiv = document.getElementById("costs");
-                await graphs.map(parameters => {
-                    const newGraph = document.createElement('div');
-                    newGraph.id = "costs" + parameters.id;
-                    parentDiv.appendChild(newGraph);
-                    if(parameters.title === "var1" || parameters.title === "var2")
-                            { graph_type= parameters.type;
-                                parameters.title = "";}
-                            else{ graph_type = parameters.type + "Scenarios";}
-                    graph_type_mapping[graph_type](newGraph.id, parameters);
-                });
-            },
-        });
-};
+//function scenario_visualize_costs(scen_id=""){
+// $.ajax({
+//            url: urlVisualizeCosts,
+//            type: "GET",
+//            success: async (graphs) => {
+//                const parentDiv = document.getElementById("costs");
+//                await graphs.map(parameters => {
+//                    const newGraph = document.createElement('div');
+//                    newGraph.id = "costs" + parameters.id;
+//                    parentDiv.appendChild(newGraph);
+//                    if(parameters.title === "var1" || parameters.title === "var2")
+//                            { graph_type= parameters.type;
+//                                parameters.title = "";}
+//                            else{ graph_type = parameters.type + "Scenarios";}
+//                    graph_type_mapping[graph_type](newGraph.id, parameters);
+//                });
+//            },
+//        });
+//};
 
 function scenario_visualize_cash_flow(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_cash_flow' %}" + scen_id,
+            url: urlVisualizeCashFlow,
             type: "GET",
             success: async (parameters) => {
                 await addFinancialPlot(parameters, plot_id="cash_flow");
@@ -242,7 +234,7 @@ function scenario_visualize_cash_flow(scen_id=""){
 
 function scenario_visualize_revenue(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_revenue' %}" + scen_id,
+            url: urlVisualizeRevenue,
             type: "GET",
             success: async (parameters) => {
                 await addFinancialPlot(parameters, plot_id="revenue");
@@ -252,7 +244,7 @@ function scenario_visualize_revenue(scen_id=""){
 
 function scenario_visualize_capex(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_capex' %}" + scen_id,
+            url: urlVisualizeCapex,
             type: "GET",
             success: async (parameters) => {
                 await addPieChart(parameters, plot_id="capex");
@@ -262,7 +254,7 @@ function scenario_visualize_capex(scen_id=""){
 
 function scenario_visualize_system_costs(scen_id=""){
  $.ajax({
-            url: "{% url 'scenario_visualize_system_costs' %}" + scen_id,
+            url: urlVisualizeSystemCosts,
             type: "GET",
             success: async (parameters) => {
                 await addCostsChart(parameters, plot_id="system_costs");
@@ -273,9 +265,6 @@ function scenario_visualize_system_costs(scen_id=""){
 
 
 /** Add a new report item **/
-
-
-
 function updateReportItemParametersForm(graphType){
     // Passes the existing text of the title to the form initials
     reportItemTitleDOM = createReportItemForm.querySelector('input[id="id_title"]');
@@ -344,55 +333,6 @@ function showCreateReportItemModal(event){
 
 }
 
-const createReportItem = (event) => {
-    //submit the form to create a new report item
 
-    // get the data of the form (view report_create_item in )
-    const createReportUrl = createReportItemForm.getAttribute("ajax-post-url");
-
-    const formData = new FormData(createReportItemForm);
-    $.ajax({
-        headers: {'X-CSRFToken': `{{ csrf_token }}` },
-        type: "POST",
-        url: createReportUrl,
-        data: formData,
-        processData: false,  // tells jQuery not to treat the data
-        contentType: false,   // tells jQuery not to define contentType
-        success: function (jsonRes) { // verknüpft mit ReportItem.render_json (Klasse in Models)
-            console.log(jsonRes)
-            // TODO recieve the graph data and call the function to plot it
-
-            reportItemTitle = '';
-            reportItemScenarios = [];
-            createReportItemModal.hide();
-            // TODO check jsonRes.report_type if it is in a mapping which has the different graph names as key and the corresponding function as values
-            // as we want to leave the door open to add other reportItem objects such as table, text, etc...
-            const graphId = addReportItemGraphToDOM(jsonRes);
-            if(jsonRes.type in graph_type_mapping){
-                graph_type_mapping[jsonRes.type](graphId, jsonRes);
-            }
-            else{
-                console.log("the report type '" + jsonRes.type + "' is not yet supported, sorry");
-            }
-        },
-        error: function (err) {
-            var jsonRes = err.responseJSON;
-            var csrfToken = createReportItemForm.querySelector('input[name="csrfmiddlewaretoken"]');
-            // update the report item graph
-            createReportItemForm.innerHTML = csrfToken.outerHTML + jsonRes.report_form;
-
-            // (re)link the changing of report_item type combobox to loading new parameters form
-            // the name of the id is linked with the name of the attribute of ReportItem model in dashboard/models.py
-            $("#id_report_type").change(function (event) {
-                var reportItemType = $(this).val();
-                updateReportItemParametersForm(reportItemType)
-            })
-            $("#id_scenarios").change(function (event) {
-                var reportItemType = $("#id_report_type").val();
-                updateReportItemParametersForm(reportItemType)
-            })
-        },
-    })
-}
 
 document.querySelectorAll("#results-analysis-links a").forEach(el => {el.classList.remove("active")});
