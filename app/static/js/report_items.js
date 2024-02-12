@@ -82,6 +82,77 @@ function nester(el, n) {
     return el;
 }
 
+var deleteReportItem = (event) => {
+    //submit the form to delete a report item
+    const reportItemId = event.target.getAttribute("data-report-item-id");
+    if(confirm("Are you sure ? This action cannot be undone")){
+        $.ajax({
+            headers: {'X-CSRFToken': `{{ csrf_token }}` },
+            type: "POST",
+            url: urlDeleteReportItem,
+            data: {report_item_id: reportItemId},
+            success: function (jsonRes) {
+                document.getElementById(reportItemId).remove();
+            },
+            error: function (err) {
+                console.log(err);
+            },
+        })
+    }
+};
+
+
+var createReportItem = (event) => {
+    //submit the form to create a new report item
+
+    // get the data of the form (view report_create_item in )
+    const createReportUrl = createReportItemForm.getAttribute("ajax-post-url");
+
+    const formData = new FormData(createReportItemForm);
+    $.ajax({
+        headers: {'X-CSRFToken': `{{ csrf_token }}` },
+        type: "POST",
+        url: createReportUrl,
+        data: formData,
+        processData: false,  // tells jQuery not to treat the data
+        contentType: false,   // tells jQuery not to define contentType
+        success: function (jsonRes) { // verknüpft mit ReportItem.render_json (Klasse in Models)
+            console.log(jsonRes)
+            // TODO recieve the graph data and call the function to plot it
+
+            reportItemTitle = '';
+            reportItemScenarios = [];
+            createReportItemModal.hide();
+            // TODO check jsonRes.report_type if it is in a mapping which has the different graph names as key and the corresponding function as values
+            // as we want to leave the door open to add other reportItem objects such as table, text, etc...
+            const graphId = addReportItemGraphToDOM(jsonRes);
+            if(jsonRes.type in graph_type_mapping){
+                graph_type_mapping[jsonRes.type](graphId, jsonRes);
+            }
+            else{
+                console.log("the report type '" + jsonRes.type + "' is not yet supported, sorry");
+            }
+        },
+        error: function (err) {
+            var jsonRes = err.responseJSON;
+            var csrfToken = createReportItemForm.querySelector('input[name="csrfmiddlewaretoken"]');
+            // update the report item graph
+            createReportItemForm.innerHTML = csrfToken.outerHTML + jsonRes.report_form;
+
+            // (re)link the changing of report_item type combobox to loading new parameters form
+            // the name of the id is linked with the name of the attribute of ReportItem model in dashboard/models.py
+            $("#id_report_type").change(function (event) {
+                var reportItemType = $(this).val();
+                updateReportItemParametersForm(reportItemType)
+            })
+            $("#id_scenarios").change(function (event) {
+                var reportItemType = $("#id_report_type").val();
+                updateReportItemParametersForm(reportItemType)
+            })
+        },
+    })
+}
+
 function format_trace_name(scenario_name, label, unit, compare=false){
     title_label = format_as_title(label);
     var trace_name = title_label + ' (' + unit + ')' ;
