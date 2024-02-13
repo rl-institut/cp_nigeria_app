@@ -151,59 +151,19 @@
 						</div>
 					</div>
 
-					<div class="row">
-						<div class="col col-md-12">
-							<div class="chart">
-								<div class="chart__header">
-									<!-- style="display: flex;gap: 10px;align-items: center;" -->
-									<div>
-										<span class="title">{% translate "Financial KPIs" %}</span>
-									</div>
-								</div>
-								{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df %}
-								<div class="chart__plot">
-									<table class="table">
-										<thead><tr><th>Description</th><th>Value</th></tr></thead>
-										<tr>
-											<td>Estimated tariff <a data-bs-toggle="tooltip" title="" data-bs-original-title="tariff help text" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="{% static 'assets/icons/i_info.svg'%}"></a></td>
-											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
-										</tr>
-										{% for kpi, value in financial_kpis.items %}
-										<tr>
-											<td>{{ kpi | safe}}</td>
-											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
-										</tr>
-										{% endfor %}
-									</table>
-								</div>
-							</div>
-							{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
-							{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-							{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
-
-						</div>
-					</div>
-					<div class="row">
-						<div class="col col-md-12">
-							<div class="chart">
-								{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
-							</div>
-						</div>
-					</div>
-
-
-
 					{% if scenario_list %}
-					<!-- KPI table start -->
 					<div class="col" id="report_items" style="display:flex;flex-direction:column;">
 						<div class="header-results">
-							<h2 class="title">{% translate "Power Supply System" %}</h2>
+							<h2 class="title">{% translate "Mini-Grid System Information" %}</h2>
 						</div>
 
-						{% include "report/kpis_template.html" with table_styles=table_styles %}
-						<!-- KPI table end -->
-						<!-- ES design start -->
-
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
+								</div>
+							</div>
+						</div>
 						<div class="row">
 							<div class="col col-md-12">
 								<div class="chart">
@@ -214,7 +174,7 @@
 										</div>
 									</div>
 									<div class="chart__plot">
-										<table class="table" id="selectedKPITable">
+										<table class="table" id="assetSizes">
 											<thead><tr><th>Asset</th><th>Size</th></thead>
 											<tbody id="General">
 
@@ -228,59 +188,25 @@
 										</table>
 									</div>
 								</div>
-								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 							</div>
 						</div>
+						{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 						<div class="row">
 							<div class="col col-md-12">
 								<div class="chart">
 									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}
 								</div>
-								{% include "report/graph_template.html" with id="system_costs" title="System costs in first year" %}
 							</div>
+						</div>
+						{% include "report/graph_template.html" with id="system_costs" title="System costs in first year" %}
+
+						{% include "report/kpis_template.html" with table_styles=table_styles %}
+						{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
+						<div class="header-results">
+							<h2 class="title">{% translate "Financial Information" %}</h2>
 						</div>
 						<div class="row">
 							<div class="col col-md-12">
-								<div class="chart">
-									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
-										<div>
-											<span class="title">{% translate "Total flows" %}</span>
-										</div>
-									</div>
-									<div class="chart__plot">
-										<table class="table" id="totalFlowsTable">
-											<thead><tr><th>Asset</th><th>Total Supply (year)</th><th>Excess generation (year)</th></tr></thead>
-											<tbody>
-
-											</tbody>
-											{% for cap in capacities %}
-											{% if cap.asset == 'inverter' or cap.asset == 'diesel_generator' %}
-											<tr>
-												{% if cap.asset == 'inverter' %}
-												<td>{% if 'B' in es_schema_name %} Solar PV + Battery {% else %} Solar PV {% endif %}</td>
-												{% else %}
-												<td>Diesel generator</td>
-												{% endif %}
-												<td>{{ cap.total_supply | floatformat | intcomma }} kWh </td>
-												<td>{{ excess|get_item:cap.asset | floatformat | intcomma }} kWh </td>
-											</tr>
-											{% endif %}
-											{% endfor %}
-										</table>
-									</div>
-								</div>
-
-								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
-							</div>
-
-						</div>
-
-						<div class="row">
-							<div class="col col-md-12">
-								<div class="header-results">
-									<h2 class="title">{% translate "Business model" %}</h2>
-								</div>
 								<div class="chart">
 									<div class="chart__header">
 										<!-- style="display: flex;gap: 10px;align-items: center;" -->
@@ -301,12 +227,44 @@
 								</div>
 							</div>
 						</div>
+						<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<!-- style="display: flex;gap: 10px;align-items: center;" -->
+									<div>
+										<span class="title">{% translate "Financial KPIs" %}</span>
+									</div>
+								</div>
 
+								<div class="chart__plot">
+									<table class="table">
+										<thead><tr><th>Description</th><th>Value</th></tr></thead>
+										<tr>
+											<td>Tariff:</td>
+											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+										</tr>
+										{% for kpi, value in financial_kpis.items %}
+										<tr>
+											<td>{{ kpi }}</td>
+											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
+										</tr>
+										{% endfor %}
+									</table>
+								</div>
+                                {% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df %}
 
-
-						<!-- Graphs area  stop -->
-						{% endif %}
+							</div>
+						</div>
 					</div>
+						{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
+						{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
+						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}
+
+					</div>
+
+					<!-- Graphs area  stop -->
+					{% endif %}
 
 					<div style="display:flex;justify-content:center">
 						<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
@@ -317,8 +275,6 @@
 			</div>
 		</div>
 	</section>
-
-
 </main>
 {% endblock progression_content %}
 
