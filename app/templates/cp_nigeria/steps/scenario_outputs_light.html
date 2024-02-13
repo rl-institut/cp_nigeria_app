@@ -246,7 +246,7 @@
 										</tr>
 										{% for kpi, value in financial_kpis.items %}
 										<tr>
-											<td>{{ kpi }}</td>
+											<td>{{ kpi | safe }}</td>
 											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
 										</tr>
 										{% endfor %}

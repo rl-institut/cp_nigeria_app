@@ -246,16 +246,16 @@
 								<div class="chart__plot">
 									<table class="table">
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
-									<tr>
-										<td>Tariff:</td>
-										<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
-									</tr>
-									{% for kpi, value in financial_kpis.items %}
-									<tr>
-										<td>{{ kpi }}</td>
-										<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
-									</tr>
-									{% endfor %}
+										<tr>
+											<td>Tariff:</td>
+											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+										</tr>
+										{% for kpi, value in financial_kpis.items %}
+										<tr>
+											<td>{{ kpi | safe }}</td>
+											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
+										</tr>
+										{% endfor %}
 									</table>
 								</div>
 							</div>
@@ -271,7 +271,7 @@
 						<h2 class="title">{% translate "Assumption CAPEX" %}</h2>
 					</div>
 					{% for cat, df in capex_assumptions.items %}
-						{% include "report/table_template.html" with id="Table"|add:cat title=cat df=df %}
+					{% include "report/table_template.html" with id="Table"|add:cat title=cat df=df %}
 					{% endfor %}
 
 					<div class="header-results">
@@ -291,55 +291,55 @@
 
 
 					<div class="row">
-							<div class="col col-md-12">
-								<div class="chart">
-									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
-										<div>
-											<span class="title">{% translate "Business model" %}</span>
-										</div>
-									</div>
-									<div class="chart__plot">
-										{{ model_graph}}
-										<div style="display:flex;justify-content:center;align-content:center;">
-											<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
-										</div>
-										<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
-											<p><h3> Model chosen: {{model_name}}</h3></p>
-											{{ model_description}}
-										</div>
+						<div class="col col-md-12">
+							<div class="chart">
+								<div class="chart__header">
+									<!-- style="display: flex;gap: 10px;align-items: center;" -->
+									<div>
+										<span class="title">{% translate "Business model" %}</span>
 									</div>
 								</div>
-								<div style="display:flex;justify-content:center">
-									<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
-										Download report
-									</a>
-									<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
+								<div class="chart__plot">
+									{{ model_graph}}
+									<div style="display:flex;justify-content:center;align-content:center;">
+										<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
+									</div>
+									<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
+										<p><h3> Model chosen: {{model_name}}</h3></p>
+										{{ model_description}}
+									</div>
+								</div>
+							</div>
+							<div style="display:flex;justify-content:center">
+								<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
+									Download report
+								</a>
+								<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
 									Download report (dev_info:ajax call)
 								</button>
-								</div>
 							</div>
 						</div>
+					</div>
 
 
-											<div class="header-results">
-							<h2 class="title">{% translate "Technoeconomic parameters" %}</h2>
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
-								<div class="chart">
-									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs %}
-								</div>
-
+					<div class="header-results">
+						<h2 class="title">{% translate "Technoeconomic parameters" %}</h2>
+					</div>
+					<div class="row">
+						<div class="col col-md-12">
+							<div class="chart">
+								{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs %}
 							</div>
 
 						</div>
+
+					</div>
 					{% include "report/graph_template.html" with id="costs" title="Overall costs breakdown" %}
 
 					<div class="row">
 						<div class="col col-md-12">
 							<div class="chart">
-									{% include "report/table_template.html" with id="CommunitySummary" title="Community demand summary" df=cgs_df %}
+								{% include "report/table_template.html" with id="CommunitySummary" title="Community demand summary" df=cgs_df %}
 							</div>
 						</div>
 					</div>
