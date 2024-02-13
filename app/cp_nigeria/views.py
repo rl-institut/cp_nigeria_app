@@ -1198,7 +1198,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     no_grant_kpis = ft.financial_kpis
 
     comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
-    comparison_kpi_df.loc["Estimated tariff"] = {
+    comparison_kpi_df.loc["Estimated tariff per kWh"] = {
         "With grant": tariff * ft.exchange_rate,
         "Without grant": no_grant_tariff * ft.exchange_rate,
     }
