@@ -1090,6 +1090,9 @@ class FinancialTool:
         x0 = -h / m
         return x0
 
+    def remove_grant(self):
+        self.financial_params["grant_share"] = 0.0
+
 
 # TODO if linear fit yields same results this can be deleted
 def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):

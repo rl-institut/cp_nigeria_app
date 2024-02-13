@@ -1183,6 +1183,17 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
     financial_kpis = ft.financial_kpis
+    # calculate the financial KPIs with 0% grant
+    ft.remove_grant()
+    no_grant_tariff = ft.tariff
+    no_grant_kpis = ft.financial_kpis
+
+    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
+    comparison_kpi_df.loc["Estimated tariff"] = {
+        "With grant": tariff * ft.exchange_rate,
+        "Without grant": no_grant_tariff * ft.exchange_rate,
+    }
+
     help_texts = {
         "Total investment costs": help_icon("All upfront investment costs"),
         "Total equity": help_icon("Total equity help text"),
@@ -1233,6 +1244,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "tariff_NGN": tariff * ft.exchange_rate,
         "tariff_USD": tariff,
         "financial_kpis": financial_kpis,
+        "comparison_kpi_df": comparison_kpi_df,
         "system_costs": system_costs,
         "currency_symbol": currency_symbol,
     }

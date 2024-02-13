@@ -161,7 +161,7 @@
 										<span class="title">{% translate "Financial KPIs" %}</span>
 									</div>
 								</div>
-
+								{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df %}
 								<div class="chart__plot">
 									<table class="table">
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
