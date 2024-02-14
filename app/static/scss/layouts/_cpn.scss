@@ -203,6 +203,7 @@
       }
 
       .advantages {
+        justify-content: center;
         padding-top: 2rem;
         padding-bottom: 2rem;
 
@@ -211,12 +212,22 @@
           font-size: 1.25rem;
         }
 
-        .pros h4 {
-          border-bottom: 4px solid #1BBB78;
+        .pros {
+          background-color: #E2F9F0;
+          margin: 0.5rem 1rem;
+
+          h4 {
+            border-bottom: 4px solid #1BBB78;
+          }
         }
 
-        .cons h4 {
-          border-bottom: 4px solid #D73B45;
+        .cons {
+          background-color: #FFE5E1;
+          margin: 0.5rem 1rem;
+
+          h4 {
+            border-bottom: 4px solid #D73B45;
+          }
         }
       }
     }
