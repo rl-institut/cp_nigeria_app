@@ -730,6 +730,7 @@ class FinancialTool:
             "fuel_price_increase",
             "grant_share",
             "debt_interest_MG",
+            "debt_interest_replacement",
             "debt_interest_SHS",
             "loan_maturity",
             "grace_period",
@@ -968,7 +969,7 @@ class FinancialTool:
         debt_start = self.project_start + self.loan_assumptions["Cum. replacement years"]
         grace_period = self.financial_params["grace_period"]
         amount = self.financial_kpis["Replacement loan amount"]
-        interest_rate = self.financial_params["equity_interest_MG"]  # TODO find out why
+        interest_rate = self.financial_params["debt_interest_replacement"]
 
         return self.debt_service_table(
             amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start

@@ -98,7 +98,13 @@ class EquityData(models.Model):
     )
     debt_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external loan (%)"),
-        help_text=_("Assumed interest rate for project loan"),
+        help_text=_("Assumed interest rate for loan at project start"),
+        default=0.11,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    debt_interest_replacement = models.FloatField(
+        verbose_name=_("Interest rate for replacement loan (%)"),
+        help_text=_("Assumed interest rate for loan used for asset replacement"),
         default=0.11,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )

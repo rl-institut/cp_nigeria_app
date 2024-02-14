@@ -77,6 +77,7 @@ class EquityDataForm(forms.ModelForm):
         "grant_share",
         "debt_share",
         "debt_interest_MG",
+        "debt_interest_replacement",
         "debt_interest_SHS",
         "equity_interest_MG",
         "equity_interest_SHS",
