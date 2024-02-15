@@ -370,6 +370,17 @@ class ReportHandler:
         # caption text
         paragraph.add_run(f" {caption}")
 
+    def add_dict_as_table(self, dict, caption=None):
+        t = self.doc.add_table(len(dict), 2)
+
+        for i, (key, value) in enumerate(dict.items()):
+            t.cell(i, 0).text = key
+            t.cell(i, 0).paragraphs[0].runs[0].font.bold = True
+            t.cell(i, 1).text = value
+
+        if caption is not None:
+            self.add_caption(t, caption)
+
     def add_df_as_table(self, df, caption=None, index=True):
         if index is True:
             start_idx = 1
@@ -495,18 +506,21 @@ class ReportHandler:
         # Add project details
         self.add_heading("Project details", level=2)
 
-        self.add_table(
-            (
-                ("Project name", "{project_name}"),
-                ("Community name", "{community_name}"),
-                ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
-                ("Annual Energy Production", "{yearly_production} kWh"),
-                ("Indicative system size", "{system_capacity} kW"),
-                ("Indicative total investment costs", "{total_investments} NGN"),
-                ("Designated Distribution Company", "{disco}"),
-                ("Indicative Project Lifetime", "{project_lifetime} years"),
-            )
-        )
+        # self.add_table(
+        #     (
+        #         ("Project name", "{project_name}"),
+        #         ("Community name", "{community_name}"),
+        #         ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
+        #         ("Annual Energy Production", "{yearly_production} kWh"),
+        #         ("Indicative system size", "{system_capacity} kW"),
+        #         ("Indicative total investment costs", "{total_investments} NGN"),
+        #         ("Designated Distribution Company", "{disco}"),
+        #         ("Indicative Project Lifetime", "{project_lifetime} years"),
+        #     )
+        # )
+
+        # Add project summary table
+        self.add_dict_as_table(get_project_summary(self.project))
 
         # Add project summary
         self.add_heading("Project summary", level=2)
