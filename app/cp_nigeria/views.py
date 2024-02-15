@@ -1096,49 +1096,49 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     # get community characteristics
     aggregated_cgs = get_aggregated_cgs(project=project)
 
-    # get optimized capacities
-    qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
-    opt_caps = qs_res.filter(
-        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
-    ).values("asset", "optimized_capacity", "total_flow")
-    # TODO here if there is no simulation or supply setup, tell the user they should define one first
-
-    # get total flows
-    qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
-    if qs_busses.count() == 1:
-        el_bus = qs_busses.get()
-        unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
-
-    elif qs_busses.filter(Q(name__contains="ac") | Q(name__contains="dc")).exists():
-        ac_bus = qs_busses.get(name="ac_bus")
-        dc_bus = qs_busses.get(name="dc_bus")
-        unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
-        unused_diesel = qs_res.filter(asset=f"{ac_bus.name}_excess")
-
-    if unused_pv.exists():
-        unused_pv = unused_pv.get().total_flow
-    else:
-        unused_pv = 0
-
-    if unused_diesel.exists():
-        unused_diesel = unused_diesel.get().total_flow
-    else:
-        unused_diesel = 0
-
-    excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
-
-    for cap in opt_caps:
-        if cap["asset"] == "pv_plant":
-            cap["total_supply"] = cap["total_flow"] - unused_pv
-        elif cap["asset"] == "diesel_generator":
-            cap["total_supply"] = cap["total_flow"] - unused_diesel
-        else:
-            cap["total_supply"] = cap["total_flow"]
-
-        cap["unit"] = AssetType.objects.get(
-            asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
-        ).unit
-        cap["supply_percentage"] = cap["total_supply"] / np.sum(get_aggregated_demand(project)) * 100
+    # # get optimized capacities
+    # qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
+    # opt_caps = qs_res.filter(
+    #     optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
+    # ).values("asset", "optimized_capacity", "total_flow")
+    # # TODO here if there is no simulation or supply setup, tell the user they should define one first
+    #
+    # # get total flows
+    # qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
+    # if qs_busses.count() == 1:
+    #     el_bus = qs_busses.get()
+    #     unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
+    #
+    # elif qs_busses.filter(Q(name__contains="ac") | Q(name__contains="dc")).exists():
+    #     ac_bus = qs_busses.get(name="ac_bus")
+    #     dc_bus = qs_busses.get(name="dc_bus")
+    #     unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
+    #     unused_diesel = qs_res.filter(asset=f"{ac_bus.name}_excess")
+    #
+    # if unused_pv.exists():
+    #     unused_pv = unused_pv.get().total_flow
+    # else:
+    #     unused_pv = 0
+    #
+    # if unused_diesel.exists():
+    #     unused_diesel = unused_diesel.get().total_flow
+    # else:
+    #     unused_diesel = 0
+    #
+    # excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
+    #
+    # for cap in opt_caps:
+    #     if cap["asset"] == "pv_plant":
+    #         cap["total_supply"] = cap["total_flow"] - unused_pv
+    #     elif cap["asset"] == "diesel_generator":
+    #         cap["total_supply"] = cap["total_flow"] - unused_diesel
+    #     else:
+    #         cap["total_supply"] = cap["total_flow"]
+    #
+    #     cap["unit"] = AssetType.objects.get(
+    #         asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
+    #     ).unit
+    #     cap["supply_percentage"] = cap["total_supply"] / np.sum(get_aggregated_demand(project)) * 100
 
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
@@ -1155,6 +1155,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(project)
     tariff = ft.tariff
+
+    # TODO add column for existing capacity to dataframe
+    opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
+    opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
+    opt_caps = opt_caps.pivot(columns="category", index="supply_source")
+    opt_caps.columns = [col[1] for col in opt_caps.columns]
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff * ft.exchange_rate
@@ -1227,8 +1233,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     context = {
         "proj_id": proj_id,
         "project_summary": project_summary,
-        "capacities": opt_caps,
-        "excess": excess,
+        "opt_caps": opt_caps,
+        # "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],

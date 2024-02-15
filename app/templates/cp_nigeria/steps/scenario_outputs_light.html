@@ -192,31 +192,34 @@
 						</div>
 						<div class="row">
 							<div class="col col-md-12">
-								<div class="chart">
-									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
-										<div>
-											<span class="title">{% translate "System size" %}</span>
-										</div>
-									</div>
-									<div class="chart__plot">
-										<table class="table" id="assetSizes">
-											<thead><tr><th>Asset</th><th>Size</th></thead>
-											<tbody id="General">
+<!--								<div class="chart">-->
+<!--									<div class="chart__header">-->
+<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
+<!--										<div>-->
+<!--											<span class="title">{% translate "System size" %}</span>-->
+<!--										</div>-->
+<!--									</div>-->
+<!--									<div class="chart__plot">-->
+<!--										<table class="table" id="assetSizes">-->
+<!--											<thead><tr><th>Asset</th><th>Size</th></thead>-->
+<!--											<tbody id="General">-->
 
-											</tbody>
-											{% for cap in capacities %}
-											<tr>
-												<td>{{ cap.asset | field_to_title }}</td>
-												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>
-											</tr>
-											{% endfor %}
-										</table>
-									</div>
-								</div>
+<!--											</tbody>-->
+<!--											{% for cap in capacities %}-->
+<!--											<tr>-->
+<!--												<td>{{ cap.asset | field_to_title }}</td>-->
+<!--												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>-->
+<!--											</tr>-->
+<!--											{% endfor %}-->
+<!--										</table>-->
+<!--									</div>-->
+<!--								</div>-->
+								{% include "report/table_template.html" with id="OptCaps" title="Installed and optimized capacities" df=opt_caps %}
+								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
+
 							</div>
+
 						</div>
-						{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 						<div class="row">
 							<div class="col col-md-12">
 								<div class="chart">
@@ -246,8 +249,8 @@
 											<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
 										</div>
 										<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
-											<p><h3> Model chosen: {{model_name}}</h3></p>
-											{{ model_description}}
+											<p><h3> Model chosen: {{ model_name }}</h3></p>
+											<p align="justify">{{ model_description }}</p>
 										</div>
 									</div>
 								</div>
@@ -263,21 +266,21 @@
 										</div>
 									</div>
 
-									<div class="chart__plot">
-										<table class="table">
-											<thead><tr><th>Description</th><th>Value</th></tr></thead>
-											<tr>
-												<td>Tariff:</td>
-												<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
-											</tr>
-											{% for kpi, value in financial_kpis.items %}
-											<tr>
-												<td>{{ kpi | safe }}</td>
-												<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
-											</tr>
-											{% endfor %}
-										</table>
-									</div>
+<!--									<div class="chart__plot">-->
+<!--										<table class="table">-->
+<!--											<thead><tr><th>Description</th><th>Value</th></tr></thead>-->
+<!--											<tr>-->
+<!--												<td>Tariff:</td>-->
+<!--												<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>-->
+<!--											</tr>-->
+<!--											{% for kpi, value in financial_kpis.items %}-->
+<!--											<tr>-->
+<!--												<td>{{ kpi | safe }}</td>-->
+<!--												<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>-->
+<!--											</tr>-->
+<!--											{% endfor %}-->
+<!--										</table>-->
+<!--									</div>-->
 									{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}
 
 								</div>
