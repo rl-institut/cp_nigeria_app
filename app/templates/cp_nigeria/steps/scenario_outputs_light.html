@@ -149,7 +149,33 @@
 								</div>
 							</div>
 						</div>
-					</div>
+						</div>
+						<div class="row">
+							<div class="col col-md-12">
+								<div class="chart">
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_project_summary" role="button" aria-expanded="false" aria-controls="container_project_summary">
+    Project summary
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_project_summary">
+										<table class="table table-bordered table-hover" id="project_summary">
+											<tbody>
+											{% for key, value in project_summary.items %}
+											<tr>
+												<td><b>{{ key }}</b></td>
+												<td>{{ value }}</td>
+											</tr>
+											{% endfor %}
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+
 
 					{% if scenario_list %}
 					<div class="col" id="report_items" style="display:flex;flex-direction:column;">
@@ -228,38 +254,38 @@
 							</div>
 						</div>
 						<div class="row">
-						<div class="col col-md-12">
-							<div class="chart">
-								<div class="chart__header">
-									<!-- style="display: flex;gap: 10px;align-items: center;" -->
-									<div>
-										<span class="title">{% translate "Financial KPIs" %}</span>
+							<div class="col col-md-12">
+								<div class="chart">
+									<div class="chart__header">
+										<!-- style="display: flex;gap: 10px;align-items: center;" -->
+										<div>
+											<span class="title">{% translate "Financial KPIs" %}</span>
+										</div>
 									</div>
-								</div>
 
-								<div class="chart__plot">
-									<table class="table">
-										<thead><tr><th>Description</th><th>Value</th></tr></thead>
-										<tr>
-											<td>Tariff:</td>
-											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
-										</tr>
-										{% for kpi, value in financial_kpis.items %}
-										<tr>
-											<td>{{ kpi | safe }}</td>
-											<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
-										</tr>
-										{% endfor %}
-									</table>
-								</div>
-                                {% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}
+									<div class="chart__plot">
+										<table class="table">
+											<thead><tr><th>Description</th><th>Value</th></tr></thead>
+											<tr>
+												<td>Tariff:</td>
+												<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+											</tr>
+											{% for kpi, value in financial_kpis.items %}
+											<tr>
+												<td>{{ kpi | safe }}</td>
+												<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>
+											</tr>
+											{% endfor %}
+										</table>
+									</div>
+									{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}
 
+								</div>
 							</div>
 						</div>
-					</div>
 						{% include "report/graph_template.html" with id="capex" title="Investment costs" %}
 						{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-<!--						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}-->
+						<!--						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}-->
 
 					</div>
 

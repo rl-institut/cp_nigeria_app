@@ -1157,7 +1157,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     tariff = ft.tariff
 
     ed = EquityData.objects.get(scenario=project.scenario)
-    ed.estimated_tariff = tariff
+    ed.estimated_tariff = tariff * ft.exchange_rate
     ed.save()
 
     capex_df = ft.capex
@@ -1221,10 +1221,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     cgs_df.drop(columns=["supply_source"], inplace=True)
     cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
 
+    project_summary = get_project_summary(project)
     currency_symbol = project.economic_data.currency_symbol
 
     context = {
         "proj_id": proj_id,
+        "project_summary": project_summary,
         "capacities": opt_caps,
         "excess": excess,
         "scen_id": project.scenario.id,

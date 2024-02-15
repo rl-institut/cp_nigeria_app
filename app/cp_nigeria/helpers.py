@@ -57,6 +57,56 @@ if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_
                     FINANCIAL_PARAMS[label][k] = v
 
 
+def get_project_summary(project):
+    bm_name = BusinessModel.objects.get(scenario=project.scenario).model_name
+    options = Options.objects.get(project=project)
+    ft = FinancialTool(project)
+    inverter_aggregated_flow = ft.system_params.loc[
+        (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
+    ].iloc[0]
+    pv_capacity = ft.system_params.loc[
+        (ft.system_params["category"] == "optimized_capacity") & (ft.system_params["supply_source"] == "pv_plant"),
+        "value",
+    ].iloc[0]
+    genset_capacity = ft.system_params.loc[
+        (ft.system_params["category"] == "optimized_capacity")
+        & (ft.system_params["supply_source"] == "diesel_generator"),
+        "value",
+    ].iloc[0]
+    yearly_production = ft.yearly_production_electricity
+    total_investments = ft.total_capex("NGN")
+    # kwfirm as defined by the ESMAP mini-grids for half a billion report
+    firm_power_output = genset_capacity + (0.25 * pv_capacity)
+    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    investment_per_kwfirm = total_investments / firm_power_output
+    renewable_share = inverter_aggregated_flow / total_demand
+    project_lifetime = project.economic_data.duration
+    bm_name = B_MODELS[bm_name]["Verbose"]
+    tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff
+    if options.community is not None:
+        community_name = options.community.name
+    else:
+        community_name = project.name
+
+    currency_symbol = project.economic_data.currency_symbol
+
+    project_summary = {
+        "Project name": f"{project.name}",
+        # "Community name": f"{community_name}",
+        "Location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
+        "Annual Energy Production": f"{yearly_production:,.2f} kWh",
+        "Firm power output": f"{firm_power_output:,.2f} kW_firm",
+        "Renewable share": f"{renewable_share:.2f}%",
+        "Indicative total investment costs": f"{total_investments:,.2f} {currency_symbol}",
+        "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
+        "Estimated tariff": f"{tariff:.2f} {currency_symbol}/kWh",
+        "Indicative Project Lifetime": f"{project_lifetime} years",
+        "Aspired business model": f"{bm_name}",
+        "Assumed exchange rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
+    }
+    return project_summary
+
+
 def help_icon(help_text=""):
     return "<a data-bs-toggle='tooltip' title='' data-bs-original-title='{}' data-bs-placement='right'><img style='height: 1.2rem;margin-left:.5rem' alt='info icon' src='{}'></a>".format(
         help_text, static("assets/icons/i_info.svg")
