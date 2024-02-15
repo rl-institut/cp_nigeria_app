@@ -10,7 +10,7 @@ $(document).ready(function () {
     scenario_visualize_capacities(scen_id);
 //    scenario_visualize_costs(scen_id);
     scenario_visualize_cash_flow(scen_id);
-    scenario_visualize_revenue(scen_id);
+//    scenario_visualize_revenue(scen_id);
     scenario_visualize_system_costs(scen_id, system_costs);
     scenario_visualize_capex(scen_id);
 });

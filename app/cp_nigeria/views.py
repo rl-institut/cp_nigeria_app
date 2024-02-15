@@ -1167,7 +1167,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     ed.save()
 
     capex_df = ft.capex
-    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
 
     system_costs = ft.system_params[
         ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
@@ -1226,7 +1226,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
     cgs_df.drop(columns=["supply_source"], inplace=True)
     cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
-
     project_summary = get_project_summary(project)
     currency_symbol = project.economic_data.currency_symbol
 
@@ -1234,6 +1233,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "proj_id": proj_id,
         "project_summary": project_summary,
         "opt_caps": opt_caps,
+        "capex_by_category": capex_by_category,
         # "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
