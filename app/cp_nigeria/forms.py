@@ -111,10 +111,10 @@ class EconomicDataForm(OpenPlanModelForm):
         self.initial["discount"] = 12.0
         self.initial["tax"] = 7.5
 
-    def save(self, *args, **kwargs):
-        ed = super().save(*args, **kwargs)
-        scenario = Scenario.objects.filter(project__economic_data=ed)
-        scenario.update(capex_fix=self.cleaned_data["capex_fix"])
+    # def save(self, *args, **kwargs):
+    #     ed = super().save(*args, **kwargs)
+    #     scenario = Scenario.objects.filter(project__economic_data=ed)
+    #     scenario.update(capex_fix=self.cleaned_data["capex_fix"])
 
     def clean(self):
         """Convert the percentage values into values ranging from 0 to 1 (for further calculations)"""
