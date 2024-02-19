@@ -249,7 +249,7 @@ class ReportHandler:
                 unit = "kW"
                 if asset[0] == "battery":
                     unit = "kWh"
-                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1],1)} {unit}]")
+                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1], 1)} {unit}]")
         if len(system_assets) == 1:
             system_assets = "a {}".format(system_assets[0])
         else:
@@ -724,6 +724,22 @@ class FinancialTool:
         opt_caps = qs_res.filter(
             optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
         ).values("asset", "optimized_capacity", "total_flow")
+        qs_installed = Asset.objects.filter(
+            scenario=self.project.scenario,
+            asset_type__asset_type__in=["pv_plant", "capacity", "diesel_generator", "transformer_station_in"],
+        ).values("asset_type__asset_type", "installed_capacity")
+        # inst_caps = {'battery' if item['asset_type__asset_type'] == 'capacity'
+        #              else item['asset_type__asset_type']: item['installed_capacity'] for item in qs_installed}
+        inst_caps = {}
+        for asset in qs_installed:
+            if asset["asset_type__asset_type"] == "capacity":
+                asset_name = "battery"
+            elif asset["asset_type__asset_type"] == "transformer_station_in":
+                asset_name = "inverter"
+            else:
+                asset_name = asset["asset_type__asset_type"]
+            inst_caps[asset_name] = asset["installed_capacity"]
+
         costs = get_costs(self.project.scenario.simulation)
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
@@ -740,8 +756,9 @@ class FinancialTool:
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
-        asset_sizes = pd.DataFrame.from_records(opt_caps)
-        assets = pd.concat([asset_sizes.set_index("asset"), costs], axis=1)
+        asset_sizes = pd.DataFrame.from_records(opt_caps).set_index("asset")
+        asset_sizes["installed_capacity"] = inst_caps
+        assets = pd.concat([asset_sizes, costs], axis=1)
 
         system_params = pd.concat(
             [

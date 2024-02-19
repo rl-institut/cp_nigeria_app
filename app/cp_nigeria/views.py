@@ -1161,6 +1161,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
     opt_caps = opt_caps.pivot(columns="category", index="supply_source")
     opt_caps.columns = [col[1] for col in opt_caps.columns]
+    units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
+    opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff * ft.exchange_rate
