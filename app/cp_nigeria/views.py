@@ -483,10 +483,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             inverter.age_installed = 0
             inverter.installed_capacity = 0
             inverter.capex_fix = 0
-            inverter.capex_var = 321210
-            inverter.opex_fix = 6424.2
+            inverter.capex_var = 415 * project.economic_data.exchange_rate
+            inverter.opex_fix = 8.3 * project.economic_data.exchange_rate
             inverter.opex_var = 0
-            inverter.lifetime = 15  # project.economic_data.duration,
+            inverter.lifetime = project.economic_data.duration
             inverter.optimize_cap = True
             inverter.efficiency = 0.95
 
