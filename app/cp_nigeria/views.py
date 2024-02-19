@@ -772,6 +772,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         scenario=scenario,
                     )
 
+        if len(user_assets) == 0:
+            inverter.delete()
         # Remove unselected assets
         for asset in Asset.objects.filter(
             scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator", "dso"]
