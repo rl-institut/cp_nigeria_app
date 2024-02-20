@@ -79,7 +79,7 @@ def get_project_summary(project):
     firm_power_output = genset_capacity + (0.25 * pv_capacity)
     total_demand, peak_demand, daily_demand = get_demand_indicators(project)
     investment_per_kwfirm = total_investments / firm_power_output
-    renewable_share = inverter_aggregated_flow / total_demand
+    renewable_share = inverter_aggregated_flow / total_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
     tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff
