@@ -240,7 +240,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
     });
     // prepare graph layout in plotly format
     const layout= {
-        title: parameters.title,
+//        title: parameters.title,
         xaxis:{
             title: parameters.x_label,
         },
@@ -365,7 +365,7 @@ function addCapacitiyGraph(graphId, parameters){
     // prepare traces in ploty format
     var data = []
     // source of the palette: https://colorswall.com/palette/171311
-    const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
+    const colors = ["#F2CD5D"];
     const n_colors = colors.length;
     parameters.data.forEach((scenario,j) => {
         scenario.timeseries.forEach((timeseries,i) => {
@@ -404,7 +404,7 @@ function addCostGraph(graphId, parameters){
     // prepare traces in ploty format
     var data = []
     // source of the palette: https://colorswall.com/palette/171311
-    const colors = ["#d64e12", "#8bd346",  "#16a4d8",  "#efdf48", "#9b5fe0" , "#f9a52c", "#60dbe8"];
+    const colors = ["#008753"];
     const patterns = ["", ".", "/", "x", "+", "-"]
     const n_colors = colors.length;
     parameters.data.forEach((scenario,j) => {
