@@ -13,7 +13,7 @@ BM_QUESTIONS_CATEGORIES = {
     "financial": _("Financial capacities"),
 }
 
-BM_FATE_DEFAULT_VALUES = {
+BM_DEFAULT_ECONOMIC_VALUES = {
     "isolated_cooperative_led": {
         "grant_share": 70,
         "debt_share": 30,

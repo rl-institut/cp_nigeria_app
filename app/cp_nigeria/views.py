@@ -881,7 +881,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             except EquityData.DoesNotExist:
                 initial = {}
                 if qs_bm.exists():
-                    initial = qs_bm.first().default_fate_values
+                    initial = qs_bm.first().default_economic_model_values
                 equity_form = EquityDataForm(prefix="equity", initial=initial)
 
             demand, total_demand, peak_demand, daily_demand = get_demand_indicators(with_timeseries=True)
