@@ -54,6 +54,10 @@ class BusinessModel(models.Model):
     def default_economic_model_values(self):
         return BM_DEFAULT_ECONOMIC_VALUES.get(self.model_name, {})
 
+    @property
+    def is_operator_led(self):
+        return "operator" in self.model_name
+
 
 class BMQuestion(models.Model):
     question_for_user = models.TextField(null=False)
@@ -74,6 +78,35 @@ class BMAnswer(models.Model):
         BusinessModel, on_delete=models.CASCADE, null=True, blank=False, related_name="user_answers"
     )
     score = models.FloatField(null=True, verbose_name="Score")
+
+    @property
+    def default_economic_model_values(self):
+        """Default economic model values
+
+        If it is the answer to the financial question "With a rough estimation, how much financial
+        resources (equity) could the community itself mobilize and provide for investing in
+        a mini-grid installation (in NGN)?" then the equity default values are based on user answer
+        """
+        default_values = self.business_model.default_economic_model_values
+        if self.question.id == 24:
+            # See app/static/business_model_questions.csv file for the values
+            if self.score == 0.3:
+                default_values["equity_community_amount"] = 2.5
+            elif self.score == 0.6:
+                default_values["equity_community_amount"] = 7.5
+            elif self.score == 0.8:
+                default_values["equity_community_amount"] = 15
+            elif self.score == 0.9:
+                default_values["equity_community_amount"] = 35
+            elif self.score == 1:
+                default_values["equity_community_amount"] = 50
+
+            if self.business_model.is_operator_led:
+                default_values["equity_developer_amount"] = 2 * default_values["equity_community_amount"]
+            else:
+                default_values["equity_developer_amount"] = 5
+
+        return default_values
 
 
 class EquityData(models.Model):

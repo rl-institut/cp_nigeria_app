@@ -926,7 +926,14 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
         initial = {}
         if qs_bm.exists():
-            initial = qs_bm.first().default_fate_values
+            bm = qs_bm.first()
+            qs_bm_questionnaire = BMAnswer.objects.filter(business_model=bm)
+
+            if qs_bm_questionnaire.exists():
+                bm_equity_question = qs_bm_questionnaire.get(question__id=24)
+                initial = bm_equity_question.default_economic_model_values
+            else:
+                initial = bm.default_economic_model_values
 
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
