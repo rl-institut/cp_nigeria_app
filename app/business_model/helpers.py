@@ -21,6 +21,8 @@ BM_FATE_DEFAULT_VALUES = {
         "debt_interest_MG": 11,
         "debt_interest_SHS": 0,
         "equity_interest_MG": 0,
+        "equity_community_amount": 5,
+        "equity_developer_amount": 5,
     },
     "isolated_operator_led": {
         "grant_share": 0,
@@ -29,6 +31,8 @@ BM_FATE_DEFAULT_VALUES = {
         "debt_interest_MG": 11,
         "debt_interest_SHS": 0,
         "equity_interest_MG": 15,
+        "equity_community_amount": 0,
+        "equity_developer_amount": 10,
     },
     "interconnected_cooperative_led": {
         "grant_share": 70,
@@ -37,6 +41,8 @@ BM_FATE_DEFAULT_VALUES = {
         "debt_interest_MG": 11,
         "debt_interest_SHS": 0,
         "equity_interest_MG": 0,
+        "equity_community_amount": 5,
+        "equity_developer_amount": 5,
     },
     "interconnected_operator_led": {
         "grant_share": 0,
@@ -45,22 +51,8 @@ BM_FATE_DEFAULT_VALUES = {
         "debt_interest_MG": 11,
         "debt_interest_SHS": 0,
         "equity_interest_MG": 15,
-    },
-    "interconnected_spv_led": {
-        "grant_share": 0,
-        "debt_share": 50,
-        "equity_share": 50,
-        "debt_interest_MG": 11,
-        "debt_interest_SHS": 0,
-        "equity_interest_MG": 5,
-    },
-    "interconnected_collaborative_spv_led": {
-        "grant_share": 30,
-        "debt_share": 40,
-        "equity_share": 30,
-        "debt_interest_MG": 11,
-        "debt_interest_SHS": 0,
-        "equity_interest_MG": 15,
+        "equity_community_amount": 0,
+        "equity_developer_amount": 10,
     },
 }
 
