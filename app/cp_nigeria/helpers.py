@@ -94,7 +94,7 @@ def get_project_summary(project):
         "Project name": f"{project.name}",
         # "Community name": f"{community_name}",
         "Location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
-        "Annual Energy Production": f"{yearly_production:,.2f} kWh",
+        "Annual energy production": f"{yearly_production:,.2f} kWh",
         "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "Renewable share": f"{renewable_share:.2f}%",
         "Indicative total investment costs": f"{total_investments:,.2f} {currency_symbol}",
@@ -1164,7 +1164,7 @@ class FinancialTool:
 
     @property
     def tariff(self):
-        x = np.arange(0.1, 0.2, 0.01)
+        x = np.arange(0.2, 0.5, 0.2)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
         # for which the sum of the cashflow for the first 4 years is 0
