@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+from django.core.exceptions import ValidationError
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.translation import gettext_lazy as _
 
@@ -101,3 +102,10 @@ def available_models(score, grid_condition):
                 if "cooperative" not in B_MODELS[k]["Name"]:
                     models.append((k, B_MODELS[k]["Verbose"]))
     return models
+
+
+def validate_percent(value):
+    if 0 <= value <= 100:
+        pass
+    else:
+        raise ValidationError(_("Please provide a value between 0 and 100"))
