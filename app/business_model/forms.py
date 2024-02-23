@@ -72,9 +72,28 @@ class BMQuestionForm(forms.Form):
 
 
 class EquityDataForm(forms.ModelForm):
+    percentage_fields = [
+        "fuel_price_increase",
+        "grant_share",
+        "debt_share",
+        "debt_interest_MG",
+        "debt_interest_replacement",
+        "debt_interest_SHS",
+        "equity_interest_MG",
+        "equity_interest_SHS",
+    ]
+    million_fields = ["equity_community_amount", "equity_developer_amount"]
+
     class Meta:
         model = EquityData
-        exclude = ["scenario", "debt_start", "debt_share", "estimated_tariff"]
+        exclude = [
+            "scenario",
+            "debt_start",
+            "debt_share",
+            "estimated_tariff",
+            "equity_interest_MG",
+            "fuel_price_increase",
+        ]
 
     def __init__(self, *args, **kwargs):
         default = kwargs.pop("default", None)
@@ -83,23 +102,14 @@ class EquityDataForm(forms.ModelForm):
         initial = kwargs.get("initial", {})
 
         if instance is not None:
-            for field in [
-                "fuel_price_increase",
-                "grant_share",
-                "debt_share",
-                "debt_interest_MG",
-                "debt_interest_SHS",
-                "equity_interest_MG",
-                "equity_interest_SHS",
-                "equity_community_amount",
-                "equity_developer_amount",
-            ]:
+            for field in self.percentage_fields:
                 initial_value = getattr(instance, field)
                 if initial_value is not None:
-                    if "amount" in field:
-                        initial[field] = initial_value / 1000000
-                    else:
-                        initial[field] = initial_value * 100
+                    initial[field] = initial_value * 100
+
+            for field in self.million_fields:
+                initial[field] = getattr(instance, field) / 1000000
+
             kwargs["initial"] = initial
 
         super().__init__(*args, **kwargs)
@@ -119,12 +129,12 @@ class EquityDataForm(forms.ModelForm):
     def clean(self):
         """Convert the percentage values into values ranging from 0 to 1 (for further calculations)"""
         super().clean()
-        for record, value in self.cleaned_data.items():
+        for field, value in self.cleaned_data.items():
             if value is not None:
-                if "amount" in record:
-                    self.cleaned_data[record] = value * 1000000
-                else:
-                    self.cleaned_data[record] = value / 100
+                if field in self.million_fields:
+                    self.cleaned_data[field] = value * 1000000
+                elif field in self.percentage_fields:
+                    self.cleaned_data[field] = value / 100
 
         return self.cleaned_data
 

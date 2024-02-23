@@ -15,7 +15,7 @@ from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
-from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES, BM_FATE_DEFAULT_VALUES
+from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES, BM_DEFAULT_ECONOMIC_VALUES
 
 
 class BusinessModel(models.Model):
@@ -51,8 +51,12 @@ class BusinessModel(models.Model):
         return total_score
 
     @property
-    def default_fate_values(self):
-        return BM_FATE_DEFAULT_VALUES.get(self.model_name, {})
+    def default_economic_model_values(self):
+        return BM_DEFAULT_ECONOMIC_VALUES.get(self.model_name, {})
+
+    @property
+    def is_operator_led(self):
+        return "operator" in self.model_name
 
 
 class BMQuestion(models.Model):
@@ -75,18 +79,50 @@ class BMAnswer(models.Model):
     )
     score = models.FloatField(null=True, verbose_name="Score")
 
+    @property
+    def default_economic_model_values(self):
+        """Default economic model values
+
+        If it is the answer to the financial question "With a rough estimation, how much financial
+        resources (equity) could the community itself mobilize and provide for investing in
+        a mini-grid installation (in NGN)?" then the equity default values are based on user answer
+        """
+        default_values = self.business_model.default_economic_model_values
+        if self.question.id == 24:
+            # See app/static/business_model_questions.csv file for the values
+            if self.score == 0.3:
+                default_values["equity_community_amount"] = 2.5
+            elif self.score == 0.6:
+                default_values["equity_community_amount"] = 7.5
+            elif self.score == 0.8:
+                default_values["equity_community_amount"] = 15
+            elif self.score == 0.9:
+                default_values["equity_community_amount"] = 35
+            elif self.score == 1:
+                default_values["equity_community_amount"] = 50
+
+            if self.business_model.is_operator_led:
+                default_values["equity_developer_amount"] = 2 * default_values["equity_community_amount"]
+            else:
+                default_values["equity_developer_amount"] = 5
+
+        return default_values
+
 
 class EquityData(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=True, blank=True)
     debt_start = models.IntegerField()
     fuel_price_increase = models.FloatField(
-        verbose_name=_("Yearly increase of fuel price (%)"),
+        help_text=_("Assumed yearly increase of fuel price (%)"),
         default=0,
         blank=True,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     grant_share = models.FloatField(
-        verbose_name=_("Share of grant for assets (%)"), validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+        verbose_name=_("Grant share (%)"),
+        help_text=_("Share of grant for assets provided by REA or other institutions"),
+        default=0.6,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_share = models.FloatField(
         verbose_name=_("Share of the external debt (%)"),
@@ -94,7 +130,15 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_interest_MG = models.FloatField(
-        verbose_name=_("Interest rate for external loan: mini-grid (%)"),
+        verbose_name=_("Interest rate for external loan (%)"),
+        help_text=_("Assumed interest rate for loan at project start"),
+        default=0.11,
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+    )
+    debt_interest_replacement = models.FloatField(
+        verbose_name=_("Interest rate for replacement loan (%)"),
+        help_text=_("Assumed interest rate for loan used for asset replacement"),
+        default=0.11,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     debt_interest_SHS = models.FloatField(
@@ -102,8 +146,19 @@ class EquityData(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         null=True,
     )
+    loan_maturity = models.IntegerField(
+        help_text=_("Number of years to repay the loan"),
+        validators=[MinValueValidator(0)],
+        default=10,
+    )
+    grace_period = models.IntegerField(
+        help_text=_("Number of years to the first repayment of principal"),
+        validators=[MinValueValidator(0.0)],
+        default=1,
+    )
     equity_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external equity: mini-grid (%)"),
+        default=0,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
     )
     equity_interest_SHS = models.FloatField(
@@ -112,10 +167,14 @@ class EquityData(models.Model):
         null=True,
     )
     equity_community_amount = models.FloatField(
-        verbose_name=_("Amount of equity the community would be " "able to mobilize (Million NGN)"), default=0
+        verbose_name=_("Community equity (Million NGN)"),
+        help_text=_("Amount of equity the community would be able to mobilize"),
+        default=0,
     )
     equity_developer_amount = models.FloatField(
-        verbose_name=_("Amount of equity the project developer would be " "able to mobilize (Million NGN)"), default=0
+        verbose_name=_("Mini-grid company equity (Million NGN)"),
+        help_text=_("Amount of equity the mini-grid company would be able to mobilize"),
+        default=0,
     )
     estimated_tariff = models.FloatField(blank=True, null=True)
 
@@ -124,7 +183,5 @@ class EquityData(models.Model):
         Compute the average fuel price over the project lifetime
         project_duration: in years
         """
-        annual_increase = np.array(
-            [np.power(1 + (self.fuel_price_increase / 100.0), n) for n in range(project_duration)]
-        )
+        annual_increase = np.array([np.power(1 + self.fuel_price_increase, n) for n in range(project_duration)])
         return initial_fuel_price * annual_increase.mean()

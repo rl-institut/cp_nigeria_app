@@ -483,10 +483,10 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             inverter.age_installed = 0
             inverter.installed_capacity = 0
             inverter.capex_fix = 0
-            inverter.capex_var = 321210
-            inverter.opex_fix = 6424.2
+            inverter.capex_var = 415
+            inverter.opex_fix = 8.3
             inverter.opex_var = 0
-            inverter.lifetime = 15  # project.economic_data.duration,
+            inverter.lifetime = project.economic_data.duration
             inverter.optimize_cap = True
             inverter.efficiency = 0.95
 
@@ -772,6 +772,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
                         scenario=scenario,
                     )
 
+        if len(user_assets) == 0:
+            inverter.delete()
         # Remove unselected assets
         for asset in Asset.objects.filter(
             scenario=scenario.id, asset_type__asset_type__in=["bess", "pv_plant", "diesel_generator", "dso"]
@@ -879,7 +881,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             except EquityData.DoesNotExist:
                 initial = {}
                 if qs_bm.exists():
-                    initial = qs_bm.first().default_fate_values
+                    initial = qs_bm.first().default_economic_model_values
                 equity_form = EquityDataForm(prefix="equity", initial=initial)
 
             demand, total_demand, peak_demand, daily_demand = get_demand_indicators(with_timeseries=True)
@@ -924,7 +926,14 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
 
         initial = {}
         if qs_bm.exists():
-            initial = qs_bm.first().default_fate_values
+            bm = qs_bm.first()
+            qs_bm_questionnaire = BMAnswer.objects.filter(business_model=bm)
+
+            if qs_bm_questionnaire.exists():
+                bm_equity_question = qs_bm_questionnaire.get(question__id=24)
+                initial = bm_equity_question.default_economic_model_values
+            else:
+                initial = bm.default_economic_model_values
 
         try:
             equity_data = EquityData.objects.get(scenario=scenario)
@@ -1183,6 +1192,17 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
     financial_kpis = ft.financial_kpis
+    # calculate the financial KPIs with 0% grant
+    ft.remove_grant()
+    no_grant_tariff = ft.tariff
+    no_grant_kpis = ft.financial_kpis
+
+    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
+    comparison_kpi_df.loc["Estimated tariff"] = {
+        "With grant": tariff * ft.exchange_rate,
+        "Without grant": no_grant_tariff * ft.exchange_rate,
+    }
+
     help_texts = {
         "Total investment costs": help_icon("All upfront investment costs"),
         "Total equity": help_icon("Total equity help text"),
@@ -1233,6 +1253,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "tariff_NGN": tariff * ft.exchange_rate,
         "tariff_USD": tariff,
         "financial_kpis": financial_kpis,
+        "comparison_kpi_df": comparison_kpi_df,
         "system_costs": system_costs,
         "currency_symbol": currency_symbol,
     }

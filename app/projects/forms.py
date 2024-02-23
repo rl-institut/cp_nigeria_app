@@ -277,7 +277,7 @@ class ProjectCreateForm(OpenPlanForm):
                 "max": "1.0",
                 "step": "0.0001",
                 "data-bs-toggle": "tooltip",
-                "title": _("Tax factor"),
+                "title": _("Tax factor (i.e. VAT)"),
                 "value": 0,
             }
         ),
