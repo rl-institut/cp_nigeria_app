@@ -105,10 +105,10 @@ class EquityDataForm(forms.ModelForm):
             for field in self.percentage_fields:
                 initial_value = getattr(instance, field)
                 if initial_value is not None:
-                    initial[field] = initial_value * 100
+                    initial[field] = initial_value * 100.0
 
             for field in self.million_fields:
-                initial[field] = getattr(instance, field) / 1000000
+                initial[field] = getattr(instance, field) / 1000000.0
 
             kwargs["initial"] = initial
 
@@ -132,9 +132,9 @@ class EquityDataForm(forms.ModelForm):
         for field, value in self.cleaned_data.items():
             if value is not None:
                 if field in self.million_fields:
-                    self.cleaned_data[field] = value * 1000000
+                    self.cleaned_data[field] = value * 1000000.0
                 elif field in self.percentage_fields:
-                    self.cleaned_data[field] = value / 100
+                    self.cleaned_data[field] = value / 100.0
 
         return self.cleaned_data
 
