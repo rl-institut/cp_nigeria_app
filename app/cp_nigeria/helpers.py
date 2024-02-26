@@ -1136,7 +1136,7 @@ class FinancialTool:
 
     def goal_seek_helper(self, custom_tariff):
         cashflow_helper = np.sum(
-            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:4]
+            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:5]
         )
         return cashflow_helper
 
