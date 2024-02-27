@@ -744,15 +744,6 @@ class FinancialTool:
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
-        # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
-        #  simulation (which is the average over project lifetime) - discuss the best approach for results display here
-        if self.financial_params["fuel_price_increase"] != 0:
-            costs.at["diesel_generator", "fuel_costs_total"] = self.yearly_increase(
-                costs.loc["diesel_generator", "fuel_costs_total"],
-                self.financial_params["fuel_price_increase"],
-                -int(self.project_duration / 2),
-            )
-
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
