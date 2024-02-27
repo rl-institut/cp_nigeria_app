@@ -1111,7 +1111,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     tariff = ft.tariff
 
     ed = EquityData.objects.get(scenario=project.scenario)
-    ed.estimated_tariff = tariff * ft.exchange_rate
+    ed.estimated_tariff = tariff
     ed.save()
 
     if complex is True:
