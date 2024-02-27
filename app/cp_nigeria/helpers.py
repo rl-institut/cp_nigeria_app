@@ -124,7 +124,6 @@ def get_shs_threshold(shs_tier):
 
 def get_aggregated_cgs(project):
     options = get_object_or_404(Options, project=project)
-    community = options.community
     shs_threshold = options.shs_threshold
 
     # list according to ConsumerType object ids in database
@@ -170,7 +169,7 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
         results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-        results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+        results_dict["SHS"]["total_demand"] = 0
         results_dict["SHS"]["supply_source"] = "shs"
 
     return results_dict
@@ -869,7 +868,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Opex"])],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -968,18 +967,21 @@ class FinancialTool:
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
-        shs_costs_om = (
-            self.cost_assumptions.loc[
-                self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
-            ].values[0]
-            * self.exchange_rate
-        )
+
         costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
         costs_om_df = costs_om_df[costs_om_df["value"] != 0]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
+        # TODO include these costs in extra information about solar home systems but not general mini-grid
+        # shs_costs_om = (
+        #     self.cost_assumptions.loc[
+        #         self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
+        #     ].values[0]
+        #     * self.exchange_rate
+        # )
+
         # multiply the unit prices by the amount
-        om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        # om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
         om_lifetime.loc["opex_total"] = om_lifetime.sum()
