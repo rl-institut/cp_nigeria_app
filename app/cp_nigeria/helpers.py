@@ -94,7 +94,7 @@ def get_project_summary(project):
         "Project name": f"{project.name}",
         # "Community name": f"{community_name}",
         "Location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
-        "Annual Energy Production": f"{yearly_production:,.2f} kWh",
+        "Annual energy production": f"{yearly_production:,.2f} kWh",
         "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "Renewable share": f"{renewable_share:.2f}%",
         "Indicative total investment costs": f"{total_investments:,.2f} {currency_symbol}",
@@ -124,7 +124,6 @@ def get_shs_threshold(shs_tier):
 
 def get_aggregated_cgs(project):
     options = get_object_or_404(Options, project=project)
-    community = options.community
     shs_threshold = options.shs_threshold
 
     # list according to ConsumerType object ids in database
@@ -170,7 +169,7 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
         results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-        results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+        results_dict["SHS"]["total_demand"] = 0
         results_dict["SHS"]["supply_source"] = "shs"
 
     return results_dict
@@ -744,15 +743,6 @@ class FinancialTool:
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
-        # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
-        #  simulation (which is the average over project lifetime) - discuss the best approach for results display here
-        if self.financial_params["fuel_price_increase"] != 0:
-            costs.at["diesel_generator", "fuel_costs_total"] = self.yearly_increase(
-                costs.loc["diesel_generator", "fuel_costs_total"],
-                self.financial_params["fuel_price_increase"],
-                -int(self.project_duration / 2),
-            )
-
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
@@ -878,7 +868,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Opex"])],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -977,18 +967,21 @@ class FinancialTool:
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
-        shs_costs_om = (
-            self.cost_assumptions.loc[
-                self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
-            ].values[0]
-            * self.exchange_rate
-        )
+
         costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
         costs_om_df = costs_om_df[costs_om_df["value"] != 0]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
+        # TODO include these costs in extra information about solar home systems but not general mini-grid
+        # shs_costs_om = (
+        #     self.cost_assumptions.loc[
+        #         self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
+        #     ].values[0]
+        #     * self.exchange_rate
+        # )
+
         # multiply the unit prices by the amount
-        om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        # om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
         om_lifetime.loc["opex_total"] = om_lifetime.sum()
@@ -1136,7 +1129,7 @@ class FinancialTool:
 
     def goal_seek_helper(self, custom_tariff):
         cashflow_helper = np.sum(
-            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:4]
+            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:5]
         )
         return cashflow_helper
 
@@ -1164,7 +1157,7 @@ class FinancialTool:
 
     @property
     def tariff(self):
-        x = np.arange(0.1, 0.2, 0.01)
+        x = np.arange(0.2, 0.5, 0.2)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
         # for which the sum of the cashflow for the first 4 years is 0
