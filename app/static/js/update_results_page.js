@@ -70,7 +70,7 @@ function update_selected_single_scenario(target){
 function update_kpi_table_style(scen_id=""){
 
     $.ajax({
-        url: urlKpiResults,
+        url: urlKpiResults, // linked to cpn_kpi_results
         type: "GET",
         success: async (parameters) => {
             await addTable(parameters, table_id="container_system_kpis")
