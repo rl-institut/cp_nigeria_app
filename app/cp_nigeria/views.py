@@ -1152,118 +1152,118 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     else:
         es_schema_name = None
 
-    # Initialize financial tool to calculate financial flows and test output graphs
+    project_summary = opt_caps = capex_by_category = cgs_df = capex_df = capex_assumptions = senior_debt = None
+    cash_flow = losses = tariff = financial_kpis = comparison_kpi_df = system_costs = replacement_loan_table = None
+    om_costs_over_lifetime = tariff_ngn = None
+
     ft = FinancialTool(project)
     tariff = ft.tariff
-
-    # opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
-    # opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
-    # opt_caps = opt_caps.pivot(columns="category", index="supply_source")
-    # opt_caps.columns = [col[1] for col in opt_caps.columns]
-    # units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
-    # opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff * ft.exchange_rate
     ed.save()
 
-    capex_df = ft.capex
-    # capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
+    if complex is True:
+        # Initialize financial tool to calculate financial flows and test output graphs
+        opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
+        opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
+        opt_caps = opt_caps.pivot(columns="category", index="supply_source")
+        opt_caps.columns = [col[1] for col in opt_caps.columns]
+        units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
+        opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
 
-    # system_costs = ft.system_params[
-    #     ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
-    # ].copy()
-    # system_costs.drop(columns=["growth_rate", "label"], inplace=True)
-    # system_costs = system_costs.pivot(columns="category", index="supply_source")
-    # system_costs.columns = [col[1] for col in system_costs.columns]
+        capex_df = ft.capex
+        capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
 
-    capex_assumptions = {}
-    for cat in capex_df.Category.unique():
-        sub_capex = capex_df.loc[capex_df.Category == cat]
-        sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
-        sub_capex.set_index("Description", inplace=True)
-        sub_capex.fillna(0, inplace=True)
-        sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
-            ["Total costs [USD]", "Total costs [NGN]"]
-        ].sum()
-        sub_capex.fillna("", inplace=True)
-        capex_assumptions[cat] = sub_capex
+        system_costs = ft.system_params[
+            ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
+        ].copy()
+        system_costs.drop(columns=["growth_rate", "label"], inplace=True)
+        system_costs = system_costs.pivot(columns="category", index="supply_source")
+        system_costs.columns = [col[1] for col in system_costs.columns]
 
-    revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        capex_assumptions = {}
+        for cat in capex_df.Category.unique():
+            sub_capex = capex_df.loc[capex_df.Category == cat]
+            sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
+            sub_capex.set_index("Description", inplace=True)
+            sub_capex.fillna(0, inplace=True)
+            sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
+                ["Total costs [USD]", "Total costs [NGN]"]
+            ].sum()
+            sub_capex.fillna("", inplace=True)
+            capex_assumptions[cat] = sub_capex
 
-    revenue_flows.index = revenue_flows.index.droplevel(1)
-    losses = ft.losses_over_lifetime(custom_tariff=tariff)
-    senior_debt = ft.initial_loan_table
-    cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
-    cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
-        losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
-    )
-    # financial_kpis = ft.financial_kpis
-    # # calculate the financial KPIs with 0% grant
-    # ft.remove_grant()
-    # no_grant_tariff = ft.tariff
-    # no_grant_kpis = ft.financial_kpis
-    #
-    # comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
-    # comparison_kpi_df.loc["Estimated tariff per kWh"] = {
-    #     "With grant": tariff * ft.exchange_rate,
-    #     "Without grant": no_grant_tariff * ft.exchange_rate,
-    # }
-    #
-    # help_texts = {
-    #     "Total investment costs": help_icon("All upfront investment costs"),
-    #     "Total equity": help_icon("Total equity help text"),
-    #     "Total grant": help_icon("Total grant help text"),
-    #     "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
-    #     "Replacement loan amount": help_icon("Amount needed to replace the system components"),
-    # }
+        revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        revenue_flows.index = revenue_flows.index.droplevel(1)
+        losses = ft.losses_over_lifetime(custom_tariff=tariff)
+        replacement_loan_table = ft.replacement_loan_table
+        om_costs_over_lifetime = ft.om_costs_over_lifetime
+        exchange_rate = ft.exchange_rate
+        tariff_ngn = tariff * exchange_rate
+        senior_debt = ft.initial_loan_table
+        cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+        cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
+            losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
+        )
+        financial_kpis = ft.financial_kpis
+        # calculate the financial KPIs with 0% grant
+        ft.remove_grant()
+        no_grant_tariff = ft.tariff
+        no_grant_kpis = ft.financial_kpis
 
-    # for k in help_texts:
-    #     financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
+        comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
+        comparison_kpi_df.loc["Estimated tariff per kWh"] = {
+            "With grant": tariff * ft.exchange_rate,
+            "Without grant": no_grant_tariff * ft.exchange_rate,
+        }
 
-    # dict for community characteristics table
-    # aggregated_cgs = get_aggregated_cgs(project)
-    # cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
-    # cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
-    # cgs_df.drop(columns=["supply_source"], inplace=True)
-    # cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
-    # project_summary = get_project_summary(project)
+        help_texts = {
+            "Total investment costs": help_icon("All upfront investment costs"),
+            "Total equity": help_icon("Total equity help text"),
+            "Total grant": help_icon("Total grant help text"),
+            "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
+            "Replacement loan amount": help_icon("Amount needed to replace the system components"),
+        }
+
+        for k in help_texts:
+            financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
+
+        aggregated_cgs = get_aggregated_cgs(project)
+        cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+        cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
+        cgs_df.drop(columns=["supply_source"], inplace=True)
+        cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
+        project_summary = get_project_summary(project)
     currency_symbol = project.economic_data.currency_symbol
-
     context = {
         "proj_id": proj_id,
-        # "project_summary": project_summary,
-        # "opt_caps": opt_caps,
-        # "capex_by_category": capex_by_category,
-        # "excess": excess,
+        "project_summary": project_summary,
+        "opt_caps": opt_caps,
+        "capex_by_category": capex_by_category,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
         "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
-        # "fate_figs": fate_figs["Net Cash Flow"],
-        # "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
-        # "diesel_curve_fig": diesel_curve_fig,
-        # "cgs_df": cgs_df,
+        "cgs_df": cgs_df,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
         "step_list": CPN_STEP_VERBOSE,
         "capex_df": capex_df,
         "capex_assumptions": capex_assumptions,
-        "revenue_flows": revenue_flows,
-        "revenue_flows_html": revenue_flows.to_html(),
         "senior_debt": senior_debt,
-        "remplacement_debt": ft.replacement_loan_table,
+        "replacement_debt": replacement_loan_table,
         "cash_flow": cash_flow,
-        "opex_costs": ft.om_costs_over_lifetime,
+        "opex_costs": om_costs_over_lifetime,
         "losses": losses,
-        "tariff_NGN": tariff * ft.exchange_rate,
+        "tariff_NGN": tariff_ngn,
         "tariff_USD": tariff,
-        # "financial_kpis": financial_kpis,
-        # "comparison_kpi_df": comparison_kpi_df,
-        # "system_costs": system_costs,
+        "financial_kpis": financial_kpis,
+        "comparison_kpi_df": comparison_kpi_df,
+        "system_costs": system_costs,
         "currency_symbol": currency_symbol,
     }
 
