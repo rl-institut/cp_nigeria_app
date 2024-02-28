@@ -1156,27 +1156,26 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     ft = FinancialTool(project)
     tariff = ft.tariff
 
-    # TODO add column for existing capacity to dataframe
-    opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
-    opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
-    opt_caps = opt_caps.pivot(columns="category", index="supply_source")
-    opt_caps.columns = [col[1] for col in opt_caps.columns]
-    units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
-    opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
+    # opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
+    # opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
+    # opt_caps = opt_caps.pivot(columns="category", index="supply_source")
+    # opt_caps.columns = [col[1] for col in opt_caps.columns]
+    # units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
+    # opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff * ft.exchange_rate
     ed.save()
 
     capex_df = ft.capex
-    capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
+    # capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
 
-    system_costs = ft.system_params[
-        ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
-    ].copy()
-    system_costs.drop(columns=["growth_rate", "label"], inplace=True)
-    system_costs = system_costs.pivot(columns="category", index="supply_source")
-    system_costs.columns = [col[1] for col in system_costs.columns]
+    # system_costs = ft.system_params[
+    #     ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
+    # ].copy()
+    # system_costs.drop(columns=["growth_rate", "label"], inplace=True)
+    # system_costs = system_costs.pivot(columns="category", index="supply_source")
+    # system_costs.columns = [col[1] for col in system_costs.columns]
 
     capex_assumptions = {}
     for cat in capex_df.Category.unique():
@@ -1199,43 +1198,43 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
         losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
     )
-    financial_kpis = ft.financial_kpis
-    # calculate the financial KPIs with 0% grant
-    ft.remove_grant()
-    no_grant_tariff = ft.tariff
-    no_grant_kpis = ft.financial_kpis
+    # financial_kpis = ft.financial_kpis
+    # # calculate the financial KPIs with 0% grant
+    # ft.remove_grant()
+    # no_grant_tariff = ft.tariff
+    # no_grant_kpis = ft.financial_kpis
+    #
+    # comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
+    # comparison_kpi_df.loc["Estimated tariff per kWh"] = {
+    #     "With grant": tariff * ft.exchange_rate,
+    #     "Without grant": no_grant_tariff * ft.exchange_rate,
+    # }
+    #
+    # help_texts = {
+    #     "Total investment costs": help_icon("All upfront investment costs"),
+    #     "Total equity": help_icon("Total equity help text"),
+    #     "Total grant": help_icon("Total grant help text"),
+    #     "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
+    #     "Replacement loan amount": help_icon("Amount needed to replace the system components"),
+    # }
 
-    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
-    comparison_kpi_df.loc["Estimated tariff per kWh"] = {
-        "With grant": tariff * ft.exchange_rate,
-        "Without grant": no_grant_tariff * ft.exchange_rate,
-    }
-
-    help_texts = {
-        "Total investment costs": help_icon("All upfront investment costs"),
-        "Total equity": help_icon("Total equity help text"),
-        "Total grant": help_icon("Total grant help text"),
-        "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
-        "Replacement loan amount": help_icon("Amount needed to replace the system components"),
-    }
-
-    for k in help_texts:
-        financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
+    # for k in help_texts:
+    #     financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
 
     # dict for community characteristics table
-    aggregated_cgs = get_aggregated_cgs(project)
-    cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
-    cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
-    cgs_df.drop(columns=["supply_source"], inplace=True)
-    cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
-    project_summary = get_project_summary(project)
+    # aggregated_cgs = get_aggregated_cgs(project)
+    # cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+    # cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
+    # cgs_df.drop(columns=["supply_source"], inplace=True)
+    # cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
+    # project_summary = get_project_summary(project)
     currency_symbol = project.economic_data.currency_symbol
 
     context = {
         "proj_id": proj_id,
-        "project_summary": project_summary,
-        "opt_caps": opt_caps,
-        "capex_by_category": capex_by_category,
+        # "project_summary": project_summary,
+        # "opt_caps": opt_caps,
+        # "capex_by_category": capex_by_category,
         # "excess": excess,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
@@ -1246,7 +1245,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         # "fate_figs": fate_figs["Net Cash Flow"],
         # "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
         # "diesel_curve_fig": diesel_curve_fig,
-        "cgs_df": cgs_df,
+        # "cgs_df": cgs_df,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
         "step_id": step_id,
@@ -1262,9 +1261,9 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "losses": losses,
         "tariff_NGN": tariff * ft.exchange_rate,
         "tariff_USD": tariff,
-        "financial_kpis": financial_kpis,
-        "comparison_kpi_df": comparison_kpi_df,
-        "system_costs": system_costs,
+        # "financial_kpis": financial_kpis,
+        # "comparison_kpi_df": comparison_kpi_df,
+        # "system_costs": system_costs,
         "currency_symbol": currency_symbol,
     }
 
@@ -1464,7 +1463,7 @@ def cpn_kpi_results(request, proj_id=None):
         # diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
         scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
 
-        kpis = []
+        kpis = {}
         qs_inverter = qs_res.filter(optimized_capacity__gt=0, asset="inverter")
         inverter_flow = 0
         if qs_inverter.exists():
@@ -1478,36 +1477,26 @@ def cpn_kpi_results(request, proj_id=None):
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-
-                scen_values = [
-                    round(
-                        inverter_flow / total_demand * factor,
-                        2,
-                    )
-                ]
+                scen_values = round(inverter_flow / total_demand * factor, 2)
 
             else:
                 factor = 1.0
-                scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
+                scen_values = round(scenario_results[kpi] * factor, 2)  # , round(diesel_results[kpi] * factor, 2)]
 
-            # if kpi not in kpis_of_comparison_diesel:
-            #     scen_values[1] = ""
+            kpis[kpi] = {
+                "verbose": KPI_PARAMETERS[kpi]["verbose"],
+                "unit": unit,
+                "value": scen_values,
+                "description": help_icon(KPI_PARAMETERS[kpi]["definition"]),
+            }
 
-            kpis.append(
-                {
-                    "name": KPI_PARAMETERS[kpi]["verbose"],
-                    "id": kpi,
-                    "unit": unit,
-                    "scen_values": scen_values,
-                    "description": KPI_PARAMETERS[kpi]["definition"],
-                }
-            )
-        table = {"General": kpis}
+            table_headers = {}
+            headers = ["Value"]
+            for header in headers:
+                table_headers[header] = {}
+                table_headers[header]["verbose"] = header
 
-        # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
-        answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
-
-    return answer
+        return JsonResponse({"data": kpis, "headers": table_headers}, status=200, content_type="application/json")
 
 
 @json_view

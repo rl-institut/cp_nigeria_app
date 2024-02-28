@@ -13,6 +13,10 @@ $(document).ready(function () {
 //    scenario_visualize_revenue(scen_id);
     scenario_visualize_system_costs(scen_id, system_costs);
     scenario_visualize_capex(scen_id);
+    request_project_summary_table(scen_id);
+    request_community_summary_table(scen_id);
+    request_system_size_table(scen_id);
+    request_financial_kpi_table(scen_id);
 });
 
 
@@ -68,73 +72,77 @@ function update_kpi_table_style(scen_id=""){
     $.ajax({
         url: urlKpiResults,
         type: "GET",
-        success: async (table_data) => {
-
-        const parentDiv = document.getElementById("selectedKPITable");
-        parentDiv.innerHTML = "";
-
-
-        /* create KPI table headers */
-        const tableHead = document.createElement('thead');
-        const table_headers = table_data.hdrs; // todo add dynamically more scenarios here
-        const table_length = table_headers.length;
-        const tableHeadContent = document.createElement('tr');
-        table_headers.map(hdr =>
-            {
-                var tableHdr = document.createElement('th');
-                tableHdr.innerHTML = hdr;
-                tableHeadContent.appendChild(tableHdr);
-            }
-        );
-        tableHead.appendChild(tableHeadContent)
-        parentDiv.appendChild(tableHead);
-
-
-        for(subBody in table_data.data) {
-            var tableBody = document.createElement('tbody');
-            tableBody.id = subBody;
-            /* add subtable title */
-            const tableSubSectionTitleRow = document.createElement('tr');
-            var tableSubSectionTitle = document.createElement('th');
-            tableSubSectionTitle.innerHTML = subBody;
-            tableSubSectionTitleRow.appendChild(tableSubSectionTitle);
-            for(i=0;i<table_length-1;++i){
-                tableSubSectionTitleRow.appendChild(document.createElement('td'));
-            }
-
-            //tableBody.appendChild(tableSubSectionTitle);
-
-            /* add subtable lines for each parameter */
-            // (param should be a json object) with keys name (type str), unit type (str) and scen_values
-            table_data.data[subBody].map(param =>{
-                var tableSubSectionParamRow = document.createElement('tr');
-                var cell = tableSubSectionParamRow.insertCell(0);
-                cell.innerHTML = param.name + " (" + param.unit + `) <a data-bs-toggle="tooltip" title="" data-bs-original-title="${param.description}" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="${srcInfoIcon}"></a>`;
-                //cell.setAttribute("title", param.description)
-                //cell.append(" just to see");
-                // todo for loop over scenario values
-                for(i=0;i<param.scen_values.length;++i){
-                    cell = tableSubSectionParamRow.insertCell(1 + i);
-                    cell.innerHTML = param.scen_values[i]
-                };
-                tableBody.appendChild(tableSubSectionParamRow);
-            });
-
-
-            parentDiv.appendChild(tableBody);
+        success: async (parameters) => {
+            await addTable(parameters, table_id="container_system_kpis")
         }
-        $('[data-bs-toggle="tooltip"]').tooltip()
+    });
+}
 
-        },
+//        const parentDiv = document.getElementById("selectedKPITable");
+//        parentDiv.innerHTML = "";
+//
+//
+//        /* create KPI table headers */
+//        const tableHead = document.createElement('thead');
+//        const table_headers = table_data.hdrs; // todo add dynamically more scenarios here
+//        const table_length = table_headers.length;
+//        const tableHeadContent = document.createElement('tr');
+//        table_headers.map(hdr =>
+//            {
+//                var tableHdr = document.createElement('th');
+//                tableHdr.innerHTML = hdr;
+//                tableHeadContent.appendChild(tableHdr);
+//            }
+//        );
+//        tableHead.appendChild(tableHeadContent)
+//        parentDiv.appendChild(tableHead);
+//
+//
+//        for(subBody in table_data.data) {
+//            var tableBody = document.createElement('tbody');
+//            tableBody.id = subBody;
+//            /* add subtable title */
+//            const tableSubSectionTitleRow = document.createElement('tr');
+//            var tableSubSectionTitle = document.createElement('th');
+//            tableSubSectionTitle.innerHTML = subBody;
+//            tableSubSectionTitleRow.appendChild(tableSubSectionTitle);
+//            for(i=0;i<table_length-1;++i){
+//                tableSubSectionTitleRow.appendChild(document.createElement('td'));
+//            }
+//
+//            //tableBody.appendChild(tableSubSectionTitle);
+//
+//            /* add subtable lines for each parameter */
+//            // (param should be a json object) with keys name (type str), unit type (str) and scen_values
+//            table_data.data[subBody].map(param =>{
+//                var tableSubSectionParamRow = document.createElement('tr');
+//                var cell = tableSubSectionParamRow.insertCell(0);
+//                cell.innerHTML = param.name + " (" + param.unit + `) <a data-bs-toggle="tooltip" title="" data-bs-original-title="${param.description}" data-bs-placement="right"><img style="height: 1.2rem;margin-left:.5rem" alt="info icon" src="${srcInfoIcon}"></a>`;
+//                //cell.setAttribute("title", param.description)
+//                //cell.append(" just to see");
+//                // todo for loop over scenario values
+//                for(i=0;i<param.scen_values.length;++i){
+//                    cell = tableSubSectionParamRow.insertCell(1 + i);
+//                    cell.innerHTML = param.scen_values[i]
+//                };
+//                tableBody.appendChild(tableSubSectionParamRow);
+//            });
+//
+//
+//            parentDiv.appendChild(tableBody);
+//        }
+//        $('[data-bs-toggle="tooltip"]').tooltip()
+//
+//        },
         /*error: function (xhr, errmsg) {
             console.log("backend_error!")
             //Show the error message
             $('#message-div').html("<div class='alert-error'>" +
                 "<strong>Success: </strong> We have encountered an error: " + errmsg + "</div>");
         }*/
-    });
-
-};
+//    });
+//
+//};
 
 /* loop over scenario selection buttons and return the ids of the selected ones */
 // function fetchSelectedScenarios(){
@@ -247,6 +255,7 @@ function scenario_visualize_capex(scen_id=""){
             url: urlVisualizeCapex,
             type: "GET",
             success: async (parameters) => {
+                await addTable(parameters, table_id="container_total_capex");
                 await addPieChart(parameters, plot_id="capex");
             },
         });
@@ -257,11 +266,67 @@ function scenario_visualize_system_costs(scen_id=""){
             url: urlVisualizeSystemCosts,
             type: "GET",
             success: async (parameters) => {
+                await addTable(parameters, table_id="container_system_costs");
                 await addCostsChart(parameters, plot_id="system_costs");
             },
         });
 };
 
+
+function request_project_summary_table(scen_id=""){
+ $.ajax({
+            url: urlRequestProjectSummary,
+            type: "GET",
+            success: async (response) => {
+                await addTable(response, table_id="container_project_summary")
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    };
+
+
+function request_community_summary_table(scen_id=""){
+ $.ajax({
+            url: urlRequestCommunitySummary,
+            type: "GET",
+            success: async (response) => {
+                await addTable(response, table_id="container_community_summary")
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    };
+
+
+function request_system_size_table(scen_id=""){
+ $.ajax({
+            url: urlRequestSystemSize,
+            type: "GET",
+            success: async (response) => {
+                await addTable(response, table_id="container_system_size")
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    };
+
+
+function request_financial_kpi_table(scen_id=""){
+ $.ajax({
+            url: urlRequestFinancialKpis,
+            type: "GET",
+            success: async (response) => {
+                await addTable(response, table_id="container_financial_kpis")
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    };
 
 
 /** Add a new report item **/

@@ -128,6 +128,26 @@ urlpatterns = [
         scenario_visualize_system_costs,
         name="scenario_visualize_system_costs",
     ),
+    re_path(
+        r"^scenario/results/request_project_summary_table/(?P<scen_id>\d+)?$",
+        request_project_summary_table,
+        name="request_project_summary_table",
+    ),
+    re_path(
+        r"^scenario/results/request_community_summary_table/(?P<scen_id>\d+)?$",
+        request_community_summary_table,
+        name="request_community_summary_table",
+    ),
+    re_path(
+        r"^scenario/results/request_system_size_table/(?P<scen_id>\d+)?$",
+        request_system_size_table,
+        name="request_system_size_table",
+    ),
+    re_path(
+        r"^scenario/results/request_financial_kpi_table/(?P<scen_id>\d+)?$",
+        request_financial_kpi_table,
+        name="request_financial_kpi_table",
+    ),
     path(
         "scenario/results/download_scalars/<int:scen_id>",
         download_scalar_results,

@@ -119,7 +119,6 @@
 </div>
 
 <main>
-	<!-- insert tabs here, previous class result-selector -->
 	<section>
 		<div class="tab-content" id="js-db-top-section">
 			<div>
@@ -148,33 +147,33 @@
 									</div>
 								</div>
 							</div>
-						</div>
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
-								<div class="chart">
-									<div class="chart__header">
-										<div>
+<!--						</div>-->
+<!--					</div>-->
+<!--					<div class="row">-->
+<!--						<div class="col col-md-12">-->
+							<div class="chart">
+								<div class="chart__header">
+									<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_project_summary" role="button" aria-expanded="false" aria-controls="container_project_summary">
     Project summary
   </a></span>
-										</div>
 									</div>
-									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_project_summary">
-										<table class="table table-bordered table-hover" id="project_summary">
-											<tbody>
-											{% for key, value in project_summary.items %}
-											<tr>
-												<td><b>{{ key }}</b></td>
-												<td>{{ value }}</td>
-											</tr>
-											{% endfor %}
-											</tbody>
-										</table>
-									</div>
+								</div>
+								<div class="chart__plot collapse show" style="overflow: scroll;" id="container_project_summary">
+									<!--										<table class="table table-bordered table-hover" id="project_summary">-->
+									<!--											<tbody>-->
+									<!--											{% for key, value in project_summary.items %}-->
+									<!--											<tr>-->
+									<!--												<td><b>{{ key }}</b></td>-->
+									<!--												<td>{{ value }}</td>-->
+									<!--											</tr>-->
+									<!--											{% endfor %}-->
+									<!--											</tbody>-->
+									<!--										</table>-->
 								</div>
 							</div>
 						</div>
+					</div>
 
 
 					{% if scenario_list %}
@@ -186,51 +185,93 @@
 						<div class="row">
 							<div class="col col-md-12">
 								<div class="chart">
-									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_community_summary" role="button" aria-expanded="false" aria-controls="container_project_summary">
+    Community summary
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_community_summary">
+										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+									</div>
 								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
-<!--								<div class="chart">-->
-<!--									<div class="chart__header">-->
-<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
-<!--										<div>-->
-<!--											<span class="title">{% translate "System size" %}</span>-->
-<!--										</div>-->
-<!--									</div>-->
-<!--									<div class="chart__plot">-->
-<!--										<table class="table" id="assetSizes">-->
-<!--											<thead><tr><th>Asset</th><th>Size</th></thead>-->
-<!--											<tbody id="General">-->
+								<!--							</div>-->
+								<!--							<div class="row">-->
+								<!--								<div class="col col-md-12">-->
+								<!--								<div class="chart">-->
+								<!--									<div class="chart__header">-->
+								<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
+								<!--										<div>-->
+								<!--											<span class="title">{% translate "System size" %}</span>-->
+								<!--										</div>-->
+								<!--									</div>-->
+								<!--									<div class="chart__plot">-->
+								<!--										<table class="table" id="assetSizes">-->
+								<!--											<thead><tr><th>Asset</th><th>Size</th></thead>-->
+								<!--											<tbody id="General">-->
 
-<!--											</tbody>-->
-<!--											{% for cap in capacities %}-->
-<!--											<tr>-->
-<!--												<td>{{ cap.asset | field_to_title }}</td>-->
-<!--												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>-->
-<!--											</tr>-->
-<!--											{% endfor %}-->
-<!--										</table>-->
-<!--									</div>-->
-<!--								</div>-->
-								{% include "report/table_template.html" with id="OptCaps" title="Installed and optimized capacities" df=opt_caps %}
+								<!--											</tbody>-->
+								<!--											{% for cap in capacities %}-->
+								<!--											<tr>-->
+								<!--												<td>{{ cap.asset | field_to_title }}</td>-->
+								<!--												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>-->
+								<!--											</tr>-->
+								<!--											{% endfor %}-->
+								<!--										</table>-->
+								<!--									</div>-->
+								<!--								</div>-->
+								<!--								{% include "report/table_template.html" with id="OptCaps" title="Installed and optimized capacities" df=opt_caps %}-->
+								<div class="chart">
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_system_size" role="button" aria-expanded="false" aria-controls="container_system_size">
+    Installed and optimized capacities
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_system_size">
+										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+									</div>
+								</div>
 								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 
-							</div>
+								<!--							</div>-->
 
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
+								<!--						</div>-->
+								<!--						<div class="row">-->
+								<!--							<div class="col col-md-12">-->
 								<div class="chart">
-									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}
+									<!--									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}-->
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_system_costs" role="button" aria-expanded="false" aria-controls="container_system_costs">
+    Power supply system costs in first year
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_system_costs">
+										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+									</div>
 								</div>
+								<!--								</div>-->
+								<!--							</div>-->
+								{% include "report/graph_template.html" with id="system_costs" title="Power supply ystem costs in first year" %}
+								<div class="chart">
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_system_kpis" role="button" aria-expanded="false" aria-controls="container_system_kpis">
+    Key system indicators
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_system_kpis">
+										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+									</div>
+								</div>
+								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
 							</div>
 						</div>
-						{% include "report/graph_template.html" with id="system_costs" title="System costs in first year" %}
-
-						{% include "report/kpis_template.html" with table_styles=table_styles %}
-						{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
 						<div class="header-results">
 							<h2 class="title">{% translate "Financial Information" %}</h2>
 						</div>
@@ -249,65 +290,94 @@
 											<img class="img" src="{% static 'assets/cp_nigeria/business_models/' %}{{model_image}}" alt="example_es" style="width:400px;">
 										</div>
 										<div style="padding-left:5rem;padding-right:5rem;padding-bottom:2rem;padding-top:3rem;">
-											<p><h3> Model chosen: {{ model_name }}</h3></p>
+											<p><h3> Model chosen: {{ model_name }}</h3>
 											<p align="justify">{{ model_description }}</p>
 										</div>
 									</div>
 								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col col-md-12">
+								<!--							</div>-->
+								<!--						</div>-->
+								<!--						<div class="row">-->
+								<!--							<div class="col col-md-12">-->
 								<div class="chart">
-<!--									<div class="chart__header">-->
-<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
-<!--										<div>-->
-<!--											<span class="title">{% translate "Financial KPIs" %}</span>-->
-<!--										</div>-->
-<!--									</div>-->
+									<!--									<div class="chart__header">-->
+									<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
+									<!--										<div>-->
+									<!--											<span class="title">{% translate "Financial KPIs" %}</span>-->
+									<!--										</div>-->
+									<!--									</div>-->
 
-<!--									<div class="chart__plot">-->
-<!--										<table class="table">-->
-<!--											<thead><tr><th>Description</th><th>Value</th></tr></thead>-->
-<!--											<tr>-->
-<!--												<td>Tariff:</td>-->
-<!--												<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>-->
-<!--											</tr>-->
-<!--											{% for kpi, value in financial_kpis.items %}-->
-<!--											<tr>-->
-<!--												<td>{{ kpi | safe }}</td>-->
-<!--												<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>-->
-<!--											</tr>-->
-<!--											{% endfor %}-->
-<!--										</table>-->
-<!--									</div>-->
-									{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}
+									<!--									<div class="chart__plot">-->
+									<!--										<table class="table">-->
+									<!--											<thead><tr><th>Description</th><th>Value</th></tr></thead>-->
+									<!--											<tr>-->
+									<!--												<td>Tariff:</td>-->
+									<!--												<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>-->
+									<!--											</tr>-->
+									<!--											{% for kpi, value in financial_kpis.items %}-->
+									<!--											<tr>-->
+									<!--												<td>{{ kpi | safe }}</td>-->
+									<!--												<td>{{ value | floatformat | intcomma}} {{ currency_symbol }} </td>-->
+									<!--											</tr>-->
+									<!--											{% endfor %}-->
+									<!--										</table>-->
+									<!--									</div>-->
+									<!--									{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}-->
+									<div class="chart">
+										<div class="chart__header">
+											<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_financial_kpis" role="button" aria-expanded="false" aria-controls="container_financial_kpis">
+    Key financial parameters
+  </a></span>
+											</div>
+										</div>
+										<div class="chart__plot collapse show" style="overflow: scroll;" id="container_financial_kpis">
+											<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+										</div>
+									</div>
+
+								</div>
+								<!--							</div>-->
+								<!--						</div>-->
+								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
+
+
+								<!--						<div class="row">-->
+								<!--							<div class="col col-md-12">-->
+								<div class="chart">
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_total_capex" role="button" aria-expanded="false" aria-controls="container_total_capex">
+    Total investment costs
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_total_capex">
+										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+									</div>
+								</div>
+								<!--							</div>-->
+
+								<!--									{% include "report/table_template.html" with id="TotalCapex" title="Total investment costs" df=capex_by_category unit=currency_symbol %}-->
+
+								<!--						</div>-->
+								<!--					</div>-->
+								<!--				</div>-->
+								{% include "report/graph_template.html" with id="capex" title="Total investment costs" %}
+
+								<!--						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}-->
+
+
+								<!-- Graphs area  stop -->
+								{% endif %}
+
+								<div style="display:flex;justify-content:center">
+									<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
+										Download report
+									</button>
 								</div>
 							</div>
 						</div>
-						{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-
-
-						<div class="row">
-							<div class="col col-md-12">
-
-									{% include "report/table_template.html" with id="TotalCapex" title="Total investment costs" df=capex_by_category unit=currency_symbol %}
-
-								</div>
-							</div>
-						</div>
-						{% include "report/graph_template.html" with id="capex" title="Total investment costs" %}
-
-						<!--						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}-->
-
-
-					<!-- Graphs area  stop -->
-					{% endif %}
-
-					<div style="display:flex;justify-content:center">
-						<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
-							Download report
-						</button>
 					</div>
 				</div>
 			</div>
@@ -354,6 +424,10 @@
 	const urlVisualizeRevenue = `{% url 'scenario_visualize_revenue' %}` + {{ scen_id }};
 	const urlVisualizeCapex = `{% url 'scenario_visualize_capex' %}` + {{ scen_id }};
 	const urlVisualizeSystemCosts = `{% url 'scenario_visualize_system_costs' %}` + {{ scen_id }};
+	const urlRequestProjectSummary = `{% url 'request_project_summary_table' %}` + {{ scen_id }};
+	const urlRequestCommunitySummary = `{% url 'request_community_summary_table' %}` + {{ scen_id }};
+	const urlRequestSystemSize = `{% url 'request_system_size_table' %}` + {{ scen_id }};
+	const urlRequestFinancialKpis = `{% url 'request_financial_kpi_table' %}` + {{ scen_id }};
 	const urlDownloadReport = `{% url 'ajax_download_report' %}`;
 
 	const srcInfoIcon = `{% static 'assets/icons/i_info.svg' %}`
