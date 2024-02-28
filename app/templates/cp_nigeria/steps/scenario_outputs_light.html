@@ -151,7 +151,7 @@
 							<!--					</div>-->
 							<!--					<div class="row">-->
 							<!--						<div class="col col-md-12">-->
-							<div class="chart">
+							<div class="chart" id="summary">
 								<div class="chart__header">
 									<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_project_summary" role="button" aria-expanded="false" aria-controls="container_project_summary">
@@ -184,7 +184,7 @@
 
 						<div class="row">
 							<div class="col col-md-12">
-								<div class="chart">
+								<div class="chart" id="community">
 									<div class="chart__header">
 										<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_community_summary" role="button" aria-expanded="false" aria-controls="container_project_summary">
@@ -195,7 +195,7 @@
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_community_summary">
 									</div>
 								</div>
-								<div class="chart">
+								<div class="chart" id="capacities-table">
 									<div class="chart__header">
 										<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_system_size" role="button" aria-expanded="false" aria-controls="container_system_size">
@@ -208,7 +208,7 @@
 								</div>
 								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 
-								<div class="chart">
+								<div class="chart" id="system-capex">
 									<!--									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}-->
 									<div class="chart__header">
 										<div>
@@ -221,8 +221,8 @@
 										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
-								{% include "report/graph_template.html" with id="system_costs" title="Power supply ystem costs in first year" %}
-								<div class="chart">
+								{% include "report/graph_template.html" with id="system_costs" title="Power supply system costs in first year" %}
+								<div class="chart" id="system-indicators">
 									<div class="chart__header">
 										<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_system_kpis" role="button" aria-expanded="false" aria-controls="container_system_kpis">
@@ -241,7 +241,7 @@
 						</div>
 						<div class="row">
 							<div class="col col-md-12">
-								<div class="chart">
+								<div class="chart" id="business-model">
 									<div class="chart__header">
 										<div>
 											<span class="title">{% translate "Business model" %}</span>
@@ -282,7 +282,7 @@
 									<!--										</table>-->
 									<!--									</div>-->
 									<!--									{% include "report/table_template.html" with id="FinancialKPIs" title="Financial KPIs" df=comparison_kpi_df unit=currency_symbol %}-->
-									<div class="chart">
+									<div class="chart" id="financial-kpis">
 										<div class="chart__header">
 											<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_financial_kpis" role="button" aria-expanded="false" aria-controls="container_financial_kpis">
@@ -297,7 +297,7 @@
 
 								</div>
 								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-								<div class="chart">
+								<div class="chart" id="investment-costs">
 									<div class="chart__header">
 										<div>
 												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_total_capex" role="button" aria-expanded="false" aria-controls="container_total_capex">
