@@ -1429,9 +1429,11 @@ def cpn_kpi_results(request, proj_id=None):
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
                 scen_values = round(inverter_flow / total_demand * factor, 2)
-
             else:
-                factor = 1.0
+                if project.economic_data.currency_symbol in unit:
+                    factor = project.economic_data.exchange_rate
+                else:
+                    factor = 1.0
                 scen_values = round(scenario_results[kpi] * factor, 2)  # , round(diesel_results[kpi] * factor, 2)]
 
             kpis[kpi] = {
