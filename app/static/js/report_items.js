@@ -550,6 +550,81 @@ function addFinancialPlot(parameters, plot_id="") {
     plotDiv.querySelector('[data-title="Autoscale"]').click()
 }
 
+function addTable(response, table_id="") {
+
+    var data = response.data;
+    var headers = response.headers;
+    const tableLength = Object.keys(headers).length + 1;
+    var parentDiv = document.getElementById(table_id); // Get reference to the table element
+    const table = document.createElement('table');
+    // define table style
+    table.classList.add("table", "table-bordered", "table-hover");
+    const tableHead = document.createElement('thead');
+    tableHead.classList.add("thead-dark")
+    tableHead.style.position = "sticky"
+    tableHead.style.top = "0"
+
+    // create table header
+    const tableHeadContent = document.createElement('tr');
+    var tableHdr = document.createElement('th');
+    tableHeadContent.appendChild(tableHdr);
+    for (const [hdr, value] of Object.entries(headers)) {
+        var tableHdr = document.createElement('th');
+        tableHdr.class = "header_table"
+        // omit unit if undefined
+        if (value.unit == undefined) {
+            unit = " "
+        }
+        else {
+            unit = ' (' + value.unit + ') '
+        }
+        if (value.description == undefined) {
+            description = " "
+            }
+        else {
+            description = value.description
+        }
+        tableHdr.innerHTML = value.verbose + unit + description;
+        tableHeadContent.appendChild(tableHdr);
+        };
+
+    tableHead.appendChild(tableHeadContent);
+    var tableBody = document.createElement('tbody');
+
+    // create table body
+    for (const [param, value] of Object.entries(data)) {
+        const tableDataRow = document.createElement('tr');
+        for (i=0; i < tableLength; ++i) {
+            const tableDataCell = document.createElement('td');
+            // omit unit if undefined
+            if (value.unit == undefined) {
+                unit = " "
+            }
+            else {
+                unit = ' (' + value.unit + ') '
+            }
+            // create the row title with unit and  description (help icon)
+            if (i == 0) {
+                tableDataCell.innerHTML = value.verbose + unit + value.description;
+            }
+            else {
+                if (Array.isArray(value.value)) {
+                tableDataCell.innerHTML = value.value[i-1]
+                } else {
+                tableDataCell.innerHTML = value.value
+                }
+            }
+            tableDataRow.appendChild(tableDataCell);
+            tableBody.appendChild(tableDataRow);
+            }
+        };
+
+    table.appendChild(tableHead);
+    table.appendChild(tableBody);
+    parentDiv.appendChild(table);
+    $('[data-bs-toggle="tooltip"]').tooltip()
+}
+
 function saveToSession(graphId) {
     // convert the plot to base64-encoded image
     const imageDataURL = Plotly.toImage(graphId, {format: 'png', width: 800, height: 500}).then(function(imageUrl) {
