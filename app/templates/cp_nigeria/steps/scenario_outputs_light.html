@@ -147,10 +147,10 @@
 									</div>
 								</div>
 							</div>
-<!--						</div>-->
-<!--					</div>-->
-<!--					<div class="row">-->
-<!--						<div class="col col-md-12">-->
+							<!--						</div>-->
+							<!--					</div>-->
+							<!--					<div class="row">-->
+							<!--						<div class="col col-md-12">-->
 							<div class="chart">
 								<div class="chart__header">
 									<div>
@@ -193,35 +193,8 @@
 										</div>
 									</div>
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_community_summary">
-										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
-								<!--							</div>-->
-								<!--							<div class="row">-->
-								<!--								<div class="col col-md-12">-->
-								<!--								<div class="chart">-->
-								<!--									<div class="chart__header">-->
-								<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
-								<!--										<div>-->
-								<!--											<span class="title">{% translate "System size" %}</span>-->
-								<!--										</div>-->
-								<!--									</div>-->
-								<!--									<div class="chart__plot">-->
-								<!--										<table class="table" id="assetSizes">-->
-								<!--											<thead><tr><th>Asset</th><th>Size</th></thead>-->
-								<!--											<tbody id="General">-->
-
-								<!--											</tbody>-->
-								<!--											{% for cap in capacities %}-->
-								<!--											<tr>-->
-								<!--												<td>{{ cap.asset | field_to_title }}</td>-->
-								<!--												<td>{{ cap.optimized_capacity | floatformat | intcomma }} {{ cap.unit }}</td>-->
-								<!--											</tr>-->
-								<!--											{% endfor %}-->
-								<!--										</table>-->
-								<!--									</div>-->
-								<!--								</div>-->
-								<!--								{% include "report/table_template.html" with id="OptCaps" title="Installed and optimized capacities" df=opt_caps %}-->
 								<div class="chart">
 									<div class="chart__header">
 										<div>
@@ -231,16 +204,10 @@
 										</div>
 									</div>
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_system_size">
-										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
 								{% include "report/graph_template.html" with id="capacities" title="Installed and optimized capacities" %}
 
-								<!--							</div>-->
-
-								<!--						</div>-->
-								<!--						<div class="row">-->
-								<!--							<div class="col col-md-12">-->
 								<div class="chart">
 									<!--									{% include "report/table_template.html" with id="TableFirstYear" title="Power supply system costs in first year" df=system_costs unit=currency_symbol %}-->
 									<div class="chart__header">
@@ -254,8 +221,6 @@
 										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
-								<!--								</div>-->
-								<!--							</div>-->
 								{% include "report/graph_template.html" with id="system_costs" title="Power supply ystem costs in first year" %}
 								<div class="chart">
 									<div class="chart__header">
@@ -266,7 +231,6 @@
 										</div>
 									</div>
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_system_kpis">
-										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
 								{% include "report/graph_template.html" with id="cpn_stacked_timeseries" title="Stacked timeseries" %}
@@ -279,7 +243,6 @@
 							<div class="col col-md-12">
 								<div class="chart">
 									<div class="chart__header">
-										<!-- style="display: flex;gap: 10px;align-items: center;" -->
 										<div>
 											<span class="title">{% translate "Business model" %}</span>
 										</div>
@@ -295,10 +258,6 @@
 										</div>
 									</div>
 								</div>
-								<!--							</div>-->
-								<!--						</div>-->
-								<!--						<div class="row">-->
-								<!--							<div class="col col-md-12">-->
 								<div class="chart">
 									<!--									<div class="chart__header">-->
 									<!--										&lt;!&ndash; style="display: flex;gap: 10px;align-items: center;" &ndash;&gt;-->
@@ -337,13 +296,7 @@
 									</div>
 
 								</div>
-								<!--							</div>-->
-								<!--						</div>-->
 								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
-
-
-								<!--						<div class="row">-->
-								<!--							<div class="col col-md-12">-->
 								<div class="chart">
 									<div class="chart__header">
 										<div>
@@ -353,22 +306,9 @@
 										</div>
 									</div>
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_total_capex">
-										<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
 									</div>
 								</div>
-								<!--							</div>-->
-
-								<!--									{% include "report/table_template.html" with id="TotalCapex" title="Total investment costs" df=capex_by_category unit=currency_symbol %}-->
-
-								<!--						</div>-->
-								<!--					</div>-->
-								<!--				</div>-->
 								{% include "report/graph_template.html" with id="capex" title="Total investment costs" %}
-
-								<!--						{% include "report/graph_template.html" with id="revenue" title="Operating revenues" %}-->
-
-
-								<!-- Graphs area  stop -->
 								{% endif %}
 
 								<div style="display:flex;justify-content:center">
