@@ -1437,7 +1437,7 @@ def cpn_kpi_results(request, proj_id=None):
             }
 
             table_headers = {}
-            headers = ["Value"]
+            headers = [""]
             for header in headers:
                 table_headers[header] = {}
                 table_headers[header]["verbose"] = header
