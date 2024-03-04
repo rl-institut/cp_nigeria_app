@@ -1275,7 +1275,9 @@ def get_costs(simulation, y_variables=None):
         df.drop(df.loc[(df.parent_asset__name == ess)].index, inplace=True)
     df.drop(columns=["parent_asset__name"], inplace=True)
 
-    return df
+    # multiply by exchange rate, since costs are saved in USD in database
+    exchange_rate = simulation.scenario.project.economic_data.exchange_rate
+    return df * exchange_rate
 
 
 def graph_costs(simulations, y_variables=None, arrangement=COSTS_PER_CATEGORY):  # COSTS_PER_CATEGORY

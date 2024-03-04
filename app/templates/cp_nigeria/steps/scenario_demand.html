@@ -36,14 +36,14 @@
 					<div class="accordion-body">
 						<form method="POST" id="consumer-group-form">
 							{% csrf_token %}
-							<p>
-								Edit Solar Home System threshold (advanced)
-								<label class="switch" data-bs-toggle="collapse" data-bs-target="#SHSForm" for="SHSSwitch">
-									<input type="checkbox" id="SHSSwitch">
-									<span class="slider round"></span>
-								</label>
-							</p>
-							<div id="SHSForm" class="collapse" style="width:300px">
+<!--							<p>-->
+<!--								Edit Solar Home System threshold (advanced)-->
+<!--								<label class="switch" data-bs-toggle="collapse" data-bs-target="#SHSForm" for="SHSSwitch">-->
+<!--									<input type="checkbox" id="SHSSwitch">-->
+<!--									<span class="slider round"></span>-->
+<!--								</label>-->
+<!--							</p>-->
+							<div id="SHSForm" style="width:300px">
 								{{ shs_form | crispy }}
 							</div>
 

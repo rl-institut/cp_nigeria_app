@@ -10,8 +10,26 @@ p {
   line-height: $line-height-normal;
 }
 
-h1,
-h2,
+h1 {
+  font-size: 40px;
+  color: $primary-color-1;
+  text-transform: uppercase;
+//   font-weight: 700;
+}
+
+h2 {
+  font-size: 32px;
+  color: $primary-color-1;
+  text-transform: uppercase;
+//   font-weight: 700;
+}
+
 h3 {
-  letter-spacing: $letter-spacing-normal;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+h4 {
+  font-size: 18px;
+  text-transform: uppercase;
 }

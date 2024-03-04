@@ -91,6 +91,12 @@ class EconomicProjectForm(OpenPlanModelForm):
 
 
 class EconomicDataForm(OpenPlanModelForm):
+    capex_fix = forms.FloatField(
+        label=_("Fix project costs"),
+        help_text=_("Expected additional costs, e.g. for project planning, land purchase etc."),
+        validators=[MinValueValidator(0.0)],
+    )
+
     class Meta:
         model = EconomicData
         exclude = ("currency", "duration", "exchange_rate")
@@ -210,7 +216,7 @@ class DieselForm(AssetCreateForm):
         field_order = [field for field in self.fields]
         field_order.insert((field_order.index("opex_var_extra") + 1), "fuel_price_increase")
         ed = EquityData.objects.filter(scenario__project_id=kwargs.get("proj_id"))
-        initial_increase = ed.first().fuel_price_increase if ed.exists() else 0
+        initial_increase = (ed.first().fuel_price_increase * 100) if ed.exists() else 0
         self.fields["fuel_price_increase"] = forms.FloatField(
             help_text=_("Estimated annual fuel price increase (%)"),
             initial=initial_increase,
@@ -232,7 +238,8 @@ class DieselForm(AssetCreateForm):
             self.fields[field].widget = forms.HiddenInput()
             self.initial[field] = value
 
-        qs = Project.objects.filter(id=kwargs.get("proj_id", -1))
+        self.proj_id = kwargs.get("proj_id", -1)
+        qs = Project.objects.filter(id=self.proj_id)
         if qs.exists():
             currency = qs.values_list("economic_data__currency", flat=True).get()
             currency = CURRENCY_SYMBOLS[currency]
@@ -253,16 +260,20 @@ class DieselForm(AssetCreateForm):
     def clean_opex_var_extra(self):
         return self.cleaned_data["opex_var_extra"] / ENERGY_DENSITY_DIESEL
 
-    def save(self, commit=True, *args, **kwargs):
-        kwargs["commit"] = commit
+    def save(self, *args, **kwargs):
         asset = super().save(*args, **kwargs)
-        if commit is True:
-            scenario = Scenario.objects.get(id=asset.scenario_id)
-            equity_data, created = EquityData.objects.get_or_create(
-                scenario=scenario, defaults={"debt_start": scenario.start_date.year, "scenario": scenario}
-            )
-            equity_data.fuel_price_increase = self.cleaned_data["fuel_price_increase"]
-            equity_data.save()
+        qs = Scenario.objects.filter(project__id=self.proj_id)
+        if qs.exists():
+            scenario = qs.first()
+        else:
+            scenario = None
+
+        equity_data, created = EquityData.objects.get_or_create(
+            scenario=scenario,
+            defaults={"debt_start": scenario.start_date.year if scenario is not None else None, "scenario": scenario},
+        )
+        equity_data.fuel_price_increase = self.cleaned_data["fuel_price_increase"] / 100
+        equity_data.save()
 
         return asset
 

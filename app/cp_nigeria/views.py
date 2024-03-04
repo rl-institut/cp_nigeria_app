@@ -1091,55 +1091,6 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         raise PermissionDenied
     user_scenarios = [project.scenario]
 
-    # TODO here workout the results of the scenario and base diesel scenario
-
-    # get community characteristics
-    aggregated_cgs = get_aggregated_cgs(project=project)
-
-    # get optimized capacities
-    qs_res = FancyResults.objects.filter(simulation__scenario=project.scenario)
-    opt_caps = qs_res.filter(
-        optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
-    ).values("asset", "optimized_capacity", "total_flow")
-    # TODO here if there is no simulation or supply setup, tell the user they should define one first
-
-    # get total flows
-    qs_busses = Bus.objects.filter(scenario=project.scenario, type="Electricity")
-    if qs_busses.count() == 1:
-        el_bus = qs_busses.get()
-        unused_pv = qs_res.filter(asset=f"{el_bus.name}_excess")
-
-    elif qs_busses.filter(Q(name__contains="ac") | Q(name__contains="dc")).exists():
-        ac_bus = qs_busses.get(name="ac_bus")
-        dc_bus = qs_busses.get(name="dc_bus")
-        unused_pv = qs_res.filter(asset=f"{dc_bus.name}_excess")
-        unused_diesel = qs_res.filter(asset=f"{ac_bus.name}_excess")
-
-    if unused_pv.exists():
-        unused_pv = unused_pv.get().total_flow
-    else:
-        unused_pv = 0
-
-    if unused_diesel.exists():
-        unused_diesel = unused_diesel.get().total_flow
-    else:
-        unused_diesel = 0
-
-    excess = {"inverter": unused_pv, "diesel_generator": unused_diesel}
-
-    for cap in opt_caps:
-        if cap["asset"] == "pv_plant":
-            cap["total_supply"] = cap["total_flow"] - unused_pv
-        elif cap["asset"] == "diesel_generator":
-            cap["total_supply"] = cap["total_flow"] - unused_diesel
-        else:
-            cap["total_supply"] = cap["total_flow"]
-
-        cap["unit"] = AssetType.objects.get(
-            asset_type__contains="capacity" if cap["asset"] == "battery" else cap["asset"]
-        ).unit
-        cap["supply_percentage"] = cap["total_supply"] / np.sum(get_aggregated_demand(project)) * 100
-
     bm = BusinessModel.objects.get(scenario__project=project)
     model = bm.model_name
     if complex is True:
@@ -1152,7 +1103,10 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     else:
         es_schema_name = None
 
-    # Initialize financial tool to calculate financial flows and test output graphs
+    project_summary = opt_caps = capex_by_category = cgs_df = capex_df = capex_assumptions = senior_debt = None
+    cash_flow = losses = tariff = financial_kpis = comparison_kpi_df = system_costs = replacement_loan_table = None
+    om_costs_over_lifetime = tariff_ngn = None
+
     ft = FinancialTool(project)
     tariff = ft.tariff
 
@@ -1160,82 +1114,90 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     ed.estimated_tariff = tariff
     ed.save()
 
-    capex_df = ft.capex
-    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    if complex is True:
+        # Initialize financial tool to calculate financial flows and test output graphs
+        opt_caps = ft.system_params[ft.system_params["category"].str.contains("capacity")].copy()
+        opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
+        opt_caps = opt_caps.pivot(columns="category", index="supply_source")
+        opt_caps.columns = [col[1] for col in opt_caps.columns]
+        units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
+        opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
 
-    system_costs = ft.system_params[
-        ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
-    ].copy()
-    system_costs.drop(columns=["growth_rate", "label"], inplace=True)
-    system_costs = system_costs.pivot(columns="category", index="supply_source")
-    system_costs.columns = [col[1] for col in system_costs.columns]
+        capex_df = ft.capex
+        capex_by_category = pd.DataFrame(capex_df.groupby("Category")["Total costs [NGN]"].sum())
 
-    capex_assumptions = {}
-    for cat in capex_df.Category.unique():
-        sub_capex = capex_df.loc[capex_df.Category == cat]
-        sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
-        sub_capex.set_index("Description", inplace=True)
-        sub_capex.fillna(0, inplace=True)
-        sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
-            ["Total costs [USD]", "Total costs [NGN]"]
-        ].sum()
-        sub_capex.fillna("", inplace=True)
-        capex_assumptions[cat] = sub_capex
+        system_costs = ft.system_params[
+            ft.system_params["category"].isin(["capex_initial", "opex_total", "fuel_costs_total"])
+        ].copy()
+        system_costs.drop(columns=["growth_rate", "label"], inplace=True)
+        system_costs = system_costs.pivot(columns="category", index="supply_source")
+        system_costs.columns = [col[1] for col in system_costs.columns]
 
-    revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        capex_assumptions = {}
+        for cat in capex_df.Category.unique():
+            sub_capex = capex_df.loc[capex_df.Category == cat]
+            sub_capex = sub_capex[["Description", "Qty", "USD/Unit", "Total costs [USD]", "Total costs [NGN]"]]
+            sub_capex.set_index("Description", inplace=True)
+            sub_capex.fillna(0, inplace=True)
+            sub_capex.loc["Total", ["Total costs [USD]", "Total costs [NGN]"]] = sub_capex[
+                ["Total costs [USD]", "Total costs [NGN]"]
+            ].sum()
+            sub_capex.fillna("", inplace=True)
+            capex_assumptions[cat] = sub_capex
 
-    revenue_flows.index = revenue_flows.index.droplevel(1)
-    losses = ft.losses_over_lifetime(custom_tariff=tariff)
-    senior_debt = ft.initial_loan_table
-    cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
-    cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
-        losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
-    )
-    financial_kpis = ft.financial_kpis
-    # calculate the financial KPIs with 0% grant
-    ft.remove_grant()
-    no_grant_tariff = ft.tariff
-    no_grant_kpis = ft.financial_kpis
+        revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        revenue_flows.index = revenue_flows.index.droplevel(1)
+        losses = ft.losses_over_lifetime(custom_tariff=tariff)
+        replacement_loan_table = ft.replacement_loan_table
+        om_costs_over_lifetime = ft.om_costs_over_lifetime
+        exchange_rate = ft.exchange_rate
+        tariff_ngn = tariff * exchange_rate
+        senior_debt = ft.initial_loan_table
+        cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+        cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
+            losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
+        )
+        financial_kpis = ft.financial_kpis
+        # calculate the financial KPIs with 0% grant
+        ft.remove_grant()
+        no_grant_tariff = ft.tariff
+        no_grant_kpis = ft.financial_kpis
 
-    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
-    comparison_kpi_df.loc["Estimated tariff"] = {
-        "With grant": tariff * ft.exchange_rate,
-        "Without grant": no_grant_tariff * ft.exchange_rate,
-    }
+        comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
+        comparison_kpi_df.loc["Estimated tariff per kWh"] = {
+            "With grant": tariff * ft.exchange_rate,
+            "Without grant": no_grant_tariff * ft.exchange_rate,
+        }
 
-    help_texts = {
-        "Total investment costs": help_icon("All upfront investment costs"),
-        "Total equity": help_icon("Total equity help text"),
-        "Total grant": help_icon("Total grant help text"),
-        "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
-        "Replacement loan amount": help_icon("Amount needed to replace the system components"),
-    }
+        help_texts = {
+            "Total investment costs": help_icon("All upfront investment costs"),
+            "Total equity": help_icon("Total equity help text"),
+            "Total grant": help_icon("Total grant help text"),
+            "Initial loan amount": help_icon("Initial loan needed to cover the initial investment costs"),
+            "Replacement loan amount": help_icon("Amount needed to replace the system components"),
+        }
 
-    for k in help_texts:
-        financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
+        for k in help_texts:
+            financial_kpis[f"{k} {help_texts[k]}"] = financial_kpis.pop(k)
 
-    # dict for community characteristics table
-    aggregated_cgs = get_aggregated_cgs(project)
-    cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
-    cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
-    cgs_df.drop(columns=["supply_source"], inplace=True)
-    cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
-
+        aggregated_cgs = get_aggregated_cgs(project)
+        cgs_df = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+        cgs_df.loc["total mini-grid"] = cgs_df[cgs_df["supply_source"] == "mini_grid"].sum()
+        cgs_df.drop(columns=["supply_source"], inplace=True)
+        cgs_df.rename(columns={"total_demand": "total_demand (kWh)"}, inplace=True)
+        project_summary = get_project_summary(project)
     currency_symbol = project.economic_data.currency_symbol
-
     context = {
         "proj_id": proj_id,
-        "capacities": opt_caps,
-        "excess": excess,
+        "project_summary": project_summary,
+        "opt_caps": opt_caps,
+        "capex_by_category": capex_by_category,
         "scen_id": project.scenario.id,
         "scenario_list": user_scenarios,
         "model_description": B_MODELS[model]["Description"],
         "model_name": B_MODELS[model]["Verbose"],
         "model_image": B_MODELS[model]["Graph"],
         "model_image_resp": B_MODELS[model]["Responsibilities"],
-        # "fate_figs": fate_figs["Net Cash Flow"],
-        # "fate_cum_net_cash_flow": fate_figs["Cummulated Net Cash Flow"],
-        # "diesel_curve_fig": diesel_curve_fig,
         "cgs_df": cgs_df,
         "es_schema_name": es_schema_name,
         "proj_name": project.name,
@@ -1243,14 +1205,12 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "step_list": CPN_STEP_VERBOSE,
         "capex_df": capex_df,
         "capex_assumptions": capex_assumptions,
-        "revenue_flows": revenue_flows,
-        "revenue_flows_html": revenue_flows.to_html(),
         "senior_debt": senior_debt,
-        "remplacement_debt": ft.replacement_loan_table,
+        "replacement_debt": replacement_loan_table,
         "cash_flow": cash_flow,
-        "opex_costs": ft.om_costs_over_lifetime,
+        "opex_costs": om_costs_over_lifetime,
         "losses": losses,
-        "tariff_NGN": tariff * ft.exchange_rate,
+        "tariff_NGN": tariff_ngn,
         "tariff_USD": tariff,
         "financial_kpis": financial_kpis,
         "comparison_kpi_df": comparison_kpi_df,
@@ -1454,7 +1414,7 @@ def cpn_kpi_results(request, proj_id=None):
         # diesel_results = json.loads(KPIScalarResults.objects.get(simulation__scenario__id=230).scalar_values)
         scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
 
-        kpis = []
+        kpis = {}
         qs_inverter = qs_res.filter(optimized_capacity__gt=0, asset="inverter")
         inverter_flow = 0
         if qs_inverter.exists():
@@ -1468,36 +1428,28 @@ def cpn_kpi_results(request, proj_id=None):
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-
-                scen_values = [
-                    round(
-                        inverter_flow / total_demand * factor,
-                        2,
-                    )
-                ]
-
+                scen_values = round(inverter_flow / total_demand * factor, 2)
             else:
-                factor = 1.0
-                scen_values = [round(scenario_results[kpi] * factor, 2)]  # , round(diesel_results[kpi] * factor, 2)]
+                if project.economic_data.currency_symbol in unit:
+                    factor = project.economic_data.exchange_rate
+                else:
+                    factor = 1.0
+                scen_values = round(scenario_results[kpi] * factor, 2)  # , round(diesel_results[kpi] * factor, 2)]
 
-            # if kpi not in kpis_of_comparison_diesel:
-            #     scen_values[1] = ""
+            kpis[kpi] = {
+                "verbose": KPI_PARAMETERS[kpi]["verbose"],
+                "unit": unit,
+                "value": scen_values,
+                "description": help_icon(KPI_PARAMETERS[kpi]["definition"]),
+            }
 
-            kpis.append(
-                {
-                    "name": KPI_PARAMETERS[kpi]["verbose"],
-                    "id": kpi,
-                    "unit": unit,
-                    "scen_values": scen_values,
-                    "description": KPI_PARAMETERS[kpi]["definition"],
-                }
-            )
-        table = {"General": kpis}
+            table_headers = {}
+            headers = ["Value"]
+            for header in headers:
+                table_headers[header] = {}
+                table_headers[header]["verbose"] = header
 
-        # TODO once diesel comparison is enabled replace by "hdrs": ["Indicator", "Scen1", "Diesel only"]
-        answer = JsonResponse({"data": table, "hdrs": ["Indicator", ""]}, status=200, content_type="application/json")
-
-    return answer
+        return JsonResponse({"data": kpis, "headers": table_headers}, status=200, content_type="application/json")
 
 
 @json_view

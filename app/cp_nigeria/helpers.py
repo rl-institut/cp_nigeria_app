@@ -57,6 +57,56 @@ if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_
                     FINANCIAL_PARAMS[label][k] = v
 
 
+def get_project_summary(project):
+    bm_name = BusinessModel.objects.get(scenario=project.scenario).model_name
+    options = Options.objects.get(project=project)
+    ft = FinancialTool(project)
+    inverter_aggregated_flow = ft.system_params.loc[
+        (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
+    ].iloc[0]
+    pv_capacity = ft.system_params.loc[
+        (ft.system_params["category"] == "optimized_capacity") & (ft.system_params["supply_source"] == "pv_plant"),
+        "value",
+    ].iloc[0]
+    genset_capacity = ft.system_params.loc[
+        (ft.system_params["category"] == "optimized_capacity")
+        & (ft.system_params["supply_source"] == "diesel_generator"),
+        "value",
+    ].iloc[0]
+    yearly_production = ft.yearly_production_electricity
+    total_investments = ft.total_capex("NGN")
+    # kwfirm as defined by the ESMAP mini-grids for half a billion report
+    firm_power_output = genset_capacity + (0.25 * pv_capacity)
+    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    investment_per_kwfirm = total_investments / firm_power_output
+    renewable_share = inverter_aggregated_flow / total_demand * 100
+    project_lifetime = project.economic_data.duration
+    bm_name = B_MODELS[bm_name]["Verbose"]
+    tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff
+    if options.community is not None:
+        community_name = options.community.name
+    else:
+        community_name = project.name
+
+    currency_symbol = project.economic_data.currency_symbol
+
+    project_summary = {
+        "Project name": f"{project.name}",
+        # "Community name": f"{community_name}",
+        "Location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
+        "Annual energy production": f"{yearly_production:,.2f} kWh",
+        "Firm power output": f"{firm_power_output:,.2f} kW_firm",
+        "Renewable share": f"{renewable_share:.2f}%",
+        "Indicative total investment costs": f"{total_investments:,.2f} {currency_symbol}",
+        "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
+        "Estimated tariff": f"{tariff:.2f} {currency_symbol}/kWh",
+        "Indicative Project Lifetime": f"{project_lifetime} years",
+        "Aspired business model": f"{bm_name}",
+        "Assumed exchange rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
+    }
+    return project_summary
+
+
 def help_icon(help_text=""):
     return "<a data-bs-toggle='tooltip' title='' data-bs-original-title='{}' data-bs-placement='right'><img style='height: 1.2rem;margin-left:.5rem' alt='info icon' src='{}'></a>".format(
         help_text, static("assets/icons/i_info.svg")
@@ -74,7 +124,6 @@ def get_shs_threshold(shs_tier):
 
 def get_aggregated_cgs(project):
     options = get_object_or_404(Options, project=project)
-    community = options.community
     shs_threshold = options.shs_threshold
 
     # list according to ConsumerType object ids in database
@@ -120,7 +169,7 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
         results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-        results_dict["SHS"]["total_demand"] = round(total_demand_shs, 2)
+        results_dict["SHS"]["total_demand"] = 0
         results_dict["SHS"]["supply_source"] = "shs"
 
     return results_dict
@@ -199,7 +248,7 @@ class ReportHandler:
                 unit = "kW"
                 if asset[0] == "battery":
                     unit = "kWh"
-                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1],1)} {unit}]")
+                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1], 1)} {unit}]")
         if len(system_assets) == 1:
             system_assets = "a {}".format(system_assets[0])
         else:
@@ -319,6 +368,17 @@ class ReportHandler:
 
         # caption text
         paragraph.add_run(f" {caption}")
+
+    def add_dict_as_table(self, dict, caption=None):
+        t = self.doc.add_table(len(dict), 2)
+
+        for i, (key, value) in enumerate(dict.items()):
+            t.cell(i, 0).text = key
+            t.cell(i, 0).paragraphs[0].runs[0].font.bold = True
+            t.cell(i, 1).text = value
+
+        if caption is not None:
+            self.add_caption(t, caption)
 
     def add_df_as_table(self, df, caption=None, index=True):
         if index is True:
@@ -445,18 +505,21 @@ class ReportHandler:
         # Add project details
         self.add_heading("Project details", level=2)
 
-        self.add_table(
-            (
-                ("Project name", "{project_name}"),
-                ("Community name", "{community_name}"),
-                ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
-                ("Annual Energy Production", "{yearly_production} kWh"),
-                ("Indicative system size", "{system_capacity} kW"),
-                ("Indicative total investment costs", "{total_investments} NGN"),
-                ("Designated Distribution Company", "{disco}"),
-                ("Indicative Project Lifetime", "{project_lifetime} years"),
-            )
-        )
+        # self.add_table(
+        #     (
+        #         ("Project name", "{project_name}"),
+        #         ("Community name", "{community_name}"),
+        #         ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
+        #         ("Annual Energy Production", "{yearly_production} kWh"),
+        #         ("Indicative system size", "{system_capacity} kW"),
+        #         ("Indicative total investment costs", "{total_investments} NGN"),
+        #         ("Designated Distribution Company", "{disco}"),
+        #         ("Indicative Project Lifetime", "{project_lifetime} years"),
+        #     )
+        # )
+
+        # Add project summary table
+        self.add_dict_as_table(get_project_summary(self.project))
 
         # Add project summary
         self.add_heading("Project summary", level=2)
@@ -660,24 +723,32 @@ class FinancialTool:
         opt_caps = qs_res.filter(
             optimized_capacity__gt=0, asset__in=["pv_plant", "battery", "inverter", "diesel_generator"], direction="in"
         ).values("asset", "optimized_capacity", "total_flow")
+        qs_installed = Asset.objects.filter(
+            scenario=self.project.scenario,
+            asset_type__asset_type__in=["pv_plant", "capacity", "diesel_generator", "transformer_station_in"],
+        ).values("asset_type__asset_type", "installed_capacity")
+        # inst_caps = {'battery' if item['asset_type__asset_type'] == 'capacity'
+        #              else item['asset_type__asset_type']: item['installed_capacity'] for item in qs_installed}
+        inst_caps = {}
+        for asset in qs_installed:
+            if asset["asset_type__asset_type"] == "capacity":
+                asset_name = "battery"
+            elif asset["asset_type__asset_type"] == "transformer_station_in":
+                asset_name = "inverter"
+            else:
+                asset_name = asset["asset_type__asset_type"]
+            inst_caps[asset_name] = asset["installed_capacity"]
+
         costs = get_costs(self.project.scenario.simulation)
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
-        # TODO this is manually resetting the diesel costs to the original diesel price and not the price used for the
-        #  simulation (which is the average over project lifetime) - discuss the best approach for results display here
-        if self.financial_params["fuel_price_increase"] != 0:
-            costs.at["diesel_generator", "fuel_costs_total"] = self.yearly_increase(
-                costs.loc["diesel_generator", "fuel_costs_total"],
-                self.financial_params["fuel_price_increase"],
-                -int(self.project_duration / 2),
-            )
-
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
-        asset_sizes = pd.DataFrame.from_records(opt_caps)
-        assets = pd.concat([asset_sizes.set_index("asset"), costs], axis=1)
+        asset_sizes = pd.DataFrame.from_records(opt_caps).set_index("asset")
+        asset_sizes["installed_capacity"] = inst_caps
+        assets = pd.concat([asset_sizes, costs], axis=1)
 
         system_params = pd.concat(
             [
@@ -797,7 +868,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Opex"])],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -896,18 +967,21 @@ class FinancialTool:
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
-        shs_costs_om = (
-            self.cost_assumptions.loc[
-                self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
-            ].values[0]
-            * self.exchange_rate
-        )
+
         costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
         costs_om_df = costs_om_df[costs_om_df["value"] != 0]
         om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
 
+        # TODO include these costs in extra information about solar home systems but not general mini-grid
+        # shs_costs_om = (
+        #     self.cost_assumptions.loc[
+        #         self.cost_assumptions["Description"] == "SHS operational expenditures", "USD/Unit"
+        #     ].values[0]
+        #     * self.exchange_rate
+        # )
+
         # multiply the unit prices by the amount
-        om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        # om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
         om_lifetime.loc["opex_total"] = om_lifetime.sum()
@@ -1055,7 +1129,7 @@ class FinancialTool:
 
     def goal_seek_helper(self, custom_tariff):
         cashflow_helper = np.sum(
-            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:4]
+            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:5]
         )
         return cashflow_helper
 
@@ -1083,7 +1157,7 @@ class FinancialTool:
 
     @property
     def tariff(self):
-        x = np.arange(0.1, 0.2, 0.01)
+        x = np.arange(0.2, 0.5, 0.2)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
         # for which the sum of the cashflow for the first 4 years is 0

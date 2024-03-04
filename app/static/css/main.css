@@ -484,10 +484,23 @@ body {
 p {
   line-height: 1.75rem; }
 
-h1,
-h2,
+h1 {
+  font-size: 40px;
+  color: #008753;
+  text-transform: uppercase; }
+
+h2 {
+  font-size: 32px;
+  color: #008753;
+  text-transform: uppercase; }
+
 h3 {
-  letter-spacing: 0.03rem; }
+  font-size: 24px;
+  text-transform: uppercase; }
+
+h4 {
+  font-size: 18px;
+  text-transform: uppercase; }
 
 .cpn-accordion .accordion-button {
   color: #54504C;
@@ -613,6 +626,11 @@ footer button.btn {
   border-radius: 8px;
   letter-spacing: 0.03rem;
   font-weight: 400; }
+  a.btn:focus,
+  button.btn:focus,
+  footer a.btn:focus,
+  footer button.btn:focus {
+    box-shadow: 0 0 0 0.25rem rgba(80, 200, 120, 0.25); }
   a.btn:link, a.btn:hover, a.btn:focus, a.btn:visited, a.btn:active,
   a.btn .icon:hover, a.btn :focus, a.btn :active,
   button.btn:link,
@@ -1748,15 +1766,22 @@ nav.navbar {
   .cpn-business__info .diagramm img {
     max-width: 26rem; }
   .cpn-business__info .advantages {
+    justify-content: center;
     padding-top: 2rem;
     padding-bottom: 2rem; }
     .cpn-business__info .advantages h4 {
       padding: 0.5rem 1rem;
       font-size: 1.25rem; }
-    .cpn-business__info .advantages .pros h4 {
-      border-bottom: 4px solid #1BBB78; }
-    .cpn-business__info .advantages .cons h4 {
-      border-bottom: 4px solid #D73B45; }
+    .cpn-business__info .advantages .pros {
+      background-color: #E2F9F0;
+      margin: 0.5rem 1rem; }
+      .cpn-business__info .advantages .pros h4 {
+        border-bottom: 4px solid #1BBB78; }
+    .cpn-business__info .advantages .cons {
+      background-color: #FFE5E1;
+      margin: 0.5rem 1rem; }
+      .cpn-business__info .advantages .cons h4 {
+        border-bottom: 4px solid #D73B45; }
 
 @use 'variables' as *;
 .dashboard-tabs {
