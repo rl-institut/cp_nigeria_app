@@ -47,6 +47,9 @@ class BMQuestionForm(forms.Form):
             if criteria.score is not None:
                 opts["initial"] = criteria.score
 
+            if criteria.question.sub_question_to is not None:
+                print(criteria.question.sub_question_to)
+                opts["required"] = False  # Set the zero score value
             if alv is not None:
                 try:
                     opts["choices"] = [["", "----------"]] + json.loads(alv)
@@ -57,6 +60,32 @@ class BMQuestionForm(forms.Form):
             else:
                 self.fields[f"criteria_{criteria.question.id}"] = forms.FloatField(**opts)
 
+            # treat sub question differently:
+            # - links to onchange of supra question
+            # - hide the sub question if the supra question's answer is not "Yes"
+            if criteria.question.sub_question_to is not None:
+                disable_sub_question = True
+                supra_question = BMQuestion.objects.get(id=criteria.question.sub_question_to)
+
+                self.fields[f"criteria_{supra_question.id}"].widget.attrs.update(
+                    {"onchange": f"triggerSubQuestion(new_value=this.value,subQuestionId={criteria.question.id})"}
+                )
+
+                supra_answer = qs.get(question=supra_question)
+                if supra_answer.score is not None:
+                    # assuming the subquestion is triggered only if answer to supraquestion is yes
+                    if supra_answer.score == 1.0:
+                        disable_sub_question = False
+                    else:
+                        self.fields[f"criteria_{criteria.question.id}"].initial = ""
+
+                if disable_sub_question is True:
+                    self.fields[f"criteria_{criteria.question.id}"].widget.attrs.update(
+                        {"class": "sub_question disabled"}
+                    )
+                else:
+                    self.fields[f"criteria_{criteria.question.id}"].widget.attrs.update({"class": "sub_question"})
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -65,7 +94,13 @@ class BMQuestionForm(forms.Form):
                 if cleaned_data[record] != "":
                     cleaned_data[record] = float(cleaned_data[record])
                 else:
-                    raise ValidationError("This field cannot be blank")
+                    question = BMQuestion.objects.get(id=int(record.split("_")[1]))
+                    if question.sub_question_to is None:
+                        raise ValidationError("This field cannot be blank")
+                    else:
+                        # assuming the subquestion is triggered only if answer to supraquestion is yes
+                        cleaned_data[record] = 0.0
+
         else:
             raise ValidationError("This form cannot be blank")
         return cleaned_data

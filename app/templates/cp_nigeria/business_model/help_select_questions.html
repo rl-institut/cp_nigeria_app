@@ -15,7 +15,7 @@
 		</h3>
 
 		<div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionQuestions">
-			<div class="accordion-body">
+			<div class="accordion-body cpn-business__questionnaire">
 				{% for field in form %}
 				{% if categories_map|get_index:forloop.counter0|is_current_category:cat %}
 				<div class="form-group{% if field.errors %} invalid{% endif %}">

@@ -66,13 +66,39 @@
 			document.getElementById("businessModelForm").submit()
 		}
 
+		function triggerSubQuestion(new_value,subQuestionId){
+			var subQuestionDiv = document.getElementById("div_id_criteria_" + subQuestionId);
+			// assuming the subquestion is triggered only if answer to supraquestion is yes
+			if(new_value == 1.0) {
+				subQuestionDiv.hidden = false;
+			}
+			else{
+				subQuestionDiv.hidden = true;
+			}
+		}
+
+
 		var helpSelectBMModalDOM = document.getElementById("helpSelectBMModal");
+
 		function showQuestionnaire(){
 			$.ajax({
 				url: `{% url 'help_select_questions' bm.id %}`,
 				success: function (formContent) {
 					helpSelectBMModalDOM.querySelector('form').innerHTML = formContent;
-					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' })
+					showModal(event,modalId='helpSelectBMModal', attrs={'action': `{% url 'help_select_questions' bm.id %}`, 'enctype': 'multipart/form-data' });
+
+					// hide/show subquestion depending on their supra question answers
+					var subQuestions = helpSelectBMModalDOM.querySelectorAll(".sub_question");
+					for(i=0;i<subQuestions.length;++i) {
+						if(subQuestions[i].classList.contains("disabled"))
+						{
+							subQuestions[i].parentNode.parentNode.hidden = true;
+						}
+						else
+						{
+							subQuestions[i].parentNode.parentNode.hidden = false;
+						}
+					}
 				}
 			});
 		}
