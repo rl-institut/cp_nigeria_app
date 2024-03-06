@@ -100,10 +100,12 @@
 													{% endif %}
                         </div>
                         <div class="actions">
+													  {% if project.scenario.simulation %}
 													  <a class="btn btn--action btn--hollow action" href="{% url 'cpn_outputs' proj_id=project.id %}">
                                 <span class="icon icon-results" aria-hidden="true"></span>
                                 {% translate "Results" %}
                             </a>
+													  {% endif %}
 														{% if project.id|has_viewer_edit_rights:request.user %}
 														<a class="btn btn--action action" href="{% url 'cpn_scenario_create' project.pk %}">
                                 <span class="icon icon-edit" aria-hidden="true"></span>
