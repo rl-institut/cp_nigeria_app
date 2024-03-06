@@ -156,7 +156,7 @@ class EquityDataForm(forms.ModelForm):
 
         if not include_shs:
             for field in self.fields:
-                if "shs" in field:
+                if "SHS" in field:
                     self.fields[field].widget = forms.HiddenInput()
                     self.fields[field].required = False
 
