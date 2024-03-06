@@ -7,7 +7,6 @@ import numpy as np
 import plotly.graph_objects as go
 import pandas as pd
 
-
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -15,7 +14,7 @@ from django.db import models
 from projects.models import Scenario
 from django.db.models import Value, Q, F, Case, When
 from django.db.models.functions import Concat, Replace
-from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES, BM_DEFAULT_ECONOMIC_VALUES
+from business_model.helpers import B_MODELS, BM_QUESTIONS_CATEGORIES, BM_DEFAULT_ECONOMIC_VALUES, validate_percent
 
 
 class BusinessModel(models.Model):
@@ -116,34 +115,34 @@ class EquityData(models.Model):
         help_text=_("Assumed yearly increase of fuel price (%)"),
         default=0,
         blank=True,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     grant_share = models.FloatField(
         verbose_name=_("Grant share (%)"),
         help_text=_("Share of grant for assets provided by REA or other institutions"),
         default=0.6,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     debt_share = models.FloatField(
         verbose_name=_("Share of the external debt (%)"),
         default=0,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     debt_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external loan (%)"),
         help_text=_("Assumed interest rate for loan at project start"),
         default=0.11,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     debt_interest_replacement = models.FloatField(
         verbose_name=_("Interest rate for replacement loan (%)"),
         help_text=_("Assumed interest rate for loan used for asset replacement"),
         default=0.11,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     debt_interest_SHS = models.FloatField(
         verbose_name=_("Interest rate for external loan: SHS (%)"),
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
         null=True,
     )
     loan_maturity = models.IntegerField(
@@ -159,11 +158,11 @@ class EquityData(models.Model):
     equity_interest_MG = models.FloatField(
         verbose_name=_("Interest rate for external equity: mini-grid (%)"),
         default=0,
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
     )
     equity_interest_SHS = models.FloatField(
         verbose_name=_("Interest rate for external equity: SHS (%)"),
-        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        validators=[validate_percent],
         null=True,
     )
     equity_community_amount = models.FloatField(

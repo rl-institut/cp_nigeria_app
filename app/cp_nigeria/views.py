@@ -875,16 +875,9 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             # TODO this seems to redirect to wrong page is the form is wrong
             qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
-            try:
-                equity_data = EquityData.objects.get(scenario=scenario)
-                equity_form = EquityDataForm(instance=equity_data, prefix="equity")
-            except EquityData.DoesNotExist:
-                initial = {}
-                if qs_bm.exists():
-                    initial = qs_bm.first().default_economic_model_values
-                equity_form = EquityDataForm(prefix="equity", initial=initial)
-
-            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(with_timeseries=True)
+            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(
+                with_timeseries=True, project=project
+            )
 
             qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
             if qs_pv.exists():

@@ -49,7 +49,6 @@ def help_select_questions(request, bm_id):
             categories_map = [cat for cat in criterias.values_list("category", flat=True)]
             categories = [cat for cat in criterias.values_list("category", flat=True).distinct()]
             # form_html = get_template("cp_nigeria/business_model/help_select_questions.html")
-            # import pdb;pdb.set_trace()
             proj_id = bm.scenario.project.id
             answer = HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, STEP_MAPPING["business_model"]]))
     else:
