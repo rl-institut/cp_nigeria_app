@@ -91,24 +91,16 @@ def get_project_summary(project):
     bm_name = BusinessModel.objects.get(scenario=project.scenario).model_name
     options = Options.objects.get(project=project)
     ft = FinancialTool(project)
-    inverter_aggregated_flow = ft.system_params.loc[
-        (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
-    ].iloc[0]
-    pv_capacity = ft.system_params.loc[
-        (ft.system_params["category"] == "optimized_capacity") & (ft.system_params["supply_source"] == "pv_plant"),
-        "value",
-    ].iloc[0]
-    genset_capacity = ft.system_params.loc[
-        (ft.system_params["category"] == "optimized_capacity")
-        & (ft.system_params["supply_source"] == "diesel_generator"),
-        "value",
-    ].iloc[0]
+    if "inverter" in ft.system_params["supply_source"].tolist():
+        inverter_aggregated_flow = ft.system_params.loc[
+            (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
+        ].iloc[0]
+    else:
+        inverter_aggregated_flow = 0
+
     yearly_production = ft.yearly_production_electricity
     total_investments = ft.total_capex("NGN")
-    # kwfirm as defined by the ESMAP mini-grids for half a billion report
-    firm_power_output = genset_capacity + (0.25 * pv_capacity)
     total_demand, peak_demand, daily_demand = get_demand_indicators(project)
-    investment_per_kwfirm = total_investments / firm_power_output
     renewable_share = inverter_aggregated_flow / total_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]

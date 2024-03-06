@@ -1205,7 +1205,6 @@ def scenario_visualize_capex(request, scen_id):
 def request_project_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     project_summary = get_project_summary(scenario.project)
-    units = {"Description": "some random unit"}
     table_content = {}
     for param in project_summary:
         table_content[param] = set_table_format(param)
