@@ -50,7 +50,7 @@ def signup(request):
                 request,
                 _("Please confirm your email address to complete the registration"),
             )
-            return redirect("home")
+            return redirect("home_cpn")
     else:
         form = CustomUserCreationForm(privacy_url=reverse("privacy"))
     return render(request, "registration/signup.html", {"form": form})
@@ -67,9 +67,7 @@ def activate(request, uidb64, token):
         user.save()
         messages.success(
             request,
-            _(
-                "Thank you for your email confirmation. Now you can log in your account."
-            ),
+            _("Thank you for your email confirmation. Now you can log in your account."),
         )
         return redirect("login")
     else:
