@@ -48,7 +48,6 @@ class BMQuestionForm(forms.Form):
                 opts["initial"] = criteria.score
 
             if criteria.question.sub_question_to is not None:
-                print(criteria.question.sub_question_to)
                 opts["required"] = False  # Set the zero score value
             if alv is not None:
                 try:
