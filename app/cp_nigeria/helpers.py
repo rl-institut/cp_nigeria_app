@@ -104,7 +104,7 @@ def get_project_summary(project):
     renewable_share = inverter_aggregated_flow / total_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
-    tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff
+    tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff * ft.exchange_rate
     if options.community is not None:
         community_name = options.community.name
     else:
