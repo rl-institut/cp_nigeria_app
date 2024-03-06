@@ -66,7 +66,7 @@ import datetime
 import logging
 import traceback
 from projects.helpers import parameters_helper
-from cp_nigeria.helpers import FinancialTool, get_project_summary, get_aggregated_cgs, help_icon
+from cp_nigeria.helpers import FinancialTool, get_project_summary, get_aggregated_cgs, set_table_format, OUTPUT_PARAMS
 from users.templatetags.custom_template_tags import field_to_title
 
 logger = logging.getLogger(__name__)
@@ -961,6 +961,15 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
             )
         )
 
+    descriptions = {
+        param: {"verbose": OUTPUT_PARAMS[param]["verbose"], "description": OUTPUT_PARAMS[param]["description"]}
+        for param in OUTPUT_PARAMS
+        if "_flow" in param
+    }
+
+    for scenario in results_json:
+        scenario["descriptions"] = descriptions
+
     return JsonResponse(results_json, status=200, content_type="application/json", safe=False)
 
 
@@ -987,6 +996,17 @@ def scenario_visualize_capacities(request, proj_id, scen_id=None):
         title="",
         report_item_type=GRAPH_CAPACITIES,
     )
+
+    descriptions = {
+        OUTPUT_PARAMS[param]["verbose"]: OUTPUT_PARAMS[param]["description"]
+        for param in OUTPUT_PARAMS
+        if "_capacity" in param
+    }
+
+    results_json["descriptions"] = descriptions
+    results_json["data"][0]["timestamps"] = [
+        OUTPUT_PARAMS[asset]["verbose"] for asset in results_json["data"][0]["timestamps"]
+    ]
 
     return JsonResponse(results_json, status=200, content_type="application/json", safe=False)
 
@@ -1051,25 +1071,26 @@ def scenario_visualize_cash_flow(request, scen_id):
     revenue = ft.revenue_over_lifetime(custom_tariff)
     costs = ft.om_costs_over_lifetime
 
-    y = [
-        ft.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist(),
-        (initial_loan.loc["Principal"] + replacement_loan.loc["Principal"]).tolist()[1:],
-        (initial_loan.loc["Interest"] + replacement_loan.loc["Interest"]).tolist()[1:],
-        # ft.losses_over_lifetime(custom_tariff).loc["Equity interest"].tolist(),
-        revenue.loc[("Total operating revenues", "operating_revenues_total"), :].tolist(),
-        costs.loc["opex_total"].tolist(),
-    ]
+    graph_contents = {
+        "Cash flow after debt service": {
+            "values": ft.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()
+        },
+        "Debt repayments": {"values": (initial_loan.loc["Principal"] + replacement_loan.loc["Principal"]).tolist()[1:]},
+        "Debt interest payments": {
+            "values": (initial_loan.loc["Interest"] + replacement_loan.loc["Interest"]).tolist()[1:]
+        },
+        "Operating revenues net": {
+            "values": revenue.loc[("Total operating revenues", "operating_revenues_total"), :].tolist()
+        },
+        "Operating expenses": {"values": costs.loc["opex_total"].tolist()},
+    }
 
     x = ft.cash_flow_over_lifetime().columns.tolist()
     title = "Cash flow"
-    names = [
-        "Cash flow after debt service",
-        "Debt repayments",
-        "Debt interest payments",
-        "Operating revenues net",
-        "Operating expenses",
-    ]
-    return JsonResponse({"x": x, "y": y, "names": names, "title": title})
+    for trace in graph_contents:
+        graph_contents[trace]["description"] = OUTPUT_PARAMS[trace]["description"]
+
+    return JsonResponse({"x": x, "graph_contents": graph_contents, "title": title})
 
 
 def scenario_visualize_revenue(request, scen_id):
@@ -1081,15 +1102,20 @@ def scenario_visualize_revenue(request, scen_id):
     revenue = ft.revenue_over_lifetime(custom_tariff)
     costs = ft.om_costs_over_lifetime
 
-    y = [
-        revenue.loc[("Total operating revenues", "operating_revenues_total"), :].tolist(),
-        costs.loc["opex_total"].tolist(),
-    ]
+    graph_contents = {
+        "Operating revenues net": {
+            "values": revenue.loc[("Total operating revenues", "operating_revenues_total"), :].tolist()
+        },
+        "Operating expenses": {"values": costs.loc["opex_total"].tolist()},
+    }
 
     x = revenue.columns.tolist()
-    names = ["Operating revenues net", "Operating expenses"]
+
+    for trace in graph_contents:
+        graph_contents[trace].update(set_table_format(trace))
+
     title = "Operating revenues"
-    return JsonResponse({"x": x, "y": y, "names": names, "title": title})
+    return JsonResponse({"x": x, "graph_contents": graph_contents, "title": title})
 
 
 def scenario_visualize_system_costs(request, scen_id):
@@ -1104,39 +1130,37 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs = system_costs.pivot(columns="category", index="supply_source")
     system_costs.columns = [col[1] for col in system_costs.columns]
 
-    labels = system_costs.columns.tolist()
-    assets = system_costs.index.tolist()
-    costs = system_costs.T.values.tolist()
+    assets = [OUTPUT_PARAMS[asset]["verbose"] for asset in system_costs.index]
+    graph_contents = system_costs.to_dict()
+    descriptions = {
+        OUTPUT_PARAMS[cost_type]["verbose"]: OUTPUT_PARAMS[cost_type]["description"]
+        for cost_type in system_costs.columns
+    }
+    for cost_type in graph_contents:
+        graph_contents[OUTPUT_PARAMS[cost_type]["verbose"]] = graph_contents.pop(cost_type)
 
     # create table from data
     table_content = {}
     headers = system_costs.columns
     system_costs = system_costs.T.to_dict()
-    units = {
-        key: scenario.project.economic_data.currency_symbol
-        for key in ["capex_initial", "opex_total", "fuel_costs_total"]
-    }
+
     for param in system_costs:
-        table_content[param] = {}
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = [f"{round(value, 2):,}" for value in system_costs[param].values()]
-        table_content[param]["description"] = help_icon("placeholder description")
-        table_content[param]["verbose"] = field_to_title(param)
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
 
     table_headers = {}
 
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["verbose"] = field_to_title(header)
-        table_headers[header]["description"] = help_icon("placeholder description")
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
-
-        table_headers[field_to_title(header)] = table_headers.pop(header)
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
-        {"labels": labels, "assets": assets, "costs": costs, "data": table_content, "headers": table_headers}
+        {
+            "assets": assets,
+            "graph_contents": graph_contents,
+            "descriptions": descriptions,
+            "data": table_content,
+            "headers": table_headers,
+        }
     )
 
 
@@ -1146,6 +1170,7 @@ def scenario_visualize_capex(request, scen_id):
     ft = FinancialTool(scenario.project)
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
+    capex_by_category.drop("Opex", inplace=True)
     categories = capex_by_category.index.tolist()
     total_costs = capex_by_category.values.tolist()
 
@@ -1154,27 +1179,24 @@ def scenario_visualize_capex(request, scen_id):
     table_content = {}
 
     headers = ["costs"]
-    units = {key: scenario.project.economic_data.currency_symbol for key in capex_by_category}
+    descriptions = []
     for param in capex_by_category:
-        table_content[param] = {}
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = f"{round(capex_by_category[param], 2):,}"
-        table_content[param]["description"] = help_icon("placeholder description")
-        table_content[param]["verbose"] = field_to_title(param)
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
+        descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["description"] = help_icon("placeholder description")
-        table_headers[header]["verbose"] = field_to_title(header)
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
-
-        table_headers[field_to_title(header)] = table_headers.pop(header)
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
-        {"categories": categories, "costs": total_costs, "data": table_content, "headers": table_headers}
+        {
+            "categories": categories,
+            "costs": total_costs,
+            "chart_descriptions": descriptions,
+            "data": table_content,
+            "headers": table_headers,
+        }
     )
 
 
@@ -1186,20 +1208,13 @@ def request_project_summary_table(request, scen_id):
     units = {"Description": "some random unit"}
     table_content = {}
     for param in project_summary:
-        table_content[param] = {}
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = project_summary[param]
-        table_content[param]["description"] = help_icon("placeholder description")
-        table_content[param]["verbose"] = param
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
 
     table_headers = {}
-    headers = ["value"]
+    headers = [""]
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["verbose"] = field_to_title(header)
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1214,7 +1229,6 @@ def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(scenario.project)
-    units = {"total_demand": "kWh"}
     table_content = {}
     headers = []
 
@@ -1222,20 +1236,12 @@ def request_community_summary_table(request, scen_id):
     for param in aggregated_cgs:
         aggregated_cgs[param].pop("supply_source")
         headers = [key for key in aggregated_cgs[param].keys()]
-        table_content[param] = {}
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = [f"{round(value, 2):,}" for value in aggregated_cgs[param].values()]
-        table_content[param]["description"] = help_icon("placeholder description")
-        table_content[param]["verbose"] = field_to_title(param)
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["description"] = help_icon("placeholder description")
-        table_headers[header]["verbose"] = field_to_title(header)
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1255,8 +1261,7 @@ def request_system_size_table(request, scen_id):
     opt_caps.drop(columns=["growth_rate", "label"], inplace=True)
     opt_caps = opt_caps.pivot(columns="category", index="supply_source")
     opt_caps.columns = [col[1] for col in opt_caps.columns]
-    units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
-    opt_caps.index = [f"{index} ({units[index]})" for index in opt_caps.index]
+    custom_units = {"pv_plant": "kWp", "battery": "kWh", "inverter": "kVA", "diesel_generator": "kW"}
 
     opt_caps = opt_caps.T.to_dict()
     table_content = {}
@@ -1265,20 +1270,13 @@ def request_system_size_table(request, scen_id):
     # create table content from aggregated cgs dictionary
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
-        table_content[param] = {}
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = [f"{round(value, 2):,}" for value in opt_caps[param].values()]
-        table_content[param]["description"] = help_icon("placeholder description")
-        table_content[param]["verbose"] = field_to_title(param)
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
+        table_content[param]["unit"] = custom_units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["description"] = help_icon("placeholder description")
-        table_headers[header]["verbose"] = field_to_title(header)
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1298,45 +1296,24 @@ def request_financial_kpi_table(request, scen_id):
     no_grant_tariff = ft.tariff
     no_grant_kpis = ft.financial_kpis
 
-    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["With grant", "Without grant"]).T
-    comparison_kpi_df.loc["Estimated tariff"] = {
-        "With grant": tariff * ft.exchange_rate,
-        "Without grant": no_grant_tariff * ft.exchange_rate,
+    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["with_grant", "without_grant"]).T
+    comparison_kpi_df.loc["tariff"] = {
+        "with_grant": tariff * ft.exchange_rate,
+        "without_grant": no_grant_tariff * ft.exchange_rate,
     }
 
     comparison_kpis = comparison_kpi_df.T.to_dict()
-    help_texts = {
-        "Total investment costs": "All upfront investment costs",
-        "Total equity": "Total equity help text",
-        "Total grant": "Total grant help text",
-        "Initial loan amount": "Initial loan needed to cover the initial investment costs",
-        "Replacement loan amount": "Amount needed to replace the system components",
-    }
-    units = {key: scenario.project.economic_data.currency_symbol for key in help_texts.keys()}
-    units["Estimated tariff"] = f"{scenario.project.economic_data.currency_symbol}/kWh"
-
     # create table content from aggregated cgs dictionary
     table_content = {}
     headers = ["costs"]
     for param in comparison_kpis:
         headers = [key for key in comparison_kpis[param].keys()]
-        table_content[param] = {}
-        table_content[param]["verbose"] = field_to_title(param)
+        table_content[param] = set_table_format(param)
         table_content[param]["value"] = [f"{round(value, 2):,}" for value in comparison_kpis[param].values()]
-        if help_texts.get(param) is not None:
-            table_content[param]["description"] = help_icon(help_texts[param])
-        else:
-            table_content[param]["description"] = help_icon("placeholder description")
-        if units.get(param) is not None:
-            table_content[param]["unit"] = units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = {}
-        table_headers[header]["verbose"] = field_to_title(header)
-        table_headers[header]["description"] = help_icon("placeholder description")
-        if units.get(header) is not None:
-            table_headers[header]["unit"] = units[header]
+        table_headers[header] = set_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},

@@ -16,7 +16,7 @@ import json
 import csv
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from projects.models import Asset
-from projects.constants import ENERGY_DENSITY_DIESEL
+from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
 from business_model.models import EquityData, BusinessModel
 from business_model.helpers import B_MODELS
 from dashboard.models import FancyResults, KPIScalarResults
@@ -42,19 +42,49 @@ HOUSEHOLD_TIERS = [
     ("very_high", "Very High Consumption Estimate"),
 ]
 
-FINANCIAL_PARAMS = {}
-if os.path.exists(staticfiles_storage.path("financial_tool/financial_parameters_list.csv")) is True:
-    with open(staticfiles_storage.path("financial_tool/financial_parameters_list.csv"), encoding="utf-8") as csvfile:
-        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
-        for i, row in enumerate(csvreader):
-            if i == 0:
-                hdr = row
-                label_idx = hdr.index("label")
-            else:
-                label = row[label_idx]
-                FINANCIAL_PARAMS[label] = {}
-                for k, v in zip(hdr, row):
-                    FINANCIAL_PARAMS[label][k] = v
+
+def csv_to_dict(filepath):
+    # the csv must contain a column named "label" containing the variable name, which will be used to construct the
+    # nested dictionaries
+    dict = {}
+    if os.path.exists(staticfiles_storage.path(filepath)) is True:
+        with open(staticfiles_storage.path(filepath), encoding="utf-8") as csvfile:
+            csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
+            for i, row in enumerate(csvreader):
+                if i == 0:
+                    hdr = row
+                    label_idx = hdr.index("label")
+                else:
+                    label = row[label_idx]
+                    dict[label] = {}
+                    for k, v in zip(hdr, row):
+                        dict[label][k] = v
+
+    return dict
+
+
+FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
+OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
+
+
+def set_table_format(param, from_dict=OUTPUT_PARAMS):
+    param_dict = {}
+    for item in ["verbose", "description", "unit"]:
+        if param == "":
+            param_dict[item] = ""
+            continue
+        if item == "description":
+            dict_value = "" if from_dict[param][item] == "" else help_icon(from_dict[param][item])
+        else:
+            dict_value = from_dict[param][item]
+
+        if "currency" in dict_value:
+            # TODO make this custom depending on project currency
+            dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
+
+        param_dict[item] = dict_value
+
+    return param_dict
 
 
 def get_project_summary(project):
@@ -91,18 +121,18 @@ def get_project_summary(project):
     currency_symbol = project.economic_data.currency_symbol
 
     project_summary = {
-        "Project name": f"{project.name}",
+        "project_name": f"{project.name}",
         # "Community name": f"{community_name}",
-        "Location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
-        "Annual energy production": f"{yearly_production:,.2f} kWh",
-        "Firm power output": f"{firm_power_output:,.2f} kW_firm",
-        "Renewable share": f"{renewable_share:.2f}%",
-        "Indicative total investment costs": f"{total_investments:,.2f} {currency_symbol}",
-        "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
-        "Estimated tariff": f"{tariff:.2f} {currency_symbol}/kWh",
-        "Indicative Project Lifetime": f"{project_lifetime} years",
-        "Aspired business model": f"{bm_name}",
-        "Assumed exchange rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
+        "location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
+        "yearly_production": f"{yearly_production:,.2f} kWh",
+        # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
+        "renewable_share": f"{renewable_share:.2f}%",
+        "total_investments": f"{total_investments:,.2f}",
+        # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
+        "tariff": f"{tariff:.2f} {currency_symbol}/kWh",
+        "project_lifetime": f"{project_lifetime}",
+        "bm_name": f"{bm_name}",
+        "exchange_rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
     }
     return project_summary
 
@@ -135,7 +165,7 @@ def get_aggregated_cgs(project):
     else:
         shs_consumers = None
 
-    results_dict["SHS"] = {}
+    results_dict["shs"] = {}
     total_demand_shs = 0
     total_consumers_shs = 0
 
@@ -168,9 +198,9 @@ def get_aggregated_cgs(project):
             results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
-        results_dict["SHS"]["nr_consumers"] = total_consumers_shs
-        results_dict["SHS"]["total_demand"] = 0
-        results_dict["SHS"]["supply_source"] = "shs"
+        results_dict["shs"]["nr_consumers"] = total_consumers_shs
+        results_dict["shs"]["total_demand"] = 0
+        results_dict["shs"]["supply_source"] = "shs"
 
     return results_dict
 
@@ -289,7 +319,7 @@ class ReportHandler:
             hh_number=self.aggregated_cgs["households"]["nr_consumers"],
             ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
             pf_number=self.aggregated_cgs["public"]["nr_consumers"],
-            shs_number=self.aggregated_cgs["SHS"]["nr_consumers"],
+            shs_number=self.aggregated_cgs["shs"]["nr_consumers"],
             shs_threshold=options.shs_threshold,
             system_assets=system_assets,
             system_capacity="XXXX (???what is the definition of system size???)",
@@ -519,7 +549,12 @@ class ReportHandler:
         # )
 
         # Add project summary table
-        self.add_dict_as_table(get_project_summary(self.project))
+        project_summary = get_project_summary(self.project)
+        summary_table = {}
+        for key in project_summary:
+            summary_table[OUTPUT_PARAMS[key]["verbose"]] = project_summary[key]
+
+        self.add_dict_as_table(summary_table)
 
         # Add project summary
         self.add_heading("Project summary", level=2)
@@ -1024,7 +1059,7 @@ class FinancialTool:
         """
         tenor = self.financial_params["loan_maturity"]
         grace_period = self.financial_params["grace_period"]
-        amount = self.financial_kpis["Initial loan amount"]
+        amount = self.financial_kpis["initial_loan_amount"]
         interest_rate = self.financial_params["debt_interest_MG"]
         debt_start = self.project_start
 
@@ -1042,7 +1077,7 @@ class FinancialTool:
         tenor = self.financial_params["loan_maturity"]
         debt_start = self.project_start + self.loan_assumptions["Cum. replacement years"]
         grace_period = self.financial_params["grace_period"]
-        amount = self.financial_kpis["Replacement loan amount"]
+        amount = self.financial_kpis["replacement_loan_amount"]
         interest_rate = self.financial_params["debt_interest_replacement"]
 
         return self.debt_service_table(
@@ -1146,11 +1181,11 @@ class FinancialTool:
             "Total costs [NGN]"
         ].sum()
         financial_kpis = {
-            "Total investment costs": gross_capex,
-            "Total equity": total_equity,
-            "Total grant": total_grant,
-            "Initial loan amount": initial_amount,
-            "Replacement loan amount": replacement_amount,
+            "total_investments": gross_capex,
+            "total_equity": total_equity,
+            "total_grant": total_grant,
+            "initial_loan_amount": initial_amount,
+            "replacement_loan_amount": replacement_amount,
         }
 
         return financial_kpis
