@@ -1502,7 +1502,7 @@ def save_to_session(request):
         image_url = request.POST.get("image_url")
         request.session[graph_id] = image_url
 
-        return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "saved to session"})
 
 
 @json_view
@@ -1529,11 +1529,12 @@ def ajax_download_report(request):
         # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
 
         # Add images
-        report_imgs = ["cpn_stacked_timeseriesElectricity"]
+        report_imgs = ["cpn_stacked_timeseriesElectricity", "capex", "system_costs", "cash_flow"]
         for img in report_imgs:
-            image_data = request.session.get(img).split(",")[1]
+            image_data = request.session.get(img)
             if image_data:
                 try:
+                    image_data = image_data.split(",")[1]
                     image_bytes = base64.b64decode(image_data)
                     image = io.BytesIO(image_bytes)
 
@@ -1542,8 +1543,13 @@ def ajax_download_report(request):
                 except Exception as e:
                     print(e)
 
+        for table in ["cost_table", "capex_table", "summary_table", "system_table"]:
+            table_data = request.session.get(table)
+            table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
+            implementation_plan.add_df_as_table(table_df)
+        report_name = f"Implementation_Plan_{project.name}"
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response["Content-Disposition"] = "attachment; filename=report.docx"
+        response["Content-Disposition"] = f"attachment; filename={report_name}.docx"
         implementation_plan.save(response)
 
         return response
