@@ -247,6 +247,20 @@ class ReportHandler:
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
 
+        # set style of the document
+        try:
+            # Set font "Lato" for the entire self.doc
+            self.doc.styles["Normal"].font.name = "Lato"
+        except ValueError:
+            # Handle the exception when "Lato" is not available and set a fallback font
+            self.doc.styles["Normal"].font.name = "Arial"
+
+        for style in self.doc.styles:
+            if style.type == 1 and style.name.startswith("Heading"):
+                style.font.color.rgb = RGBColor(0, 135, 83)
+                style.font.bold = False
+
+        # get parameters needed for implementation plan
         options = Options.objects.get(project=project)
         if options.community is not None:
             community_name = options.community.name
@@ -339,15 +353,14 @@ class ReportHandler:
         if self.text_parameters["grid_option"] is False:
             self.text_parameters["grid_option"] = "is not connected to the national grid"
         else:
-            self.text_parameters[
-                "grid_option"
-            ] = "connected to the national grid, however, the electricity level provided is insufficient with an average amount of {grid_connection_hours} hours of electricity per day"
-        for style in self.doc.styles:
-            if style.type == 1 and style.name.startswith("Heading"):
-                style.font.color.rgb = RGBColor(0, 135, 83)
+            self.text_parameters["grid_option"] = (
+                "connected to the national grid, however, the electricity level provided is insufficient with an "
+                "average amount of {grid_connection_hours} hours of electricity per day"
+            )
 
     def add_heading(self, text, level=1):
-        self.doc.add_heading(text.format(**self.text_parameters), level)
+        text = text.format(**self.text_parameters).upper()
+        self.doc.add_heading(text, level)
 
     def add_paragraph(self, text=None, style=None, emph=[]):
         if text is not None:
@@ -364,7 +377,7 @@ class ReportHandler:
             runner.bold = True
         return p
 
-    def add_image(self, path, width=None, height=None):
+    def add_image(self, path, width=Inches(6), height=Inches(2.5)):
         self.doc.add_picture(path, width=width, height=height)
 
     def add_caption(self, tab_or_figure, caption):
@@ -497,12 +510,6 @@ class ReportHandler:
         title = f"Mini-Grid Implementation Plan for {self.project.name}"
         subtitle = f"Date: {date.today().strftime('%d.%m.%Y')}"
         summary = f"{self.project.description}"
-        try:
-            # Set font "Lato" for the entire self.doc
-            self.doc.styles["Normal"].font.name = "Lato"
-        except ValueError:
-            # Handle the exception when "Lato" is not available and set a fallback font
-            self.doc.styles["Normal"].font.name = "Arial"
 
         # Add logo in the right top corner
         header = self.doc.sections[0].header
@@ -551,7 +558,14 @@ class ReportHandler:
         # Add project summary
         self.add_heading("Project summary", level=2)
         self.add_paragraph(
-            "The {community_name} community is a rural community in the {community_region} region. The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a constant and reliable electricity supply, the community is willing to engage with project partners to construct a suitable mini-grid system. The system proposed in this implementation plan, by using the CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would amount to {system_capex:.0f} NGN, while overall Opex amount to {system_opex:.0f} NGN. Regarding the project implementation, an {bm_name} business model approach is suggested."
+            "The {community_name} community is a rural community in the {community_region} region. The community "
+            "comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public "
+            "facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a "
+            "constant and reliable electricity supply, the community is willing to engage with project partners to "
+            "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
+            "CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would "
+            "amount to {system_capex:,.0f} NGN, while overall Opex amount to {system_opex:,.0f} NGN. Regarding the "
+            "project implementation, an {bm_name} business model approach is suggested."
         )
 
         subtitle_run = subtitle_paragraph.add_run(summary)
@@ -601,7 +615,18 @@ class ReportHandler:
 
         self.add_heading("CP-Nigeria Toolbox Context", level=2)
         self.add_paragraph(
-            "This implementation plan is the output of an open source online toolbox LINK. The toolbox has been developed within the frame of the project CP Nigeria: Communities of Practice as driver of a bottom-up energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). \nThe overall objective of the project is to achieve a climate-friendly energy supply through decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must play a driving role. The project therefore aims to create exemplary civil society nuclei ('Communities of Practice') and to empower them to plan and implement DRE projects (local level). Based on this, it works transdisciplinary on improving the political framework for local decentralized RE projects (national level). In this way, civil society can be empowered to implement DRE independently and make a significant contribution to the achievement of climate change mitigation goals.  https://www.international-climate-initiative.com/en/project/communities-of-practice-as-driver-of-a-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/."
+            "This implementation plan is the output of an open source online toolbox LINK. The toolbox has been "
+            "developed within the frame of the project CP Nigeria: Communities of Practice as driver of a bottom-up "
+            "energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). "
+            "\nThe overall objective of the project is to achieve a climate-friendly energy supply through "
+            "decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must "
+            "play a driving role. The project therefore aims to create exemplary civil society nuclei ('Communities "
+            "of Practice') and to empower them to plan and implement DRE projects (local level). Based on this, "
+            "it works transdisciplinary on improving the political framework for local decentralized RE projects ("
+            "national level). In this way, civil society can be empowered to implement DRE independently and make a "
+            "significant contribution to the achievement of climate change mitigation goals.  "
+            "https://www.international-climate-initiative.com/en/project/communities-of-practice-as-driver-of-a"
+            "-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/."
         )
 
         self.add_heading("Methodology", level=2)
@@ -609,10 +634,18 @@ class ReportHandler:
         self.add_heading("Electricity Demand Profile")
 
         self.add_paragraph(
-            "The total electricity demand is estimated by assigning demand profiles to the households, enterprises and public facilities present in the community, based on demand profiles constructed within the PeopleSun project HYPERLINK, which were derived from surveys and appliance audits conducted within electrified communities. As the demand is based on proxy data for already electrified communities, the system doesn't consider any demand increase over project lifetime, but instead assumes that the proposed supply system would be able to satisfy future demand."
+            "The total electricity demand is estimated by assigning demand profiles to the households, enterprises "
+            "and public facilities present in the community, based on demand profiles constructed within the "
+            "PeopleSun project HYPERLINK, which were derived from surveys and appliance audits conducted within "
+            "electrified communities. As the demand is based on proxy data for already electrified communities, "
+            "the system doesn't consider any demand increase over project lifetime, but instead assumes that the "
+            "proposed supply system would be able to satisfy future demand."
         )
         self.add_paragraph(
-            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all households, enterprises, facilities and machinery selected for the simulation."
+            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
+            "facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic "
+            "amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all "
+            "households, enterprises, facilities and machinery selected for the simulation."
         )
 
         self.add_df_as_table(
@@ -624,16 +657,22 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home Systems instead, all households assigned to the {shs_threshold} tier and below are excluded from the supply system optimization. In this case, {shs_number} households were assumed to be served by SHS. "
+            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
+            "Systems instead, all households assigned to the {shs_threshold} tier and below are excluded from the "
+            "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
         )
         self.add_paragraph(
-            "The estimated yearly demand for the {community_name} community is {total_demand:.1f} kWh/year. The average daily demand is {avg_daily_demand:.1f} kWh/day, while the peak demand for the simulated year is {peak_demand:.1f} kW. The demand is divided between households, enterprises and public facilities as follows:"
+            "The estimated yearly demand for the {community_name} community is {total_demand:,.0f} kWh/year. The "
+            "average daily demand is {avg_daily_demand:,.1f} kWh/day, while the peak demand for the simulated year is "
+            "{peak_demand:,.1f} kW. The demand is divided between households, enterprises and public facilities as "
+            "follows:"
         )
 
         self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
 
         self.add_paragraph(
-            "The following graph displays how the cumulated demand is aggregated based on the given community characteristics."
+            "The following graph displays how the cumulated demand is aggregated based on the given community "
+            "characteristics."
         )
 
         # TODO demand graph
@@ -651,7 +690,8 @@ class ReportHandler:
         )
 
         self.add_list(
-            "Show weekly load profile, with different colors for each consumer type (Below show total demand per day, month and year)"
+            "Show weekly load profile, with different colors for each consumer type (Below show total demand per day, "
+            "month and year)"
         )
 
         self.add_list(
@@ -662,29 +702,52 @@ class ReportHandler:
         self.add_image(self.image_path["es_schema"], width=Inches(3))
 
         self.add_paragraph(
-            "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with the following components: {energy_system_components_string}. To optimize the system, the following costs and characteristics were assumed:"
+            "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
+            "the following components: {energy_system_components_string}. To optimize the system, the following costs "
+            "and characteristics were assumed:"
         )
 
         # - {Table with supply system parameters (form contents from page 4)}
 
         self.add_paragraph(
-            "Additionally, a diesel price increase of {diesel_price_increase}% a year on average was assumed. Based on the given system setup, the following asset sizes would be best suited to satisfy the demand:"
+            "Additionally, a diesel price increase of {diesel_price_increase}% a year on average was assumed. Based "
+            "on the given system setup, the following asset sizes would be best suited to satisfy the demand:"
         )
 
         # - {Table with optimized capacities}
 
         self.add_paragraph(
-            "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, with {renewable_share}% of the generation coming from renewable sources. "
+            "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
+            "with {renewable_share}% of the generation coming from renewable sources."
         )
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system amount to {system_capex} NGN. More detailed information regarding investment costs and financial considerations can be found in chapter 5. The operational expenditures for the simulated year amount to {opex_total} NGN, with an estimated annual increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs} NGN are attributed to fuel costs, of which {fuel_consumption_liter}L are consumed during the simulation. The following graph displays the power flow for the system during one week:"
+            "In total, the investment costs for the power supply system amount to {system_capex} NGN. More detailed "
+            "information regarding investment costs and financial considerations can be found in chapter 5. The "
+            "operational expenditures for the simulated year amount to {opex_total} NGN, with an estimated annual "
+            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs} NGN are "
+            "attributed to fuel costs, of which {fuel_consumption_liter}L are consumed during the simulation. The "
+            "following graph displays the power flow for the system during one week:"
         )
 
         self.doc.add_page_break()
         self.add_heading("Business Model of the Mini-grid Project")
         self.add_paragraph(
-            "For the successful implementation of this mini-project, an {bm_name} is proposed. Hence, the {community_name} community aims to create a cooperative (co-op) to lead the development and governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. The co-op together with the undergrid community is responsible for project planning, development, and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, the installation of generation, storage, and distribution assets as well as respective responsibilities related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration of the business model is displayed in the figure below and indicative roles and responsibilities by the co-op and operator company are displayed in the table below. A cooperative-led model is an innovative approach in Nigeria that strongly enhances local awareness and engagement and that can achieve affordable tariffs for customers in the community. Challenging, however, will be the provision of adequate financial resources, therefore the community is now reaching out to commercial and concessional financiers."
+            "For the successful implementation of this mini-project, an {bm_name} is proposed. Hence, "
+            "the {community_name} community aims to create a cooperative (co-op) to lead the development and "
+            "governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. "
+            "The co-op together with the undergrid community is responsible for project planning, development, "
+            "and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible "
+            "for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is "
+            "required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, "
+            "the installation of generation, storage, and distribution assets as well as respective responsibilities "
+            "related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration "
+            "of the business model is displayed in the figure below and indicative roles and responsibilities by the "
+            "co-op and operator company are displayed in the table below. A cooperative-led model is an innovative "
+            "approach in Nigeria that strongly enhances local awareness and engagement and that can achieve "
+            "affordable tariffs for customers in the community. Challenging, however, will be the provision of "
+            "adequate financial resources, therefore the community is now reaching out to commercial and concessional "
+            "financiers."
         )
 
         self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
