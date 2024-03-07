@@ -260,7 +260,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
-    saveToSession(graphId);
+    saveImageToSession(graphId);
 };
 
 function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
@@ -572,6 +572,7 @@ function addFinancialPlot(parameters, plot_id="") {
     Plotly.newPlot(plotDiv, traces, layout, config);
     // simulate a click on autoscale
     plotDiv.querySelector('[data-title="Autoscale"]').click()
+    saveImageToSession(plot_id);
 }
 
 function addTable(response, table_id="") {
@@ -649,8 +650,9 @@ function addTable(response, table_id="") {
     $('[data-bs-toggle="tooltip"]').tooltip()
 }
 
-function saveToSession(graphId) {
+function saveImageToSession(graphId) {
     // convert the plot to base64-encoded image
+    console.log("saving image in plot div " + graphId + "to session")
     const imageDataURL = Plotly.toImage(graphId, {format: 'png', width: 800, height: 500}).then(function(imageUrl) {
         $.ajax({
         headers: {'X-CSRFToken': csrfToken},
@@ -666,6 +668,26 @@ function saveToSession(graphId) {
         });
     });
 };
+
+
+function saveTableToSession(tableId, tableContent) {
+    // convert the plot to base64-encoded image
+    const imageDataURL = Plotly.toImage(graphId, {format: 'png', width: 800, height: 500}).then(function(imageUrl) {
+        $.ajax({
+        headers: {'X-CSRFToken': csrfToken},
+        type: 'POST',
+        url: urlSaveToSession,
+        data: {table_id: graphId, table_content: tableContent},
+        success: function (response) {
+            console.log(response);
+        },
+        error: function (error) {
+            console.error(error);
+        }
+        });
+    });
+};
+
 
 function downloadReport(proj_id) {
         $.ajax({
@@ -717,6 +739,7 @@ function addPieChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
+    saveImageToSession(plot_id);
 }
 
 
@@ -753,6 +776,7 @@ function addCostsChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
+    saveImageToSession(plot_id);
 }
 
 function insertLineBreaks(inputString, charactersPerLine) {

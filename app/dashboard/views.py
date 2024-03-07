@@ -1153,6 +1153,10 @@ def scenario_visualize_system_costs(request, scen_id):
     for header in headers:
         table_headers[header] = set_table_format(header)
 
+    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    request.session["cost_table"] = {"headers": report_headers, "data": report_table}
+
     return JsonResponse(
         {
             "assets": assets,
@@ -1188,6 +1192,10 @@ def scenario_visualize_capex(request, scen_id):
     table_headers = {}
     for header in headers:
         table_headers[header] = set_table_format(header)
+
+    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    request.session["capex_table"] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
         {
@@ -1242,6 +1250,10 @@ def request_community_summary_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_table_format(header)
 
+    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    request.session["summary_table"] = {"headers": report_headers, "data": report_table}
+
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
         status=200,
@@ -1276,6 +1288,10 @@ def request_system_size_table(request, scen_id):
     table_headers = {}
     for header in headers:
         table_headers[header] = set_table_format(header)
+
+    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    request.session["system_table"] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
