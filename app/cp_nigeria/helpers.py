@@ -5,10 +5,7 @@ from docx.shape import InlineShape
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.oxml.ns import nsdecls
-from docx.oxml import parse_xml
+from docx.oxml import parse_xml, OxmlElement, ns
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -413,7 +410,7 @@ class ReportHandler:
         run = paragraph.add_run()
 
         fldChar = OxmlElement("w:fldChar")
-        fldChar.set(qn("w:fldCharType"), "begin")
+        fldChar.set(ns.qn("w:fldCharType"), "begin")
         run._r.append(fldChar)
 
         instrText = OxmlElement("w:instrText")
@@ -421,7 +418,7 @@ class ReportHandler:
         run._r.append(instrText)
 
         fldChar = OxmlElement("w:fldChar")
-        fldChar.set(qn("w:fldCharType"), "end")
+        fldChar.set(ns.qn("w:fldCharType"), "end")
         run._r.append(fldChar)
 
         # caption text
@@ -510,7 +507,7 @@ class ReportHandler:
 
         # Set a cell background (shading) color and align center
         for cell in row_cells:
-            shading_elm = parse_xml(r'<w:shd {} w:fill="E6F7EE"/>'.format(nsdecls("w")))
+            shading_elm = parse_xml(r'<w:shd {} w:fill="E6F7EE"/>'.format(ns.nsdecls("w")))
             cell._tc.get_or_add_tcPr().append(shading_elm)
         p = row_cells[0].paragraphs[0]
         p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -519,7 +516,7 @@ class ReportHandler:
         if total_row.cells[0].text == "Total":
             for cell in total_row.cells:
                 cell.paragraphs[0].runs[0].font.bold = True
-                shading_elm = parse_xml(r'<w:shd {} w:fill="EFEDEB"/>'.format(nsdecls("w")))
+                shading_elm = parse_xml(r'<w:shd {} w:fill="EFEDEB"/>'.format(ns.nsdecls("w")))
                 cell._tc.get_or_add_tcPr().append(shading_elm)
 
         return table
@@ -530,7 +527,7 @@ class ReportHandler:
         row_cells[0].merge(row_cells[-1])
 
         # Set a cell background (shading) color and align center
-        shading_elm = parse_xml(r'<w:shd {} w:fill="008753"/>'.format(nsdecls("w")))
+        shading_elm = parse_xml(r'<w:shd {} w:fill="008753"/>'.format(ns.nsdecls("w")))
         row_cells[0]._tc.get_or_add_tcPr().append(shading_elm)
         row_cells[0].text = title
         p = row_cells[0].paragraphs[0]
@@ -558,6 +555,25 @@ class ReportHandler:
             style = "List Bullet"
         for bullet in list_items:
             self.add_paragraph(bullet, style=style, emph=emph)
+
+    def create_attribute(self, element, name, value):
+        # used for page numbering
+        element.set(ns.qn(name), value)
+
+    def add_page_number(self, run):
+        fldChar1 = OxmlElement("w:fldChar")
+        self.create_attribute(fldChar1, "w:fldCharType", "begin")
+
+        instrText = OxmlElement("w:instrText")
+        self.create_attribute(instrText, "xml:space", "preserve")
+        instrText.text = "PAGE"
+
+        fldChar2 = OxmlElement("w:fldChar")
+        self.create_attribute(fldChar2, "w:fldCharType", "end")
+
+        run._r.append(fldChar1)
+        run._r.append(instrText)
+        run._r.append(fldChar2)
 
     def save(self, response):
         self.doc.save(response)
