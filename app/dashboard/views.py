@@ -1129,6 +1129,7 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs.drop(columns=["growth_rate", "label"], inplace=True)
     system_costs = system_costs.pivot(columns="category", index="supply_source")
     system_costs.columns = [col[1] for col in system_costs.columns]
+    system_costs.loc["total"] = system_costs.sum()
 
     assets = [OUTPUT_PARAMS[asset]["verbose"] for asset in system_costs.index]
     graph_contents = system_costs.to_dict()
@@ -1154,7 +1155,7 @@ def scenario_visualize_system_costs(request, scen_id):
         table_headers[header] = set_table_format(header)
 
     report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    report_headers = [f"{value['verbose']} ({value['unit']})" for header, value in table_headers.items()]
     request.session["cost_table"] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
@@ -1175,6 +1176,7 @@ def scenario_visualize_capex(request, scen_id):
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
     capex_by_category.drop("Opex", inplace=True)
+    capex_by_category.loc["total"] = capex_by_category.sum()
     categories = capex_by_category.index.tolist()
     total_costs = capex_by_category.values.tolist()
 
@@ -1194,7 +1196,7 @@ def scenario_visualize_capex(request, scen_id):
         table_headers[header] = set_table_format(header)
 
     report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    report_headers = [f"{value['verbose']} ({value['unit']})" for header, value in table_headers.items()]
     request.session["capex_table"] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
@@ -1236,9 +1238,11 @@ def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     # dict for community characteristics table
     aggregated_cgs = get_aggregated_cgs(scenario.project)
+    aggregated_cgs = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+    aggregated_cgs.loc["total"] = aggregated_cgs.sum()
+    aggregated_cgs = aggregated_cgs.T.to_dict()
     table_content = {}
     headers = []
-
     # create table content from aggregated cgs dictionary
     for param in aggregated_cgs:
         aggregated_cgs[param].pop("supply_source")
@@ -1278,7 +1282,6 @@ def request_system_size_table(request, scen_id):
     table_content = {}
     headers = []
 
-    # create table content from aggregated cgs dictionary
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
         table_content[param] = set_table_format(param)
@@ -1289,7 +1292,7 @@ def request_system_size_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_table_format(header)
 
-    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_table = {f"{value['verbose']} ({value['unit']})": value["value"] for key, value in table_content.items()}
     report_headers = [value["verbose"] for header, value in table_headers.items()]
     request.session["system_table"] = {"headers": report_headers, "data": report_table}
 
@@ -1318,7 +1321,7 @@ def request_financial_kpi_table(request, scen_id):
     }
 
     comparison_kpis = comparison_kpi_df.T.to_dict()
-    # create table content from aggregated cgs dictionary
+
     table_content = {}
     headers = ["costs"]
     for param in comparison_kpis:

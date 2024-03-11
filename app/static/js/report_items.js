@@ -639,6 +639,14 @@ function addTable(response, table_id="") {
                 tableDataCell.innerHTML = value.value
                 }
             }
+
+            // set bold if row for total
+            if (value.verbose == "Total") {
+                tableDataCell.style.fontWeight = "bold"
+                tableDataCell.style.backgroundColor = "#F9F8F7"
+            }
+
+            // set bold
             tableDataRow.appendChild(tableDataCell);
             tableBody.appendChild(tableDataRow);
             }
@@ -711,9 +719,16 @@ function downloadReport(proj_id) {
 
 function addPieChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
+
+	// delete the last element of all arrays (total - only needed for table, not graph)
+	parameters.categories.pop();
+	parameters.costs.pop();
+	parameters.chart_descriptions.pop();
+
     var labels = parameters.categories;
     var costs = parameters.costs;
-    var descriptions = parameters.chart_descriptions.map(desc => insertLineBreaks(desc, 50))
+    var descriptions = parameters.chart_descriptions
+    descriptions = descriptions.map(desc => insertLineBreaks(desc, 50))
 
     // Create a Plotly Pie Chart
     var data = [{
@@ -745,6 +760,8 @@ function addPieChart(parameters, plot_id="") {
 
 function addCostsChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
+	// remove "Total" from assets
+	parameters.assets.pop();
     var assets = parameters.assets;
     var graphContents = parameters.graph_contents;
     var descriptions = parameters.descriptions;

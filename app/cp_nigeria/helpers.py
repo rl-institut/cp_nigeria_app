@@ -4,6 +4,7 @@ from docx.table import Table
 from docx.shape import InlineShape
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.oxml.ns import nsdecls
@@ -261,6 +262,9 @@ class ReportHandler:
             if style.type == 1 and style.name.startswith("Heading"):
                 style.font.color.rgb = RGBColor(0, 135, 83)
                 style.font.bold = False
+                style.paragraph_format.space_after = Pt(8)
+            elif style.name == "Normal":
+                style.paragraph_format.line_spacing = 1.25
 
         # get parameters needed for implementation plan
         options = Options.objects.get(project=project)
@@ -375,6 +379,7 @@ class ReportHandler:
                 print(text)
                 raise (e)
         p = self.doc.add_paragraph(style=style)
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         runner = p.add_run(text)
         if "italic" in emph:
             runner.italic = True
@@ -446,18 +451,23 @@ class ReportHandler:
             for j in range(df.shape[0]):
                 t.cell(j + 1, 0).text = df.index[j]
                 t.cell(j + 1, 0).paragraphs[0].runs[0].font.bold = True
+                t.cell(j + 1, 0).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
         # add headers
         for j in range(df.shape[1]):
             t.cell(0, j + start_idx).text = df.columns[j]
             t.cell(0, j + start_idx).paragraphs[0].runs[0].font.bold = True
+            t.cell(0, j + start_idx).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
         for i in range(df.shape[0]):
             for j in range(df.shape[-1]):
                 t.cell(i + 1, j + start_idx).text = str(df.values[i, j])
+                t.cell(j + 1, j + start_idx).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
         if caption is not None:
             self.add_caption(t, caption)
+
+        self.set_table_layout(t)
 
     def get_df_from_cache(self, name):
         # the output tables available are "cost_table", "capex_table", "summary_table", "system_table"
@@ -491,6 +501,28 @@ class ReportHandler:
                         raise (e)
                 else:
                     row_cells[i].text = str(item)
+
+        self.set_table_layout(table)
+
+    @staticmethod
+    def set_table_layout(table):
+        row_cells = table.rows[0].cells
+
+        # Set a cell background (shading) color and align center
+        for cell in row_cells:
+            shading_elm = parse_xml(r'<w:shd {} w:fill="E6F7EE"/>'.format(nsdecls("w")))
+            cell._tc.get_or_add_tcPr().append(shading_elm)
+        p = row_cells[0].paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        total_row = table.rows[-1]
+        if total_row.cells[0].text == "Total":
+            for cell in total_row.cells:
+                cell.paragraphs[0].runs[0].font.bold = True
+                shading_elm = parse_xml(r'<w:shd {} w:fill="EFEDEB"/>'.format(nsdecls("w")))
+                cell._tc.get_or_add_tcPr().append(shading_elm)
+
+        return table
 
     def add_financial_table(self, records, title=""):
         table = self.doc.add_table(rows=1, cols=2)
@@ -728,10 +760,10 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system amount to {system_capex:,} NGN. More detailed "
+            "In total, the investment costs for the power supply system amount to {system_capex:,.0} NGN. More detailed "
             "information regarding investment costs and financial considerations can be found in chapter 5. The "
-            "operational expenditures for the simulated year amount to {opex_total:,} NGN, with an estimated annual "
-            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,} NGN are "
+            "operational expenditures for the simulated year amount to {opex_total:,.0} NGN, with an estimated annual "
+            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,.0} NGN are "
             "attributed to fuel costs, of which {fuel_consumption_liter:,.1}L are consumed during the simulation. The "
             "following graph displays the power flow for the system during one week:"
         )

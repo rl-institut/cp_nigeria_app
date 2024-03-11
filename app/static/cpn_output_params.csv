@@ -50,3 +50,4 @@ Logistics,Logistics,"Logistics include costs for shipping, customs clearance cos
 Power supply system,Power supply system,"Purchase cost of the mini-grid assets (PV plant, battery and diesel generator)",
 Taxes,Taxes,"The Value Added Tax (VAT) is a consumption tax paid when goods are purchased and services rendered. VAT applies to all operating revenues of the mini-grid system",
 Transmission network,Transmission network,"Transmission network costs can include costs for the on-site transformer, the substation for grid connection and the grid-connection itself",
+total,Total,,
