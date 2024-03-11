@@ -317,9 +317,21 @@ class ReportHandler:
 
         self.aggregated_cgs = get_aggregated_cgs(self.project)
 
-        self.consumer_groups = ConsumerGroup.objects.filter(project=project).values_list(
-            "consumer_type__consumer_type", "timeseries__name", "number_consumers"
-        )
+        # Make a sentence with existing enterprises and public facilities
+        self.cgs = ConsumerGroup.objects.filter(project=project)
+        cg_sentences = {}
+        for consumer_type in ["Enterprise", "Public facility"]:
+            consumers = []
+            # Get the 4 most commonly found consumers for each consumer type and construct into sentence list
+            most_consumers = (
+                self.cgs.filter(consumer_type__consumer_type=consumer_type)
+                .order_by("-number_consumers")
+                .values_list("timeseries__name", "number_consumers")[:4]
+            )
+            for name, nr_consumers in most_consumers:
+                consumers.append(f"{name.replace('_', ': ')} ({nr_consumers})")
+
+            cg_sentences[consumer_type] = ", ".join(consumers[:-1]) + f" and {consumers[-1]}"
 
         self.text_parameters = dict(
             grid_option=options.main_grid,
@@ -353,8 +365,8 @@ class ReportHandler:
             project_lifetime=self.project.economic_data.duration,
             total_investments=ft.total_capex("NGN"),
             disco="DiscoName",
-            ent_demand_categories="this, that and the other",
-            pf_demand_categories="beep, boop, merp and zorp",
+            ent_demand_categories=cg_sentences["Enterprise"],
+            pf_demand_categories=cg_sentences["Public facility"],
         )
         if self.text_parameters["grid_option"] is False:
             self.text_parameters["grid_option"] = "is not connected to the national grid"
@@ -382,6 +394,8 @@ class ReportHandler:
             runner.italic = True
         if "bold" in emph:
             runner.bold = True
+        if "red" in emph:
+            runner.font.color.rgb = RGBColor(255, 0, 0)
         return p
 
     def add_image(self, path, width=Inches(6)):
@@ -643,7 +657,7 @@ class ReportHandler:
             (
                 "The community is located in the {community_region} region",
                 "The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities.",
-                "Enterprises run by community members operate in the field of {ent_demand_categories}",
+                "Some of the most commonly found enterprises in the community include {ent_demand_categories}",
                 "Existing public facilities include {pf_demand_categories}",
                 "Currently, the community is {grid_option}",
             )
