@@ -789,34 +789,7 @@ class ReportHandler:
 
         self.add_heading("Business Model of the Mini-grid Project")
 
-        if self.bm_name == "isolated_cooperative_led":
-            bm_text = "Something interesting about the bm "
-        elif self.bm_name == "isolated_operator_led":
-            bm_text = "Something interesting about the bm "
-        elif self.bm_name == "interconnected_cooperative_led":
-            bm_text = " Hence, "
-            "the {community_name} community aims to create a cooperative (co-op) to lead the development and "
-            "governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. "
-            "The co-op together with the undergrid community is responsible for project planning, development, "
-            "and capital raising. The co-op owns the mini-grid generation and distribution assets and is responsible "
-            "for customer relations and billing. For certain tasks, however, a mini-grid operator’s experience is "
-            "required, hence, the community seeks to engage a suitable operator company through the co-op. Thereby, "
-            "the installation of generation, storage, and distribution assets as well as respective responsibilities "
-            "related to operation and maintenance are subject to the sub-contract. A simple graphical demonstration "
-            "of the business model is displayed in the figure below and indicative roles and responsibilities by the "
-            "co-op and operator company are displayed in the table below. A cooperative-led model is an innovative "
-            "approach in Nigeria that strongly enhances local awareness and engagement and that can achieve "
-            "affordable tariffs for customers in the community. Challenging, however, will be the provision of "
-            "adequate financial resources, therefore the community is now reaching out to commercial and concessional "
-            "financiers."
-        elif self.bm_name == "interconnected_operator_led":
-            bm_text = "Something interesting about the bm "
-        else:
-            bm_text = " "
-
-        self.add_paragraph(
-            "For the successful implementation of this mini-project, an {bm_name} is proposed." + bm_text
-        )
+        self.add_paragraph(B_MODELS[self.bm_name]["Report"])
 
         self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
         self.add_image(self.image_path["bm_resp"], width=Inches(5))
