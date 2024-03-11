@@ -1330,6 +1330,10 @@ def request_financial_kpi_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_table_format(header)
 
+    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
+    report_headers = [value["verbose"] for header, value in table_headers.items()]
+    request.session["financial_kpi_table"] = {"headers": report_headers, "data": report_table}
+
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
         status=200,

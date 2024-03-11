@@ -1513,43 +1513,12 @@ def ajax_download_report(request):
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         logging.info("downloading implementation plan")
-        implementation_plan = ReportHandler(project)
+        implementation_plan = ReportHandler(project, request.session)
         implementation_plan.create_cover_sheet()
         implementation_plan.create_report_content()
-        # implementation_plan.add_paragraph("For now, this is just a demo")
-        # implementation_plan.add_paragraph("Here are some graphs:")
-        #
-        # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
-        # for graph in os.listdir(graph_dir):
-        #     implementation_plan.add_image(os.path.join(graph_dir, graph))
 
-        # TODO what is the best way to potentially not recalculate all of the information but reuse it
-        # Add tables
-        # aggregated_cgs = get_aggregated_cgs(project)
-        # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
-
-        # Add images
-        report_imgs = ["cpn_stacked_timeseriesElectricity", "capex", "system_costs", "cash_flow"]
-        for img in report_imgs:
-            image_data = request.session.get(img)
-            if image_data:
-                try:
-                    image_data = image_data.split(",")[1]
-                    image_bytes = base64.b64decode(image_data)
-                    image = io.BytesIO(image_bytes)
-
-                    implementation_plan.add_image(image)
-
-                except Exception as e:
-                    print(e)
-
-        for table in ["cost_table", "capex_table", "summary_table", "system_table"]:
-            table_data = request.session.get(table)
-            table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
-            implementation_plan.add_df_as_table(table_df)
-        report_name = f"Implementation_Plan_{project.name}"
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response["Content-Disposition"] = f"attachment; filename={report_name}.docx"
+        response["Content-Disposition"] = f"attachment; filename=report.docx"
         implementation_plan.save(response)
 
         return response
@@ -1560,7 +1529,7 @@ def ajax_download_report(request):
 def download_report(request, proj_id):
     project = get_object_or_404(Project, id=proj_id)
     logging.info("downloading implementation plan")
-    implementation_plan = ReportHandler(project)
+    implementation_plan = ReportHandler(project, request.session)
     implementation_plan.create_cover_sheet()
     implementation_plan.create_report_content()
     # implementation_plan.add_paragraph("For now, this is just a demo")

@@ -14,6 +14,8 @@ import numpy_financial as npf
 import os
 import json
 import csv
+import base64
+import io
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from projects.models import Asset
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
@@ -243,7 +245,7 @@ def get_demand_indicators(project, with_timeseries=False):
 
 
 class ReportHandler:
-    def __init__(self, project):
+    def __init__(self, project, cache_dict):
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
 
@@ -293,6 +295,7 @@ class ReportHandler:
             ).format(*system_assets)
 
         self.project = project
+        self.cache_dict = cache_dict
         self.image_path = dict(
             es_schema="static/assets/gui/" + options.schema_name,
             bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],
@@ -339,7 +342,7 @@ class ReportHandler:
             renewable_share=inverter_aggregated_flow / total_demand,
             lcoe=lcoe,
             opex_total=ft.total_opex(),
-            opex_growth_rate=ft.opex_growth_rate,
+            opex_growth_rate=ft.opex_growth_rate * 100,
             fuel_costs=ft.fuel_costs,
             fuel_consumption_liter=ft.fuel_consumption_liter,
             energy_system_components_string=options.component_list,
@@ -349,6 +352,8 @@ class ReportHandler:
             project_lifetime=self.project.economic_data.duration,
             total_investments=ft.total_capex("NGN"),
             disco="DiscoName",
+            ent_demand_categories="this, that and the other",
+            pf_demand_categories="beep, boop, merp and zorp",
         )
         if self.text_parameters["grid_option"] is False:
             self.text_parameters["grid_option"] = "is not connected to the national grid"
@@ -377,8 +382,21 @@ class ReportHandler:
             runner.bold = True
         return p
 
-    def add_image(self, path, width=Inches(6), height=Inches(2.5)):
-        self.doc.add_picture(path, width=width, height=height)
+    def add_image(self, path, width=Inches(6)):
+        self.doc.add_picture(path, width=width)
+
+    def add_image_from_cache(self, name, width=Inches(6)):
+        # the output images available are "cpn_stacked_timeseriesElectricity", "capex", "system_costs", "cash_flow"
+        image_data = self.cache_dict.get(name)
+        if image_data:
+            try:
+                image_data = image_data.split(",")[1]
+                image_bytes = base64.b64decode(image_data)
+                image = io.BytesIO(image_bytes)
+
+                self.add_image(image, width)
+            except Exception as e:
+                print(e)
 
     def add_caption(self, tab_or_figure, caption):
         target = {Table: "Table", InlineShape: "Figure"}[type(tab_or_figure)]
@@ -440,6 +458,12 @@ class ReportHandler:
 
         if caption is not None:
             self.add_caption(t, caption)
+
+    def get_df_from_cache(self, name):
+        # the output tables available are "cost_table", "capex_table", "summary_table", "system_table"
+        table_data = self.cache_dict.get(name)
+        table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
+        return table_df
 
     def add_table(self, records, columns=None):
         tot_rows = len(records)
@@ -584,6 +608,9 @@ class ReportHandler:
             (
                 "The community is located in the {community_region} region",
                 "The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities.",
+                "Enterprises run by community members operate in the field of {ent_demand_categories}",
+                "Existing public facilities include {pf_demand_categories}",
+                "Currently, the community is {grid_option}",
             )
         )
 
@@ -595,12 +622,12 @@ class ReportHandler:
         # )
 
         self.add_paragraph(
-            "--------------------------------------\nDear toolbox user, it is recommended to enrich this section, by providing the following information",
+            "--------------------------------------\nDear toolbox user, it is recommended to enrich this section by providing the following information",
             emph="italic",
         )
         self.add_list("Description of the current electricity access situation", emph="italic")
         self.add_list(
-            ("Use of diesel generators", "Most common cooking practices", "Use of lightening"),
+            ("Use of diesel generators", "Most common cooking practices", "Use of lighting"),
             style="List Bullet 2",
             emph="italic",
         )
@@ -630,7 +657,6 @@ class ReportHandler:
         )
 
         self.add_heading("Methodology", level=2)
-        self.doc.add_page_break()
         self.add_heading("Electricity Demand Profile")
 
         self.add_paragraph(
@@ -668,7 +694,7 @@ class ReportHandler:
             "follows:"
         )
 
-        self.add_df_as_table(pd.DataFrame(self.aggregated_cgs), caption="Consumer groups")
+        self.add_df_as_table(self.get_df_from_cache("summary_table"))
 
         self.add_paragraph(
             "The following graph displays how the cumulated demand is aggregated based on the given community "
@@ -677,27 +703,6 @@ class ReportHandler:
 
         # TODO demand graph
 
-        self.add_list("Table or graph with")
-        self.add_list(
-            (
-                "Number of total consumers",
-                "Number of each consumer type (public, commercial, household)",
-                "Households: share of each demand TIER",
-                "Enterprises: share of each enterprise type",
-                "Public: share of each public type",
-            ),
-            style="List Bullet 2",
-        )
-
-        self.add_list(
-            "Show weekly load profile, with different colors for each consumer type (Below show total demand per day, "
-            "month and year)"
-        )
-
-        self.add_list(
-            "Demand increase: show growth rate / year in % and absolute yearly demand values in year 5, 10, 15 and 20"
-        )
-        self.doc.add_page_break()
         self.add_heading("Electricity Supply System Size and Composition")
         self.add_image(self.image_path["es_schema"], width=Inches(3))
 
@@ -714,26 +719,34 @@ class ReportHandler:
             "on the given system setup, the following asset sizes would be best suited to satisfy the demand:"
         )
 
-        # - {Table with optimized capacities}
+        # Table with optimized capacities
+        self.add_df_as_table(self.get_df_from_cache("system_table"))
 
         self.add_paragraph(
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
-            "with {renewable_share}% of the generation coming from renewable sources."
+            "with {renewable_share:.2}% of the generation coming from renewable sources."
         )
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system amount to {system_capex} NGN. More detailed "
+            "In total, the investment costs for the power supply system amount to {system_capex:,} NGN. More detailed "
             "information regarding investment costs and financial considerations can be found in chapter 5. The "
-            "operational expenditures for the simulated year amount to {opex_total} NGN, with an estimated annual "
-            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs} NGN are "
-            "attributed to fuel costs, of which {fuel_consumption_liter}L are consumed during the simulation. The "
+            "operational expenditures for the simulated year amount to {opex_total:,} NGN, with an estimated annual "
+            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,} NGN are "
+            "attributed to fuel costs, of which {fuel_consumption_liter:,.1}L are consumed during the simulation. The "
             "following graph displays the power flow for the system during one week:"
         )
 
-        self.doc.add_page_break()
+        # Stacked timeseries graph
+        self.add_image_from_cache("cpn_stacked_timeseriesElectricity")
+
         self.add_heading("Business Model of the Mini-grid Project")
-        self.add_paragraph(
-            "For the successful implementation of this mini-project, an {bm_name} is proposed. Hence, "
+
+        if self.bm_name == "isolated_cooperative_led":
+            bm_text = "Something interesting about the bm "
+        elif self.bm_name == "isolated_operator_led":
+            bm_text = "Something interesting about the bm "
+        elif self.bm_name == "interconnected_cooperative_led":
+            bm_text = " Hence, "
             "the {community_name} community aims to create a cooperative (co-op) to lead the development and "
             "governance of the mini-grid project. In this way, community leadership and local buy-in is strengthened. "
             "The co-op together with the undergrid community is responsible for project planning, development, "
@@ -748,23 +761,77 @@ class ReportHandler:
             "affordable tariffs for customers in the community. Challenging, however, will be the provision of "
             "adequate financial resources, therefore the community is now reaching out to commercial and concessional "
             "financiers."
+        elif self.bm_name == "interconnected_operator_led":
+            bm_text = "Something interesting about the bm "
+        else:
+            bm_text = " "
+
+        self.add_paragraph(
+            "For the successful implementation of this mini-project, an {bm_name} is proposed." + bm_text
         )
 
         self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
         self.add_image(self.image_path["bm_resp"], width=Inches(5))
 
-        self.doc.add_page_break()
         self.add_heading("Financial Analysis")
 
+        self.add_paragraph(
+            "The project includes the following Capital Expenditures (CAPEX) that need to be covered "
+            "during installation of the technical equipment, i.e. the power supply system and the "
+            "transmission network. CAPEX are considered in a conservative way and include also "
+            "logistical costs, an insurance for construction as well as planning and labor costs. VAT is"
+            " considered for non-technical equipment costs only."
+        )
         self.add_heading("Capital Expenditure (CAPEX)", level=2)
-
-        self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
+        self.add_df_as_table(self.get_df_from_cache("capex_table"))
+        self.add_image_from_cache("capex")
+        # self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
 
         self.add_heading("Operational Expenditure (OPEX)", level=2)
-        self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
+        self.add_paragraph(
+            "The project includes the following operational expenditures (OPEX) that need to be covered"
+            " during operation of the power supply system and the transmission network. OPEX are "
+            "considered in a conservative way and include service and maintenance for the mini-grid as "
+            "well as diesel fuel for the diesel-genset."
+        )
+        self.add_df_as_table(self.get_df_from_cache("cost_table"))
+        # self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
 
+        self.add_heading("Key Financial Parameters", level=2)
+        self.add_paragraph(
+            "The following key financial parameters describe the economic viability and profitability "
+            "of the project. They include the resulting community tariff and its annual increase rate "
+            "as well as the internal rate of return (IRR) of the project activity over 10 and 20 years."
+        )
+
+        # TODO add table with tariff and IRR
+
+        self.add_heading("Financing Structure", level=2)
+        self.add_paragraph(
+            "The Financing Structure shows the key financial conditions including the communities’ and "
+            "mini-grid companies’ equity share and interest, the grant and the debt volume and it’s "
+            "average interest rate. For the grant, a deduction of 25% is considered, since typically "
+            "performance based grants are applied that are provided after the implementation of the "
+            "project. Thus a domestic bank loan with approximately 25% interest has to be taken up for "
+            "one year, effectively reducing the volume of the grant by 25%. WACC describes the "
+            "resulting weighted costs of capital for the project activity."
+        )
+
+        # TODO add WACC to table and remove tariff (further up)
+        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"))
+
+        self.add_heading("Cash Flow Diagram", level=2)
+        self.add_paragraph(
+            "The following Figure shows the net cash flow over time, including debt repayment and debt "
+            "interest payments as well as the  comparison of net operating revenues and  operating expenses."
+        )
+        self.add_image_from_cache("cash_flow")
         self.doc.add_page_break()
+        # TODO add next steps
         self.add_heading("Next Steps")
+        self.doc.add_page_break()
+        self.doc.add_heading("Appendix")
+        # TODO add tables about cost assumptions etc here
 
 
 class FinancialTool:
