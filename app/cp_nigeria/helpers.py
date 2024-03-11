@@ -606,19 +606,6 @@ class ReportHandler:
         # Add project details
         self.add_heading("Project details", level=2)
 
-        # self.add_table(
-        #     (
-        #         ("Project name", "{project_name}"),
-        #         ("Community name", "{community_name}"),
-        #         ("Location", "{community_region} ({community_latitude:.4f} / {community_longitude:.4f})"),
-        #         ("Annual Energy Production", "{yearly_production} kWh"),
-        #         ("Indicative system size", "{system_capacity} kW"),
-        #         ("Indicative total investment costs", "{total_investments} NGN"),
-        #         ("Designated Distribution Company", "{disco}"),
-        #         ("Indicative Project Lifetime", "{project_lifetime} years"),
-        #     )
-        # )
-
         # Add project summary table
         project_summary = get_project_summary(self.project)
         summary_table = {}
@@ -635,7 +622,7 @@ class ReportHandler:
             "facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a "
             "constant and reliable electricity supply, the community is willing to engage with project partners to "
             "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
-            "CP-Nigeria Toolbox, has a size of {system_capacity} and comprises {system_assets}. Overall Capex would "
+            "CP-Nigeria Toolbox, comprises {system_assets}. Overall Capex would "
             "amount to {system_capex:,.0f} NGN, while overall Opex amount to {system_opex:,.0f} NGN. Regarding the "
             "project implementation, an {bm_name} business model approach is suggested."
         )
@@ -671,13 +658,13 @@ class ReportHandler:
 
         self.add_paragraph(
             "--------------------------------------\nDear toolbox user, it is recommended to enrich this section by providing the following information",
-            emph="italic",
+            emph=["italic", "red"],
         )
-        self.add_list("Description of the current electricity access situation", emph="italic")
+        self.add_list("Description of the current electricity access situation", emph=["italic", "red"])
         self.add_list(
             ("Use of diesel generators", "Most common cooking practices", "Use of lighting"),
             style="List Bullet 2",
-            emph="italic",
+            emph=["italic", "red"],
         )
         self.add_list(
             (
@@ -685,7 +672,7 @@ class ReportHandler:
                 "Existing community organizational structures, e.g. (energy) cooperatives, associations, committees, etc.",
                 "Skills of community members in the context of energy/electricity supply",
             ),
-            emph="italic",
+            emph=["italic", "red"],
         )
 
         self.add_heading("CP-Nigeria Toolbox Context", level=2)
@@ -720,14 +707,6 @@ class ReportHandler:
             "facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic "
             "amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all "
             "households, enterprises, facilities and machinery selected for the simulation."
-        )
-
-        self.add_df_as_table(
-            pd.DataFrame.from_records(
-                self.consumer_groups, columns=["Consumer Type", "Demand Profile", "Nr. of Consumers"]
-            ),
-            caption="Consumer groups",
-            index=False,
         )
 
         self.add_paragraph(
@@ -776,11 +755,11 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system amount to {system_capex:,.0} NGN. More detailed "
+            "In total, the investment costs for the power supply system amount to {system_capex:,.0f} NGN. More detailed "
             "information regarding investment costs and financial considerations can be found in chapter 5. The "
-            "operational expenditures for the simulated year amount to {opex_total:,.0} NGN, with an estimated annual "
-            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,.0} NGN are "
-            "attributed to fuel costs, of which {fuel_consumption_liter:,.1}L are consumed during the simulation. The "
+            "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN, with an estimated annual "
+            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,.0f} NGN are "
+            "attributed to fuel costs, of which {fuel_consumption_liter:,.1f}L are consumed during the simulation. The "
             "following graph displays the power flow for the system during one week:"
         )
 
