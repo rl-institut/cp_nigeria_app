@@ -6,6 +6,7 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import parse_xml, OxmlElement, ns
+from docx.opc.constants import RELATIONSHIP_TYPE
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -575,6 +576,7 @@ class ReportHandler:
         element.set(ns.qn(name), value)
 
     def add_page_number(self, run):
+        # code from https://stackoverflow.com/questions/56658872/add-page-number-using-python-docx
         fldChar1 = OxmlElement("w:fldChar")
         self.create_attribute(fldChar1, "w:fldCharType", "begin")
 
@@ -588,6 +590,41 @@ class ReportHandler:
         run._r.append(fldChar1)
         run._r.append(instrText)
         run._r.append(fldChar2)
+
+    def add_hyperlink_into_run(self, paragraph, run, url):
+        # code from: https://github.com/python-openxml/python-docx/issues/74#issuecomment-441351994
+        runs = paragraph.runs
+        for i in range(len(runs)):
+            if runs[i].text == run.text:
+                break
+
+        # This gets access to the document.xml.rels file and gets a new relation id value
+        part = paragraph.part
+        r_id = part.relate_to(url, RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+
+        # Create the w:hyperlink tag and add needed values
+        hyperlink = OxmlElement("w:hyperlink")
+        self.create_attribute(hyperlink, "r:id", r_id)
+        hyperlink.append(run._r)
+        paragraph._p.insert(i + 1, hyperlink)
+
+    def add_paragraph_with_hyperlink(self, paragraph_text, hyperlink_text, url):
+        p = self.add_paragraph()
+
+        # Add the first run (text before the hyperlink)
+        p.add_run(paragraph_text.split(hyperlink_text)[0])
+
+        # Add the second run (hyperlink text)
+        run_hyperlink = p.add_run(hyperlink_text)
+        run_hyperlink.bold = True
+        run_hyperlink.underline = True
+        run_hyperlink.font.color.rgb = RGBColor(0, 102, 204)
+        self.add_hyperlink_into_run(p, run_hyperlink, url)
+
+        # Add the third run (text after the hyperlink)
+        p.add_run(paragraph_text.split(hyperlink_text)[1])
+
+        return p
 
     @staticmethod
     def create_community_criteria_list(bmanswer_qs):
@@ -705,33 +742,41 @@ class ReportHandler:
         )
 
         self.add_heading("CP-Nigeria Toolbox Context", level=2)
-        self.add_paragraph(
-            "This implementation plan is the output of an open source online toolbox LINK. The toolbox has been "
+        self.add_paragraph_with_hyperlink(
+            "This implementation plan is the output of an open source online toolbox.",
+            "open source online toolbox.",
+            "https://community-minigrid.ng/en/",
+        )
+        self.add_paragraph_with_hyperlink(
+            "The toolbox has been "
             "developed within the frame of the project CP Nigeria: Communities of Practice as driver of a bottom-up "
             "energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). "
-            "\nThe overall objective of the project is to achieve a climate-friendly energy supply through "
+            "The overall objective of the project is to achieve a climate-friendly energy supply through "
             "decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must "
             "play a driving role. The project therefore aims to create exemplary civil society nuclei ('Communities "
             "of Practice') and to empower them to plan and implement DRE projects (local level). Based on this, "
             "it works transdisciplinary on improving the political framework for local decentralized RE projects ("
             "national level). In this way, civil society can be empowered to implement DRE independently and make a "
-            "significant contribution to the achievement of climate change mitigation goals.  "
-            "https://www.international-climate-initiative.com/en/project/communities-of-practice-as-driver-of-a"
-            "-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/."
+            "significant contribution to the achievement of climate change mitigation goals.  ",
+            "International Climate Initiative (IKI)",
+            "https://www.international-climate-initiative.com/en/project/communities-of-practice-as-driver-of-a-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/",
         )
 
         ### DEMAND SECTION ###
         self.add_heading("Methodology", level=2)
         self.add_heading("Electricity Demand Profile")
 
-        self.add_paragraph(
+        p = self.add_paragraph_with_hyperlink(
             "The total electricity demand is estimated by assigning demand profiles to the households, enterprises "
             "and public facilities present in the community, based on demand profiles constructed within the "
-            "PeopleSun project HYPERLINK, which were derived from surveys and appliance audits conducted within "
+            "PeopleSun project, which were derived from surveys and appliance audits conducted within "
             "electrified communities. As the demand is based on proxy data for already electrified communities, "
             "the system doesn't consider any demand increase over project lifetime, but instead assumes that the "
-            "proposed supply system would be able to satisfy future demand."
+            "proposed supply system would be able to satisfy future demand.",
+            "PeopleSun project",
+            "https://www.peoplesun.org/",
         )
+
         self.add_paragraph(
             "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
             "facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic "
