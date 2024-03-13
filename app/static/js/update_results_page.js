@@ -4,6 +4,18 @@ $(document).ready(function () {
     const scen_id = "{{ scen_id }}";
     const proj_id = "{{ proj_id }}";
 
+    // enable "download report" buttons only when all ajax calls have been completed (since the graphs/tables are saved
+    // in the cache, not all data needed for the report will be ready otherwise)
+    // Increment ongoingRequests count on each AJAX request
+    $(document).ajaxSend(function(event, jqxhr, settings) {
+        updateOngoingRequests(1);
+    });
+
+    // Decrement ongoingRequests count after each AJAX request completes
+    $(document).ajaxComplete(function(event, jqxhr, settings) {
+        updateOngoingRequests(-1);
+    });
+
     // load the scenario plots
     update_kpi_table_style(scen_id);
     scenario_visualize_cpn_stacked_timeseries(scen_id);
@@ -19,6 +31,17 @@ $(document).ready(function () {
     request_financial_kpi_table(scen_id);
 });
 
+// Define a variable to keep track of ongoing requests
+var ongoingRequests = 0;
+
+// Function to update ongoing requests count
+function updateOngoingRequests(delta) {
+    ongoingRequests += delta;
+    // If there are no ongoing requests, enable the button
+    if (ongoingRequests === 0) {
+        $('#download_report_btn').prop('disabled', false);
+    }
+}
 
 // allow to collapse the dataframe tables
 function collapseTables(){
