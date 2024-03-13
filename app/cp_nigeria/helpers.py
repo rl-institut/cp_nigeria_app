@@ -249,6 +249,8 @@ class ReportHandler:
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
         self.table_counter = 0
         self.figure_counter = 0
+        self.heading_counter = 0
+        self.subheading_counter = 0
 
         # set style of the document
         try:
@@ -373,7 +375,30 @@ class ReportHandler:
 
     def add_heading(self, text, level=1):
         text = text.format(**self.text_parameters).upper()
-        self.doc.add_heading(text, level)
+        if level == 1:
+            self.heading_counter += 1
+            self.subheading_counter = 0
+            number = f"{str(self.heading_counter)}. "
+        elif level == 2 and self.heading_counter > 0:
+            self.subheading_counter += 1
+            number = f"{self.heading_counter}.{self.subheading_counter}. "
+        else:
+            number = ""
+
+        h = self.doc.add_heading(number + text, level)
+        h.runs[0].font.color.rgb = RGBColor(0, 135, 83)
+        h.runs[0].font.bold = False
+        h.paragraph_format.space_after = Pt(8)
+
+    def add_table(self, rows, cols, caption=None):
+        self.table_counter += 1
+        t = self.doc.add_table(rows, cols, style="Light Shading")
+        if caption is not None:
+            self.add_caption(t, caption)
+
+        self.doc.paragraphs[-1].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        return t
 
     def add_paragraph(self, text=None, style=None, emph=[]):
         if text is not None:
@@ -631,6 +656,7 @@ class ReportHandler:
         run = header.paragraphs[0].add_run()
         run.add_picture(self.logo_path, width=Pt(70))
         header.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        header.paragraphs[0].paragraph_format.space_after = Pt(3)
 
         # Add title
         title_paragraph = self.add_paragraph()
