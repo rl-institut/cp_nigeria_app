@@ -247,6 +247,8 @@ class ReportHandler:
     def __init__(self, project, cache_dict):
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
+        self.table_counter = 0
+        self.figure_counter = 0
 
         # set style of the document
         try:
@@ -255,14 +257,6 @@ class ReportHandler:
         except ValueError:
             # Handle the exception when "Lato" is not available and set a fallback font
             self.doc.styles["Normal"].font.name = "Arial"
-
-        for style in self.doc.styles:
-            if style.type == 1 and style.name.startswith("Heading"):
-                style.font.color.rgb = RGBColor(0, 135, 83)
-                style.font.bold = False
-                style.paragraph_format.space_after = Pt(8)
-            elif style.name == "Normal":
-                style.paragraph_format.line_spacing = 1.25
 
         # get parameters needed for implementation plan
         options = Options.objects.get(project=project)
@@ -397,12 +391,18 @@ class ReportHandler:
             runner.bold = True
         if "red" in emph:
             runner.font.color.rgb = RGBColor(255, 0, 0)
+
+        p.paragraph_format.line_spacing = 1.25
         return p
 
-    def add_image(self, path, width=Inches(6)):
-        self.doc.add_picture(path, width=width)
+    def add_image(self, path, width=Inches(6), caption=None):
+        self.figure_counter += 1
+        fig = self.doc.add_picture(path, width=width)
+        self.doc.paragraphs[-1].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        if caption is not None:
+            self.add_caption(fig, caption)
 
-    def add_image_from_cache(self, name, width=Inches(6)):
+    def add_image_from_cache(self, name, width=Inches(6), caption=None):
         # the output images available are "cpn_stacked_timeseriesElectricity", "capex", "system_costs", "cash_flow"
         image_data = self.cache_dict.get(name)
         if image_data:
@@ -411,44 +411,48 @@ class ReportHandler:
                 image_bytes = base64.b64decode(image_data)
                 image = io.BytesIO(image_bytes)
 
-                self.add_image(image, width)
+                self.add_image(image, width, caption)
             except Exception as e:
                 print(e)
 
     def add_caption(self, tab_or_figure, caption):
         target = {Table: "Table", InlineShape: "Figure"}[type(tab_or_figure)]
+        if target == "Table":
+            number = self.table_counter
+        else:
+            number = self.figure_counter
 
         # caption type
-        paragraph = self.doc.add_paragraph(f"{target} ", style="Caption")
+        paragraph = self.doc.add_paragraph(style="Caption")
+        paragraph.paragraph_format.space_before = Pt(3)
 
-        # numbering field
-        run = paragraph.add_run()
-
-        fldChar = OxmlElement("w:fldChar")
-        fldChar.set(ns.qn("w:fldCharType"), "begin")
-        run._r.append(fldChar)
-
-        instrText = OxmlElement("w:instrText")
-        instrText.text = f" SEQ {target} \\* ARABIC"
-        run._r.append(instrText)
-
-        fldChar = OxmlElement("w:fldChar")
-        fldChar.set(ns.qn("w:fldCharType"), "end")
-        run._r.append(fldChar)
+        # TODO numbering field: code works but only when manually updating the document, replaced with manual numbering for now (see: https://github.com/python-openxml/python-docx/issues/359)
+        # run = paragraph.add_run()
+        #
+        # fldChar = OxmlElement("w:fldChar")
+        # fldChar.set(ns.qn("w:fldCharType"), "begin")
+        # run._r.append(fldChar)
+        #
+        # instrText = OxmlElement("w:instrText")
+        # instrText.text = f" SEQ {target} \\* ARABIC"
+        # run._r.append(instrText)
+        #
+        # fldChar = OxmlElement("w:fldChar")
+        # fldChar.set(ns.qn("w:fldCharType"), "end")
+        # run._r.append(fldChar)
 
         # caption text
-        paragraph.add_run(f" {caption}")
+        caption_run = paragraph.add_run(f"{target} {number}: {caption}")
+        caption_run.font.color.rgb = RGBColor(0, 135, 83)
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     def add_dict_as_table(self, dict, caption=None):
-        t = self.doc.add_table(len(dict), 2)
+        t = self.doc.add_table(len(dict), 2, caption)
 
         for i, (key, value) in enumerate(dict.items()):
             t.cell(i, 0).text = key
             t.cell(i, 0).paragraphs[0].runs[0].font.bold = True
             t.cell(i, 1).text = value
-
-        if caption is not None:
-            self.add_caption(t, caption)
 
     def add_df_as_table(self, df, caption=None, index=True):
         if index is True:
@@ -456,30 +460,20 @@ class ReportHandler:
         else:
             start_idx = 0
 
-        t = self.doc.add_table(df.shape[0] + 1, df.shape[1] + start_idx)
+        t = self.add_table(df.shape[0] + 1, df.shape[1] + start_idx, caption)
 
         # add indices
         if index is True:
             for j in range(df.shape[0]):
                 t.cell(j + 1, 0).text = df.index[j]
-                t.cell(j + 1, 0).paragraphs[0].runs[0].font.bold = True
-                t.cell(j + 1, 0).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
         # add headers
         for j in range(df.shape[1]):
             t.cell(0, j + start_idx).text = df.columns[j]
-            t.cell(0, j + start_idx).paragraphs[0].runs[0].font.bold = True
-            t.cell(0, j + start_idx).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
         for i in range(df.shape[0]):
             for j in range(df.shape[-1]):
                 t.cell(i + 1, j + start_idx).text = str(df.values[i, j])
-                t.cell(j + 1, j + start_idx).vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-
-        if caption is not None:
-            self.add_caption(t, caption)
-
-        self.set_table_layout(t)
 
     def get_df_from_cache(self, name):
         # the output tables available are "cost_table", "capex_table", "summary_table", "system_table"
@@ -487,14 +481,14 @@ class ReportHandler:
         table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
         return table_df
 
-    def add_table(self, records, columns=None):
+    def add_table_from_records(self, records, columns=None):
         tot_rows = len(records)
         col_spacer = 0
         if columns is not None:
             tot_rows += 1
             col_spacer = 1
 
-        table = self.doc.add_table(rows=tot_rows, cols=len(records[0]))
+        table = self.add_table(rows=tot_rows, cols=len(records[0]))
 
         if columns is not None:
             hdr_cells = table.rows[0].cells
@@ -514,30 +508,8 @@ class ReportHandler:
                 else:
                     row_cells[i].text = str(item)
 
-        self.set_table_layout(table)
-
-    @staticmethod
-    def set_table_layout(table):
-        row_cells = table.rows[0].cells
-
-        # Set a cell background (shading) color and align center
-        for cell in row_cells:
-            shading_elm = parse_xml(r'<w:shd {} w:fill="E6F7EE"/>'.format(ns.nsdecls("w")))
-            cell._tc.get_or_add_tcPr().append(shading_elm)
-        p = row_cells[0].paragraphs[0]
-        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-
-        total_row = table.rows[-1]
-        if total_row.cells[0].text == "Total":
-            for cell in total_row.cells:
-                cell.paragraphs[0].runs[0].font.bold = True
-                shading_elm = parse_xml(r'<w:shd {} w:fill="EFEDEB"/>'.format(ns.nsdecls("w")))
-                cell._tc.get_or_add_tcPr().append(shading_elm)
-
-        return table
-
     def add_financial_table(self, records, title=""):
-        table = self.doc.add_table(rows=1, cols=2)
+        table = self.add_table(rows=1, cols=2)
         row_cells = table.rows[0].cells
         row_cells[0].merge(row_cells[-1])
 
@@ -590,6 +562,12 @@ class ReportHandler:
         run._r.append(fldChar1)
         run._r.append(instrText)
         run._r.append(fldChar2)
+
+    def prevent_table_splitting(self):
+        tags = self.doc.element.xpath("//w:tr[position() < last()]/w:tc/w:p")
+        for tag in tags:
+            ppr = tag.get_or_add_pPr()
+            ppr.keepNext_val = True
 
     def add_hyperlink_into_run(self, paragraph, run, url):
         # code from: https://github.com/python-openxml/python-docx/issues/74#issuecomment-441351994
@@ -796,7 +774,7 @@ class ReportHandler:
             "follows:"
         )
 
-        self.add_df_as_table(self.get_df_from_cache("summary_table"))
+        self.add_df_as_table(self.get_df_from_cache("summary_table"), caption="Community demand summary")
 
         self.add_paragraph(
             "The following graph displays how the cumulated demand is aggregated based on the given community "
@@ -807,7 +785,7 @@ class ReportHandler:
 
         ### ELECTRICITY SYSTEM SECTION ###
         self.add_heading("Electricity Supply System Size and Composition")
-        self.add_image(self.image_path["es_schema"], width=Inches(3))
+        self.add_image(self.image_path["es_schema"], width=Inches(3), caption="System schematic")
 
         self.add_paragraph(
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
@@ -823,7 +801,7 @@ class ReportHandler:
         )
 
         # Table with optimized capacities
-        self.add_df_as_table(self.get_df_from_cache("system_table"))
+        self.add_df_as_table(self.get_df_from_cache("system_table"), caption="System size")
 
         self.add_paragraph(
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
@@ -840,15 +818,15 @@ class ReportHandler:
         )
 
         # Stacked timeseries graph
-        self.add_image_from_cache("cpn_stacked_timeseriesElectricity")
+        self.add_image_from_cache("cpn_stacked_timeseriesElectricity", caption="Power flows during first week")
 
         ### BUSINESS MODEL SECTION ###
         self.add_heading("Business Model of the Mini-grid Project")
 
         self.add_paragraph(B_MODELS[self.bm_name]["Report"])
 
-        self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
-        self.add_image(self.image_path["bm_resp"], width=Inches(5))
+        self.add_image(self.image_path["bm_graph"], width=Inches(2.5), caption="Business model structure")
+        self.add_image(self.image_path["bm_resp"], width=Inches(5), caption="Business model responsibilities")
 
         # Add additional text and criteria bullet points if community-led model is chosen
         if "cooperative" in self.bm_name:
@@ -872,6 +850,7 @@ class ReportHandler:
 
         ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
+        self.add_heading("Capital Expenditure (CAPEX)", level=2)
 
         self.add_paragraph(
             "The project includes the following Capital Expenditures (CAPEX) that need to be covered "
@@ -880,9 +859,9 @@ class ReportHandler:
             "logistical costs, an insurance for construction as well as planning and labor costs. VAT is"
             " considered for non-technical equipment costs only."
         )
-        self.add_heading("Capital Expenditure (CAPEX)", level=2)
-        self.add_df_as_table(self.get_df_from_cache("capex_table"))
-        self.add_image_from_cache("capex")
+
+        self.add_df_as_table(self.get_df_from_cache("capex_table"), caption="Total mini-grid CAPEX")
+        self.add_image_from_cache("capex", caption="Total mini-grid CAPEX")
         # self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
 
         self.add_heading("Operational Expenditure (OPEX)", level=2)
@@ -892,7 +871,7 @@ class ReportHandler:
             "considered in a conservative way and include service and maintenance for the mini-grid as "
             "well as diesel fuel for the diesel-genset."
         )
-        self.add_df_as_table(self.get_df_from_cache("cost_table"))
+        self.add_df_as_table(self.get_df_from_cache("cost_table"), "Total system costs during first year")
         # self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
 
         self.add_heading("Key Financial Parameters", level=2)
@@ -916,14 +895,14 @@ class ReportHandler:
         )
 
         # TODO add WACC to table and remove tariff (further up)
-        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"))
+        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"), caption="Key financial parameters")
 
         self.add_heading("Cash Flow Diagram", level=2)
         self.add_paragraph(
             "The following Figure shows the net cash flow over time, including debt repayment and debt "
             "interest payments as well as the  comparison of net operating revenues and  operating expenses."
         )
-        self.add_image_from_cache("cash_flow")
+        self.add_image_from_cache("cash_flow", caption="Cash flow over project lifetime")
         self.doc.add_page_break()
         # TODO add next steps
         self.add_heading("Next Steps")
