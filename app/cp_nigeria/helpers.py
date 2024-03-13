@@ -17,12 +17,12 @@ import io
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
 from projects.models import Asset
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
-from business_model.models import EquityData, BusinessModel
+from business_model.models import EquityData, BusinessModel, BMAnswer
 from business_model.helpers import B_MODELS
 from dashboard.models import FancyResults, KPIScalarResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
-from django.db.models import Func
+from django.db.models import Func, Sum
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
@@ -43,7 +43,7 @@ HOUSEHOLD_TIERS = [
 ]
 
 
-def csv_to_dict(filepath):
+def csv_to_dict(filepath, label_col="label"):
     # the csv must contain a column named "label" containing the variable name, which will be used to construct the
     # nested dictionaries
     dict = {}
@@ -53,7 +53,7 @@ def csv_to_dict(filepath):
             for i, row in enumerate(csvreader):
                 if i == 0:
                     hdr = row
-                    label_idx = hdr.index("label")
+                    label_idx = hdr.index(label_col)
                 else:
                     label = row[label_idx]
                     dict[label] = {}
@@ -589,6 +589,20 @@ class ReportHandler:
         run._r.append(instrText)
         run._r.append(fldChar2)
 
+    @staticmethod
+    def create_community_criteria_list(bmanswer_qs):
+        BM_CRITERIA = csv_to_dict("business_model_report_criteria.csv", label_col="Criteria")
+        criteria_list = []
+        for criteria, values in BM_CRITERIA.items():
+            total_score_qs = bmanswer_qs.filter(question_id__in=json.loads(values["Questions"])).aggregate(
+                total_score=Sum("score")
+            )
+            score = total_score_qs["total_score"]
+            if score > json.loads(values["Threshold"]):
+                criteria_list.append(criteria)
+
+        return criteria_list
+
     def save(self, response):
         self.doc.save(response)
 
@@ -651,6 +665,7 @@ class ReportHandler:
     def create_report_content(self):
         # TODO implement properly
 
+        ### INTRODUCTION ###
         self.add_heading("Context and Background")
         self.add_heading("Community Background", level=2)
         self.add_list(
@@ -705,6 +720,7 @@ class ReportHandler:
             "-bottom-up-energy-transition-in-nigeria-img2020-i-003-nga-energy-transition-communities-of-practice/."
         )
 
+        ### DEMAND SECTION ###
         self.add_heading("Methodology", level=2)
         self.add_heading("Electricity Demand Profile")
 
@@ -744,6 +760,7 @@ class ReportHandler:
 
         # TODO demand graph
 
+        ### ELECTRICITY SYSTEM SECTION ###
         self.add_heading("Electricity Supply System Size and Composition")
         self.add_image(self.image_path["es_schema"], width=Inches(3))
 
@@ -780,6 +797,7 @@ class ReportHandler:
         # Stacked timeseries graph
         self.add_image_from_cache("cpn_stacked_timeseriesElectricity")
 
+        ### BUSINESS MODEL SECTION ###
         self.add_heading("Business Model of the Mini-grid Project")
 
         self.add_paragraph(B_MODELS[self.bm_name]["Report"])
@@ -787,6 +805,27 @@ class ReportHandler:
         self.add_image(self.image_path["bm_graph"], width=Inches(2.5))
         self.add_image(self.image_path["bm_resp"], width=Inches(5))
 
+        # Add additional text and criteria bullet points if community-led model is chosen
+        if "cooperative" in self.bm_name:
+            self.add_paragraph(
+                "A cooperative-led model is an innovative approach in Nigeria that strongly enhances "
+                "local awareness and engagement. Additionally, the community-led approach can increase "
+                "the affordability of tariffs for customers in the community. It is, however, "
+                "challenging for communities to attract adequate financial resources, therefore, the "
+                "community is reaching out to financial partners."
+            )
+
+            qs = BMAnswer.objects.filter(business_model=self.bm)
+            if qs.exists():
+                self.add_paragraph(
+                    "Within the process of the CP-Nigeria Toolbox, the community’s suitability for following "
+                    "a community-led approach for the realisation of a mini-grid system has been assessed "
+                    "based on several research-based criteria. The community meets the following criteria "
+                    "to choose the cooperative-led model and has in place:"
+                )
+                self.add_list(self.create_community_criteria_list(qs))
+
+        ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
 
         self.add_paragraph(
