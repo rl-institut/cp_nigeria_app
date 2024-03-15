@@ -145,7 +145,7 @@ def get_shs_threshold(shs_tier):
     return excluded_tiers
 
 
-def get_aggregated_cgs(project):
+def get_aggregated_cgs(project, as_ts=False):
     options = get_object_or_404(Options, project=project)
     shs_threshold = options.shs_threshold
 
@@ -164,7 +164,7 @@ def get_aggregated_cgs(project):
 
     for consumer_type_id, consumer_type in enumerate(consumer_types, 1):
         results_dict[consumer_type] = {}
-        total_demand = 0
+        total_demand = np.zeros(8760)
         total_consumers = 0
 
         # filter consumer group objects based on consumer type
@@ -175,11 +175,12 @@ def get_aggregated_cgs(project):
             ts = DemandTimeseries.objects.get(pk=group.timeseries_id)
 
             if shs_consumers is not None and ts.name in shs_consumers:
-                total_demand_shs += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
+                total_demand_shs += np.array(ts.get_values_with_unit("kWh")) * group.number_consumers
+                total_demand_shs += np.array(ts.get_values_with_unit("kWh")) * group.number_consumers
                 total_consumers_shs += group.number_consumers
 
             else:
-                total_demand += sum(np.array(ts.get_values_with_unit("kWh")) * group.number_consumers)
+                total_demand += np.array(ts.get_values_with_unit("kWh")) * group.number_consumers
                 total_consumers += group.number_consumers
 
         # add machinery total demand to enterprise demand without increasing nr. of consumers
@@ -188,12 +189,17 @@ def get_aggregated_cgs(project):
             results_dict["enterprises"]["total_demand"] += total_demand
         else:
             results_dict[consumer_type]["nr_consumers"] = total_consumers
-            results_dict[consumer_type]["total_demand"] = round(total_demand, 2)
+            results_dict[consumer_type]["total_demand"] = total_demand
             results_dict[consumer_type]["supply_source"] = "mini_grid"
 
+        # TODO SHS demand is manually reset at 0 now to avoid CAPEX and OPEX costs - find better solution
         results_dict["shs"]["nr_consumers"] = total_consumers_shs
-        results_dict["shs"]["total_demand"] = 0
+        results_dict["shs"]["total_demand"] = np.zeros(8760)
         results_dict["shs"]["supply_source"] = "shs"
+
+    if as_ts is not True:
+        for key in results_dict:
+            results_dict[key]["total_demand"] = round(sum(results_dict[key]["total_demand"]), 0)
 
     return results_dict
 
@@ -339,7 +345,7 @@ class ReportHandler:
             ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
             pf_number=self.aggregated_cgs["public"]["nr_consumers"],
             shs_number=self.aggregated_cgs["shs"]["nr_consumers"],
-            shs_threshold=options.shs_threshold,
+            shs_threshold=dict(HOUSEHOLD_TIERS)[options.shs_threshold],
             system_assets=system_assets,
             system_capacity="XXXX (???what is the definition of system size???)",
             system_capex=ft.total_capex("NGN"),
@@ -803,11 +809,13 @@ class ReportHandler:
         self.add_df_as_table(self.get_df_from_cache("summary_table"), caption="Community demand summary")
 
         self.add_paragraph(
-            "The following graph displays how the cumulated demand is aggregated based on the given community "
+            "The total estimated yearly demand for the {community_name} community is {total_demand:,.0f} kWh/year. The "
+            "average daily demand is {avg_daily_demand:,.1f} kWh/day, while the peak demand for the simulated year is "
+            "{peak_demand:,.1f} kW. The following graph displays how the cumulated demand is aggregated based on the given community "
             "characteristics."
         )
 
-        # TODO demand graph
+        self.add_image_from_cache("mini_grid_demand", caption="Total mini-grid demand")
 
         ### ELECTRICITY SYSTEM SECTION ###
         self.add_heading("Electricity Supply System Size and Composition")

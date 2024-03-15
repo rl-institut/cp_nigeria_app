@@ -232,6 +232,7 @@ function request_community_summary_table(scen_id=""){
             url: urlRequestCommunitySummary,
             type: "GET",
             success: async (response) => {
+                await addDemandGraph(response.graph_data, plot_id="mini_grid_demand")
                 await addTable(response, table_id="container_community_summary")
             },
             error: function(xhr, errmsg, err) {

@@ -1237,7 +1237,17 @@ def request_project_summary_table(request, scen_id):
 def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     # dict for community characteristics table
-    aggregated_cgs = get_aggregated_cgs(scenario.project)
+    graph_data = {"labels": [], "values": [], "descriptions": []}
+    aggregated_cgs = get_aggregated_cgs(scenario.project, as_ts=True)
+    graph_data["timestamps"] = scenario.get_timestamps(json_format=True)
+
+    for key in aggregated_cgs:
+        if key != "shs":
+            graph_data["labels"].append(OUTPUT_PARAMS[key]["verbose"])
+            graph_data["descriptions"].append(OUTPUT_PARAMS[key]["description"])
+            graph_data["values"].append(aggregated_cgs[key]["total_demand"].tolist())
+        aggregated_cgs[key]["total_demand"] = round(sum(aggregated_cgs[key]["total_demand"]),0)
+
     aggregated_cgs = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
     aggregated_cgs.loc["total"] = aggregated_cgs.sum()
     aggregated_cgs = aggregated_cgs.T.to_dict()
@@ -1259,7 +1269,7 @@ def request_community_summary_table(request, scen_id):
     request.session["summary_table"] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
-        {"data": table_content, "headers": table_headers},
+        {"graph_data": graph_data, "data": table_content, "headers": table_headers},
         status=200,
         content_type="application/json",
     )

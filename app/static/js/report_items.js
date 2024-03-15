@@ -217,7 +217,7 @@ function addTimeseriesGraph(graphId, parameters){
 function addStackedTimeseriesGraph(graphId, parameters){
     // prepare stacked traces in plotly format
     var data = []
-    var colorway = ["B2916C", "991818", "008753", "F2CD5D", "824670", "778EB5", "E86C1A"]
+    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
     var descriptions = parameters.descriptions
     if(parameters.data.length == 1){
         compare = false;
@@ -574,6 +574,40 @@ function addFinancialPlot(parameters, plot_id="") {
     plotDiv.querySelector('[data-title="Autoscale"]').click()
     saveImageToSession(plot_id);
 }
+
+function addDemandGraph(parameters, plot_id="") {
+    var plotDiv = document.getElementById(plot_id);
+    var labels = parameters.labels;
+    var values = parameters.values;
+    var descriptions = parameters.descriptions;
+    var traces = []
+    // Generating traces for the stacked graph
+    for (i=0; i < labels.length; ++i) {
+        var trace = {
+            x: parameters.timestamps,
+            y: values[i],
+            type: 'scatter',
+            mode: 'lines',
+            fill: 'tonexty',
+            stackgroup: 'one',
+            name: labels[i],
+        };
+        traces.push(trace)
+    };
+
+    // Setting layout options
+    var layout = {
+        xaxis: { title: 'Time', range: [parameters.timestamps[0], parameters.timestamps[168]] },
+        yaxis: { title: 'Demand [kWh]' },
+        colorway: colorway,
+    };
+
+    // Plotting the stacked graph
+    Plotly.newPlot(plot_id, traces, layout);
+
+    saveImageToSession(plot_id);
+}
+
 
 function addTable(response, table_id="") {
 
