@@ -117,10 +117,10 @@ def get_project_summary(project):
         "project_name": f"{project.name}",
         # "Community name": f"{community_name}",
         "location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
-        "yearly_production": f"{yearly_production:,.2f} kWh",
+        "yearly_production": f"{yearly_production:,.0f} kWh",
         # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "renewable_share": f"{renewable_share:.2f}%",
-        "total_investments": f"{total_investments:,.2f}",
+        "total_investments": f"{total_investments:,.0f} {currency_symbol}",
         # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
         "tariff": f"{tariff:.2f} {currency_symbol}/kWh",
         "project_lifetime": f"{project_lifetime}",
@@ -355,7 +355,7 @@ class ReportHandler:
             avg_daily_demand=daily_demand,
             peak_demand=peak_demand,
             diesel_price_increase=ft.financial_params["fuel_price_increase"],
-            renewable_share=inverter_aggregated_flow / total_demand,
+            renewable_share=(inverter_aggregated_flow / total_demand) * 100,
             lcoe=lcoe,
             opex_total=ft.total_opex(),
             opex_growth_rate=ft.opex_growth_rate * 100,
@@ -374,10 +374,9 @@ class ReportHandler:
         if self.text_parameters["grid_option"] is False:
             self.text_parameters["grid_option"] = "is not connected to the national grid"
         else:
-            self.text_parameters["grid_option"] = (
-                "connected to the national grid, however, the electricity level provided is insufficient with an "
-                "average amount of {grid_connection_hours} hours of electricity per day"
-            )
+            self.text_parameters[
+                "grid_option"
+            ] = "connected to the national grid, however, the electricity level provided is insufficient"
 
     def add_heading(self, text, level=1):
         text = text.format(**self.text_parameters).upper()
@@ -668,14 +667,14 @@ class ReportHandler:
         title_paragraph = self.add_paragraph()
         title_paragraph.paragraph_format.space_before = Inches(0.5)
         title_run = title_paragraph.add_run(title)
-        title_run.font.size = Pt(20)
+        title_run.font.size = Pt(18)
         title_run.font.bold = True
         title_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         # Add subtitle
         subtitle_paragraph = self.add_paragraph()
         subtitle_run = subtitle_paragraph.add_run(subtitle)
-        subtitle_run.font.size = Pt(14)
+        subtitle_run.font.size = Pt(13)
         subtitle_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         # Add project details
@@ -773,7 +772,6 @@ class ReportHandler:
         )
 
         ### DEMAND SECTION ###
-        self.add_heading("Methodology", level=2)
         self.add_heading("Electricity Demand Profile")
 
         p = self.add_paragraph_with_hyperlink(
@@ -788,22 +786,16 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
-            "facilities. Due to the nature of the used demand profiles, enterprise profiles only include basic "
-            "amenities (e.g. lighting), while heavy machinery is added separately. The following table displays all "
-            "households, enterprises, facilities and machinery selected for the simulation."
+            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
+            "Systems (SHS) instead, all households assigned to the {shs_threshold} tier and below are excluded from the "
+            "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
         )
 
         self.add_paragraph(
-            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
-            "Systems instead, all households assigned to the {shs_threshold} tier and below are excluded from the "
-            "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
-        )
-        self.add_paragraph(
-            "The estimated yearly demand for the {community_name} community is {total_demand:,.0f} kWh/year. The "
-            "average daily demand is {avg_daily_demand:,.1f} kWh/day, while the peak demand for the simulated year is "
-            "{peak_demand:,.1f} kW. The demand is divided between households, enterprises and public facilities as "
-            "follows:"
+            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
+            "facilities that would be connected to the mini-grid. Due to the nature of the used demand profiles, enterprise profiles only include basic "
+            "amenities (e.g. lighting), while heavy machinery is added separately. The following table displays the "
+            "number of consumers and their respective yearly electricity demand."
         )
 
         self.add_df_as_table(self.get_df_from_cache("summary_table"), caption="Community demand summary")
@@ -823,16 +815,13 @@ class ReportHandler:
 
         self.add_paragraph(
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
-            "the following components: {energy_system_components_string}. To optimize the system, the following costs "
-            "and characteristics were assumed:"
+            "the following components: {energy_system_components_string}. The cost and asset characteristics used to "
+            "conduct the system optimization can be seen in the annex. Based on the given system setup, the following "
+            "asset sizes result in the least-cost solution:"
         )
 
+        # TODO put this in annex
         # - {Table with supply system parameters (form contents from page 4)}
-
-        self.add_paragraph(
-            "Additionally, a diesel price increase of {diesel_price_increase}% a year on average was assumed. Based "
-            "on the given system setup, the following asset sizes would be best suited to satisfy the demand:"
-        )
 
         # Table with optimized capacities
         self.add_df_as_table(self.get_df_from_cache("system_table"), caption="System size")
@@ -844,10 +833,10 @@ class ReportHandler:
 
         self.add_paragraph(
             "In total, the investment costs for the power supply system amount to {system_capex:,.0f} NGN. More detailed "
-            "information regarding investment costs and financial considerations can be found in chapter 5. The "
+            "information regarding investment costs and financial considerations can be found in the respective section. The "
             "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN, with an estimated annual "
             "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,.0f} NGN are "
-            "attributed to fuel costs, of which {fuel_consumption_liter:,.1f}L are consumed during the simulation. The "
+            "attributed to fuel costs, amounting to {fuel_consumption_liter:,.1f} L consumed. The "
             "following graph displays the power flow for the system during one week:"
         )
 
@@ -937,11 +926,10 @@ class ReportHandler:
             "interest payments as well as the  comparison of net operating revenues and  operating expenses."
         )
         self.add_image_from_cache("cash_flow", caption="Cash flow over project lifetime")
-        self.doc.add_page_break()
         # TODO add next steps
         self.add_heading("Next Steps")
         self.doc.add_page_break()
-        self.doc.add_heading("Appendix")
+        self.add_heading("Appendix")
         # TODO add tables about cost assumptions etc here
 
 
