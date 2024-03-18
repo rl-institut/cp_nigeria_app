@@ -9,10 +9,18 @@ tariff,Estimated tariff,"The estimated cost for the consumer, taking into accoun
 project_lifetime,Project lifetime,Number of years the project is intended to be operational,years
 bm_name,Aspired business model,"The selected approach for the delivery of the mini-grid project. In this case, the business model refers to the determination of roles and responsibilities of project proponents in the fields of ownership, development and implementation, operation and maintenance and financing",
 exchange_rate,Assumed exchange rate,Price of the given currency in relation to USD,currency/USD
-total_equity,Total equity,"The sum of equity that is provided, e.g. by a mini-grid company and/or community energy cooperative",
-total_grant,Total grant,"The sum of grant financing that flows into the project from funding agencies",
-initial_loan_amount,Initial loan amount,The sum of debt borrowed from banks and financiers at the beginning of the mini-grid project to cover investment costs,
-replacement_loan_amount,Replacement loan amount,"The sum of debt borrowed from banks and financiers during the lifetime of the mini-grid project to cover larger replacement costs of assets, such as inverters, battery or diesel generator",
+equity_community,Equity community,"The sum of equity that is provided by the communit, e.g. through a community energy cooperative",currency
+equity_developer,Equity mini-grid company, "The sum of equity that is provided by a mini-grid company",currency
+total_equity,Total equity,"The sum of equity that is provided, e.g. by a mini-grid company and/or community energy cooperative",currency
+total_grant,Total grant,"The sum of grant financing that flows into the project from funding agencies",currency
+initial_loan_amount,Total initial loan (mixed sources),The sum of debt borrowed from banks and financiers at the beginning of the mini-grid project to cover investment costs,currency
+replacement_loan_amount,Total replacement loan,"The sum of debt borrowed from banks and financiers during the lifetime of the mini-grid project to cover larger replacement costs of assets, such as inverters, battery or diesel generator",currency
+maturity,Maturity,Number of years to repay the loan,years
+grace_period,Grace period,Number of years to the first repayment of principal,years
+interest_rate,Interest rate,Interest rate for the loan,%
+irr_10,Internal Return on Investment (10 years),Placeholder,%
+irr_20,Internal Return on Investment (20 years),Placeholder,%
+wacc,WACC,Weighted average cost of capital for the project activity,%
 shs,Solar home systems,Consumers assumed to be served by solar home systems instead of the mini-grid,
 households,Households,Households connected to the mini-grid,
 enterprises,Enterprises,"Enterprises connected to the mini-grid, including machinery",

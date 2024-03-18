@@ -120,12 +120,12 @@ def get_project_summary(project):
         "yearly_production": f"{yearly_production:,.0f} kWh",
         # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "renewable_share": f"{renewable_share:.2f}%",
-        "total_investments": f"{total_investments:,.0f} {currency_symbol}",
         # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
         "tariff": f"{tariff:.2f} {currency_symbol}/kWh",
         "project_lifetime": f"{project_lifetime}",
         "bm_name": f"{bm_name}",
         "exchange_rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
+        "total_investments": f"{total_investments:,.0f} {currency_symbol}",
     }
     return project_summary
 
@@ -904,11 +904,11 @@ class ReportHandler:
             "as well as the internal rate of return (IRR) of the project activity over 10 and 20 years."
         )
 
-        # TODO add table with tariff and IRR
+        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"), caption="Key Financial Parameters")
 
         self.add_heading("Financing Structure", level=2)
         self.add_paragraph(
-            "The Financing Structure shows the key financial conditions including the communities’ and "
+            "The financing structure shows the key financial conditions including the communities’ and "
             "mini-grid companies’ equity share and interest, the grant and the debt volume and it’s "
             "average interest rate. For the grant, a deduction of 25% is considered, since typically "
             "performance based grants are applied that are provided after the implementation of the "
@@ -917,8 +917,9 @@ class ReportHandler:
             "resulting weighted costs of capital for the project activity."
         )
 
-        # TODO add WACC to table and remove tariff (further up)
-        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"), caption="Key financial parameters")
+        self.add_df_as_table(
+            self.get_df_from_cache("financing_structure_table"), caption="Financing structure for the project"
+        )
 
         self.add_heading("Cash Flow Diagram", level=2)
         self.add_paragraph(
@@ -1401,12 +1402,25 @@ class FinancialTool:
         replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
             "Total costs [NGN]"
         ].sum()
+
+        loan_fraction = initial_amount / gross_capex
+        equity_fraction = total_equity / gross_capex
+        wacc = (loan_fraction * self.financial_params["debt_interest_MG"]) + (
+            equity_fraction * self.financial_params["equity_interest_MG"]
+        )
+
         financial_kpis = {
             "total_investments": gross_capex,
+            "equity_community": self.financial_params["equity_community_amount"],
+            "equity_developer": self.financial_params["equity_developer_amount"],
             "total_equity": total_equity,
-            "total_grant": total_grant,
             "initial_loan_amount": initial_amount,
+            "interest_rate": self.financial_params["debt_interest_MG"],
+            "maturity": self.financial_params["loan_maturity"],
+            "grace_period": self.financial_params["grace_period"],
             "replacement_loan_amount": replacement_amount,
+            "total_grant": total_grant,
+            "wacc": wacc,
         }
 
         return financial_kpis

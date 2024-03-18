@@ -1246,7 +1246,7 @@ def request_community_summary_table(request, scen_id):
             graph_data["labels"].append(OUTPUT_PARAMS[key]["verbose"])
             graph_data["descriptions"].append(OUTPUT_PARAMS[key]["description"])
             graph_data["values"].append(aggregated_cgs[key]["total_demand"].tolist())
-        aggregated_cgs[key]["total_demand"] = round(sum(aggregated_cgs[key]["total_demand"]),0)
+        aggregated_cgs[key]["total_demand"] = round(sum(aggregated_cgs[key]["total_demand"]), 0)
 
     aggregated_cgs = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
     aggregated_cgs.loc["total"] = aggregated_cgs.sum()
@@ -1318,37 +1318,55 @@ def request_financial_kpi_table(request, scen_id):
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
     tariff = ft.tariff
-    financial_kpis = ft.financial_kpis
+    financing_structure = ft.financial_kpis
+    # TODO discuss if this should be in table, excluded or included in total investments
+    financing_structure.pop("replacement_loan_amount")
     # calculate the financial KPIs with 0% grant
+    irr_kpis = {"irr_10": ft.internal_return_on_investment(10), "irr_20": ft.internal_return_on_investment(20)}
     ft.remove_grant()
-    no_grant_tariff = ft.tariff
-    no_grant_kpis = ft.financial_kpis
+    no_grant_irr_kpis = {"irr_10": ft.internal_return_on_investment(10), "irr_20": ft.internal_return_on_investment(20)}
 
-    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["with_grant", "without_grant"]).T
+    no_grant_tariff = ft.tariff
+
+    comparison_kpi_df = pd.DataFrame([irr_kpis, no_grant_irr_kpis], index=["with_grant", "without_grant"]).T
     comparison_kpi_df.loc["tariff"] = {
         "with_grant": tariff * ft.exchange_rate,
         "without_grant": no_grant_tariff * ft.exchange_rate,
     }
 
     comparison_kpis = comparison_kpi_df.T.to_dict()
+    tables = {"financial_kpi_table": {}, "financing_structure_table": {}}
 
-    table_content = {}
-    headers = ["costs"]
-    for param in comparison_kpis:
-        headers = [key for key in comparison_kpis[param].keys()]
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in comparison_kpis[param].values()]
+    for name, data in zip(["financial_kpi_table", "financing_structure_table"], [comparison_kpis, financing_structure]):
+        table_content = {}
+        table_headers = {}
+        for param, values in data.items():
+            table_content[param] = set_table_format(param)
+            if OUTPUT_PARAMS[param]["unit"] == "%":
+                if isinstance(values, dict):
+                    table_content[param]["value"] = [f"{round(value * 100, 2):,}" for value in values.values()]
+                else:
+                    table_content[param]["value"] = f"{round(values * 100, 2):,}"
+            else:
+                if isinstance(values, dict):
+                    headers = [key for key in values.keys()]
+                    table_content[param]["value"] = [f"{round(value, 2):,}" for value in values.values()]
+                else:
+                    headers = [""]
+                    table_content[param]["value"] = f"{round(values, 2):,}"
 
-    table_headers = {}
-    for header in headers:
-        table_headers[header] = set_table_format(header)
+        tables[name]["data"] = table_content
+        for header in headers:
+            table_headers[header] = set_table_format(header)
+        tables[name]["headers"] = table_headers
 
-    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [value["verbose"] for header, value in table_headers.items()]
-    request.session["financial_kpi_table"] = {"headers": report_headers, "data": report_table}
+    for table, data in tables.items():
+        report_table = {value["verbose"]: value["value"] for key, value in data["data"].items()}
+        report_headers = [value["verbose"] for value in data["headers"].values()]
+        request.session[table] = {"headers": report_headers, "data": report_table}
 
     return JsonResponse(
-        {"data": table_content, "headers": table_headers},
+        {"tables": tables},
         status=200,
         content_type="application/json",
     )

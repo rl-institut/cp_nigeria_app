@@ -261,7 +261,8 @@ function request_financial_kpi_table(scen_id=""){
             url: urlRequestFinancialKpis,
             type: "GET",
             success: async (response) => {
-                await addTable(response, table_id="container_financial_kpis")
+                await addTable(response.tables.financial_kpi_table, table_id="container_financial_kpis")
+                await addTable(response.tables.financing_structure_table, table_id="container_financial_structure")
             },
             error: function(xhr, errmsg, err) {
                 console.log(xhr.status + ": " + xhr.responseText);
