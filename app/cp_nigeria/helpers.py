@@ -4,7 +4,7 @@ from docx.table import Table
 from docx.shape import InlineShape
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.oxml import parse_xml, OxmlElement, ns
 from docx.opc.constants import RELATIONSHIP_TYPE
 import pandas as pd
@@ -397,11 +397,13 @@ class ReportHandler:
 
     def add_table(self, rows, cols, caption=None):
         self.table_counter += 1
+        # styles = ["Light Grid", "Light List", "Light Shading", "Medium Grid 1", "Medium List 1", "Medium Shading 1"]
         t = self.doc.add_table(rows, cols, style="Light Shading")
+
         if caption is not None:
             self.add_caption(t, caption)
 
-        self.doc.paragraphs[-1].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        t.alignment = WD_TABLE_ALIGNMENT.CENTER
 
         return t
 
@@ -490,20 +492,31 @@ class ReportHandler:
         else:
             start_idx = 0
 
-        t = self.add_table(df.shape[0] + 1, df.shape[1] + start_idx, caption)
+        rows = df.shape[0]
+        cols = df.shape[1]
+
+        t = self.add_table(rows + 1, cols + start_idx, caption)
 
         # add indices
         if index is True:
-            for j in range(df.shape[0]):
+            for j in range(rows):
                 t.cell(j + 1, 0).text = df.index[j]
 
         # add headers
-        for j in range(df.shape[1]):
+        for j in range(cols):
             t.cell(0, j + start_idx).text = df.columns[j]
 
-        for i in range(df.shape[0]):
-            for j in range(df.shape[-1]):
+        for i in range(rows):
+            for j in range(cols):
                 t.cell(i + 1, j + start_idx).text = str(df.values[i, j])
+
+        # shade and make bold if rows contain total
+        for j in range(rows):
+            if "total" in df.index[j].lower():
+                for cell in t.rows[j + 1].cells:
+                    shading_elm = parse_xml(r'<w:shd {} w:fill="4CC58C"/>'.format(ns.nsdecls("w")))
+                    cell._tc.get_or_add_tcPr().append(shading_elm)
+                    cell.paragraphs[0].runs[0].font.bold = True
 
     def get_df_from_cache(self, name):
         # the output tables available are "cost_table", "capex_table", "summary_table", "system_table"

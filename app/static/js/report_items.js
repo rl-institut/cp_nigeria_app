@@ -675,7 +675,7 @@ function addTable(response, table_id="") {
             }
 
             // set bold if row for total
-            if (value.verbose == "Total") {
+            if (value.verbose.includes("Total")) {
                 tableDataCell.style.fontWeight = "bold"
                 tableDataCell.style.backgroundColor = "#F9F8F7"
             }
