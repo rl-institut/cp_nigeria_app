@@ -1147,7 +1147,7 @@ def scenario_visualize_system_costs(request, scen_id):
 
     for param in system_costs:
         table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in system_costs[param].values()]
+        table_content[param]["value"] = [f"{value:,.0f}" for value in system_costs[param].values()]
 
     table_headers = {}
 
@@ -1188,7 +1188,7 @@ def scenario_visualize_capex(request, scen_id):
     descriptions = []
     for param in capex_by_category:
         table_content[param] = set_table_format(param)
-        table_content[param]["value"] = f"{round(capex_by_category[param], 2):,}"
+        table_content[param]["value"] = f"{capex_by_category[param]:,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
@@ -1258,7 +1258,7 @@ def request_community_summary_table(request, scen_id):
         aggregated_cgs[param].pop("supply_source")
         headers = [key for key in aggregated_cgs[param].keys()]
         table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in aggregated_cgs[param].values()]
+        table_content[param]["value"] = [f"{value:,.0f}" for value in aggregated_cgs[param].values()]
 
     table_headers = {}
     for header in headers:
@@ -1295,7 +1295,7 @@ def request_system_size_table(request, scen_id):
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
         table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in opt_caps[param].values()]
+        table_content[param]["value"] = [f"{value:,.2f}" for value in opt_caps[param].values()]
         table_content[param]["unit"] = custom_units[param]
 
     table_headers = {}
@@ -1344,16 +1344,16 @@ def request_financial_kpi_table(request, scen_id):
             table_content[param] = set_table_format(param)
             if OUTPUT_PARAMS[param]["unit"] == "%":
                 if isinstance(values, dict):
-                    table_content[param]["value"] = [f"{round(value * 100, 2):,}" for value in values.values()]
+                    table_content[param]["value"] = [f"{value * 100:,.1f}" for value in values.values()]
                 else:
-                    table_content[param]["value"] = f"{round(values * 100, 2):,}"
+                    table_content[param]["value"] = f"{values * 100:,.1f}"
             else:
                 if isinstance(values, dict):
                     headers = [key for key in values.keys()]
-                    table_content[param]["value"] = [f"{round(value, 2):,}" for value in values.values()]
+                    table_content[param]["value"] = [f"{value:,.0f}" for value in values.values()]
                 else:
                     headers = [""]
-                    table_content[param]["value"] = f"{round(values, 2):,}"
+                    table_content[param]["value"] = f"{values:,.0f}"
 
         tables[name]["data"] = table_content
         for header in headers:
