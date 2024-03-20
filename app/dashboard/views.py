@@ -66,7 +66,14 @@ import datetime
 import logging
 import traceback
 from projects.helpers import parameters_helper
-from cp_nigeria.helpers import FinancialTool, get_project_summary, get_aggregated_cgs, set_table_format, OUTPUT_PARAMS
+from cp_nigeria.helpers import (
+    FinancialTool,
+    get_project_summary,
+    get_aggregated_cgs,
+    set_outputs_table_format,
+    OUTPUT_PARAMS,
+    save_table_for_report,
+)
 from users.templatetags.custom_template_tags import field_to_title
 
 logger = logging.getLogger(__name__)
@@ -1112,7 +1119,7 @@ def scenario_visualize_revenue(request, scen_id):
     x = revenue.columns.tolist()
 
     for trace in graph_contents:
-        graph_contents[trace].update(set_table_format(trace))
+        graph_contents[trace].update(set_outputs_table_format(trace))
 
     title = "Operating revenues"
     return JsonResponse({"x": x, "graph_contents": graph_contents, "title": title})
@@ -1146,17 +1153,16 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs = system_costs.T.to_dict()
 
     for param in system_costs:
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{value:,.0f}" for value in system_costs[param].values()]
 
     table_headers = {}
-
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
-    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [f"{value['verbose']} ({value['unit']})" for header, value in table_headers.items()]
-    request.session["cost_table"] = {"headers": report_headers, "data": report_table}
+    save_table_for_report(
+        project=scenario.project, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
+    )
 
     return JsonResponse(
         {
@@ -1187,17 +1193,17 @@ def scenario_visualize_capex(request, scen_id):
     headers = ["costs"]
     descriptions = []
     for param in capex_by_category:
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = f"{capex_by_category[param]:,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
-    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [f"{value['verbose']} ({value['unit']})" for header, value in table_headers.items()]
-    request.session["capex_table"] = {"headers": report_headers, "data": report_table}
+    save_table_for_report(
+        project=scenario.project, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+    )
 
     return JsonResponse(
         {
@@ -1217,13 +1223,13 @@ def request_project_summary_table(request, scen_id):
     project_summary = get_project_summary(scenario.project)
     table_content = {}
     for param in project_summary:
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = project_summary[param]
 
     table_headers = {}
     headers = [""]
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1257,16 +1263,14 @@ def request_community_summary_table(request, scen_id):
     for param in aggregated_cgs:
         aggregated_cgs[param].pop("supply_source")
         headers = [key for key in aggregated_cgs[param].keys()]
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{value:,.0f}" for value in aggregated_cgs[param].values()]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
-    report_table = {value["verbose"]: value["value"] for key, value in table_content.items()}
-    report_headers = [value["verbose"] for header, value in table_headers.items()]
-    request.session["summary_table"] = {"headers": report_headers, "data": report_table}
+    save_table_for_report(project=scenario.project, attr_name="demand_table", cols=table_headers, rows=table_content)
 
     return JsonResponse(
         {"graph_data": graph_data, "data": table_content, "headers": table_headers},
@@ -1294,17 +1298,17 @@ def request_system_size_table(request, scen_id):
 
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{value:,.2f}" for value in opt_caps[param].values()]
         table_content[param]["unit"] = custom_units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
-    report_table = {f"{value['verbose']} ({value['unit']})": value["value"] for key, value in table_content.items()}
-    report_headers = [value["verbose"] for header, value in table_headers.items()]
-    request.session["system_table"] = {"headers": report_headers, "data": report_table}
+    save_table_for_report(
+        project=scenario.project, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
+    )
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1341,7 +1345,7 @@ def request_financial_kpi_table(request, scen_id):
         table_content = {}
         table_headers = {}
         for param, values in data.items():
-            table_content[param] = set_table_format(param)
+            table_content[param] = set_outputs_table_format(param)
             if OUTPUT_PARAMS[param]["unit"] == "%":
                 if isinstance(values, dict):
                     table_content[param]["value"] = [f"{value * 100:,.1f}" for value in values.values()]
@@ -1357,13 +1361,13 @@ def request_financial_kpi_table(request, scen_id):
 
         tables[name]["data"] = table_content
         for header in headers:
-            table_headers[header] = set_table_format(header)
+            table_headers[header] = set_outputs_table_format(header)
         tables[name]["headers"] = table_headers
 
     for table, data in tables.items():
-        report_table = {value["verbose"]: value["value"] for key, value in data["data"].items()}
-        report_headers = [value["verbose"] for value in data["headers"].values()]
-        request.session[table] = {"headers": report_headers, "data": report_table}
+        save_table_for_report(
+            project=scenario.project, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
+        )
 
     return JsonResponse(
         {"tables": tables},

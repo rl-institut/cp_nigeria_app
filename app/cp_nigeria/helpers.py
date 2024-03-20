@@ -15,7 +15,7 @@ import json
 import csv
 import base64
 import io
-from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options
+from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options, ImplementationPlanContent
 from projects.models import Asset
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
 from business_model.models import EquityData, BusinessModel, BMAnswer
@@ -68,7 +68,27 @@ FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
 OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
 
 
-def set_table_format(param, from_dict=OUTPUT_PARAMS):
+def save_table_for_report(project, attr_name, cols, rows, units_on=[]):
+    if "rows" in units_on:
+        report_table = {f"{value['verbose']} ({value['unit']})": value["value"] for key, value in rows.items()}
+    else:
+        report_table = {value["verbose"]: value["value"] for key, value in rows.items()}
+    if "cols" in units_on:
+        report_headers = [f"{value['verbose']} ({value['unit']})" for header, value in cols.items()]
+    else:
+        report_headers = [value["verbose"] for header, value in cols.items()]
+
+    report_qs = ImplementationPlanContent.objects.filter(project=project)
+    if report_qs.exists():
+        report_content = report_qs.first()
+        setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
+        report_content.save()
+        print(f"Saved {attr_name} to db")
+    else:
+        print(f"Report object was not found, so {attr_name} could not be saved")
+
+
+def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):
     param_dict = {}
     for item in ["verbose", "description", "unit"]:
         if param == "":
@@ -250,7 +270,7 @@ def get_demand_indicators(project, with_timeseries=False):
 
 
 class ReportHandler:
-    def __init__(self, project, cache_dict):
+    def __init__(self, project):
         self.doc = Document()
         self.logo_path = "static/assets/logos/cpnigeria-logo.png"
         self.table_counter = 0
@@ -299,7 +319,7 @@ class ReportHandler:
             ).format(*system_assets)
 
         self.project = project
-        self.cache_dict = cache_dict
+        self.report_obj = ImplementationPlanContent.objects.get(project=self.project)
         self.image_path = dict(
             es_schema="static/assets/gui/" + options.schema_name,
             bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],
@@ -434,9 +454,8 @@ class ReportHandler:
         if caption is not None:
             self.add_caption(fig, caption)
 
-    def add_image_from_cache(self, name, width=Inches(6), caption=None):
-        # the output images available are "cpn_stacked_timeseriesElectricity", "capex", "system_costs", "cash_flow"
-        image_data = self.cache_dict.get(name)
+    def add_image_from_db(self, name, width=Inches(6), caption=None):
+        image_data = getattr(self.report_obj, name)
         if image_data:
             try:
                 image_data = image_data.split(",")[1]
@@ -446,6 +465,8 @@ class ReportHandler:
                 self.add_image(image, width, caption)
             except Exception as e:
                 print(e)
+        else:
+            print(f"Image {name} was not found in session storage")
 
     def add_caption(self, tab_or_figure, caption):
         target = {Table: "Table", InlineShape: "Figure"}[type(tab_or_figure)]
@@ -487,6 +508,10 @@ class ReportHandler:
             t.cell(i, 1).text = value
 
     def add_df_as_table(self, df, caption=None, index=True):
+        if not isinstance(df, pd.DataFrame):
+            print("Invalid format, table data must be a pd.DataFrame")
+            return
+
         if index is True:
             start_idx = 1
         else:
@@ -518,11 +543,14 @@ class ReportHandler:
                     cell._tc.get_or_add_tcPr().append(shading_elm)
                     cell.paragraphs[0].runs[0].font.bold = True
 
-    def get_df_from_cache(self, name):
-        # the output tables available are "cost_table", "capex_table", "summary_table", "system_table"
-        table_data = self.cache_dict.get(name)
-        table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
-        return table_df
+    def get_df_from_db(self, name):
+        table_json = getattr(self.report_obj, name)
+        if table_json:
+            table_data = json.loads(table_json)
+            table_df = pd.DataFrame.from_dict(table_data["data"], orient="index", columns=table_data["headers"])
+            return table_df
+        else:
+            print(f"Table {name} was not found in session storage")
 
     def add_table_from_records(self, records, columns=None):
         tot_rows = len(records)
@@ -811,7 +839,7 @@ class ReportHandler:
             "number of consumers and their respective yearly electricity demand."
         )
 
-        self.add_df_as_table(self.get_df_from_cache("summary_table"), caption="Community demand summary")
+        self.add_df_as_table(self.get_df_from_db("demand_table"), caption="Community demand summary")
 
         self.add_paragraph(
             "The total estimated yearly demand for the {community_name} community is {total_demand:,.0f} kWh/year. The "
@@ -820,7 +848,7 @@ class ReportHandler:
             "characteristics."
         )
 
-        self.add_image_from_cache("mini_grid_demand", caption="Total mini-grid demand")
+        self.add_image_from_db("mini_grid_demand_graph", caption="Total mini-grid demand")
 
         ### ELECTRICITY SYSTEM SECTION ###
         self.add_heading("Electricity Supply System Size and Composition")
@@ -837,7 +865,7 @@ class ReportHandler:
         # - {Table with supply system parameters (form contents from page 4)}
 
         # Table with optimized capacities
-        self.add_df_as_table(self.get_df_from_cache("system_table"), caption="System size")
+        self.add_df_as_table(self.get_df_from_db("system_table"), caption="System size")
 
         self.add_paragraph(
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
@@ -854,7 +882,7 @@ class ReportHandler:
         )
 
         # Stacked timeseries graph
-        self.add_image_from_cache("cpn_stacked_timeseriesElectricity", caption="Power flows during first week")
+        self.add_image_from_db("stacked_timeseries_graph", caption="Power flows during first week")
 
         ### BUSINESS MODEL SECTION ###
         self.add_heading("Business Model of the Mini-grid Project")
@@ -896,8 +924,8 @@ class ReportHandler:
             " considered for non-technical equipment costs only."
         )
 
-        self.add_df_as_table(self.get_df_from_cache("capex_table"), caption="Total mini-grid CAPEX")
-        self.add_image_from_cache("capex", caption="Total mini-grid CAPEX")
+        self.add_df_as_table(self.get_df_from_db("capex_table"), caption="Total mini-grid CAPEX")
+        self.add_image_from_db("capex_graph", caption="Total mini-grid CAPEX")
         # self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
 
         self.add_heading("Operational Expenditure (OPEX)", level=2)
@@ -907,7 +935,7 @@ class ReportHandler:
             "considered in a conservative way and include service and maintenance for the mini-grid as "
             "well as diesel fuel for the diesel-genset."
         )
-        self.add_df_as_table(self.get_df_from_cache("cost_table"), "Total system costs during first year")
+        self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
         # self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
 
         self.add_heading("Key Financial Parameters", level=2)
@@ -917,7 +945,7 @@ class ReportHandler:
             "as well as the internal rate of return (IRR) of the project activity over 10 and 20 years."
         )
 
-        self.add_df_as_table(self.get_df_from_cache("financial_kpi_table"), caption="Key Financial Parameters")
+        self.add_df_as_table(self.get_df_from_db("financial_kpi_table"), caption="Key Financial Parameters")
 
         self.add_heading("Financing Structure", level=2)
         self.add_paragraph(
@@ -931,7 +959,7 @@ class ReportHandler:
         )
 
         self.add_df_as_table(
-            self.get_df_from_cache("financing_structure_table"), caption="Financing structure for the project"
+            self.get_df_from_db("financing_structure_table"), caption="Financing structure for the project"
         )
 
         self.add_heading("Cash Flow Diagram", level=2)
@@ -939,7 +967,7 @@ class ReportHandler:
             "The following Figure shows the net cash flow over time, including debt repayment and debt "
             "interest payments as well as the  comparison of net operating revenues and  operating expenses."
         )
-        self.add_image_from_cache("cash_flow", caption="Cash flow over project lifetime")
+        self.add_image_from_db("cash_flow_graph", caption="Cash flow over project lifetime")
         # TODO add next steps
         self.add_heading("Next Steps")
         self.doc.add_page_break()

@@ -96,6 +96,21 @@ class Options(models.Model):
         return "diesel" in self.user_case
 
 
+class ImplementationPlanContent(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    demand_table = models.TextField()
+    cost_table = models.TextField()
+    capex_table = models.TextField()
+    system_table = models.TextField()
+    financial_kpi_table = models.TextField()
+    financing_structure_table = models.TextField()
+    stacked_timeseries_graph = models.TextField()
+    mini_grid_demand_graph = models.TextField()
+    capex_graph = models.TextField()
+    cash_flow_graph = models.TextField()
+    system_costs_graph = models.TextField()
+
+
 def copy_energy_system_from_usecase(usecase_name, scenario):
     """Given a scenario, copy the topology of the usecase"""
     # Filter the name of the project and the usecasename within this project

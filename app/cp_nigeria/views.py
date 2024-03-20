@@ -1077,6 +1077,7 @@ def cpn_complex_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False):
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
+    report_obj, created = ImplementationPlanContent.objects.get_or_create(project=project)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1496,13 +1497,21 @@ def cpn_business_model(request):
 @json_view
 @login_required
 @require_http_methods(["POST"])
-def save_to_session(request):
+def save_graph_to_db(request, proj_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         graph_id = request.POST.get("graph_id")
+        if graph_id == "cpn_stacked_timeseriesElectricity":
+            graph_id = "stacked_timeseries"
+        attr_name = f"{graph_id}_graph"
         image_url = request.POST.get("image_url")
-        request.session[graph_id] = image_url
-
-        return JsonResponse({"status": "saved to session"})
+        report_qs = ImplementationPlanContent.objects.filter(project=proj_id)
+        if report_qs.exists():
+            report_content = report_qs.first()
+            setattr(report_content, attr_name, image_url)
+            report_content.save()
+            return JsonResponse({"status": "saved " + attr_name + " to db"})
+        else:
+            return JsonResponse({"status": "db object could not be found"})
 
 
 @json_view
@@ -1512,8 +1521,9 @@ def ajax_download_report(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
-        logging.info("downloading implementation plan")
-        implementation_plan = ReportHandler(project, request.session)
+        logging.info("Downloading implementation plan")
+
+        implementation_plan = ReportHandler(project)
         implementation_plan.create_cover_sheet()
         implementation_plan.create_report_content()
         implementation_plan.add_page_number(implementation_plan.doc.sections[0].footer.paragraphs[0].add_run())
