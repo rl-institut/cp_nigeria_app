@@ -22,7 +22,6 @@ urlpatterns = [
     path("<int:bm_id>/model/choice", cpn_model_suggestion, name="cpn_model_suggestion"),
     path("<int:proj_id>/outputs", cpn_outputs, name="cpn_outputs"),
     path("<int:proj_id>/edit/step/<int:step_id>/complex", cpn_complex_outputs, name="cpn_complex_output"),
-    path("<int:proj_id>/download_report", download_report, name="download_report"),
     path("ajax/download_report", ajax_download_report, name="ajax_download_report"),
     path("ajax/<int:proj_id>/save_graph_to_db", save_graph_to_db, name="save_graph_to_db"),
     # path("<int:proj_id>/update/energy/system/<int:scen_id>", update_energy_system, name="update_energy_system"),
