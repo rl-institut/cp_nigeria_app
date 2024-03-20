@@ -84,12 +84,12 @@ class Options(models.Model):
     def component_list(self):
         components = []
         if "diesel" in self.user_case:
-            components.append("Diesel generator")
+            components.append("diesel generator")
         if "pv" in self.user_case:
-            components.append("PV Panels")
+            components.append("solar PV panels")
         if "bess" in self.user_case:
-            components.append("Battery storage")
-        return ("a {}, " * (len(components) - 2) + "a {}" * (len(components) > 1) + " and a {}").format(*components)
+            components.append("battery storage")
+        return (" {}, " * (len(components) - 2) + " {}" * (len(components) > 1) + " and  {}").format(*components)
 
     @property
     def has_diesel(self):

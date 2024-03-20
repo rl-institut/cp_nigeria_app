@@ -142,7 +142,7 @@ def get_project_summary(project):
         "renewable_share": f"{renewable_share:.2f}%",
         # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
         "tariff": f"{tariff:.2f} {currency_symbol}/kWh",
-        "project_lifetime": f"{project_lifetime}",
+        "project_lifetime": f"{project_lifetime} years",
         "bm_name": f"{bm_name}",
         "exchange_rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
         "total_investments": f"{total_investments:,.0f} {currency_symbol}",
@@ -328,7 +328,10 @@ class ReportHandler:
 
         scenario_results = json.loads(KPIScalarResults.objects.get(simulation__scenario=project.scenario).scalar_values)
 
-        lcoe = round(scenario_results["levelized_costs_of_electricity_equivalent"], 2)
+        lcoe = (
+            round(scenario_results["levelized_costs_of_electricity_equivalent"], 2)
+            * self.project.economic_data.exchange_rate
+        )
 
         ft = FinancialTool(project)
 
@@ -803,8 +806,8 @@ class ReportHandler:
             "energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). "
             "The overall objective of the project is to achieve a climate-friendly energy supply through "
             "decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must "
-            "play a driving role. The project therefore aims to create exemplary civil society nuclei ('Communities "
-            "of Practice') and to empower them to plan and implement DRE projects (local level). Based on this, "
+            'play a driving role. The project therefore aims to create exemplary civil society nuclei ("Communities '
+            'of Practice") and to empower them to plan and implement DRE projects (local level). Based on this, '
             "it works transdisciplinary on improving the political framework for local decentralized RE projects ("
             "national level). In this way, civil society can be empowered to implement DRE independently and make a "
             "significant contribution to the achievement of climate change mitigation goals.  ",
@@ -828,7 +831,7 @@ class ReportHandler:
 
         self.add_paragraph(
             "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
-            "Systems (SHS) instead, all households assigned to the {shs_threshold} tier and below are excluded from the "
+            'Systems (SHS) instead, all households assigned to the "{shs_threshold}" tier and below are excluded from the '
             "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
         )
 
@@ -869,7 +872,7 @@ class ReportHandler:
 
         self.add_paragraph(
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
-            "with {renewable_share:.2}% of the generation coming from renewable sources."
+            "with {renewable_share:.1f}% of the generation coming from renewable sources."
         )
 
         self.add_paragraph(
@@ -883,34 +886,6 @@ class ReportHandler:
 
         # Stacked timeseries graph
         self.add_image_from_db("stacked_timeseries_graph", caption="Power flows during first week")
-
-        ### BUSINESS MODEL SECTION ###
-        self.add_heading("Business Model of the Mini-grid Project")
-
-        self.add_paragraph(B_MODELS[self.bm_name]["Report"])
-
-        self.add_image(self.image_path["bm_graph"], width=Inches(2.5), caption="Business model structure")
-        self.add_image(self.image_path["bm_resp"], width=Inches(5), caption="Business model responsibilities")
-
-        # Add additional text and criteria bullet points if community-led model is chosen
-        if "cooperative" in self.bm_name:
-            self.add_paragraph(
-                "A cooperative-led model is an innovative approach in Nigeria that strongly enhances "
-                "local awareness and engagement. Additionally, the community-led approach can increase "
-                "the affordability of tariffs for customers in the community. It is, however, "
-                "challenging for communities to attract adequate financial resources, therefore, the "
-                "community is reaching out to financial partners."
-            )
-
-            qs = BMAnswer.objects.filter(business_model=self.bm)
-            if qs.exists():
-                self.add_paragraph(
-                    "Within the process of the CP-Nigeria Toolbox, the community’s suitability for following "
-                    "a community-led approach for the realisation of a mini-grid system has been assessed "
-                    "based on several research-based criteria. The community meets the following criteria "
-                    "to choose the cooperative-led model and has in place:"
-                )
-                self.add_list(self.create_community_criteria_list(qs))
 
         ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
@@ -926,7 +901,6 @@ class ReportHandler:
 
         self.add_df_as_table(self.get_df_from_db("capex_table"), caption="Total mini-grid CAPEX")
         self.add_image_from_db("capex_graph", caption="Total mini-grid CAPEX")
-        # self.add_financial_table((("", ""), ("", "")), title="Capex (in USD)")
 
         self.add_heading("Operational Expenditure (OPEX)", level=2)
         self.add_paragraph(
@@ -936,7 +910,6 @@ class ReportHandler:
             "well as diesel fuel for the diesel-genset."
         )
         self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
-        # self.add_financial_table((("", ""), ("", "")), title="Opex (in USD)")
 
         self.add_heading("Key Financial Parameters", level=2)
         self.add_paragraph(
@@ -968,6 +941,34 @@ class ReportHandler:
             "interest payments as well as the  comparison of net operating revenues and  operating expenses."
         )
         self.add_image_from_db("cash_flow_graph", caption="Cash flow over project lifetime")
+
+        ### BUSINESS MODEL SECTION ###
+        self.add_heading("Business Model of the Mini-grid Project")
+
+        self.add_paragraph(B_MODELS[self.bm_name]["Report"])
+
+        self.add_image(self.image_path["bm_graph"], width=Inches(2.5), caption="Business model structure")
+        self.add_image(self.image_path["bm_resp"], width=Inches(5), caption="Business model responsibilities")
+
+        # Add additional text and criteria bullet points if community-led model is chosen
+        if "cooperative" in self.bm_name:
+            self.add_paragraph(
+                "A cooperative-led model is an innovative approach in Nigeria that strongly enhances "
+                "local awareness and engagement. Additionally, the community-led approach can increase "
+                "the affordability of tariffs for customers in the community. It is, however, "
+                "challenging for communities to attract adequate financial resources, therefore, the "
+                "community is reaching out to financial partners."
+            )
+
+            qs = BMAnswer.objects.filter(business_model=self.bm)
+            if qs.exists():
+                self.add_paragraph(
+                    "Within the process of the CP-Nigeria Toolbox, the community’s suitability for following "
+                    "a community-led approach for the realisation of a mini-grid system has been assessed "
+                    "based on several research-based criteria. The community meets the following criteria "
+                    "to choose the cooperative-led model and has in place:"
+                )
+                self.add_list(self.create_community_criteria_list(qs))
         # TODO add next steps
         self.add_heading("Next Steps")
         self.doc.add_page_break()
