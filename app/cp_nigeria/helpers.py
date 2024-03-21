@@ -1055,10 +1055,10 @@ class FinancialTool:
 
         system_params = pd.concat(
             [
-                pd.melt(assets.reset_index(), id_vars=["index"], var_name=["category"]).rename(
+                pd.melt(assets.reset_index(), id_vars=["index"], var_name="category").rename(
                     columns={"index": "supply_source"}
                 ),
-                pd.melt(total_demand.reset_index(), id_vars=["supply_source"], var_name=["category"]),
+                pd.melt(total_demand.reset_index(), id_vars=["supply_source"], var_name="category"),
             ],
             ignore_index=True,
         )
