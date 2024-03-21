@@ -337,9 +337,13 @@ class ReportHandler:
 
         total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
-        inverter_aggregated_flow = ft.system_params.loc[
-            (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"), "value"
-        ].iloc[0]
+        if "inverter" in ft.system_params["supply_source"].tolist():
+            inverter_aggregated_flow = ft.system_params.loc[
+                (ft.system_params["category"] == "total_flow") & (ft.system_params["supply_source"] == "inverter"),
+                "value",
+            ].iloc[0]
+        else:
+            inverter_aggregated_flow = 0
 
         self.aggregated_cgs = get_aggregated_cgs(self.project)
 
