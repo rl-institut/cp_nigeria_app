@@ -69,7 +69,7 @@ FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
 OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
 
 
-def save_table_for_report(project, attr_name, cols, rows, units_on=[]):
+def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
     if "rows" in units_on:
         report_table = {f"{value['verbose']} ({value['unit']})": value["value"] for key, value in rows.items()}
     else:
@@ -79,7 +79,7 @@ def save_table_for_report(project, attr_name, cols, rows, units_on=[]):
     else:
         report_headers = [value["verbose"] for header, value in cols.items()]
 
-    report_qs = ImplementationPlanContent.objects.filter(project=project)
+    report_qs = ImplementationPlanContent.objects.filter(simulation=scenario.simulation)
     if report_qs.exists():
         report_content = report_qs.first()
         setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
@@ -362,7 +362,7 @@ class ReportHandler:
             ).format(*system_assets)
 
         self.project = project
-        self.report_obj = ImplementationPlanContent.objects.get(project=self.project)
+        self.report_obj = ImplementationPlanContent.objects.get(simulation=self.project.scenario.simulation)
         self.image_path = dict(
             es_schema="static/assets/gui/" + options.schema_name,
             bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],

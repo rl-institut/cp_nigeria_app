@@ -1077,7 +1077,7 @@ def cpn_complex_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False):
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
-    report_obj, created = ImplementationPlanContent.objects.get_or_create(project=project)
+    report_obj, created = ImplementationPlanContent.objects.get_or_create(simulation=project.scenario.simulation)
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1499,12 +1499,13 @@ def cpn_business_model(request):
 @require_http_methods(["POST"])
 def save_graph_to_db(request, proj_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        project = Project.objects.get(id=proj_id)
         graph_id = request.POST.get("graph_id")
         if graph_id == "cpn_stacked_timeseriesElectricity":
             graph_id = "stacked_timeseries"
         attr_name = f"{graph_id}_graph"
         image_url = request.POST.get("image_url")
-        report_qs = ImplementationPlanContent.objects.filter(project=proj_id)
+        report_qs = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
         if report_qs.exists():
             report_content = report_qs.first()
             setattr(report_content, attr_name, image_url)

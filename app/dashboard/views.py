@@ -1161,7 +1161,7 @@ def scenario_visualize_system_costs(request, scen_id):
         table_headers[header] = set_outputs_table_format(header)
 
     save_table_for_report(
-        project=scenario.project, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        scenario=scenario, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
     )
 
     return JsonResponse(
@@ -1202,7 +1202,7 @@ def scenario_visualize_capex(request, scen_id):
         table_headers[header] = set_outputs_table_format(header)
 
     save_table_for_report(
-        project=scenario.project, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        scenario=scenario, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
     )
 
     return JsonResponse(
@@ -1270,7 +1270,7 @@ def request_community_summary_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_outputs_table_format(header)
 
-    save_table_for_report(project=scenario.project, attr_name="demand_table", cols=table_headers, rows=table_content)
+    save_table_for_report(scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content)
 
     return JsonResponse(
         {"graph_data": graph_data, "data": table_content, "headers": table_headers},
@@ -1307,7 +1307,7 @@ def request_system_size_table(request, scen_id):
         table_headers[header] = set_outputs_table_format(header)
 
     save_table_for_report(
-        project=scenario.project, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
+        scenario=scenario, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
     )
 
     return JsonResponse(
@@ -1366,7 +1366,7 @@ def request_financial_kpi_table(request, scen_id):
 
     for table, data in tables.items():
         save_table_for_report(
-            project=scenario.project, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
+            scenario=scenario, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
         )
 
     return JsonResponse(

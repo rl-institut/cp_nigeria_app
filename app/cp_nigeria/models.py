@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase
+from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase, Simulation
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 
 
@@ -97,7 +97,7 @@ class Options(models.Model):
 
 
 class ImplementationPlanContent(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE, blank=True, null=True)
     demand_table = models.TextField()
     cost_table = models.TextField()
     capex_table = models.TextField()
