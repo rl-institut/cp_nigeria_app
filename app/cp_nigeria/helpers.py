@@ -16,7 +16,7 @@ import csv
 import base64
 import io
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options, ImplementationPlanContent
-from projects.models import Asset
+from projects.models import Asset, Simulation
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
 from business_model.models import EquityData, BusinessModel, BMAnswer
 from business_model.helpers import B_MODELS
@@ -27,6 +27,7 @@ from django.db.models import Func, Sum
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
+from django.db.models import Case
 
 
 class Unnest(Func):
@@ -267,6 +268,48 @@ def get_demand_indicators(project, with_timeseries=False):
         return (demand, total_demand, peak_demand, daily_demand)
     else:
         return (total_demand, peak_demand, daily_demand)
+
+
+def get_asset_assumptions(project):
+    qs = Simulation.objects.filter(scenario_id=project.scenario.id)
+
+    if qs.exists():
+        simulation = qs.first()
+        # get asset data
+        qs1 = (
+            Asset.objects.filter(scenario__simulation=simulation).annotate(label=Case(default="name")).order_by("label")
+        )
+
+        qs1 = qs1.filter(label__in=["battery capacity", "diesel_generator", "inverter", "pv_plant"]).values(
+            "label",
+            "capex_var",
+            "opex_fix",
+            "opex_var",
+            "opex_var_extra",
+            "lifetime",
+        )
+
+        df = pd.DataFrame.from_records(qs1)
+        df.index = df.label
+        df.loc["diesel_generator", "opex_var_extra"] *= ENERGY_DENSITY_DIESEL
+        df.drop(["label"], axis=1, inplace=True)
+        cost_names = {
+            "capex_var": "CAPEX (USD/unit)",
+            "opex_fix": "OPEX per year (USD/unit)",
+            "opex_var": "Additional costs (e.g. lubricant) (USD/kWh)",
+            "opex_var_extra": "Fuel costs (USD/L)",
+            "lifetime": "Lifetime",
+        }
+        asset_names = {
+            "battery capacity": "Battery",
+            "diesel_generator": "Diesel generator",
+            "inverter": "Inverter",
+            "pv_plant": "Solar PV plant",
+        }
+
+        df.rename(columns=cost_names, index=asset_names, inplace=True)
+        df = df.round(2)
+        return df.T
 
 
 class ReportHandler:
@@ -721,15 +764,15 @@ class ReportHandler:
         title_paragraph = self.add_paragraph()
         title_paragraph.paragraph_format.space_before = Inches(0.5)
         title_run = title_paragraph.add_run(title)
-        title_run.font.size = Pt(18)
+        title_run.font.size = Pt(16)
         title_run.font.bold = True
         title_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         # Add subtitle
         subtitle_paragraph = self.add_paragraph()
         subtitle_run = subtitle_paragraph.add_run(subtitle)
-        subtitle_run.font.size = Pt(13)
-        subtitle_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        subtitle_run.font.size = Pt(12)
+        self.doc.paragraphs[-1].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         # Add project details
         self.add_heading("Project details", level=2)
@@ -755,16 +798,10 @@ class ReportHandler:
             "project implementation, an {bm_name} business model approach is suggested."
         )
 
-        subtitle_run = subtitle_paragraph.add_run(summary)
-        subtitle_run.font.size = Pt(10)
-        subtitle_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-
         # Add page break
         self.doc.add_page_break()
 
     def create_report_content(self):
-        # TODO implement properly
-
         ### INTRODUCTION ###
         self.add_heading("Context and Background")
         self.add_heading("Community Background", level=2)
@@ -833,7 +870,7 @@ class ReportHandler:
             "and public facilities present in the community, based on demand profiles constructed within the "
             "PeopleSun project, which were derived from surveys and appliance audits conducted within "
             "electrified communities. As the demand is based on proxy data for already electrified communities, "
-            "the system doesn't consider any demand increase over project lifetime, but instead assumes that the "
+            "the system does not consider any demand increase over project lifetime, but instead assumes that the "
             "proposed supply system would be able to satisfy future demand.",
             "PeopleSun project",
             "https://www.peoplesun.org/",
@@ -847,8 +884,7 @@ class ReportHandler:
 
         self.add_paragraph(
             "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
-            "facilities that would be connected to the mini-grid. Due to the nature of the used demand profiles, enterprise profiles only include basic "
-            "amenities (e.g. lighting), while heavy machinery is added separately. The following table displays the "
+            "facilities that would be connected to the mini-grid. The following table displays the "
             "number of consumers and their respective yearly electricity demand."
         )
 
@@ -873,9 +909,6 @@ class ReportHandler:
             "conduct the system optimization can be seen in the annex. Based on the given system setup, the following "
             "asset sizes result in the least-cost solution:"
         )
-
-        # TODO put this in annex
-        # - {Table with supply system parameters (form contents from page 4)}
 
         # Table with optimized capacities
         self.add_df_as_table(self.get_df_from_db("system_table"), caption="System size")
@@ -904,7 +937,7 @@ class ReportHandler:
         self.add_paragraph(
             "The project includes the following Capital Expenditures (CAPEX) that need to be covered "
             "during installation of the technical equipment, i.e. the power supply system and the "
-            "transmission network. CAPEX are considered in a conservative way and include also "
+            "transmission network. CAPEX are considered in a conservative way and also include "
             "logistical costs, an insurance for construction as well as planning and labor costs. VAT is"
             " considered for non-technical equipment costs only."
         )
@@ -933,7 +966,7 @@ class ReportHandler:
         self.add_heading("Financing Structure", level=2)
         self.add_paragraph(
             "The financing structure shows the key financial conditions including the communities’ and "
-            "mini-grid companies’ equity share and interest, the grant and the debt volume and it’s "
+            "mini-grid companies’ equity share and interest, the grant and the debt volume and its "
             "average interest rate. For the grant, a deduction of 25% is considered, since typically "
             "performance based grants are applied that are provided after the implementation of the "
             "project. Thus a domestic bank loan with approximately 25% interest has to be taken up for "
@@ -982,8 +1015,9 @@ class ReportHandler:
         # TODO add next steps
         self.add_heading("Next Steps")
         self.doc.add_page_break()
-        self.add_heading("Appendix")
+        self.add_heading("Annex")
         # TODO add tables about cost assumptions etc here
+        self.add_df_as_table(get_asset_assumptions(self.project), caption="Asset assumptions")
 
 
 class FinancialTool:
