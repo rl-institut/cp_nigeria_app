@@ -641,6 +641,12 @@ class ReportHandler:
         run._r.append(instrText)
         run._r.append(fldChar2)
 
+    def add_footer(self):
+        self.add_page_number(self.doc.sections[0].footer.paragraphs[0].add_run())
+        footer_text = f"    {self.project.name} \t \t https://community-minigrid.ng/en"
+        footer_run = self.doc.sections[0].footer.paragraphs[0].add_run(footer_text)
+        footer_run.font.size = Pt(9)
+
     def prevent_table_splitting(self):
         tags = self.doc.element.xpath("//w:tr[position() < last()]/w:tc/w:p")
         for tag in tags:

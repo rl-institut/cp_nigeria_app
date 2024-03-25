@@ -1526,7 +1526,7 @@ def ajax_download_report(request):
         implementation_plan = ReportHandler(project)
         implementation_plan.create_cover_sheet()
         implementation_plan.create_report_content()
-        implementation_plan.add_page_number(implementation_plan.doc.sections[0].footer.paragraphs[0].add_run())
+        implementation_plan.add_footer()
         implementation_plan.prevent_table_splitting()
 
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
