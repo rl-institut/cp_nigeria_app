@@ -637,6 +637,10 @@ class AssetCreateForm(OpenPlanModelForm):
         self.input_output_mapping = kwargs.pop("input_output_mapping", None)
 
         super().__init__(*args, **kwargs)
+
+        if not hasattr(self, "exchange_rate"):
+            self.exchange_rate = 1
+
         # which fields exists in the form are decided upon AssetType saved in the db
         asset_type = AssetType.objects.get(asset_type=self.asset_type_name)
         [self.fields.pop(field) for field in list(self.fields) if field not in asset_type.visible_fields]
