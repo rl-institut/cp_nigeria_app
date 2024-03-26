@@ -506,23 +506,56 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             bus=ac_bus, bus_connection_port="input_1", asset=inverter, flow_direction="A2B", scenario=scenario
         )
 
-        asset_type_name = "demand"
+        # demand is split between household (hh), public facilities (pf) and enterprises (ent)
+        asset_type_name = "reducable_demand"
 
-        demand, created = Asset.objects.get_or_create(
-            scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
+        demand_hh, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_hh",
         )
-        demand.pos_x = 900
-        demand.pos_y = ac_bus.pos_y
-        demand.save()
+        demand_ent, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_ent",
+            efficiency=1,
+        )
+        demand_pf, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_pf",
+            efficiency=1,
+        )
+        demand_hh.pos_x = 900
+        demand_ent.pos_x = 900
+        demand_pf.pos_x = 900
+        demand_hh.pos_y = ac_bus.pos_y + 150
+        demand_ent.pos_y = ac_bus.pos_y
+        demand_pf.pos_y = ac_bus.pos_y - 150
+        demand_hh.save()
+        demand_ent.save()
+        demand_pf.save()
         if created is True:
-            total_demand = get_aggregated_demand(project)
-            demand.input_timeseries = json.dumps(total_demand)
-            demand.save()
+            for dem, cg_type in zip((demand_ent, demand_hh, demand_pf), ("Enterprise", "Household", "Public facility")):
+                total_demand = get_aggregated_demand(project, consumer_type=cg_type)
+                dem.input_timeseries = json.dumps(total_demand)
+                dem.save()
 
-        peak_demand = round(np.array(json.loads(demand.input_timeseries)).max(), 1)
+        peak_demand = (
+            np.array(json.loads(demand_hh.input_timeseries))
+            + np.array(json.loads(demand_ent.input_timeseries))
+            + np.array(json.loads(demand_pf.input_timeseries))
+        )
+        peak_demand = round(peak_demand.max(), 1)
 
         ConnectionLink.objects.get_or_create(
-            bus=ac_bus, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_hh, flow_direction="B2A", scenario=scenario
+        )
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_ent, flow_direction="B2A", scenario=scenario
+        )
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_pf, flow_direction="B2A", scenario=scenario
         )
 
         for i, asset_name in enumerate(user_assets):
