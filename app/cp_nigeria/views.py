@@ -1099,16 +1099,29 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     else:
         es_schema_name = None
 
-    project_summary = opt_caps = capex_by_category = cgs_df = capex_df = capex_assumptions = senior_debt = None
-    cash_flow = losses = tariff = financial_kpis = comparison_kpi_df = system_costs = replacement_loan_table = None
-    om_costs_over_lifetime = tariff_ngn = None
-
     ft = FinancialTool(project)
     tariff = ft.tariff
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff
     ed.save()
+
+    currency_symbol = project.economic_data.currency_symbol
+    context = {
+        "proj_id": proj_id,
+        "scen_id": project.scenario.id,
+        "scenario_list": user_scenarios,
+        "model_description": B_MODELS[model]["Description"],
+        "model_name": B_MODELS[model]["Verbose"],
+        "model_image": B_MODELS[model]["Graph"],
+        "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "es_schema_name": es_schema_name,
+        "proj_name": project.name,
+        "step_id": step_id,
+        "step_list": CPN_STEP_VERBOSE,
+        "currency_symbol": currency_symbol,
+        "save_to_db": save_to_db,
+    }
 
     if complex is True:
         # Initialize financial tool to calculate financial flows and test output graphs
@@ -1182,39 +1195,27 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         cgs_df.drop(columns=["supply_source"], inplace=True)
         cgs_df.rename(columns={"total_demand": "total_demand"}, inplace=True)
         project_summary = get_project_summary(project)
-    currency_symbol = project.economic_data.currency_symbol
-    context = {
-        "proj_id": proj_id,
-        "project_summary": project_summary,
-        "opt_caps": opt_caps,
-        "capex_by_category": capex_by_category,
-        "scen_id": project.scenario.id,
-        "scenario_list": user_scenarios,
-        "model_description": B_MODELS[model]["Description"],
-        "model_name": B_MODELS[model]["Verbose"],
-        "model_image": B_MODELS[model]["Graph"],
-        "model_image_resp": B_MODELS[model]["Responsibilities"],
-        "cgs_df": cgs_df,
-        "es_schema_name": es_schema_name,
-        "proj_name": project.name,
-        "step_id": step_id,
-        "step_list": CPN_STEP_VERBOSE,
-        "capex_df": capex_df,
-        "capex_assumptions": capex_assumptions,
-        "senior_debt": senior_debt,
-        "replacement_debt": replacement_loan_table,
-        "cash_flow": cash_flow,
-        "opex_costs": om_costs_over_lifetime,
-        "losses": losses,
-        "tariff_NGN": tariff_ngn,
-        "tariff_USD": tariff,
-        "financial_kpis": financial_kpis,
-        "comparison_kpi_df": comparison_kpi_df,
-        "system_costs": system_costs,
-        "currency_symbol": currency_symbol,
-        "save_to_db": save_to_db,
-    }
 
+        context.update(
+            {
+                "project_summary": project_summary,
+                "opt_caps": opt_caps,
+                "capex_by_category": capex_by_category,
+                "cgs_df": cgs_df,
+                "capex_df": capex_df,
+                "capex_assumptions": capex_assumptions,
+                "senior_debt": senior_debt,
+                "replacement_debt": replacement_loan_table,
+                "cash_flow": cash_flow,
+                "opex_costs": om_costs_over_lifetime,
+                "losses": losses,
+                "tariff_NGN": tariff_ngn,
+                "tariff_USD": tariff,
+                "financial_kpis": financial_kpis,
+                "comparison_kpi_df": comparison_kpi_df,
+                "system_costs": system_costs,
+            }
+        )
     return render(request, html_template, context)
 
 
