@@ -28,6 +28,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
 from django.db.models import Case
+from django.db import transaction
 
 
 class Unnest(Func):
@@ -79,14 +80,18 @@ def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
     else:
         report_headers = [value["verbose"] for header, value in cols.items()]
 
-    report_qs = ImplementationPlanContent.objects.filter(simulation=scenario.simulation)
-    if report_qs.exists():
-        report_content = report_qs.first()
-        setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
-        report_content.save()
-        print(f"Saved {attr_name} to db")
-    else:
-        print(f"Report object was not found, so {attr_name} could not be saved")
+    try:
+        with transaction.atomic():
+            report_qs = ImplementationPlanContent.objects.select_for_update().filter(simulation=scenario.simulation)
+            if report_qs.exists():
+                report_content = report_qs.first()
+                setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
+                report_content.save()
+                print(f"Saved {attr_name} to database")
+            else:
+                print(f"Report object was not found, so {attr_name} could not be saved")
+    except Exception as e:
+        print(e)
 
 
 def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):

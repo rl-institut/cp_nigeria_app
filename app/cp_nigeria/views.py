@@ -1505,14 +1505,21 @@ def save_graph_to_db(request, proj_id):
             graph_id = "stacked_timeseries"
         attr_name = f"{graph_id}_graph"
         image_url = request.POST.get("image_url")
-        report_qs = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
-        if report_qs.exists():
-            report_content = report_qs.first()
-            setattr(report_content, attr_name, image_url)
-            report_content.save()
-            return JsonResponse({"status": "saved " + attr_name + " to db"})
-        else:
-            return JsonResponse({"status": "db object could not be found"})
+
+        try:
+            with transaction.atomic():
+                report_qs = ImplementationPlanContent.objects.select_for_update().filter(
+                    simulation=project.scenario.simulation
+                )
+                if report_qs.exists():
+                    report_content = report_qs.first()
+                    setattr(report_content, attr_name, image_url)
+                    report_content.save()
+                    return JsonResponse({"status": "success", "message": "Saved " + attr_name + " to database"})
+                else:
+                    return JsonResponse({"status": "failed", "message": "Database object could not be found"})
+        except Exception as e:
+            return JsonResponse({"status": "failed", "message": e})
 
 
 @json_view
