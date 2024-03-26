@@ -24,7 +24,7 @@ from business_model.helpers import B_MODELS
 from dashboard.models import FancyResults, KPIScalarResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
-from django.db.models import Func, Sum
+from django.db.models import Func, Sum, Avg, Max
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
@@ -166,7 +166,7 @@ def get_project_summary(project):
 
     yearly_production = ft.yearly_production_electricity
     total_investments = ft.total_capex("NGN")
-    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    total_demand, peak_demand, daily_demand = get_fulfilled_demand_indicator(project)
     renewable_share = inverter_aggregated_flow / total_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
@@ -270,7 +270,7 @@ def get_aggregated_cgs(project, as_ts=False):
     return results_dict
 
 
-def get_aggregated_demand(project):
+def get_aggregated_demand(project, consumer_type=None):
     options = get_object_or_404(Options, project=project)
     shs_threshold = options.shs_threshold
     # Prevent error if no timeseries are present
@@ -283,7 +283,8 @@ def get_aggregated_demand(project):
             shs_consumers = get_shs_threshold(options.shs_threshold)
             # TODO need to warn the user if the total_demand is empty due to shs threshold
             cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
-
+        if consumer_type is not None:
+            cg_qs = cg_qs.filter(consumer_type__consumer_type=consumer_type)
         for cg in cg_qs:
             timeseries_values = np.array(cg.timeseries.get_values_with_unit("kWh"))
             nr_consumers = cg.number_consumers
@@ -298,11 +299,13 @@ def get_demand_indicators(project, with_timeseries=False):
 
     :param with_timeseries: when True return the full timeseries as well
     """
-    qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+    qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="reducable_demand")
     if qs_demand.exists():
-        demand = json.loads(qs_demand.get().input_timeseries)
-        demand_np = np.array(demand)
-
+        demand_np = []
+        for dem in qs_demand:
+            demand = json.loads(dem.input_timeseries)
+            demand_np.append(demand)
+        demand_np = np.vstack(demand_np).sum(axis=1)
     else:
         demand_np = np.array(get_aggregated_demand(project))
 
@@ -310,10 +313,29 @@ def get_demand_indicators(project, with_timeseries=False):
     peak_demand = round(demand_np.max(), 1)
     daily_demand = round(total_demand / 365, 1)
     if with_timeseries is True:
-        return (demand, total_demand, peak_demand, daily_demand)
+        return (demand_np.tolist(), total_demand, peak_demand, daily_demand)
     else:
         return (total_demand, peak_demand, daily_demand)
 
+def get_fulfilled_demand_indicator(project, total_only=False):
+    """Provide the aggregated, peak and daily averaged fulfilled demand
+
+    :param total_only: when True return only the aggragated value over the simulation time
+    """
+    qs_res = FancyResults.objects.filter(
+        simulation__scenario=project.scenario, direction="out", bus="ac_bus", asset__contains="critical"
+    )
+    total_fulfilled_demand = qs_res.aggregate(delivered_demand=Sum("total_flow"))["delivered_demand"]
+    if total_only is True:
+        return total_fulfilled_demand
+    else:
+        delivered_demand = []
+        for dem in qs_res:
+            delivered_demand.append(dem.timeseries)
+        delivered_demand_np = np.vstack(delivered_demand).sum(axis=0)
+        peak_demand = round(delivered_demand_np.max(), 1)
+        daily_demand = round(total_fulfilled_demand / 365, 1)
+        return total_fulfilled_demand, peak_demand, daily_demand
 
 def get_asset_assumptions(project):
     qs = Simulation.objects.filter(scenario_id=project.scenario.id)
@@ -1253,6 +1275,10 @@ class FinancialTool:
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
+
+        total_fulfilled_demand = get_fulfilled_demand_indicator(self.project, total_only=True)
+        total_demand.loc["mini_grid", "total_demand"] = total_fulfilled_demand
+
         asset_sizes = pd.DataFrame.from_records(opt_caps).set_index("asset")
         asset_sizes["installed_capacity"] = inst_caps
         assets = pd.concat([asset_sizes, costs], axis=1)
