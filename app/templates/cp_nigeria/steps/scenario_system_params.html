@@ -20,18 +20,6 @@
 
 		<section class="project-setup two-columns">
 			<form method="POST">
-				<!--div class="row">
-					{% if pv_timeseries %}
-					<div class="col">
-						<h3>PV normalized timeseries</h3>
-						<div id="pv_trace"></div>
-					</div>
-					{% endif %}
-					<div class="col">
-						<h3>Demand profile (kWh)</h3>
-						<div id="demand_trace"></div>
-					</div>
-				</div-->
 				<div style="display:flex">
 					<div class="left">
 						<div>
@@ -121,19 +109,4 @@
 {% endblock next_btn %}
 
 {% block end_body_scripts %}
-{% if demand %}
-<script>
-	var demand = {{ demand }};
-	var timestamps = {{ timestamps }};
-	makePlotly( timestamps, demand, plot_id="demand_trace");
-	// makePlotly( x, y, plot_id="pv_trace");
-</script>
-{% endif %}
-{% if pv_timeseries %}
-<script>
-	var pv_timeseries = {{ pv_timeseries }};
-	var timestamps = {{ timestamps }};
-	makePlotly( timestamps, pv_timeseries, plot_id="pv_trace");
-</script>
-{% endif %}
 {% endblock end_body_scripts %}

@@ -927,15 +927,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             # TODO this seems to redirect to wrong page is the form is wrong
             qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
-            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(
-                with_timeseries=True, project=project
-            )
-
-            qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
-            if qs_pv.exists():
-                pv_timeseries = json.loads(qs_pv.get().input_timeseries)
-            else:
-                pv_timeseries = None
+            total_demand, peak_demand, daily_demand = get_demand_indicators(project=project)
 
             if qs_bm.exists():
                 bm = qs_bm.get()
@@ -947,11 +939,6 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 {
                     "form": form,
                     "equity_form": equity_form,
-                    "timestamps": [
-                        i for i in range(len(demand))
-                    ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
-                    "demand": demand,
-                    "pv_timeseries": pv_timeseries,
                     "daily_demand": daily_demand,
                     "peak_demand": peak_demand,
                     "model_name": model_name,
