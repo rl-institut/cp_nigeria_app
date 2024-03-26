@@ -11,11 +11,13 @@ from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
 from projects.forms import StorageForm, AssetCreateForm, UploadTimeseriesForm
 from projects.models import Project, EconomicData, Scenario
 from business_model.models import EquityData
+from business_model.helpers import validate_percent
 from projects.constants import CURRENCY_SYMBOLS, ENERGY_DENSITY_DIESEL
 from .models import *
 from projects.helpers import PARAMETERS
 from projects.requests import request_exchange_rate
 from cp_nigeria.helpers import HOUSEHOLD_TIERS
+
 
 CURVES = (("Evening Peak", "Evening Peak"), ("Midday Peak", "Midday Peak"))
 
@@ -323,16 +325,32 @@ class BessForm(StorageForm):
         return round(1 - self.cleaned_data["soc_min"], 3)
 
 
-class SHSTiersForm(forms.Form):
-    help_text = "All households assigned to the selected tier or below will be served by solar home systems."
-    question_icon = f'<span class="icon icon-question" data-bs-toggle="tooltip" title="{help_text}"></span>'
+class DemandOptionsForm(forms.Form):
+    help_text_shs = "All households assigned to the selected tier or below will be served by solar home systems."
+    help_text_demand = "Select the percentage of demand you want to fulfill, the rest might be fulfilled if the optimization allows it. For example if you select 80%, then 80% of the demand of your community will be fulfilled for sure and the remaining 20% is optional, thus the total fulfilled demand after optimization will lie between 80% and 100%. Currently this only apply on the demand of the households."
+    question_icon = '<span class="icon icon-question" data-bs-toggle="tooltip" title="{}"></span>'
 
     shs_threshold = forms.ChoiceField(
         widget=forms.Select(attrs={"data-bs-toggle": "tooltip"}),
         required=False,
         choices=HOUSEHOLD_TIERS,
-        label="Select a threshold for SHS users" + question_icon,
+        label="Select a threshold for SHS users" + question_icon.format(help_text_shs),
     )
+    demand_coverage_factor = forms.FloatField(
+        required=False,
+        label="Minimal percentage of the demand to fulfill" + question_icon.format(help_text_demand),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(DemandOptionsForm, self).__init__(*args, **kwargs)
+        self.fields["demand_coverage_factor"].widget.attrs["min"] = 0
+        self.fields["demand_coverage_factor"].widget.attrs["max"] = 100
+
+    def clean_demand_coverage_factor(self):
+        """method which gets called upon form validation"""
+        demand_coverage_factor = self.cleaned_data["demand_coverage_factor"] / 100.0
+        validate_percent(demand_coverage_factor)
+        return demand_coverage_factor
 
 
 class ConsumerGroupForm(OpenPlanModelForm):

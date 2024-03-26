@@ -266,12 +266,19 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # with option advanced_view set by user choice
     if request.method == "POST":
         qs_demand = Asset.objects.filter(
-            scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+            scenario=project.scenario,
+            asset_type__asset_type="reducable_demand",
         )
+        demand_options_form = DemandOptionsForm(request.POST)
+        if demand_options_form.is_valid():
+            options.shs_threshold = demand_options_form.cleaned_data["shs_threshold"]
 
-        shs_form = SHSTiersForm(request.POST)
-        if shs_form.is_valid():
-            options.shs_threshold = shs_form.cleaned_data["shs_threshold"]
+            hh_demand = qs_demand.filter(name="electricity_demand_hh")
+            if hh_demand.exists():
+                hh_demand = hh_demand.get()
+                hh_demand.efficiency = demand_options_form.cleaned_data["demand_coverage_factor"]
+                hh_demand.save()
+            options.demand_coverage_factor = demand_options_form.cleaned_data["demand_coverage_factor"]
             options.save()
 
         formset_qs = ConsumerGroup.objects.filter(project=project)
@@ -316,17 +323,22 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         if formset.is_valid():
             # update demand if exists
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(project)
-                demand = qs_demand.get()
-                demand.input_timeseries = json.dumps(total_demand)
-                demand.save()
+                for demand, cg_type in zip(qs_demand, ("Enterprise", "Household", "Public facility")):
+                    total_demand = get_aggregated_demand(project, consumer_type=cg_type)
+                    demand.input_timeseries = json.dumps(total_demand)
+                    demand.save()
 
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
+        demand_options_form = DemandOptionsForm(
+            initial={
+                "shs_threshold": options.shs_threshold,
+                "demand_coverage_factor": options.demand_coverage_factor * 100,
+            }
+        )
 
         if options.community is not None and not formset_qs.exists():
             cg_qs = ConsumerGroup.objects.filter(community=options.community)
@@ -358,7 +370,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "cp_nigeria/steps/scenario_demand.html",
         {
             "formset": formset,
-            "shs_form": shs_form,
+            "shs_form": demand_options_form,
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
@@ -532,6 +544,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         demand_hh.pos_y = ac_bus.pos_y + 150
         demand_ent.pos_y = ac_bus.pos_y
         demand_pf.pos_y = ac_bus.pos_y - 150
+        # reduce the coverage of the household demand
+        demand_hh.efficiency = options.demand_coverage_factor
         demand_hh.save()
         demand_ent.save()
         demand_pf.save()
