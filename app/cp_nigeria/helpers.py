@@ -71,6 +71,17 @@ FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
 OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
 
 
+def calculate_co2_mitigation(project):
+    # TODO implement the calculation
+    co2_mitigations = {"Ebute-Ipare": 6894, "Usungwe": 22123, "Unguwar Kure": 3088, "Ezere": 8981, "Egbuniwe": 7472}
+
+    for key in co2_mitigations.keys():
+        if project.name or project.options.community.name in key:
+            return f"{co2_mitigations[key]:,}"
+
+    return "[not available]"
+
+
 def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
     if "rows" in units_on:
         report_table = {f"{value['verbose']} ({value['unit']})": value["value"] for key, value in rows.items()}
@@ -153,7 +164,7 @@ def get_project_summary(project):
         "project_lifetime": f"{project_lifetime} years",
         "bm_name": f"{bm_name}",
         "exchange_rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
-        "total_investments": f"{total_investments:,.0f} {currency_symbol}",
+        "total_investments": f"{round(total_investments, -3):,.0f} {currency_symbol}",
     }
     return project_summary
 
@@ -316,7 +327,7 @@ def get_asset_assumptions(project):
 
         df.rename(columns=cost_names, index=asset_names, inplace=True)
         df = df.round(2)
-        return df.T
+        return df
 
 
 def get_community_region(project):
@@ -386,9 +397,9 @@ class ReportHandler:
             self.doc.styles["Normal"].font.name = "Arial"
 
         # get parameters needed for implementation plan
-        options = Options.objects.get(project=project)
-        if options.community is not None:
-            community_name = options.community.name
+        self.options = Options.objects.get(project=project)
+        if self.options.community is not None:
+            community_name = self.options.community.name
         else:
             community_name = project.name
         self.bm = BusinessModel.objects.get(scenario=project.scenario)
@@ -404,12 +415,17 @@ class ReportHandler:
 
         # Make a sentence with system assets and their optimized capacities
         system_assets = []
+        assets_text = {
+            "battery": "battery system",
+            "pv_plant": "solar PV plant",
+            "diesel_generator": "diesel generator",
+        }
         for asset in opt_caps.values_list("asset", "optimized_capacity"):
             if asset[0] != "inverter":
                 unit = "kW"
                 if asset[0] == "battery":
                     unit = "kWh"
-                system_assets.append(f"{asset[0].replace('_', ' ').title()} [{round(asset[1], 1)} {unit}]")
+                system_assets.append(f"{assets_text[asset[0]]} [{round(asset[1], 1)} {unit}]")
         if len(system_assets) == 1:
             system_assets = "a {}".format(system_assets[0])
         else:
@@ -420,7 +436,7 @@ class ReportHandler:
         self.project = project
         self.report_obj = ImplementationPlanContent.objects.get(simulation=self.project.scenario.simulation)
         self.image_path = dict(
-            es_schema="static/assets/gui/" + options.schema_name,
+            es_schema="static/assets/gui/" + self.options.schema_name,
             bm_graph="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Graph"],
             bm_resp="static/assets/cp_nigeria/business_models/" + B_MODELS[self.bm_name]["Responsibilities"],
         )
@@ -464,20 +480,23 @@ class ReportHandler:
 
         state, region = get_community_region(self.project)
         self.text_parameters = dict(
-            grid_option=options.main_grid,
+            grid_option=self.bm.grid_condition,
             bm_name=B_MODELS[self.bm_name]["Verbose"],
             community_name=community_name,
             community_state=state,
             community_region=region,
+            co2_mitigation=calculate_co2_mitigation(self.project),
             hh_number_mg=self.aggregated_cgs["households"]["nr_consumers"],
             ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
             pf_number=self.aggregated_cgs["public"]["nr_consumers"],
             shs_number=self.aggregated_cgs["shs"]["nr_consumers"],
-            shs_threshold=dict(HOUSEHOLD_TIERS)[options.shs_threshold],
+            hh_number_total=self.aggregated_cgs["households"]["nr_consumers"]
+            + self.aggregated_cgs["shs"]["nr_consumers"],
+            shs_threshold=dict(HOUSEHOLD_TIERS)[self.options.shs_threshold],
             system_assets=system_assets,
-            system_capacity="XXXX (???what is the definition of system size???)",
             system_capex=ft.total_capex("NGN"),
             system_opex=ft.total_opex(),
+            grant_share=ft.financial_params["grant_share"] * 100,
             yearly_production=ft.yearly_production_electricity,
             total_demand=total_demand,
             avg_daily_demand=daily_demand,
@@ -489,7 +508,7 @@ class ReportHandler:
             opex_growth_rate=ft.opex_growth_rate * 100,
             fuel_costs=ft.fuel_costs,
             fuel_consumption_liter=ft.fuel_consumption_liter,
-            energy_system_components_string=options.component_list,
+            energy_system_components_string=self.options.component_list,
             community_latitude=self.project.latitude,
             community_longitude=self.project.longitude,
             project_name=self.project.name,
@@ -498,9 +517,12 @@ class ReportHandler:
             disco="DiscoName",
             ent_demand_categories=cg_sentences["Enterprise"],
             pf_demand_categories=cg_sentences["Public facility"],
+            # TODO change when demand coverage is merged
+            demand_coverage=100,
+            grant_deduction=(1 - ft.usable_grant) * 100,
         )
-        if self.text_parameters["grid_option"] is False:
-            self.text_parameters["grid_option"] = "is not connected to the national grid"
+        if self.text_parameters["grid_option"] == "isolated":
+            self.text_parameters["grid_option"] = "not connected to the national grid"
         else:
             self.text_parameters[
                 "grid_option"
@@ -638,10 +660,14 @@ class ReportHandler:
         # add headers
         for j in range(cols):
             t.cell(0, j + start_idx).text = df.columns[j]
+            p = t.cell(0, j + start_idx).paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         for i in range(rows):
             for j in range(cols):
                 t.cell(i + 1, j + start_idx).text = str(df.values[i, j])
+                p = t.cell(i + 1, j + start_idx).paragraphs[0]
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         # shade and make bold if rows contain total
         for j in range(rows):
@@ -851,9 +877,9 @@ class ReportHandler:
             "facilities. Currently, the community is {grid_option}. In light of the community's aspiration to achieve a "
             "constant and reliable electricity supply, the community is willing to engage with project partners to "
             "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
-            "CP-Nigeria Toolbox, comprises {system_assets}. Overall Capex would "
-            "amount to {system_capex:,.0f} NGN, while overall Opex amount to {system_opex:,.0f} NGN. Regarding the "
-            "project implementation, an {bm_name} business model approach is suggested."
+            "CP-Nigeria Toolbox, comprises {system_assets}. The project does not only present a robust business case "
+            "but electrifying the community will also deliver vital socioeconomic benefits to its members. In "
+            "addition, the project approximately mitigates {co2_mitigation} tonnes of CO2 over the project lifetime."
         )
 
         # Add page break
@@ -908,7 +934,7 @@ class ReportHandler:
         self.add_paragraph_with_hyperlink(
             "The toolbox has been "
             "developed within the frame of the project CP Nigeria: Communities of Practice as driver of a bottom-up "
-            "energy transition in Nigeria: This project is funded by the International Climate Initiative (IKI). "
+            "energy transition in Nigeria. This project is funded by the International Climate Initiative (IKI). "
             "The overall objective of the project is to achieve a climate-friendly energy supply through "
             "decentralized renewable energy (DRE) in Nigeria by 2030. In order to achieve this, civil society must "
             'play a driving role. The project therefore aims to create exemplary civil society nuclei ("Communities '
@@ -925,24 +951,33 @@ class ReportHandler:
 
         p = self.add_paragraph_with_hyperlink(
             "The total electricity demand is estimated by assigning demand profiles to the households, enterprises "
-            "and public facilities present in the community, based on demand profiles constructed within the "
+            "and public facilities present in the community, based on demand profiles calculated within the "
             "PeopleSun project, which were derived from surveys and appliance audits conducted within "
             "electrified communities. As the demand is based on proxy data for already electrified communities, "
-            "the system does not consider any demand increase over project lifetime, but instead assumes that the "
-            "proposed supply system would be able to satisfy future demand.",
+            "the system does not consider any demand increase over the project lifetime, but instead assumes that the "
+            "proposed supply system would be able to satisfy future demand for all consumers connected to the "
+            "mini-grid. In the case of new connections, the system may require upsizing.",
             "PeopleSun project",
-            "https://www.peoplesun.org/",
+            "https://energypedia.info/wiki/Nigeria_Off-Grid_Solar_Knowledge_Hub",
         )
 
-        self.add_paragraph(
-            "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
-            'Systems (SHS) instead, all households assigned to the "{shs_threshold}" tier and below are excluded from the '
-            "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
-        )
+        if self.options.shs_threshold == "very_high":
+            self.add_paragraph(
+                "To avoid system oversizing, the system was assumed to only serve enterprises and public facilities. "
+                "Therefore, all households were excluded from the supply system optimization. This approach assumes "
+                "that the mini-grid capacity will be increased and expanded to serve households as the project "
+                "progresses. Households are assumed to be served by Solar Home Systems (SHS) instead."
+            )
+        else:
+            self.add_paragraph(
+                "Given that not all households may be connected to the mini-grid, but some may be served by Solar Home "
+                'Systems (SHS) instead, all households assigned to the "{shs_threshold}" tier and below are excluded from the '
+                "supply system optimization. In this case, {shs_number} households were assumed to be served by SHS."
+            )
 
         self.add_paragraph(
-            "In total, the community has {hh_number} households, {ent_number} enterprises and {pf_number} public "
-            "facilities that would be connected to the mini-grid. The following table displays the "
+            "In total, {hh_number_mg} households, {ent_number} enterprises and {pf_number} public "
+            "facilities would be connected to the mini-grid. Table 1 displays the "
             "number of consumers and their respective yearly electricity demand."
         )
 
@@ -951,8 +986,8 @@ class ReportHandler:
         self.add_paragraph(
             "The total estimated yearly demand for the {community_name} community is {total_demand:,.0f} kWh/year. The "
             "average daily demand is {avg_daily_demand:,.1f} kWh/day, while the peak demand for the simulated year is "
-            "{peak_demand:,.1f} kW. The following graph displays how the cumulated demand is aggregated based on the given community "
-            "characteristics."
+            "{peak_demand:,.1f} kW. Figure 1 displays how the cumulated demand is aggregated based on the given community "
+            "characteristics for one week."
         )
 
         self.add_image_from_db("mini_grid_demand_graph", caption="Total mini-grid demand")
@@ -963,8 +998,9 @@ class ReportHandler:
 
         self.add_paragraph(
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
-            "the following components: {energy_system_components_string}. The cost and asset characteristics used to "
-            "conduct the system optimization can be seen in the annex. Based on the given system setup, the following "
+            "the following components: {energy_system_components_string}. The optimization assumes a {demand_coverage}% "
+            "demand coverage. The cost and asset characteristics used to "
+            "conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
             "asset sizes result in the least-cost solution:"
         )
 
@@ -977,46 +1013,52 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system amount to {system_capex:,.0f} NGN. More detailed "
-            "information regarding investment costs and financial considerations can be found in the respective section. The "
-            "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN, with an estimated annual "
-            "increase in operational expenditures of {opex_growth_rate}%. Of these expenditures, {fuel_costs:,.0f} NGN are "
-            "attributed to fuel costs, amounting to {fuel_consumption_liter:,.1f} L consumed. The "
+            "In total, the investment costs for the power supply system total to {system_capex:,.0f} NGN. The "
+            "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN. Additionally, {fuel_costs:,.0f} NGN are "
+            "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. More detailed "
+            "information regarding system costs and financial data can be found in Section 4. The "
             "following graph displays the power flow for the system during one week:"
         )
-
         # Stacked timeseries graph
         self.add_image_from_db("stacked_timeseries_graph", caption="Power flows during first week")
 
         ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
-        self.add_heading("Capital Expenditure (CAPEX)", level=2)
+        self.add_heading("Supply System Costs", level=2)
 
         self.add_paragraph(
-            "The project includes the following Capital Expenditures (CAPEX) that need to be covered "
-            "during installation of the technical equipment, i.e. the power supply system and the "
+            "Table 3 and Fig. 4 display the project's capital expenditures (CAPEX), which need to be covered "
+            "during the installation of technical equipment, i.e. the power supply system outlined in Section 3 and the "
             "transmission network. CAPEX are considered in a conservative way and also include "
-            "logistical costs, an insurance for construction as well as planning and labor costs. VAT is"
+            "logistical costs, insurance for construction as well as planning and labor costs. VAT is"
             " considered for non-technical equipment costs only."
         )
 
-        self.add_df_as_table(self.get_df_from_db("capex_table"), caption="Total mini-grid CAPEX")
+        self.add_df_as_table(self.get_df_from_db("capex_table"), caption="Distribution of mini-grid CAPEX")
         self.add_image_from_db("capex_graph", caption="Total mini-grid CAPEX")
 
-        self.add_heading("Operational Expenditure (OPEX)", level=2)
         self.add_paragraph(
-            "The project includes the following operational expenditures (OPEX) that need to be covered"
-            " during operation of the power supply system and the transmission network. OPEX are "
+            "Additionally, the project includes operational expenditures (OPEX) that need to be covered"
+            " during the operation of the power supply system and the transmission network. OPEX are "
             "considered in a conservative way and include service and maintenance for the mini-grid as "
-            "well as diesel fuel for the diesel-genset."
+            "well as diesel fuel for the diesel generator. Table 4 displays total OPEX costs for the first"
+            "year of operation, as well as CAPEX broken down by system asset. During the remaining project lifetime, "
+            "OPEX costs are assumed to increase an average of {opex_growth_rate} per year."
         )
         self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
 
         self.add_heading("Key Financial Parameters", level=2)
         self.add_paragraph(
             "The following key financial parameters describe the economic viability and profitability "
-            "of the project. They include the resulting community tariff and its annual increase rate "
-            "as well as the internal rate of return (IRR) of the project activity over 10 and 20 years."
+            "of the project. They include the resulting community tariff "
+            "as well as the internal rate of return (IRR) of the project activity over 10 and 20 years. "
+            "Several parameters flow into the tariff calculation, such as investment and operational costs, the "
+            "community’s electricity demand as well as assumptions regarding the composition of financial instruments "
+            "or interest rate levels. A key parameter that determines the tariff height is the potential "
+            "acquisition of a grant. For instance, the Nigerian Rural Electrification Agency (REA) offers the "
+            "opportunity to apply for grant financing for mini-grid projects in rural areas. The Annex of this document"
+            " provides a list of potential financing sources, including also other financial instruments. In the grant "
+            "scenario, the tool assumes a grant component of {grant_share:.0f}% of the total investment costs. "
         )
 
         self.add_df_as_table(self.get_df_from_db("financial_kpi_table"), caption="Key Financial Parameters")
@@ -1025,21 +1067,32 @@ class ReportHandler:
         self.add_paragraph(
             "The financing structure shows the key financial conditions including the communities’ and "
             "mini-grid companies’ equity share and interest, the grant and the debt volume and its "
-            "average interest rate. For the grant, a deduction of 25% is considered, since typically "
-            "performance based grants are applied that are provided after the implementation of the "
-            "project. Thus a domestic bank loan with approximately 25% interest has to be taken up for "
-            "one year, effectively reducing the volume of the grant by 25%. WACC describes the "
-            "resulting weighted costs of capital for the project activity."
+            "average interest rate. For the grant, a deduction of {grant_deduction}% is considered, since typically "
+            "performance-based grants are applied that are provided after the implementation of the "
+            "project. Thus a domestic bank loan with high interest rates has to be taken up for "
+            "one year to cover a portion of the investment costs, effectively reducing the volume of the grant by "
+            "{grant_deduction}%. WACC describes the resulting weighted average costs of capital for the project activity."
         )
 
         self.add_df_as_table(
             self.get_df_from_db("financing_structure_table"), caption="Financing structure for the project"
         )
 
+        self.add_paragraph(
+            "*In addition to the parameters in the table above, the overall tool calculation also "
+            "considers an additional loan that is required for the replacement of certain mini-grid "
+            "assets during the project lifetime. As it does not add to the total investment costs, "
+            "it is not included here. The replacement is assumed to happen after approx. ten years of "
+            "operation and typically impacts the battery system and diesel generator (see Annex for "
+            "more information about assumed asset lifetimes)."
+        )
+
         self.add_heading("Cash Flow Diagram", level=2)
         self.add_paragraph(
-            "The following Figure shows the net cash flow over time, including debt repayment and debt "
-            "interest payments as well as the  comparison of net operating revenues and  operating expenses."
+            "Figure 5 shows the net cash flow over time, including debt repayment and debt "
+            "interest payments. These flows consider the repayment of both the initial loan and the loan taken up "
+            "after half of the project lifetime for the replacement of certain assets. The graph also displays the "
+            "comparison of net operating revenues and operating expenses."
         )
         self.add_image_from_db("cash_flow_graph", caption="Cash flow over project lifetime")
 
@@ -1048,7 +1101,7 @@ class ReportHandler:
 
         self.add_paragraph(B_MODELS[self.bm_name]["Report"])
 
-        self.add_image(self.image_path["bm_graph"], width=Inches(2.5), caption="Business model structure")
+        self.add_image(self.image_path["bm_graph"], width=Inches(4), caption="Business model structure")
         self.add_image(self.image_path["bm_resp"], width=Inches(5), caption="Business model responsibilities")
 
         # Add additional text and criteria bullet points if community-led model is chosen
@@ -1070,11 +1123,12 @@ class ReportHandler:
                     "to choose the cooperative-led model and has in place:"
                 )
                 self.add_list(self.create_community_criteria_list(qs))
-        # TODO add next steps
-        self.add_heading("Next Steps")
         self.doc.add_page_break()
         self.add_heading("Annex")
+        self.add_heading("Next steps guideline for community", level=2)
+        self.add_heading("Financing sources database", level=2)
         # TODO add tables about cost assumptions etc here
+        self.add_heading("Tool assumptions", level=2)
         self.add_df_as_table(get_asset_assumptions(self.project), caption="Asset assumptions")
 
 
@@ -1106,6 +1160,9 @@ class FinancialTool:
             "label",
         )
         self.system_lifetime = self.add_diff_rows(system_lifetime)
+        self.usable_grant = (
+            0.875  # this factor assumes that part of the grant is directly used for loan interest payments
+        )
 
     def collect_system_params(self):
         """
@@ -1536,12 +1593,11 @@ class FinancialTool:
 
     @property
     def financial_kpis(self):
-        usable_grant = 0.75  # this factor assumes that 25% of the grant is directly used for loan interest payments
         gross_capex = self.capex["Total costs [NGN]"].sum()
         total_equity = (
             self.financial_params["equity_community_amount"] + self.financial_params["equity_developer_amount"]
         )
-        total_grant = self.financial_params["grant_share"] * gross_capex * usable_grant
+        total_grant = self.financial_params["grant_share"] * gross_capex * self.usable_grant
         initial_amount = max(gross_capex - total_grant - total_equity, 0)
         replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
             "Total costs [NGN]"

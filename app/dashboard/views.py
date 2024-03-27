@@ -1154,7 +1154,7 @@ def scenario_visualize_system_costs(request, scen_id):
 
     for param in system_costs:
         table_content[param] = set_outputs_table_format(param)
-        table_content[param]["value"] = [f"{value:,.0f}" for value in system_costs[param].values()]
+        table_content[param]["value"] = [f"{round(value, -3):,.0f}" for value in system_costs[param].values()]
 
     table_headers = {}
     for header in headers:
@@ -1195,7 +1195,7 @@ def scenario_visualize_capex(request, scen_id):
     descriptions = []
     for param in capex_by_category:
         table_content[param] = set_outputs_table_format(param)
-        table_content[param]["value"] = f"{capex_by_category[param]:,.0f}"
+        table_content[param]["value"] = f"{round(capex_by_category[param], -3):,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
@@ -1364,6 +1364,7 @@ def request_financial_kpi_table(request, scen_id):
                     table_content[param]["value"] = [f"{value:,.0f}" for value in values.values()]
                 else:
                     headers = [""]
+                    values = round(values, -3) if isinstance(values, float) else values
                     table_content[param]["value"] = f"{values:,.0f}"
 
         tables[name]["data"] = table_content
