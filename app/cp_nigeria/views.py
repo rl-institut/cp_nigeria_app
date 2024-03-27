@@ -200,6 +200,11 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
             form = ProjectForm(request.POST)
             economic_data = EconomicProjectForm(request.POST)
         if form.is_valid() and economic_data.is_valid():
+            if project is not None and hasattr(project.scenario, "simulation"):
+                # the results could change without re-running the simulation if the exchange rate is changed, so we delete the report items if this is the case
+                qs_report = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
+                if qs_report.exists() and economic_data.has_changed():
+                    qs_report.delete()
             economic_data = economic_data.save()
             project = form.save(user=request.user, commit=False)
             project.economic_data = economic_data
