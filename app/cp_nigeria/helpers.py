@@ -29,6 +29,7 @@ from django.templatetags.static import static
 from dashboard.models import get_costs
 from django.db.models import Case
 from django.db import transaction
+from geopy.geocoders import Nominatim
 
 
 class Unnest(Func):
@@ -131,6 +132,7 @@ def get_project_summary(project):
     renewable_share = inverter_aggregated_flow / total_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
+    state, region = get_community_region(project)
     tariff = EquityData.objects.get(scenario=project.scenario).estimated_tariff * ft.exchange_rate
     if options.community is not None:
         community_name = options.community.name
@@ -142,7 +144,7 @@ def get_project_summary(project):
     project_summary = {
         "project_name": f"{project.name}",
         # "Community name": f"{community_name}",
-        "location": f"{project.latitude:.4f}°, {project.longitude:.4f}°",
+        "location": f"{state} State",
         "yearly_production": f"{yearly_production:,.0f} kWh",
         # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "renewable_share": f"{renewable_share:.2f}%",
@@ -317,6 +319,55 @@ def get_asset_assumptions(project):
         return df.T
 
 
+def get_community_region(project):
+    """Returns a tuple containing the state and geopolitical zone by extracting the state from the
+    address returned by reverse geocoding the coordinates"""
+    state_region_mapping = {
+        "Yobe": "North East",
+        "Borno": "North East",
+        "Bauchi": "North East",
+        "Gombe": "North East",
+        "Adamawa": "North East",
+        "Taraba": "North East",
+        "Niger": "North Central",
+        "Nasarawa": "North Central",
+        "Kwara": "North Central",
+        "Kogi": "North Central",
+        "Benue": "North Central",
+        "Plateau": "North Central",
+        "FCT": "North Central",
+        "Sokoto": "North West",
+        "Katsina": "North West",
+        "Jigawa": "North West",
+        "Kano": "North West",
+        "Zamfara": "North West",
+        "Kaduna": "North West",
+        "Kebbi": "North West",
+        "Anambra": "South East",
+        "Abia": "South East",
+        "Enugu": "South East",
+        "Ebonyi": "South East",
+        "Imo": "South East",
+        "Edo": "South South",
+        "Delta": "South South",
+        "Cross River": "South South",
+        "Akwa Ibom": "South South",
+        "Rivers": "South South",
+        "Bayelsa": "South South",
+        "Oyo": "South West",
+        "Osun": "South West",
+        "Ekiti": "South West",
+        "Ogun": "South West",
+        "Ondo": "South West",
+        "Lagos": "South West",
+    }
+    geolocator = Nominatim(user_agent="cp_nigeria_app")
+    location = geolocator.reverse(f"{project.latitude}, {project.longitude}")
+    state = location.raw["address"]["state"]
+    region = state_region_mapping[state]
+    return state, region
+
+
 class ReportHandler:
     def __init__(self, project):
         self.doc = Document()
@@ -411,12 +462,14 @@ class ReportHandler:
 
             cg_sentences[consumer_type] = ", ".join(consumers[:-1]) + f" and {consumers[-1]}"
 
+        state, region = get_community_region(self.project)
         self.text_parameters = dict(
             grid_option=options.main_grid,
             bm_name=B_MODELS[self.bm_name]["Verbose"],
             community_name=community_name,
-            community_region="Region",
-            hh_number=self.aggregated_cgs["households"]["nr_consumers"],
+            community_state=state,
+            community_region=region,
+            hh_number_mg=self.aggregated_cgs["households"]["nr_consumers"],
             ent_number=self.aggregated_cgs["enterprises"]["nr_consumers"],
             pf_number=self.aggregated_cgs["public"]["nr_consumers"],
             shs_number=self.aggregated_cgs["shs"]["nr_consumers"],
@@ -793,9 +846,9 @@ class ReportHandler:
         # Add project summary
         self.add_heading("Project summary", level=2)
         self.add_paragraph(
-            "The {community_name} community is a rural community in the {community_region} region. The community "
-            "comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public "
-            "facilities. Currently, the community {grid_option}. In light of the community's aspiration to achieve a "
+            "The {community_name} community is a rural community in {community_state} State ({community_region} Region). The community "
+            "comprises about {hh_number_total} households as well as {ent_number} enterprises and {pf_number} public "
+            "facilities. Currently, the community is {grid_option}. In light of the community's aspiration to achieve a "
             "constant and reliable electricity supply, the community is willing to engage with project partners to "
             "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
             "CP-Nigeria Toolbox, comprises {system_assets}. Overall Capex would "
@@ -812,8 +865,8 @@ class ReportHandler:
         self.add_heading("Community Background", level=2)
         self.add_list(
             (
-                "The community is located in the {community_region} region",
-                "The community comprises about {hh_number} households as well as {ent_number} enterprises and {pf_number} public facilities.",
+                "The community is located in {community_state} State ({community_region} Region)",
+                "The community comprises about {hh_number_total} households as well as {ent_number} enterprises and {pf_number} public facilities.",
                 "Some of the most commonly found enterprises in the community include {ent_demand_categories}",
                 "Existing public facilities include {pf_demand_categories}",
                 "Currently, the community is {grid_option}",
