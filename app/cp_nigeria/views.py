@@ -1078,6 +1078,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
     report_obj, created = ImplementationPlanContent.objects.get_or_create(simulation=project.scenario.simulation)
+    # saves the graphs and tables to the database if the object doesn't exist yet
+    save_to_db = True if created else False
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1210,6 +1212,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         "comparison_kpi_df": comparison_kpi_df,
         "system_costs": system_costs,
         "currency_symbol": currency_symbol,
+        "save_to_db": save_to_db,
     }
 
     return render(request, html_template, context)

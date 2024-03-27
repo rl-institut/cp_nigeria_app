@@ -95,6 +95,7 @@ function update_kpi_table_style(scen_id=""){
     $.ajax({
         url: urlKpiResults, // linked to cpn_kpi_results
         type: "GET",
+        data: {save_to_db: saveToDB},
         success: async (parameters) => {
             await addTable(parameters, table_id="container_system_kpis")
         }
@@ -194,6 +195,7 @@ function scenario_visualize_capex(scen_id=""){
  $.ajax({
             url: urlVisualizeCapex,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (parameters) => {
                 await addTable(parameters, table_id="container_total_capex");
                 await addPieChart(parameters, plot_id="capex");
@@ -205,6 +207,7 @@ function scenario_visualize_system_costs(scen_id=""){
  $.ajax({
             url: urlVisualizeSystemCosts,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (parameters) => {
                 await addTable(parameters, table_id="container_system_costs");
                 await addCostsChart(parameters, plot_id="system_costs");
@@ -217,6 +220,7 @@ function request_project_summary_table(scen_id=""){
  $.ajax({
             url: urlRequestProjectSummary,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addTable(response, table_id="container_project_summary")
             },
@@ -231,6 +235,7 @@ function request_community_summary_table(scen_id=""){
  $.ajax({
             url: urlRequestCommunitySummary,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addDemandGraph(response.graph_data, plot_id="mini_grid_demand")
                 await addTable(response, table_id="container_community_summary")
@@ -246,6 +251,7 @@ function request_system_size_table(scen_id=""){
  $.ajax({
             url: urlRequestSystemSize,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addTable(response, table_id="container_system_size")
             },
@@ -260,6 +266,7 @@ function request_financial_kpi_table(scen_id=""){
  $.ajax({
             url: urlRequestFinancialKpis,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addTable(response.tables.financial_kpi_table, table_id="container_financial_kpis")
                 await addTable(response.tables.financing_structure_table, table_id="container_financial_structure")

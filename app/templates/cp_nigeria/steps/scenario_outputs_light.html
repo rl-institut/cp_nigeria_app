@@ -359,6 +359,7 @@
     const urlCopyReportItem = "#";
     const urlDeleteReportItem = `{% url 'report_delete_item' proj_id %}`;
     const urlSaveToDB = `{% url 'save_graph_to_db' proj_id %}`;
+    const saveToDB = {% if save_to_db %} true {% else %} false {% endif %};
 
 	var createReportItemModalDOM = document.getElementById("createReportItemModal");
 	var createReportItemModal = new bootstrap.Modal(createReportItemModalDOM);

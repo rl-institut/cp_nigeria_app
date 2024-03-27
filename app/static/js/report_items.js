@@ -260,7 +260,10 @@ function addStackedTimeseriesGraph(graphId, parameters){
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
-    saveImageToDB(graphId);
+
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 };
 
 function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
@@ -572,7 +575,10 @@ function addFinancialPlot(parameters, plot_id="") {
     Plotly.newPlot(plotDiv, traces, layout, config);
     // simulate a click on autoscale
     plotDiv.querySelector('[data-title="Autoscale"]').click()
-    saveImageToDB(plot_id);
+
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 function addDemandGraph(parameters, plot_id="") {
@@ -605,7 +611,9 @@ function addDemandGraph(parameters, plot_id="") {
     // Plotting the stacked graph
     Plotly.newPlot(plot_id, traces, layout);
 
-    saveImageToDB(plot_id);
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 
@@ -768,7 +776,9 @@ function addPieChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
-    saveImageToDB(plot_id);
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 
@@ -807,7 +817,9 @@ function addCostsChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
-    saveImageToDB(plot_id);
+        if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 function insertLineBreaks(inputString, charactersPerLine) {

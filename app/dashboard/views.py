@@ -1126,8 +1126,8 @@ def scenario_visualize_revenue(request, scen_id):
 
 
 def scenario_visualize_system_costs(request, scen_id):
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     scenario = get_object_or_404(Scenario, pk=scen_id)
-
     # Initialize financial tool to get system costs for graph
     ft = FinancialTool(scenario.project)
     system_costs = ft.system_params[
@@ -1160,9 +1160,10 @@ def scenario_visualize_system_costs(request, scen_id):
     for header in headers:
         table_headers[header] = set_outputs_table_format(header)
 
-    save_table_for_report(
-        scenario=scenario, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
-    )
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        )
 
     return JsonResponse(
         {
@@ -1177,7 +1178,7 @@ def scenario_visualize_system_costs(request, scen_id):
 
 def scenario_visualize_capex(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     ft = FinancialTool(scenario.project)
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
@@ -1201,9 +1202,10 @@ def scenario_visualize_capex(request, scen_id):
     for header in headers:
         table_headers[header] = set_outputs_table_format(header)
 
-    save_table_for_report(
-        scenario=scenario, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
-    )
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        )
 
     return JsonResponse(
         {
@@ -1242,6 +1244,7 @@ def request_project_summary_table(request, scen_id):
 @json_view
 def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     graph_data = {"labels": [], "values": [], "descriptions": []}
     aggregated_cgs = get_aggregated_cgs(scenario.project, as_ts=True)
@@ -1270,7 +1273,8 @@ def request_community_summary_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_outputs_table_format(header)
 
-    save_table_for_report(scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content)
+    if save_to_db:
+        save_table_for_report(scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content)
 
     return JsonResponse(
         {"graph_data": graph_data, "data": table_content, "headers": table_headers},
@@ -1283,6 +1287,7 @@ def request_community_summary_table(request, scen_id):
 @json_view
 def request_system_size_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
 
@@ -1306,9 +1311,10 @@ def request_system_size_table(request, scen_id):
     for header in headers:
         table_headers[header] = set_outputs_table_format(header)
 
-    save_table_for_report(
-        scenario=scenario, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
-    )
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
+        )
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1319,6 +1325,7 @@ def request_system_size_table(request, scen_id):
 
 def request_financial_kpi_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
     tariff = ft.tariff
@@ -1364,10 +1371,11 @@ def request_financial_kpi_table(request, scen_id):
             table_headers[header] = set_outputs_table_format(header)
         tables[name]["headers"] = table_headers
 
-    for table, data in tables.items():
-        save_table_for_report(
-            scenario=scenario, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
-        )
+    if save_to_db:
+        for table, data in tables.items():
+            save_table_for_report(
+                scenario=scenario, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
+            )
 
     return JsonResponse(
         {"tables": tables},
