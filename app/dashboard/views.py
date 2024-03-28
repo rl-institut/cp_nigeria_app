@@ -1071,16 +1071,14 @@ def scenario_visualize_cash_flow(request, scen_id):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(scenario.project)
-    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
-
     initial_loan = ft.initial_loan_table
     replacement_loan = ft.replacement_loan_table
-    revenue = ft.revenue_over_lifetime(custom_tariff)
+    revenue = ft.revenue_over_lifetime
     costs = ft.om_costs_over_lifetime
 
     graph_contents = {
         "Cash flow after debt service": {
-            "values": ft.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()
+            "values": ft.cash_flow_over_lifetime.loc["Cash flow after debt service"].tolist()
         },
         "Debt repayments": {"values": (initial_loan.loc["Principal"] + replacement_loan.loc["Principal"]).tolist()[1:]},
         "Debt interest payments": {
@@ -1092,7 +1090,7 @@ def scenario_visualize_cash_flow(request, scen_id):
         "Operating expenses": {"values": costs.loc["opex_total"].tolist()},
     }
 
-    x = ft.cash_flow_over_lifetime().columns.tolist()
+    x = ft.cash_flow_over_lifetime.columns.tolist()
     title = "Cash flow"
     for trace in graph_contents:
         graph_contents[trace]["description"] = OUTPUT_PARAMS[trace]["description"]
@@ -1105,8 +1103,7 @@ def scenario_visualize_revenue(request, scen_id):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(scenario.project)
-    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
-    revenue = ft.revenue_over_lifetime(custom_tariff)
+    revenue = ft.revenue_over_lifetime
     costs = ft.om_costs_over_lifetime
 
     graph_contents = {
@@ -1328,16 +1325,23 @@ def request_financial_kpi_table(request, scen_id):
     save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
-    tariff = ft.tariff
+    tariff = ft.calculate_tariff()
     financing_structure = ft.financial_kpis
     # TODO discuss if this should be in table, excluded or included in total investments
     financing_structure.pop("replacement_loan_amount")
     # calculate the financial KPIs with 0% grant
-    irr_kpis = {"irr_10": ft.internal_return_on_investment(10), "irr_20": ft.internal_return_on_investment(20)}
-    ft.remove_grant()
-    no_grant_irr_kpis = {"irr_10": ft.internal_return_on_investment(10), "irr_20": ft.internal_return_on_investment(20)}
+    irr_kpis = {
+        "irr_10": ft.internal_return_on_investment(10),
+        "irr_20": ft.internal_return_on_investment(20),
+    }
 
-    no_grant_tariff = ft.tariff
+    ft.remove_grant()
+    no_grant_tariff = ft.calculate_tariff()
+
+    no_grant_irr_kpis = {
+        "irr_10": ft.internal_return_on_investment(10),
+        "irr_20": ft.internal_return_on_investment(20),
+    }
 
     comparison_kpi_df = pd.DataFrame([irr_kpis, no_grant_irr_kpis], index=["with_grant", "without_grant"]).T
     comparison_kpi_df.loc["tariff"] = {

@@ -1246,13 +1246,8 @@ def get_costs(simulation, y_variables=None):
     df["fuel_costs_total"] = df.apply(lambda x: x.total_flow * x.energy_price, axis=1)
 
     # calculate fuel costs for diesel genset
-    if qs2.filter(asset="diesel_fuel_consumption").exists():
-        diesel_generation = qs2.filter(asset="diesel_fuel_consumption").get().total_flow
-    else:
-        diesel_generation = 0
-
     df.loc[df["label"] == "diesel_generator", "fuel_costs_total"] = (
-        diesel_generation * df[df["label"] == "diesel_generator"]["opex_var_extra"]
+        df[df["label"] == "diesel_generator"]["total_flow"] * df[df["label"] == "diesel_generator"]["opex_var_extra"]
     )
 
     df = df[

@@ -1152,6 +1152,9 @@ class FinancialTool:
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
+        # automatically set the tariff if it has already been previously calculated
+        if self.financial_params["estimated_tariff"] is not None:
+            self.set_tariff(self.financial_params["estimated_tariff"])
         # calculate the system growth over the project lifetime and add rows for new mg and shs consumers per year
         system_lifetime = self.growth_over_lifetime_table(
             self.system_params[self.system_params["category"].isin(["nr_consumers", "total_demand"])],
@@ -1267,11 +1270,11 @@ class FinancialTool:
             "equity_interest_SHS",
             "equity_community_amount",
             "equity_developer_amount",
+            "estimated_tariff",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
         financial_params = qs_ed.first() | qs_eq.first()
         financial_params["capex_fix"] = self.project.scenario.capex_fix
-
         return financial_params
 
     @staticmethod
@@ -1386,16 +1389,12 @@ class FinancialTool:
     def opex_growth_rate(self):
         return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
 
-    def revenue_over_lifetime(self, custom_tariff=None):
+    @property
+    def revenue_over_lifetime(self):
         """
         This method returns a wide table calculating the revenue flows over project lifetime based on the cost
         assumptions for revenue together with the number of consumers and total demand of the system.
         """
-        # set the tariff to the already calculated tariff if the function is not being called from goal seek
-        if custom_tariff is not None:
-            self.cost_assumptions.loc[
-                self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"
-            ] = custom_tariff
 
         revenue_df = pd.merge(
             self.cost_assumptions[self.cost_assumptions["Category"] == "Revenue"],
@@ -1507,7 +1506,8 @@ class FinancialTool:
             amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
         )
 
-    def losses_over_lifetime(self, custom_tariff=None):
+    @property
+    def losses_over_lifetime(self):
         """
         This method first calculates the EBITDA (earnings before interest, tax, depreciation and amortization), then
         the financial losses through depreciation, interest payments to get the EBT (earnings before tax) and finally
@@ -1520,7 +1520,7 @@ class FinancialTool:
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
         losses.loc["EBITDA"] = (
-            self.revenue_over_lifetime(custom_tariff).loc[("Total operating revenues", "operating_revenues_total"), :]
+            self.revenue_over_lifetime.loc[("Total operating revenues", "operating_revenues_total"), :]
             - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
@@ -1547,13 +1547,14 @@ class FinancialTool:
 
         return losses
 
-    def cash_flow_over_lifetime(self, custom_tariff=None):
+    @property
+    def cash_flow_over_lifetime(self):
         """
         This method calculates the cash flows over system lifetime considering the previously calculated loan debt,
         earnings and financial losses. Both the losses_ver_lifetime() and debt_service_table() are called here.
         """
         cash_flow = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
-        losses = self.losses_over_lifetime(custom_tariff)
+        losses = self.losses_over_lifetime
 
         cash_flow.loc["Cash flow from operating activity"] = losses.loc["EBITDA"] - losses.loc["Corporate tax"]
         cash_flow.loc["Cash flow after debt service"] = (
@@ -1579,16 +1580,17 @@ class FinancialTool:
         """
         gross_capex = self.capex["Total costs [NGN]"].sum()
         grant = self.financial_params["grant_share"] * gross_capex
-        cash_flow = self.cash_flow_over_lifetime()
+        cash_flow = self.cash_flow_over_lifetime
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
         cash_flow_irr.insert(0, -gross_capex + grant)
 
         return npf.irr(cash_flow_irr[: (years + 1)])
 
     def goal_seek_helper(self, custom_tariff):
-        cashflow_helper = np.sum(
-            self.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()[0:5]
-        )
+        # change the tariff to the custom tariff
+        self.set_tariff(custom_tariff)
+
+        cashflow_helper = np.sum(self.cash_flow_over_lifetime.loc["Cash flow after debt service"].tolist()[0:5])
         return cashflow_helper
 
     @property
@@ -1625,18 +1627,25 @@ class FinancialTool:
 
         return financial_kpis
 
-    @property
-    def tariff(self):
-        x = np.arange(0.2, 0.5, 0.2)
+    def calculate_tariff(self):
+        x = np.arange(0.1, 0.5, 0.1)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
         # for which the sum of the cashflow for the first 4 years is 0
         m, h = np.polyfit(x, [self.goal_seek_helper(xi) for xi in x], deg=1)
         x0 = -h / m
+
+        # set the tariff to the calculated value
+        self.set_tariff(x0)
         return x0
 
     def remove_grant(self):
         self.financial_params["grant_share"] = 0.0
+        self.calculate_tariff()
+
+    def set_tariff(self, tariff):
+        # set FinancialTool tariff value to the computed tariff
+        self.cost_assumptions.loc[self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"] = tariff
 
 
 # TODO if linear fit yields same results this can be deleted

@@ -1105,7 +1105,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         es_schema_name = None
 
     ft = FinancialTool(project)
-    tariff = ft.tariff
+    tariff = ft.calculate_tariff()
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff
@@ -1159,22 +1159,22 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
             sub_capex.fillna("", inplace=True)
             capex_assumptions[cat] = sub_capex
 
-        revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        revenue_flows = ft.revenue_over_lifetime
         revenue_flows.index = revenue_flows.index.droplevel(1)
-        losses = ft.losses_over_lifetime(custom_tariff=tariff)
+        losses = ft.losses_over_lifetime
         replacement_loan_table = ft.replacement_loan_table
         om_costs_over_lifetime = ft.om_costs_over_lifetime
         exchange_rate = ft.exchange_rate
         tariff_ngn = tariff * exchange_rate
         senior_debt = ft.initial_loan_table
-        cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+        cash_flow = ft.cash_flow_over_lifetime
         cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
             losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
         )
         financial_kpis = ft.financial_kpis
         # calculate the financial KPIs with 0% grant
         ft.remove_grant()
-        no_grant_tariff = ft.tariff
+        no_grant_tariff = ft.calculate_tariff()
         no_grant_kpis = ft.financial_kpis
 
         comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["with_grant", "without_grant"]).T
