@@ -66,7 +66,14 @@ import datetime
 import logging
 import traceback
 from projects.helpers import parameters_helper
-from cp_nigeria.helpers import FinancialTool, get_project_summary, get_aggregated_cgs, set_table_format, OUTPUT_PARAMS
+from cp_nigeria.helpers import (
+    FinancialTool,
+    get_project_summary,
+    get_aggregated_cgs,
+    set_outputs_table_format,
+    OUTPUT_PARAMS,
+    save_table_for_report,
+)
 from users.templatetags.custom_template_tags import field_to_title
 
 logger = logging.getLogger(__name__)
@@ -1064,16 +1071,14 @@ def scenario_visualize_cash_flow(request, scen_id):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(scenario.project)
-    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
-
     initial_loan = ft.initial_loan_table
     replacement_loan = ft.replacement_loan_table
-    revenue = ft.revenue_over_lifetime(custom_tariff)
+    revenue = ft.revenue_over_lifetime
     costs = ft.om_costs_over_lifetime
 
     graph_contents = {
         "Cash flow after debt service": {
-            "values": ft.cash_flow_over_lifetime(custom_tariff).loc["Cash flow after debt service"].tolist()
+            "values": ft.cash_flow_over_lifetime.loc["Cash flow after debt service"].tolist()
         },
         "Debt repayments": {"values": (initial_loan.loc["Principal"] + replacement_loan.loc["Principal"]).tolist()[1:]},
         "Debt interest payments": {
@@ -1085,7 +1090,7 @@ def scenario_visualize_cash_flow(request, scen_id):
         "Operating expenses": {"values": costs.loc["opex_total"].tolist()},
     }
 
-    x = ft.cash_flow_over_lifetime().columns.tolist()
+    x = ft.cash_flow_over_lifetime.columns.tolist()
     title = "Cash flow"
     for trace in graph_contents:
         graph_contents[trace]["description"] = OUTPUT_PARAMS[trace]["description"]
@@ -1098,8 +1103,7 @@ def scenario_visualize_revenue(request, scen_id):
 
     # Initialize financial tool to calculate financial flows and test output graphs
     ft = FinancialTool(scenario.project)
-    custom_tariff = EquityData.objects.get(scenario=scenario).estimated_tariff
-    revenue = ft.revenue_over_lifetime(custom_tariff)
+    revenue = ft.revenue_over_lifetime
     costs = ft.om_costs_over_lifetime
 
     graph_contents = {
@@ -1112,15 +1116,15 @@ def scenario_visualize_revenue(request, scen_id):
     x = revenue.columns.tolist()
 
     for trace in graph_contents:
-        graph_contents[trace].update(set_table_format(trace))
+        graph_contents[trace].update(set_outputs_table_format(trace))
 
     title = "Operating revenues"
     return JsonResponse({"x": x, "graph_contents": graph_contents, "title": title})
 
 
 def scenario_visualize_system_costs(request, scen_id):
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     scenario = get_object_or_404(Scenario, pk=scen_id)
-
     # Initialize financial tool to get system costs for graph
     ft = FinancialTool(scenario.project)
     system_costs = ft.system_params[
@@ -1129,6 +1133,7 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs.drop(columns=["growth_rate", "label"], inplace=True)
     system_costs = system_costs.pivot(columns="category", index="supply_source")
     system_costs.columns = [col[1] for col in system_costs.columns]
+    system_costs.loc["total"] = system_costs.sum()
 
     assets = [OUTPUT_PARAMS[asset]["verbose"] for asset in system_costs.index]
     graph_contents = system_costs.to_dict()
@@ -1145,13 +1150,17 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs = system_costs.T.to_dict()
 
     for param in system_costs:
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in system_costs[param].values()]
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = [f"{round(value, -3):,.0f}" for value in system_costs[param].values()]
 
     table_headers = {}
-
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
+
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="cost_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        )
 
     return JsonResponse(
         {
@@ -1166,11 +1175,12 @@ def scenario_visualize_system_costs(request, scen_id):
 
 def scenario_visualize_capex(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     ft = FinancialTool(scenario.project)
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
     capex_by_category.drop("Opex", inplace=True)
+    capex_by_category.loc["total"] = capex_by_category.sum()
     categories = capex_by_category.index.tolist()
     total_costs = capex_by_category.values.tolist()
 
@@ -1181,13 +1191,18 @@ def scenario_visualize_capex(request, scen_id):
     headers = ["costs"]
     descriptions = []
     for param in capex_by_category:
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = f"{round(capex_by_category[param], 2):,}"
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = f"{round(capex_by_category[param], -3):,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
+
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        )
 
     return JsonResponse(
         {
@@ -1205,16 +1220,15 @@ def scenario_visualize_capex(request, scen_id):
 def request_project_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     project_summary = get_project_summary(scenario.project)
-    units = {"Description": "some random unit"}
     table_content = {}
     for param in project_summary:
-        table_content[param] = set_table_format(param)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = project_summary[param]
 
     table_headers = {}
     headers = [""]
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1227,24 +1241,42 @@ def request_project_summary_table(request, scen_id):
 @json_view
 def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
-    aggregated_cgs = get_aggregated_cgs(scenario.project)
+    graph_data = {"labels": [], "values": [], "descriptions": []}
+    aggregated_cgs = get_aggregated_cgs(scenario.project, as_ts=True)
+    graph_data["timestamps"] = scenario.get_timestamps(json_format=True)
+
+    for key in aggregated_cgs:
+        if key != "shs":
+            graph_data["labels"].append(OUTPUT_PARAMS[key]["verbose"])
+            graph_data["descriptions"].append(OUTPUT_PARAMS[key]["description"])
+            graph_data["values"].append(aggregated_cgs[key]["total_demand"].tolist())
+        aggregated_cgs[key]["total_demand"] = round(sum(aggregated_cgs[key]["total_demand"]), 0)
+
+    aggregated_cgs = pd.DataFrame.from_dict(aggregated_cgs, orient="index")
+    aggregated_cgs.loc["total"] = aggregated_cgs.sum()
+    aggregated_cgs = aggregated_cgs.T.to_dict()
     table_content = {}
     headers = []
-
     # create table content from aggregated cgs dictionary
     for param in aggregated_cgs:
         aggregated_cgs[param].pop("supply_source")
         headers = [key for key in aggregated_cgs[param].keys()]
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in aggregated_cgs[param].values()]
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = [f"{value:,.0f}" for value in aggregated_cgs[param].values()]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
+
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content, units_on="cols"
+        )
 
     return JsonResponse(
-        {"data": table_content, "headers": table_headers},
+        {"graph_data": graph_data, "data": table_content, "headers": table_headers},
         status=200,
         content_type="application/json",
     )
@@ -1254,6 +1286,7 @@ def request_community_summary_table(request, scen_id):
 @json_view
 def request_system_size_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
 
@@ -1267,16 +1300,20 @@ def request_system_size_table(request, scen_id):
     table_content = {}
     headers = []
 
-    # create table content from aggregated cgs dictionary
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in opt_caps[param].values()]
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = [f"{value:,.2f}" for value in opt_caps[param].values()]
         table_content[param]["unit"] = custom_units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_table_format(header)
+        table_headers[header] = set_outputs_table_format(header)
+
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="system_table", cols=table_headers, rows=table_content, units_on=["rows"]
+        )
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1287,36 +1324,68 @@ def request_system_size_table(request, scen_id):
 
 def request_financial_kpi_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     ft = FinancialTool(scenario.project)
-    tariff = ft.tariff
-    financial_kpis = ft.financial_kpis
+    tariff = ft.calculate_tariff()
+    financing_structure = ft.financial_kpis
+    # TODO discuss if this should be in table, excluded or included in total investments
+    financing_structure.pop("replacement_loan_amount")
     # calculate the financial KPIs with 0% grant
-    ft.remove_grant()
-    no_grant_tariff = ft.tariff
-    no_grant_kpis = ft.financial_kpis
+    irr_kpis = {
+        "irr_10": ft.internal_return_on_investment(10),
+        "irr_20": ft.internal_return_on_investment(20),
+    }
 
-    comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["with_grant", "without_grant"]).T
+    ft.remove_grant()
+    no_grant_tariff = ft.calculate_tariff()
+
+    no_grant_irr_kpis = {
+        "irr_10": ft.internal_return_on_investment(10),
+        "irr_20": ft.internal_return_on_investment(20),
+    }
+
+    comparison_kpi_df = pd.DataFrame([irr_kpis, no_grant_irr_kpis], index=["with_grant", "without_grant"]).T
     comparison_kpi_df.loc["tariff"] = {
         "with_grant": tariff * ft.exchange_rate,
         "without_grant": no_grant_tariff * ft.exchange_rate,
     }
 
     comparison_kpis = comparison_kpi_df.T.to_dict()
-    # create table content from aggregated cgs dictionary
-    table_content = {}
-    headers = ["costs"]
-    for param in comparison_kpis:
-        headers = [key for key in comparison_kpis[param].keys()]
-        table_content[param] = set_table_format(param)
-        table_content[param]["value"] = [f"{round(value, 2):,}" for value in comparison_kpis[param].values()]
+    tables = {"financial_kpi_table": {}, "financing_structure_table": {}}
 
-    table_headers = {}
-    for header in headers:
-        table_headers[header] = set_table_format(header)
+    for name, data in zip(["financial_kpi_table", "financing_structure_table"], [comparison_kpis, financing_structure]):
+        table_content = {}
+        table_headers = {}
+        for param, values in data.items():
+            table_content[param] = set_outputs_table_format(param)
+            if OUTPUT_PARAMS[param]["unit"] == "%":
+                if isinstance(values, dict):
+                    table_content[param]["value"] = [f"{value * 100:,.1f}" for value in values.values()]
+                else:
+                    table_content[param]["value"] = f"{values * 100:,.1f}"
+            else:
+                if isinstance(values, dict):
+                    headers = [key for key in values.keys()]
+                    table_content[param]["value"] = [f"{value:,.0f}" for value in values.values()]
+                else:
+                    headers = [""]
+                    values = round(values, -3) if isinstance(values, float) else values
+                    table_content[param]["value"] = f"{values:,.0f}"
+
+        tables[name]["data"] = table_content
+        for header in headers:
+            table_headers[header] = set_outputs_table_format(header)
+        tables[name]["headers"] = table_headers
+
+    if save_to_db:
+        for table, data in tables.items():
+            save_table_for_report(
+                scenario=scenario, attr_name=table, cols=data["headers"], rows=data["data"], units_on=["rows"]
+            )
 
     return JsonResponse(
-        {"data": table_content, "headers": table_headers},
+        {"tables": tables},
         status=200,
         content_type="application/json",
     )

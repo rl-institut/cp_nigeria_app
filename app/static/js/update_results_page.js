@@ -4,6 +4,18 @@ $(document).ready(function () {
     const scen_id = "{{ scen_id }}";
     const proj_id = "{{ proj_id }}";
 
+    // enable "download report" buttons only when all ajax calls have been completed (since the graphs/tables are saved
+    // in the cache, not all data needed for the report will be ready otherwise)
+    // Increment ongoingRequests count on each AJAX request
+    $(document).ajaxSend(function(event, jqxhr, settings) {
+        updateOngoingRequests(1);
+    });
+
+    // Decrement ongoingRequests count after each AJAX request completes
+    $(document).ajaxComplete(function(event, jqxhr, settings) {
+        updateOngoingRequests(-1);
+    });
+
     // load the scenario plots
     update_kpi_table_style(scen_id);
     scenario_visualize_cpn_stacked_timeseries(scen_id);
@@ -19,6 +31,17 @@ $(document).ready(function () {
     request_financial_kpi_table(scen_id);
 });
 
+// Define a variable to keep track of ongoing requests
+var ongoingRequests = 0;
+
+// Function to update ongoing requests count
+function updateOngoingRequests(delta) {
+    ongoingRequests += delta;
+    // If there are no ongoing requests, enable the button
+    if (ongoingRequests === 0) {
+        $('#download_report_btn').prop('disabled', false);
+    }
+}
 
 // allow to collapse the dataframe tables
 function collapseTables(){
@@ -72,6 +95,7 @@ function update_kpi_table_style(scen_id=""){
     $.ajax({
         url: urlKpiResults, // linked to cpn_kpi_results
         type: "GET",
+        data: {save_to_db: saveToDB},
         success: async (parameters) => {
             await addTable(parameters, table_id="container_system_kpis")
         }
@@ -171,6 +195,7 @@ function scenario_visualize_capex(scen_id=""){
  $.ajax({
             url: urlVisualizeCapex,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (parameters) => {
                 await addTable(parameters, table_id="container_total_capex");
                 await addPieChart(parameters, plot_id="capex");
@@ -182,6 +207,7 @@ function scenario_visualize_system_costs(scen_id=""){
  $.ajax({
             url: urlVisualizeSystemCosts,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (parameters) => {
                 await addTable(parameters, table_id="container_system_costs");
                 await addCostsChart(parameters, plot_id="system_costs");
@@ -194,6 +220,7 @@ function request_project_summary_table(scen_id=""){
  $.ajax({
             url: urlRequestProjectSummary,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addTable(response, table_id="container_project_summary")
             },
@@ -208,7 +235,9 @@ function request_community_summary_table(scen_id=""){
  $.ajax({
             url: urlRequestCommunitySummary,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
+                await addDemandGraph(response.graph_data, plot_id="mini_grid_demand")
                 await addTable(response, table_id="container_community_summary")
             },
             error: function(xhr, errmsg, err) {
@@ -222,6 +251,7 @@ function request_system_size_table(scen_id=""){
  $.ajax({
             url: urlRequestSystemSize,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
                 await addTable(response, table_id="container_system_size")
             },
@@ -236,8 +266,10 @@ function request_financial_kpi_table(scen_id=""){
  $.ajax({
             url: urlRequestFinancialKpis,
             type: "GET",
+            data: {save_to_db: saveToDB},
             success: async (response) => {
-                await addTable(response, table_id="container_financial_kpis")
+                await addTable(response.tables.financial_kpi_table, table_id="container_financial_kpis")
+                await addTable(response.tables.financing_structure_table, table_id="container_financial_structure")
             },
             error: function(xhr, errmsg, err) {
                 console.log(xhr.status + ": " + xhr.responseText);

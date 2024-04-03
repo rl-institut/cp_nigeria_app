@@ -200,6 +200,11 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
             form = ProjectForm(request.POST)
             economic_data = EconomicProjectForm(request.POST)
         if form.is_valid() and economic_data.is_valid():
+            if project is not None and hasattr(project.scenario, "simulation"):
+                # the results could change without re-running the simulation if the exchange rate is changed, so we delete the report items if this is the case
+                qs_report = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
+                if qs_report.exists() and economic_data.has_changed():
+                    qs_report.delete()
             economic_data = economic_data.save()
             project = form.save(user=request.user, commit=False)
             project.economic_data = economic_data
@@ -1077,6 +1082,9 @@ def cpn_complex_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"]):
 def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False):
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
+    report_obj, created = ImplementationPlanContent.objects.get_or_create(simulation=project.scenario.simulation)
+    # saves the graphs and tables to the database if there are empty fields (report_obj.empty_fields is True)
+    save_to_db = report_obj.empty_fields
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1096,16 +1104,29 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     else:
         es_schema_name = None
 
-    project_summary = opt_caps = capex_by_category = cgs_df = capex_df = capex_assumptions = senior_debt = None
-    cash_flow = losses = tariff = financial_kpis = comparison_kpi_df = system_costs = replacement_loan_table = None
-    om_costs_over_lifetime = tariff_ngn = None
-
     ft = FinancialTool(project)
-    tariff = ft.tariff
+    tariff = ft.calculate_tariff()
 
     ed = EquityData.objects.get(scenario=project.scenario)
     ed.estimated_tariff = tariff
     ed.save()
+
+    currency_symbol = project.economic_data.currency_symbol
+    context = {
+        "proj_id": proj_id,
+        "scen_id": project.scenario.id,
+        "scenario_list": user_scenarios,
+        "model_description": B_MODELS[model]["Description"],
+        "model_name": B_MODELS[model]["Verbose"],
+        "model_image": B_MODELS[model]["Graph"],
+        "model_image_resp": B_MODELS[model]["Responsibilities"],
+        "es_schema_name": es_schema_name,
+        "proj_name": project.name,
+        "step_id": step_id,
+        "step_list": CPN_STEP_VERBOSE,
+        "currency_symbol": currency_symbol,
+        "save_to_db": save_to_db,
+    }
 
     if complex is True:
         # Initialize financial tool to calculate financial flows and test output graphs
@@ -1138,22 +1159,22 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
             sub_capex.fillna("", inplace=True)
             capex_assumptions[cat] = sub_capex
 
-        revenue_flows = ft.revenue_over_lifetime(custom_tariff=tariff)
+        revenue_flows = ft.revenue_over_lifetime
         revenue_flows.index = revenue_flows.index.droplevel(1)
-        losses = ft.losses_over_lifetime(custom_tariff=tariff)
+        losses = ft.losses_over_lifetime
         replacement_loan_table = ft.replacement_loan_table
         om_costs_over_lifetime = ft.om_costs_over_lifetime
         exchange_rate = ft.exchange_rate
         tariff_ngn = tariff * exchange_rate
         senior_debt = ft.initial_loan_table
-        cash_flow = ft.cash_flow_over_lifetime(custom_tariff=tariff)
+        cash_flow = ft.cash_flow_over_lifetime
         cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
             losses.loc["Equity interest"] + losses.loc["Debt interest"] + senior_debt.loc["Principal"]
         )
         financial_kpis = ft.financial_kpis
         # calculate the financial KPIs with 0% grant
         ft.remove_grant()
-        no_grant_tariff = ft.tariff
+        no_grant_tariff = ft.calculate_tariff()
         no_grant_kpis = ft.financial_kpis
 
         comparison_kpi_df = pd.DataFrame([financial_kpis, no_grant_kpis], index=["with_grant", "without_grant"]).T
@@ -1179,38 +1200,27 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         cgs_df.drop(columns=["supply_source"], inplace=True)
         cgs_df.rename(columns={"total_demand": "total_demand"}, inplace=True)
         project_summary = get_project_summary(project)
-    currency_symbol = project.economic_data.currency_symbol
-    context = {
-        "proj_id": proj_id,
-        "project_summary": project_summary,
-        "opt_caps": opt_caps,
-        "capex_by_category": capex_by_category,
-        "scen_id": project.scenario.id,
-        "scenario_list": user_scenarios,
-        "model_description": B_MODELS[model]["Description"],
-        "model_name": B_MODELS[model]["Verbose"],
-        "model_image": B_MODELS[model]["Graph"],
-        "model_image_resp": B_MODELS[model]["Responsibilities"],
-        "cgs_df": cgs_df,
-        "es_schema_name": es_schema_name,
-        "proj_name": project.name,
-        "step_id": step_id,
-        "step_list": CPN_STEP_VERBOSE,
-        "capex_df": capex_df,
-        "capex_assumptions": capex_assumptions,
-        "senior_debt": senior_debt,
-        "replacement_debt": replacement_loan_table,
-        "cash_flow": cash_flow,
-        "opex_costs": om_costs_over_lifetime,
-        "losses": losses,
-        "tariff_NGN": tariff_ngn,
-        "tariff_USD": tariff,
-        "financial_kpis": financial_kpis,
-        "comparison_kpi_df": comparison_kpi_df,
-        "system_costs": system_costs,
-        "currency_symbol": currency_symbol,
-    }
 
+        context.update(
+            {
+                "project_summary": project_summary,
+                "opt_caps": opt_caps,
+                "capex_by_category": capex_by_category,
+                "cgs_df": cgs_df,
+                "capex_df": capex_df,
+                "capex_assumptions": capex_assumptions,
+                "senior_debt": senior_debt,
+                "replacement_debt": replacement_loan_table,
+                "cash_flow": cash_flow,
+                "opex_costs": om_costs_over_lifetime,
+                "losses": losses,
+                "tariff_NGN": tariff_ngn,
+                "tariff_USD": tariff,
+                "financial_kpis": financial_kpis,
+                "comparison_kpi_df": comparison_kpi_df,
+                "system_costs": system_costs,
+            }
+        )
     return render(request, html_template, context)
 
 
@@ -1496,13 +1506,29 @@ def cpn_business_model(request):
 @json_view
 @login_required
 @require_http_methods(["POST"])
-def save_to_session(request):
+def save_graph_to_db(request, proj_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        project = Project.objects.get(id=proj_id)
         graph_id = request.POST.get("graph_id")
+        if graph_id == "cpn_stacked_timeseriesElectricity":
+            graph_id = "stacked_timeseries"
+        attr_name = f"{graph_id}_graph"
         image_url = request.POST.get("image_url")
-        request.session[graph_id] = image_url
 
-        return JsonResponse({"status": "success"})
+        with transaction.atomic():
+            report_qs = ImplementationPlanContent.objects.select_for_update().filter(
+                simulation=project.scenario.simulation
+            )
+            if report_qs.exists():
+                if report_qs.count() > 1:
+                    logging.error("ImplementationPlanContent returned more than one object")
+                report_content = report_qs.first()
+                setattr(report_content, attr_name, image_url)
+                report_content.save()
+                answer = JsonResponse({"status": "success", "message": "Saved " + attr_name + " to database"})
+            else:
+                answer = JsonResponse({"status": "failed", "message": "Database object could not be found"})
+            return answer
 
 
 @json_view
@@ -1512,79 +1538,16 @@ def ajax_download_report(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
-        logging.info("downloading implementation plan")
+        logging.info("Downloading implementation plan")
+
         implementation_plan = ReportHandler(project)
         implementation_plan.create_cover_sheet()
         implementation_plan.create_report_content()
-        # implementation_plan.add_paragraph("For now, this is just a demo")
-        # implementation_plan.add_paragraph("Here are some graphs:")
-        #
-        # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
-        # for graph in os.listdir(graph_dir):
-        #     implementation_plan.add_image(os.path.join(graph_dir, graph))
-
-        # TODO what is the best way to potentially not recalculate all of the information but reuse it
-        # Add tables
-        # aggregated_cgs = get_aggregated_cgs(project)
-        # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
-
-        # Add images
-        report_imgs = ["cpn_stacked_timeseriesElectricity"]
-        for img in report_imgs:
-            image_data = request.session.get(img).split(",")[1]
-            if image_data:
-                try:
-                    image_bytes = base64.b64decode(image_data)
-                    image = io.BytesIO(image_bytes)
-
-                    implementation_plan.add_image(image)
-
-                except Exception as e:
-                    print(e)
+        implementation_plan.add_footer()
+        implementation_plan.prevent_table_splitting()
 
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response["Content-Disposition"] = "attachment; filename=report.docx"
+        response["Content-Disposition"] = f"attachment; filename=report.docx"
         implementation_plan.save(response)
 
         return response
-
-
-@login_required
-@require_http_methods(["GET"])
-def download_report(request, proj_id):
-    project = get_object_or_404(Project, id=proj_id)
-    logging.info("downloading implementation plan")
-    implementation_plan = ReportHandler(project)
-    implementation_plan.create_cover_sheet()
-    implementation_plan.create_report_content()
-    # implementation_plan.add_paragraph("For now, this is just a demo")
-    # implementation_plan.add_paragraph("Here are some graphs:")
-    #
-    # graph_dir = "static/assets/cp_nigeria/FATE_graphs"
-    # for graph in os.listdir(graph_dir):
-    #     implementation_plan.add_image(os.path.join(graph_dir, graph))
-
-    # TODO what is the best way to potentially not recalculate all of the information but reuse it
-    # Add tables
-    # aggregated_cgs = get_aggregated_cgs(project)
-    # implementation_plan.add_df_as_table(pd.DataFrame(aggregated_cgs), caption="Consumer groups")
-
-    # # Add images
-    # report_imgs = ["cpn_stacked_timeseriesElectricity"]
-    # for img in report_imgs:
-    #     image_data = request.session.get(img).split(",")[1]
-    #     if image_data:
-    #         try:
-    #             image_bytes = base64.b64decode(image_data)
-    #             image = io.BytesIO(image_bytes)
-    #
-    #             implementation_plan.add_image(image)
-    #
-    #         except Exception as e:
-    #             print(e)
-
-    response = "debug.docx"
-    implementation_plan.save(response)
-
-    response = HttpResponse("Hello")
-    return response

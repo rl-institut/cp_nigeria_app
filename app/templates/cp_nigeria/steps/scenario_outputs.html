@@ -311,9 +311,6 @@
 								</div>
 							</div>
 							<div style="display:flex;justify-content:center">
-								<a class="btn btn--medium"  href="{% url 'download_report' proj_id %}" style="margin-top:0.5rem">
-									Download report
-								</a>
 								<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
 									Download report (dev_info:ajax call)
 								</button>
@@ -450,7 +447,8 @@
 const urlNotImplemented = `{% url 'not_implemented' %}?url={{ request.get_full_path }}`;
 const urlCopyReportItem = "#";
 const urlDeleteReportItem = `{% url 'report_delete_item' proj_id %}`;
-const urlSaveToSession = `{% url 'save_to_session' %}`;
+const urlSaveToDB = `{% url 'save_graph_to_db' proj_id %}`;
+const saveToDB = {% if save_to_db %} true {% else %} false {% endif %};
 const urlDownloadReport = `{% url 'ajax_download_report' %}`;
 </script>
 <script src="{% static 'js/report_items.js' %}"></script>

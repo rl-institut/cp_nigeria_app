@@ -79,6 +79,7 @@ if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
                 resp_idx = hdr.index("Responsibilities")
                 adv_idx = hdr.index("Advantages")
                 disadv_idx = hdr.index("Disadvantages")
+                report_idx = hdr.index("Report")
             else:
                 label = row[label_idx]
                 B_MODELS[label] = {}

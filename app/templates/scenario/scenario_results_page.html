@@ -198,25 +198,6 @@ const urlNotImplemented = `{% url 'not_implemented' %}?url={{ request.get_full_p
 const urlCopyReportItem = "#";
 const urlDeleteReportItem = `{% url 'report_delete_item' proj_id %}`;
 
-
-const deleteReportItem = (event) => {
-    //submit the form to delete a report item
-    const reportItemId = event.target.getAttribute("data-report-item-id");
-    if(confirm("Are you sure ? This action cannot be undone")){
-        $.ajax({
-            headers: {'X-CSRFToken': `{{ csrf_token }}` },
-            type: "POST",
-            url: urlDeleteReportItem,
-            data: {report_item_id: reportItemId},
-            success: function (jsonRes) {
-                document.getElementById(reportItemId).remove();
-            },
-            error: function (err) {
-                console.log(err);
-            },
-        })
-    }
-};
 </script>
 <script src="{% static 'js/report_items.js' %}"></script>
 

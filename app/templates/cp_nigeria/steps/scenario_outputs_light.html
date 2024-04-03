@@ -195,6 +195,7 @@
 									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_community_summary">
 									</div>
 								</div>
+								{% include "report/graph_template.html" with id="mini_grid_demand" title="Total mini-grid demand" %}
 								<div class="chart" id="capacities-table">
 									<div class="chart__header">
 										<div>
@@ -295,7 +296,20 @@
 										</div>
 									</div>
 
+
 								</div>
+								<div class="chart" id="financial-structure">
+										<div class="chart__header">
+											<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_financial_structure" role="button" aria-expanded="false" aria-controls="container_financial_structure">
+    Financing Structure
+  </a></span>
+											</div>
+										</div>
+										<div class="chart__plot collapse show" style="overflow: scroll;" id="container_financial_structure">
+											<!--									{% include "report/table_template.html" with id="CommunitySummary" title="Community summary" df=cgs_df %}-->
+										</div>
+									</div>
 								{% include "report/graph_template.html" with id="cash_flow" title="Cash flow breakdown" %}
 								<div class="chart" id="investment-costs">
 									<div class="chart__header">
@@ -312,7 +326,7 @@
 								{% endif %}
 
 								<div style="display:flex;justify-content:center">
-									<button class="btn btn--medium"  onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
+									<button disabled id="download_report_btn" class="btn btn--medium" onclick="javascript:downloadReport({{ proj_id }})" style="margin-top:0.5rem">
 										Download report
 									</button>
 								</div>
@@ -344,7 +358,8 @@
 	const urlNotImplemented = `{% url 'not_implemented' %}?url={{ request.get_full_path }}`;
     const urlCopyReportItem = "#";
     const urlDeleteReportItem = `{% url 'report_delete_item' proj_id %}`;
-    const urlSaveToSession = `{% url 'save_to_session' %}`;
+    const urlSaveToDB = `{% url 'save_graph_to_db' proj_id %}`;
+    const saveToDB = {% if save_to_db %} true {% else %} false {% endif %};
 
 	var createReportItemModalDOM = document.getElementById("createReportItemModal");
 	var createReportItemModal = new bootstrap.Modal(createReportItemModalDOM);

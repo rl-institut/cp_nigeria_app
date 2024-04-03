@@ -217,7 +217,7 @@ function addTimeseriesGraph(graphId, parameters){
 function addStackedTimeseriesGraph(graphId, parameters){
     // prepare stacked traces in plotly format
     var data = []
-    var colorway = ["B2916C", "991818", "008753", "F2CD5D", "824670", "778EB5", "E86C1A"]
+    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
     var descriptions = parameters.descriptions
     if(parameters.data.length == 1){
         compare = false;
@@ -260,7 +260,10 @@ function addStackedTimeseriesGraph(graphId, parameters){
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
-    saveToSession(graphId);
+
+    if (saveToDB == true) {
+        saveImageToDB(graphId);
+    }
 };
 
 function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
@@ -572,7 +575,47 @@ function addFinancialPlot(parameters, plot_id="") {
     Plotly.newPlot(plotDiv, traces, layout, config);
     // simulate a click on autoscale
     plotDiv.querySelector('[data-title="Autoscale"]').click()
+
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
+
+function addDemandGraph(parameters, plot_id="") {
+    var plotDiv = document.getElementById(plot_id);
+    var labels = parameters.labels;
+    var values = parameters.values;
+    var descriptions = parameters.descriptions;
+    var traces = []
+    // Generating traces for the stacked graph
+    for (i=0; i < labels.length; ++i) {
+        var trace = {
+            x: parameters.timestamps,
+            y: values[i],
+            type: 'scatter',
+            mode: 'lines',
+            fill: 'tonexty',
+            stackgroup: 'one',
+            name: labels[i],
+        };
+        traces.push(trace)
+    };
+
+    // Setting layout options
+    var layout = {
+        xaxis: { title: 'Time', range: [parameters.timestamps[0], parameters.timestamps[168]] },
+        yaxis: { title: 'Demand [kWh]' },
+        colorway: colorway,
+    };
+
+    // Plotting the stacked graph
+    Plotly.newPlot(plot_id, traces, layout);
+
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
+}
+
 
 function addTable(response, table_id="") {
 
@@ -638,6 +681,14 @@ function addTable(response, table_id="") {
                 tableDataCell.innerHTML = value.value
                 }
             }
+
+            // set bold if row for total
+            if (value.verbose.includes("Total")) {
+                tableDataCell.style.fontWeight = "bold"
+                tableDataCell.style.backgroundColor = "#F9F8F7"
+            }
+
+            // set bold
             tableDataRow.appendChild(tableDataCell);
             tableBody.appendChild(tableDataRow);
             }
@@ -649,13 +700,14 @@ function addTable(response, table_id="") {
     $('[data-bs-toggle="tooltip"]').tooltip()
 }
 
-function saveToSession(graphId) {
+function saveImageToDB(graphId) {
     // convert the plot to base64-encoded image
+    console.log("saving image in plot div " + graphId + " to DB")
     const imageDataURL = Plotly.toImage(graphId, {format: 'png', width: 800, height: 500}).then(function(imageUrl) {
         $.ajax({
         headers: {'X-CSRFToken': csrfToken},
         type: 'POST',
-        url: urlSaveToSession,
+        url: urlSaveToDB,
         data: {graph_id: graphId, image_url: imageUrl},
         success: function (response) {
             console.log(response);
@@ -689,9 +741,16 @@ function downloadReport(proj_id) {
 
 function addPieChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
+
+	// delete the last element of all arrays (total - only needed for table, not graph)
+	parameters.categories.pop();
+	parameters.costs.pop();
+	parameters.chart_descriptions.pop();
+
     var labels = parameters.categories;
     var costs = parameters.costs;
-    var descriptions = parameters.chart_descriptions.map(desc => insertLineBreaks(desc, 50))
+    var descriptions = parameters.chart_descriptions
+    descriptions = descriptions.map(desc => insertLineBreaks(desc, 50))
 
     // Create a Plotly Pie Chart
     var data = [{
@@ -717,11 +776,16 @@ function addPieChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
+    if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 
 function addCostsChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
+	// remove "Total" from assets
+	parameters.assets.pop();
     var assets = parameters.assets;
     var graphContents = parameters.graph_contents;
     var descriptions = parameters.descriptions;
@@ -753,6 +817,9 @@ function addCostsChart(parameters, plot_id="") {
     };
 
     Plotly.newPlot(plotDiv, data, layout);
+        if (saveToDB == true) {
+        saveImageToDB(plot_id);
+    }
 }
 
 function insertLineBreaks(inputString, charactersPerLine) {

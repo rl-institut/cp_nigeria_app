@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import timedelta
 from django.forms.models import model_to_dict
 from django.utils.translation import gettext_lazy as _
-from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase
+from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase, Simulation
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 
 
@@ -84,16 +84,38 @@ class Options(models.Model):
     def component_list(self):
         components = []
         if "diesel" in self.user_case:
-            components.append("Diesel generator")
+            components.append("diesel generator")
         if "pv" in self.user_case:
-            components.append("PV Panels")
+            components.append("solar PV panels")
         if "bess" in self.user_case:
-            components.append("Battery storage")
-        return ("a {}, " * (len(components) - 2) + "a {}" * (len(components) > 1) + " and a {}").format(*components)
+            components.append("battery storage")
+        return (" {}, " * (len(components) - 2) + " {}" * (len(components) > 1) + " and  {}").format(*components)
 
     @property
     def has_diesel(self):
         return "diesel" in self.user_case
+
+
+class ImplementationPlanContent(models.Model):
+    simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE, blank=True, null=True)
+    demand_table = models.TextField()
+    cost_table = models.TextField()
+    capex_table = models.TextField()
+    system_table = models.TextField()
+    financial_kpi_table = models.TextField()
+    financing_structure_table = models.TextField()
+    stacked_timeseries_graph = models.TextField()
+    mini_grid_demand_graph = models.TextField()
+    capex_graph = models.TextField()
+    cash_flow_graph = models.TextField()
+    system_costs_graph = models.TextField()
+
+    @property
+    def empty_fields(self):
+        for field in self._meta.fields:
+            if getattr(self, field.name) == "":
+                return True
+        return False
 
 
 def copy_energy_system_from_usecase(usecase_name, scenario):
