@@ -73,14 +73,37 @@ OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
 
 
 def calculate_co2_mitigation(project):
-    # TODO implement the calculation
-    co2_mitigations = {"Ebute-Ipare": 6894, "Usungwe": 22123, "Unguwar Kure": 3088, "Ezere": 8981, "Egbuniwe": 7472}
+    """
+    The BAU scenario assumes the same demand as the project scenario. Of this demand, each household consumes 55kWh
+    of kerosene a year and the rest is covered by diesel generators. In the project scenario, the total generation
+    from the diesel genset is considered. For more information about the methodology and used default values, check
+    https://cdm.unfccc.int/methodologies/DB/KHK371SOJH99Z35OBUWUTWZ9KMW9YN
+    """
+    assumptions = {"hh_kerosene_use": 55, "kerosene_emission_factor": 2.72, "genset_emission_factor": 0.8}
 
-    for key in co2_mitigations.keys():
-        if project.name or project.options.community.name in key:
-            return f"{co2_mitigations[key]:,}"
+    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    total_hhs = get_aggregated_cgs(project)["households"]["nr_consumers"]
 
-    return "[not available]"
+    # BAU Scenario
+    kerosene_supply_bau = total_hhs * assumptions["hh_kerosene_use"]
+    kerosene_emissions_bau = kerosene_supply_bau * assumptions["kerosene_emission_factor"]
+    diesel_supply_bau = total_demand - kerosene_supply_bau
+    diesel_emissions_bau = diesel_supply_bau * assumptions["genset_emission_factor"]
+    total_emissions_bau = (kerosene_emissions_bau + diesel_emissions_bau) * project.economic_data.duration
+
+    # Project scenario
+    diesel_supply_mg = (
+        FancyResults.objects.filter(simulation__scenario=project.scenario, asset="diesel_generator", direction="in")
+        .values_list("total_flow", flat=True)
+        .get()
+    )
+    diesel_emissions_mg = diesel_supply_mg * assumptions["genset_emission_factor"]
+    total_emissions_mg = diesel_emissions_mg * project.economic_data.duration
+
+    # emission reduction in tonnes CO2
+    emission_reduction = (total_emissions_bau - total_emissions_mg) / 1000
+
+    return emission_reduction
 
 
 def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
@@ -877,7 +900,7 @@ class ReportHandler:
             "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
             "CP-Nigeria Toolbox, comprises {system_assets}. The project does not only present a robust business case "
             "but electrifying the community will also deliver vital socioeconomic benefits to its members. In "
-            "addition, the project approximately mitigates {co2_mitigation} tonnes of CO2 over the project lifetime."
+            "addition, the project approximately mitigates {co2_mitigation:,.1f} tonnes of CO2 over the project lifetime."
         )
 
         # Add page break
