@@ -1271,7 +1271,9 @@ def request_community_summary_table(request, scen_id):
         table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
-        save_table_for_report(scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content)
+        save_table_for_report(
+            scenario=scenario, attr_name="demand_table", cols=table_headers, rows=table_content, units_on="cols"
+        )
 
     return JsonResponse(
         {"graph_data": graph_data, "data": table_content, "headers": table_headers},

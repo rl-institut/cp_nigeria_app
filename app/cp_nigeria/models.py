@@ -110,6 +110,13 @@ class ImplementationPlanContent(models.Model):
     cash_flow_graph = models.TextField()
     system_costs_graph = models.TextField()
 
+    @property
+    def empty_fields(self):
+        for field in self._meta.fields:
+            if getattr(self, field.name) == "":
+                return True
+        return False
+
 
 def copy_energy_system_from_usecase(usecase_name, scenario):
     """Given a scenario, copy the topology of the usecase"""

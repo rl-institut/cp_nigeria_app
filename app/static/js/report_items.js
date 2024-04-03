@@ -262,7 +262,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
     Plotly.newPlot(graphId, data, layout);
 
     if (saveToDB == true) {
-        saveImageToDB(plot_id);
+        saveImageToDB(graphId);
     }
 };
 

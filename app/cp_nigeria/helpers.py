@@ -15,6 +15,7 @@ import json
 import csv
 import base64
 import io
+import logging
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options, ImplementationPlanContent
 from projects.models import Asset, Simulation
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
@@ -92,18 +93,17 @@ def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
     else:
         report_headers = [value["verbose"] for header, value in cols.items()]
 
-    try:
-        with transaction.atomic():
-            report_qs = ImplementationPlanContent.objects.select_for_update().filter(simulation=scenario.simulation)
-            if report_qs.exists():
-                report_content = report_qs.first()
-                setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
-                report_content.save()
-                print(f"Saved {attr_name} to database")
-            else:
-                print(f"Report object was not found, so {attr_name} could not be saved")
-    except Exception as e:
-        print(e)
+    with transaction.atomic():
+        report_qs = ImplementationPlanContent.objects.select_for_update().filter(simulation=scenario.simulation)
+        if report_qs.exists():
+            if report_qs.count() > 1:
+                logging.error("ImplementationPlanContent returned more than one object")
+            report_content = report_qs.first()
+            setattr(report_content, attr_name, json.dumps({"headers": report_headers, "data": report_table}))
+            report_content.save()
+            print(f"Saved {attr_name} to database")
+        else:
+            print(f"Report object was not found, so {attr_name} could not be saved")
 
 
 def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):
@@ -587,14 +587,12 @@ class ReportHandler:
     def add_image_from_db(self, name, width=Inches(6), caption=None):
         image_data = getattr(self.report_obj, name)
         if image_data:
-            try:
-                image_data = image_data.split(",")[1]
-                image_bytes = base64.b64decode(image_data)
-                image = io.BytesIO(image_bytes)
+            image_data = image_data.split(",")[1]
+            image_bytes = base64.b64decode(image_data)
+            image = io.BytesIO(image_bytes)
 
-                self.add_image(image, width, caption)
-            except Exception as e:
-                print(e)
+            self.add_image(image, width, caption)
+
         else:
             print(f"Image {name} was not found in session storage")
 

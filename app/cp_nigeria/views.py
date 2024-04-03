@@ -1083,8 +1083,8 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     project = get_object_or_404(Project, id=proj_id)
     options = get_object_or_404(Options, project=project)
     report_obj, created = ImplementationPlanContent.objects.get_or_create(simulation=project.scenario.simulation)
-    # saves the graphs and tables to the database if the object doesn't exist yet
-    save_to_db = True if created else False
+    # saves the graphs and tables to the database if there are empty fields (report_obj.empty_fields is True)
+    save_to_db = report_obj.empty_fields
 
     if (project.user != request.user) and (
         project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
@@ -1515,20 +1515,20 @@ def save_graph_to_db(request, proj_id):
         attr_name = f"{graph_id}_graph"
         image_url = request.POST.get("image_url")
 
-        try:
-            with transaction.atomic():
-                report_qs = ImplementationPlanContent.objects.select_for_update().filter(
-                    simulation=project.scenario.simulation
-                )
-                if report_qs.exists():
-                    report_content = report_qs.first()
-                    setattr(report_content, attr_name, image_url)
-                    report_content.save()
-                    return JsonResponse({"status": "success", "message": "Saved " + attr_name + " to database"})
-                else:
-                    return JsonResponse({"status": "failed", "message": "Database object could not be found"})
-        except Exception as e:
-            return JsonResponse({"status": "failed", "message": e})
+        with transaction.atomic():
+            report_qs = ImplementationPlanContent.objects.select_for_update().filter(
+                simulation=project.scenario.simulation
+            )
+            if report_qs.exists():
+                if report_qs.count() > 1:
+                    logging.error("ImplementationPlanContent returned more than one object")
+                report_content = report_qs.first()
+                setattr(report_content, attr_name, image_url)
+                report_content.save()
+                answer = JsonResponse({"status": "success", "message": "Saved " + attr_name + " to database"})
+            else:
+                answer = JsonResponse({"status": "failed", "message": "Database object could not be found"})
+            return answer
 
 
 @json_view
