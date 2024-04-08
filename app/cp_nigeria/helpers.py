@@ -1173,6 +1173,7 @@ class FinancialTool:
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
+        self.financial_params["equity_developer_amount"] = self.equity_developer
         # automatically set the tariff if it has already been previously calculated
         if self.financial_params["estimated_tariff"] is not None:
             self.set_tariff(self.financial_params["estimated_tariff"])
@@ -1290,7 +1291,7 @@ class FinancialTool:
             "equity_interest_MG",
             "equity_interest_SHS",
             "equity_community_amount",
-            "equity_developer_amount",
+            "equity_developer_share",
             "estimated_tariff",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
@@ -1409,6 +1410,10 @@ class FinancialTool:
     @property
     def opex_growth_rate(self):
         return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
+
+    @property
+    def equity_developer(self):
+        return self.total_capex("NGN") * self.financial_params["equity_developer_share"]
 
     @property
     def revenue_over_lifetime(self):
@@ -1599,7 +1604,7 @@ class FinancialTool:
         This method returns the internal return on investment % based on project CAPEX, grant share and cash flows
         after a given number of project years.
         """
-        gross_capex = self.capex["Total costs [NGN]"].sum()
+        gross_capex = self.total_capex("NGN")
         grant = self.financial_params["grant_share"] * gross_capex
         cash_flow = self.cash_flow_over_lifetime
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()

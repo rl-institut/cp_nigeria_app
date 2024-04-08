@@ -100,11 +100,6 @@ class BMAnswer(models.Model):
             elif self.score == 1:
                 default_values["equity_community_amount"] = 50
 
-            if self.business_model.is_operator_led:
-                default_values["equity_developer_amount"] = 2 * default_values["equity_community_amount"]
-            else:
-                default_values["equity_developer_amount"] = 5
-
         return default_values
 
 
@@ -170,10 +165,11 @@ class EquityData(models.Model):
         help_text=_("Amount of equity the community would be able to mobilize"),
         default=0,
     )
-    equity_developer_amount = models.FloatField(
-        verbose_name=_("Mini-grid company equity (Million NGN)"),
-        help_text=_("Amount of equity the mini-grid company would be able to mobilize"),
-        default=0,
+    equity_developer_share = models.FloatField(
+        verbose_name=_("Mini-grid company equity (%)"),
+        validators=[validate_percent],
+        help_text=_("Equity the mini-grid company would be able to mobilize as a percentage of total CAPEX"),
+        default=0.1,
     )
     estimated_tariff = models.FloatField(blank=True, null=True)
 
