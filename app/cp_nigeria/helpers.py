@@ -396,10 +396,14 @@ def get_community_region(project):
         "Ondo": "South West",
         "Lagos": "South West",
     }
-    geolocator = Nominatim(user_agent="cp_nigeria_app")
-    location = geolocator.reverse(f"{project.latitude}, {project.longitude}")
-    state = location.raw["address"]["state"]
-    region = state_region_mapping[state]
+    try:
+        geolocator = Nominatim(user_agent="cp_nigeria_app")
+        location = geolocator.reverse(f"{project.latitude}, {project.longitude}")
+        state = location.raw["address"]["state"]
+        region = state_region_mapping[state]
+    except:
+        state = "[could not locate state]"
+        region = "[region unavailable]"
     return state, region
 
 
