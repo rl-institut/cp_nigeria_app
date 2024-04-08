@@ -1356,7 +1356,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems"])],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems", "Opex"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -1456,9 +1456,37 @@ class FinancialTool:
         the system together with the annual cost increase assumptions.
         """
 
-        costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
-        costs_om_df = costs_om_df[costs_om_df["value"] != 0]
-        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
+        costs_om_system = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
+        costs_om_system = costs_om_system[costs_om_system["value"] != 0]
+
+        costs_om_other = pd.merge(
+            self.cost_assumptions[
+                (self.cost_assumptions["Category"] == "Opex") & (~self.cost_assumptions["USD/Unit"].isna())
+            ],
+            self.system_params[["label", "value"]],
+            left_on="Target",
+            right_on="label",
+            suffixes=("_costs", "_outputs"),
+            how="left",
+        )
+        costs_om_other["Total costs [NGN]"] = costs_om_other["USD/Unit"] * costs_om_other["value"] * self.exchange_rate
+        costs_om_system.rename(
+            columns={
+                "label": "Description",
+                "category": "Category",
+                "growth_rate": "Growth rate",
+                "value": "Total costs [NGN]",
+            },
+            inplace=True,
+        )
+
+        costs_om_total = pd.concat(
+            [costs_om_system, costs_om_other[["Description", "Category", "Growth rate", "Total costs [NGN]"]]],
+            ignore_index=True,
+        )
+        om_lifetime = self.growth_over_lifetime_table(
+            costs_om_total, "Total costs [NGN]", growth_col="Growth rate", index_col="Description"
+        )
 
         # TODO include these costs in extra information about solar home systems but not general mini-grid
         # shs_costs_om = (

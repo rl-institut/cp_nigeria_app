@@ -1179,7 +1179,6 @@ def scenario_visualize_capex(request, scen_id):
     ft = FinancialTool(scenario.project)
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
-    capex_by_category.drop("Opex", inplace=True)
     capex_by_category.loc["total"] = capex_by_category.sum()
     categories = capex_by_category.index.tolist()
     total_costs = capex_by_category.values.tolist()

@@ -4,6 +4,10 @@ Others PV Materials (AC/ DC cabling, Gpas, Monitoring system, Fences, CCTV, etc)
 SHS Fosera Ignite incl. Mounting system;Solar home systems;1;675;SHS consumers;;shs_nr_consumers
 SHS operational expenditures;Solar home systems;1;7;SHS consumers;0.015;shs_nr_consumers
 Mini-grid operational expenditures;Opex;1;;;0.015;
+Management and bookkeeping;Opex;1;2;kWp;0.01;pv_plant_optimized_capacity
+Insurance;Opex;1;6;kWp;0.01;pv_plant_optimized_capacity
+Land lease;Opex;1;2.3;kWp;0.01;pv_plant_optimized_capacity
+Security on site;Opex;1;1;kWp;0.01;pv_plant_optimized_capacity
 Transformer on-site;Transmission network;0;120;;;
 Substation for grid connection;Transmission network;0;0;;;
 Grid connection;Transmission network;1;207;Mini-grid consumers;;mini_grid_nr_consumers
@@ -18,7 +22,7 @@ Payment Guarantees;Insurances;1;0;kWp;;pv_plant_optimized_capacity
 Installation (labour) for system ;Labour and soft costs;1;150;kWp;;pv_plant_optimized_capacity
 DEVEX (incl feasibility studies, project development, planning);Labour and soft costs;1;80;kWp;;pv_plant_optimized_capacity
 Financial Fees & DDs;Labour and soft costs;1;0;kWp;;pv_plant_optimized_capacity
-Project Management during construction;Labour and soft costs;1;0;kWp;;pv_plant_optimized_capacity
+Project management during construction;Labour and soft costs;1;0;kWp;;pv_plant_optimized_capacity
 Contingency;Labour and soft costs;1;50;kWp;;pv_plant_optimized_capacity
 Metering and fixed costs;Revenue;1;4;Mini-grid users;0.065;mini_grid_nr_consumers
 Connection fee;Revenue;1;7;Mini-grid users;0.065;mini_grid_nr_consumers_new
