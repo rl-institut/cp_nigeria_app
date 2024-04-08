@@ -30,6 +30,7 @@ from django.templatetags.static import static
 from dashboard.models import get_costs
 from django.db.models import Case
 from django.db import transaction
+from django.utils.functional import cached_property
 from geopy.geocoders import Nominatim
 
 
@@ -1253,19 +1254,19 @@ class FinancialTool:
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
 
-    @property
+    @cached_property
     def yearly_production_electricity(self):
         flow_df = self.system_params[self.system_params["category"] == "total_flow"]
         return flow_df[flow_df["supply_source"].isin(["diesel_generator", "pv_plant", "dso"])].value.sum()
 
-    @property
+    @cached_property
     def fuel_costs(self):
         return self.system_params[
             (self.system_params["supply_source"] == "diesel_generator")
             & (self.system_params["category"] == "fuel_costs_total")
         ].value.iloc[0]
 
-    @property
+    @cached_property
     def fuel_consumption_liter(self):
         return (
             self.system_params[
@@ -1343,7 +1344,7 @@ class FinancialTool:
 
         return df
 
-    @property
+    @cached_property
     def capex(self):
         """
         This method takes the given general cost assumptions and merges them with the specific project results
@@ -1407,11 +1408,11 @@ class FinancialTool:
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
         return costs_om_df.value.sum()
 
-    @property
+    @cached_property
     def opex_growth_rate(self):
         return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
 
-    @property
+    @cached_property
     def equity_developer(self):
         return self.total_capex("NGN") * self.financial_params["equity_developer_share"]
 
@@ -1444,7 +1445,7 @@ class FinancialTool:
 
         return revenue_flows
 
-    @property
+    @cached_property
     def om_costs_over_lifetime(self):
         """
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
@@ -1515,7 +1516,7 @@ class FinancialTool:
             amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
         )
 
-    @property
+    @cached_property
     def replacement_loan_table(self):
         """
         This method creates a table for the replacement costs debt (accounts for replacing battery, inverter and diesel
