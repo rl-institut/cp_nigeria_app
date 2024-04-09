@@ -25,6 +25,7 @@ $(document).ready(function () {
 //    scenario_visualize_revenue(scen_id);
     scenario_visualize_system_costs(scen_id, system_costs);
     scenario_visualize_capex(scen_id);
+    scenario_visualize_opex(scen_id);
     request_project_summary_table(scen_id);
     request_community_summary_table(scen_id);
     request_system_size_table(scen_id);
@@ -202,6 +203,20 @@ function scenario_visualize_capex(scen_id=""){
             },
         });
 };
+
+
+function scenario_visualize_opex(scen_id=""){
+ $.ajax({
+            url: urlVisualizeOpex,
+            type: "GET",
+            data: {save_to_db: saveToDB},
+            success: async (parameters) => {
+                await addTable(parameters, table_id="container_total_opex");
+                await addPieChart(parameters, plot_id="opex");
+            },
+        });
+};
+
 
 function scenario_visualize_system_costs(scen_id=""){
  $.ajax({

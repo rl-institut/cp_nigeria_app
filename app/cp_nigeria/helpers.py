@@ -132,20 +132,23 @@ def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
 
 def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):
     param_dict = {}
-    for item in ["verbose", "description", "unit"]:
-        if param == "":
-            param_dict[item] = ""
-            continue
-        if item == "description":
-            dict_value = "" if from_dict[param][item] == "" else help_icon(from_dict[param][item])
-        else:
-            dict_value = from_dict[param][item]
+    try:
+        for item in ["verbose", "description", "unit"]:
+            if param == "":
+                param_dict[item] = ""
+                continue
+            if item == "description":
+                dict_value = "" if from_dict[param][item] == "" else help_icon(from_dict[param][item])
+            else:
+                dict_value = from_dict[param][item]
 
-        if "currency" in dict_value:
-            # TODO make this custom depending on project currency
-            dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
+            if "currency" in dict_value:
+                # TODO make this custom depending on project currency
+                dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
 
-        param_dict[item] = dict_value
+            param_dict[item] = dict_value
+    except KeyError:
+        param_dict = {"verbose": param.title(), "description": "", "unit": ""}
 
     return param_dict
 
@@ -1450,15 +1453,31 @@ class FinancialTool:
         return revenue_flows
 
     @cached_property
-    def om_costs_over_lifetime(self):
-        """
-        This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
-        the system together with the annual cost increase assumptions.
-        """
-
+    def om_costs(self):
+        # get the opex costs for the system
         costs_om_system = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
         costs_om_system = costs_om_system[costs_om_system["value"] != 0]
+        # group the system opex costs
+        total_system_opex = costs_om_system.groupby(["category"])["value"].sum().opex_total
+        total_row = {
+            "category": "Total costs",
+            "value": total_system_opex,
+            "growth_rate": self.opex_growth_rate,
+            "label": "energy_system_opex_total",
+        }
+        costs_om_system = pd.concat([costs_om_system, pd.DataFrame(total_row, index=[0])], ignore_index=True)
+        costs_om_system = costs_om_system[costs_om_system["category"] != "opex_total"]
+        costs_om_system.drop(columns=["supply_source", "category"], inplace=True)
+        costs_om_system.rename(
+            columns={
+                "label": "Description",
+                "growth_rate": "Growth rate",
+                "value": "Total costs [NGN]",
+            },
+            inplace=True,
+        )
 
+        # get the other OPEX costs (management, insurances etc.) from the assumptions
         costs_om_other = pd.merge(
             self.cost_assumptions[
                 (self.cost_assumptions["Category"] == "Opex") & (~self.cost_assumptions["USD/Unit"].isna())
@@ -1470,22 +1489,25 @@ class FinancialTool:
             how="left",
         )
         costs_om_other["Total costs [NGN]"] = costs_om_other["USD/Unit"] * costs_om_other["value"] * self.exchange_rate
-        costs_om_system.rename(
-            columns={
-                "label": "Description",
-                "category": "Category",
-                "growth_rate": "Growth rate",
-                "value": "Total costs [NGN]",
-            },
-            inplace=True,
-        )
 
         costs_om_total = pd.concat(
             [costs_om_system, costs_om_other[["Description", "Category", "Growth rate", "Total costs [NGN]"]]],
             ignore_index=True,
         )
-        om_lifetime = self.growth_over_lifetime_table(
-            costs_om_total, "Total costs [NGN]", growth_col="Growth rate", index_col="Description"
+        # set the descriptions as the index
+        costs_om_total.index = costs_om_total["Description"]
+
+        return costs_om_total
+
+    @cached_property
+    def om_costs_over_lifetime(self):
+        """
+        This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
+        the system together with the annual cost increase assumptions.
+        """
+
+        costs_om_lifetime = self.growth_over_lifetime_table(
+            self.om_costs, "Total costs [NGN]", growth_col="Growth rate"
         )
 
         # TODO include these costs in extra information about solar home systems but not general mini-grid
@@ -1497,12 +1519,12 @@ class FinancialTool:
         # )
 
         # multiply the unit prices by the amount
-        # om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        # costs_om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
-        om_lifetime.loc["opex_total"] = om_lifetime.sum()
+        costs_om_lifetime.loc["opex_total"] = costs_om_lifetime.sum()
 
-        return om_lifetime
+        return costs_om_lifetime
 
     def debt_service_table(self, amount, tenor, gp, ir, debt_start):
         debt_service = pd.DataFrame(

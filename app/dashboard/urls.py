@@ -124,6 +124,11 @@ urlpatterns = [
         name="scenario_visualize_capex",
     ),
     re_path(
+        r"^scenario/results/request_opex/(?P<scen_id>\d+)?$",
+        scenario_visualize_opex,
+        name="scenario_visualize_opex",
+    ),
+    re_path(
         r"^scenario/results/request_system_costs/(?P<scen_id>\d+)?$",
         scenario_visualize_system_costs,
         name="scenario_visualize_system_costs",

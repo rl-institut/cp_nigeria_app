@@ -5,7 +5,7 @@ SHS Fosera Ignite incl. Mounting system;Solar home systems;1;675;SHS consumers;;
 SHS operational expenditures;Solar home systems;1;7;SHS consumers;0.015;shs_nr_consumers
 Mini-grid operational expenditures;Opex;1;;;0.015;
 Management and bookkeeping;Opex;1;2;kWp;0.01;pv_plant_optimized_capacity
-Insurance;Opex;1;6;kWp;0.01;pv_plant_optimized_capacity
+Insurances;Opex;1;6;kWp;0.01;pv_plant_optimized_capacity
 Land lease;Opex;1;2.3;kWp;0.01;pv_plant_optimized_capacity
 Security on site;Opex;1;1;kWp;0.01;pv_plant_optimized_capacity
 Transformer on-site;Transmission network;0;120;;;

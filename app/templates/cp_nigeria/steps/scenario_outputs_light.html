@@ -323,6 +323,19 @@
 									</div>
 								</div>
 								{% include "report/graph_template.html" with id="capex" title="Total investment costs" %}
+								<div class="chart" id="om-costs">
+									<div class="chart__header">
+										<div>
+												<span class="title"><a data-bs-toggle="collapse" data-bs-target="#container_total_capex" role="button" aria-expanded="false" aria-controls="container_total_opex">
+    Total yearly operation and maintenance costs
+  </a></span>
+										</div>
+									</div>
+									<div class="chart__plot collapse show" style="overflow: scroll;" id="container_total_opex">
+									</div>
+								</div>
+								{% include "report/graph_template.html" with id="opex" title="Total yearly operation and maintenance costs" %}
+
 								{% endif %}
 
 								<div style="display:flex;justify-content:center">
@@ -378,6 +391,7 @@
 	const urlVisualizeCashFlow = `{% url 'scenario_visualize_cash_flow' %}` + {{ scen_id }};
 	const urlVisualizeRevenue = `{% url 'scenario_visualize_revenue' %}` + {{ scen_id }};
 	const urlVisualizeCapex = `{% url 'scenario_visualize_capex' %}` + {{ scen_id }};
+	const urlVisualizeOpex = `{% url 'scenario_visualize_opex' %}` + {{ scen_id }};
 	const urlVisualizeSystemCosts = `{% url 'scenario_visualize_system_costs' %}` + {{ scen_id }};
 	const urlRequestProjectSummary = `{% url 'request_project_summary_table' %}` + {{ scen_id }};
 	const urlRequestCommunitySummary = `{% url 'request_community_summary_table' %}` + {{ scen_id }};
