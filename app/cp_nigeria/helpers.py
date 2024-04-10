@@ -1712,7 +1712,7 @@ class FinancialTool:
         x = np.arange(0.1, 0.5, 0.1)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
-        # for which the sum of the cashflow for the first 4 years is 0
+        # for which the sum of the cashflow for the first 5 years is 0
         m, h = np.polyfit(x, [self.goal_seek_helper(xi) for xi in x], deg=1)
         x0 = -h / m
 
@@ -1727,89 +1727,3 @@ class FinancialTool:
     def set_tariff(self, tariff):
         # set FinancialTool tariff value to the computed tariff
         self.cost_assumptions.loc[self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"] = tariff
-
-
-# TODO if linear fit yields same results this can be deleted
-def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
-    """
-    code taken from https://github.com/DrTol/GoalSeek_Python
-    Copyright (c) 2019 Hakan İbrahim Tol
-    """
-    # Goal Seek function of Excel
-    #   via use of Line Search and Bisection Methods
-
-    # Inputs
-    #   fun     : Function to be evaluated
-    #   goal    : Expected result/output
-    #   x0      : Initial estimate/Starting point
-
-    # Initial check
-    if fun(x0) == goal:
-        print("Exact solution found")
-        return x0
-
-    # Line Search Method
-    step_sizes = np.logspace(-1, 4, 6)
-    scopes = np.logspace(1, 5, 5)
-
-    vFun = np.vectorize(fun)
-
-    for scope in scopes:
-        break_nested = False
-        for step_size in step_sizes:
-            cApos = np.linspace(x0, x0 + step_size * scope, int(scope))
-            cAneg = np.linspace(x0, x0 - step_size * scope, int(scope))
-
-            cA = np.concatenate((cAneg[::-1], cApos[1:]), axis=0)
-
-            fA = vFun(cA) - goal
-
-            if np.any(np.diff(np.sign(fA))):
-                index_lb = np.nonzero(np.diff(np.sign(fA)))
-
-                if len(index_lb[0]) == 1:
-                    index_ub = index_lb + np.array([1])
-
-                    x_lb = np.ndarray.item(np.array(cA)[index_lb])
-                    x_ub = np.ndarray.item(np.array(cA)[index_ub])
-                    break_nested = True
-                    break
-                else:  # Two or more roots possible
-                    index_ub = index_lb + np.array([1])
-
-                    print("Other solution possible at around, x0 = ", np.array(cA)[index_lb[0][1]])
-
-                    x_lb = np.ndarray.item()(np.array(cA)[index_lb[0][0]])
-                    x_ub = np.ndarray.item()(np.array(cA)[index_ub[0][0]])
-                    break_nested = True
-                    break
-
-        if break_nested:
-            break
-    if not x_lb or not x_ub:
-        print("No Solution Found")
-        return
-
-    # Bisection Method
-    iter_num = 0
-    error = 10
-
-    while iter_num < MaxIter and fTol < error:
-        x_m = (x_lb + x_ub) / 2
-        f_m = fun(x_m) - goal
-
-        error = abs(f_m)
-
-        if (fun(x_lb) - goal) * (f_m) < 0:
-            x_ub = x_m
-        elif (fun(x_ub) - goal) * (f_m) < 0:
-            x_lb = x_m
-        elif f_m == 0:
-            print("Exact spolution found")
-            return x_m
-        else:
-            print("Failure in Bisection Method")
-
-        iter_num += 1
-
-    return x_m
