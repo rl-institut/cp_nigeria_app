@@ -178,12 +178,15 @@ def get_project_summary(project):
         community_name = project.name
 
     currency_symbol = project.economic_data.currency_symbol
+    fulfilled_demand = get_fulfilled_demand_indicator(project, total_only=True)
+    fulfilled_demand_share = fulfilled_demand / get_demand_indicators(project)[0]
 
     project_summary = {
         "project_name": f"{project.name}",
         # "Community name": f"{community_name}",
         "location": f"{state} State",
-        "yearly_production": f"{yearly_production:,.0f} kWh",
+        "fulfilled_demand": f"{fulfilled_demand:,.0f} kWh",
+        "fulfilled_demand_share": f"{fulfilled_demand_share:.2f}%",
         # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "renewable_share": f"{renewable_share:.2f}%",
         # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
@@ -317,6 +320,7 @@ def get_demand_indicators(project, with_timeseries=False):
     else:
         return (total_demand, peak_demand, daily_demand)
 
+
 def get_fulfilled_demand_indicator(project, total_only=False):
     """Provide the aggregated, peak and daily averaged fulfilled demand
 
@@ -336,6 +340,7 @@ def get_fulfilled_demand_indicator(project, total_only=False):
         peak_demand = round(delivered_demand_np.max(), 1)
         daily_demand = round(total_fulfilled_demand / 365, 1)
         return total_fulfilled_demand, peak_demand, daily_demand
+
 
 def get_asset_assumptions(project):
     qs = Simulation.objects.filter(scenario_id=project.scenario.id)
@@ -570,8 +575,10 @@ class ReportHandler:
             disco="DiscoName",
             ent_demand_categories=cg_sentences["Enterprise"],
             pf_demand_categories=cg_sentences["Public facility"],
-            # TODO change when demand coverage is merged
-            demand_coverage=100,
+            demand_coverage_factor=self.options.demand_coverage_factor * 100,
+            fulfilled_demand=get_fulfilled_demand_indicator(project, total_only=True),
+            fulfilled_demand_share=get_fulfilled_demand_indicator(project, total_only=True)
+            / get_demand_indicators(project)[0],
             grant_deduction=(1 - ft.usable_grant) * 100,
         )
         if self.text_parameters["grid_option"] == "isolated":
@@ -1049,7 +1056,7 @@ class ReportHandler:
 
         self.add_paragraph(
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
-            "the following components: {energy_system_components_string}. The optimization assumes a {demand_coverage}% "
+            "the following components: {energy_system_components_string}. The optimization assumes a {demand_coverage_factor}% "
             "demand coverage. The cost and asset characteristics used to "
             "conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
             "asset sizes result in the least-cost solution:"
@@ -1059,6 +1066,8 @@ class ReportHandler:
         self.add_df_as_table(self.get_df_from_db("system_table"), caption="System size")
 
         self.add_paragraph(
+            "Based on the given asset sizes, system is able to fulfill {fulfilled_demand_share:.2f}% of the total demand, "
+            "providing {fulfilled_demand:,.0f} kWh of electricity during the simulated year (not including excess). "
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
             "with {renewable_share:.1f}% of the generation coming from renewable sources."
         )
