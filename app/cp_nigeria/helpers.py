@@ -287,12 +287,18 @@ def get_aggregated_demand(project, consumer_type=None):
             # TODO need to warn the user if the total_demand is empty due to shs threshold
             cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
         if consumer_type is not None:
-            cg_qs = cg_qs.filter(consumer_type__consumer_type=consumer_type)
+            # include the machinery demand in the enterprise demand
+            if consumer_type == "Enterprise":
+                consumer_types = ["Enterprise", "Machinery"]
+                cg_qs = cg_qs.filter(consumer_type__consumer_type__in=consumer_types)
+            else:
+                cg_qs = cg_qs.filter(consumer_type__consumer_type=consumer_type)
         for cg in cg_qs:
             timeseries_values = np.array(cg.timeseries.get_values_with_unit("kWh"))
             nr_consumers = cg.number_consumers
             total_demand.append(timeseries_values * nr_consumers)
-        return np.vstack(total_demand).sum(axis=0).tolist()
+        total_demand_list = np.vstack(total_demand).sum(axis=0).tolist()
+        return total_demand_list
     else:
         return []
 
