@@ -1458,7 +1458,7 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
-        total_demand, peak_demand, daily_demand = get_fulfilled_demand_indicator(project)
+        total_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
 
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)

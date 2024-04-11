@@ -166,8 +166,8 @@ def get_project_summary(project):
 
     yearly_production = ft.yearly_production_electricity
     total_investments = ft.total_capex("NGN")
-    total_demand, peak_demand, daily_demand = get_fulfilled_demand_indicator(project)
-    renewable_share = inverter_aggregated_flow / total_demand * 100
+    fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
+    renewable_share = inverter_aggregated_flow / fulfilled_demand * 100
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
     state, region = get_community_region(project)
@@ -178,8 +178,9 @@ def get_project_summary(project):
         community_name = project.name
 
     currency_symbol = project.economic_data.currency_symbol
-    fulfilled_demand = get_fulfilled_demand_indicator(project, total_only=True)
-    fulfilled_demand_share = fulfilled_demand / get_demand_indicators(project)[0]
+    fulfilled_demand_share = (
+        get_fulfilled_demand_indicators(project, total_only=True) / np.sum(get_aggregated_demand(project)) * 100
+    )
 
     project_summary = {
         "project_name": f"{project.name}",
@@ -327,7 +328,7 @@ def get_demand_indicators(project, with_timeseries=False):
         return (total_demand, peak_demand, daily_demand)
 
 
-def get_fulfilled_demand_indicator(project, total_only=False):
+def get_fulfilled_demand_indicators(project, total_only=False):
     """Provide the aggregated, peak and daily averaged fulfilled demand
 
     :param total_only: when True return only the aggragated value over the simulation time
@@ -514,7 +515,9 @@ class ReportHandler:
 
         ft = FinancialTool(project)
         self.cost_assumptions = ft.cost_assumption_tables
-        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+
+        fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
+        total_demand = np.sum(get_aggregated_demand(project))
 
         if "inverter" in ft.system_params["supply_source"].tolist():
             inverter_aggregated_flow = ft.system_params.loc[
@@ -566,7 +569,7 @@ class ReportHandler:
             avg_daily_demand=daily_demand,
             peak_demand=peak_demand,
             diesel_price_increase=ft.financial_params["fuel_price_increase"],
-            renewable_share=(inverter_aggregated_flow / total_demand) * 100,
+            renewable_share=(inverter_aggregated_flow / fulfilled_demand) * 100,
             lcoe=lcoe,
             opex_total=ft.total_opex(),
             opex_growth_rate=ft.opex_growth_rate * 100,
@@ -582,9 +585,8 @@ class ReportHandler:
             ent_demand_categories=cg_sentences["Enterprise"],
             pf_demand_categories=cg_sentences["Public facility"],
             demand_coverage_factor=self.options.demand_coverage_factor * 100,
-            fulfilled_demand=get_fulfilled_demand_indicator(project, total_only=True),
-            fulfilled_demand_share=get_fulfilled_demand_indicator(project, total_only=True)
-            / get_demand_indicators(project)[0],
+            fulfilled_demand=fulfilled_demand,
+            fulfilled_demand_share=fulfilled_demand / total_demand * 100,
             grant_deduction=(1 - ft.usable_grant) * 100,
         )
         if self.text_parameters["grid_option"] == "isolated":
@@ -1042,7 +1044,7 @@ class ReportHandler:
         self.add_paragraph(
             "In total, {hh_number_mg} households, {ent_number} enterprises and {pf_number} public "
             "facilities would be connected to the mini-grid. Table 1 displays the "
-            "number of consumers and their respective yearly electricity demand."
+            "number of consumers and their respective yearly electricity demand to be fulfilled by the mini-grid."
         )
 
         self.add_df_as_table(self.get_df_from_db("demand_table"), caption="Community demand summary")
@@ -1060,20 +1062,26 @@ class ReportHandler:
         self.add_heading("Electricity Supply System Size and Composition")
         self.add_image(self.image_path["es_schema"], width=Inches(3), caption="System schematic")
 
-        self.add_paragraph(
+        system_paragraph = (
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
-            "the following components: {energy_system_components_string}. The optimization assumes a {demand_coverage_factor}% "
-            "demand coverage. The cost and asset characteristics used to "
-            "conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
-            "asset sizes result in the least-cost solution:"
+            "the following components: {energy_system_components_string}."
+            + (
+                " The optimization assumes a minimum " "{demand_coverage_factor}% household demand coverage."
+                if self.options.shs_threshold != "very_high"
+                else ""
+            )
+            + " The cost and asset characteristics used to conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
+            "asset sizes displayed in Table 2 result in the least-cost solution."
         )
+
+        self.add_paragraph(system_paragraph)
 
         # Table with optimized capacities
         self.add_df_as_table(self.get_df_from_db("system_table"), caption="System size")
 
         self.add_paragraph(
-            "Based on the given asset sizes, system is able to fulfill {fulfilled_demand_share:.2f}% of the total demand, "
-            "providing {fulfilled_demand:,.0f} kWh of electricity during the simulated year (not including excess). "
+            "Based on the given asset sizes, the system is able to fulfill {fulfilled_demand_share:.2f}% of the total demand, "
+            "providing {fulfilled_demand:,.0f} kWh of electricity during the simulated year. "
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
             "with {renewable_share:.1f}% of the generation coming from renewable sources."
         )
@@ -1291,7 +1299,7 @@ class FinancialTool:
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
 
-        total_fulfilled_demand = get_fulfilled_demand_indicator(self.project, total_only=True)
+        total_fulfilled_demand = get_fulfilled_demand_indicators(self.project, total_only=True)
         total_demand.loc["mini_grid", "total_demand"] = total_fulfilled_demand
 
         asset_sizes = pd.DataFrame.from_records(opt_caps).set_index("asset")
