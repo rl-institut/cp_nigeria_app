@@ -1808,7 +1808,6 @@ class FinancialTool:
 
     def remove_grant(self):
         self.financial_params["grant_share"] = 0.0
-        self.calculate_tariff()
 
     def set_tariff(self, tariff):
         # set FinancialTool tariff value to the computed tariff

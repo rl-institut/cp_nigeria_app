@@ -370,7 +370,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "cp_nigeria/steps/scenario_demand.html",
         {
             "formset": formset,
-            "shs_form": demand_options_form,
+            "demand_options_form": demand_options_form,
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
