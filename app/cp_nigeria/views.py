@@ -323,7 +323,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         if formset.is_valid():
             # update demand if exists
             if qs_demand.exists():
-                for demand, cg_type in zip(qs_demand, ("Enterprise", "Household", "Public facility")):
+                for demand, cg_type in zip(qs_demand.order_by("name"), ("Enterprise", "Household", "Public facility")):
                     total_demand = get_aggregated_demand(project, consumer_type=cg_type)
                     demand.input_timeseries = json.dumps(total_demand)
                     demand.save()
