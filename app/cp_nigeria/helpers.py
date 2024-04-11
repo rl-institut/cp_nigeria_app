@@ -314,7 +314,7 @@ def get_demand_indicators(project, with_timeseries=False):
         for dem in qs_demand:
             demand = json.loads(dem.input_timeseries)
             demand_np.append(demand)
-        demand_np = np.vstack(demand_np).sum(axis=1)
+        demand_np = np.vstack(demand_np).sum(axis=0)
     else:
         demand_np = np.array(get_aggregated_demand(project))
 
