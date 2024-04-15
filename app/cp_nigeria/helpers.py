@@ -480,7 +480,7 @@ class ReportHandler:
         )
 
         ft = FinancialTool(project)
-
+        self.cost_assumptions = ft.cost_assumption_tables
         total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         if "inverter" in ft.system_params["supply_source"].tolist():
@@ -1084,7 +1084,7 @@ class ReportHandler:
             "maintenance, total OPEX includes costs such as management and bookkeeping, land lease or security. Table "
             "and Fig. 5 display total OPEX costs for the first year of operation. During the project lifetime, "
             "operational expenditures are assumed to increase an average of {opex_growth_rate} per year. Cost "
-            "assumptions made for this financial analysis are listed in Table ... of the Annex"
+            "assumptions made for this financial analysis are listed in Tables 9 and 10 (see Annex)"
         )
 
         self.add_df_as_table(self.get_df_from_db("opex_table"), caption="Distribution of mini-grid OPEX")
@@ -1122,7 +1122,7 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "*In addition to the parameters in the table above, the overall tool calculation also "
+            "*In addition to the parameters in Table 7, the overall tool calculation also "
             "considers an additional loan that is required for the replacement of certain mini-grid "
             "assets during the project lifetime. As it does not add to the total investment costs, "
             "it is not included here. The replacement is assumed to happen after approx. ten years of "
@@ -1173,6 +1173,8 @@ class ReportHandler:
         # TODO add tables about cost assumptions etc here
         self.add_heading("Tool assumptions", level=2)
         self.add_df_as_table(get_asset_assumptions(self.project), caption="Asset assumptions")
+        self.add_df_as_table(self.cost_assumptions[0], caption="CAPEX cost assumptions")
+        self.add_df_as_table(self.cost_assumptions[1], caption="OPEX cost assumptions")
 
 
 class FinancialTool:
@@ -1274,6 +1276,27 @@ class FinancialTool:
         system_params["label"] = system_params["supply_source"] + "_" + system_params["category"]
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
+
+    @cached_property
+    def cost_assumption_tables(self):
+        capex_assumptions = self.cost_assumptions[
+            (~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems", "Opex"]))
+            & (self.cost_assumptions["Qty"] > 0)
+            & (~self.cost_assumptions["USD/Unit"].isna())
+            & (self.cost_assumptions["USD/Unit"] != 0.0)
+        ].copy()
+        opex_assumptions = self.cost_assumptions[
+            (self.cost_assumptions["Category"] == "Opex")
+            & (self.cost_assumptions["Qty"] > 0)
+            & (~self.cost_assumptions["USD/Unit"].isna())
+            & (self.cost_assumptions["USD/Unit"] != 0.0)
+        ].copy()
+
+        for df in [capex_assumptions, opex_assumptions]:
+            df.drop(columns=["Qty", "Growth rate", "Target"], inplace=True)
+            df.set_index("Description", inplace=True)
+
+        return capex_assumptions, opex_assumptions
 
     @cached_property
     def yearly_production_electricity(self):
