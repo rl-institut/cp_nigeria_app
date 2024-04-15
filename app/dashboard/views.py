@@ -1223,7 +1223,6 @@ def scenario_visualize_opex(request, scen_id):
     headers = ["costs"]
     descriptions = []
     categories = []
-    costs = opex_df.tolist()
 
     for param in opex:
         table_content[param] = set_outputs_table_format(param)
@@ -1237,7 +1236,7 @@ def scenario_visualize_opex(request, scen_id):
 
     if save_to_db:
         save_table_for_report(
-            scenario=scenario, attr_name="capex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+            scenario=scenario, attr_name="opex_table", cols=table_headers, rows=table_content, units_on=["cols"]
         )
 
     return JsonResponse(

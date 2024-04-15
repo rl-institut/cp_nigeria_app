@@ -98,17 +98,19 @@ class Options(models.Model):
 
 class ImplementationPlanContent(models.Model):
     simulation = models.ForeignKey(Simulation, on_delete=models.CASCADE, blank=True, null=True)
-    demand_table = models.TextField()
-    cost_table = models.TextField()
-    capex_table = models.TextField()
-    system_table = models.TextField()
-    financial_kpi_table = models.TextField()
-    financing_structure_table = models.TextField()
-    stacked_timeseries_graph = models.TextField()
-    mini_grid_demand_graph = models.TextField()
-    capex_graph = models.TextField()
-    cash_flow_graph = models.TextField()
-    system_costs_graph = models.TextField()
+    demand_table = models.TextField(blank=True, default="")
+    cost_table = models.TextField(blank=True, default="")
+    capex_table = models.TextField(blank=True, default="")
+    opex_table = models.TextField(blank=True, default="")
+    system_table = models.TextField(blank=True, default="")
+    financial_kpi_table = models.TextField(blank=True, default="")
+    financing_structure_table = models.TextField(blank=True, default="")
+    stacked_timeseries_graph = models.TextField(blank=True, default="")
+    mini_grid_demand_graph = models.TextField(blank=True, default="")
+    capex_graph = models.TextField(blank=True, default="")
+    opex_graph = models.TextField(blank=True, default="")
+    cash_flow_graph = models.TextField(blank=True, default="")
+    system_costs_graph = models.TextField(blank=True, default="")
 
     @property
     def empty_fields(self):

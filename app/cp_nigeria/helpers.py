@@ -1042,21 +1042,33 @@ class ReportHandler:
         )
 
         self.add_paragraph(
+            "Table 3 displays the total costs for the mini-grid system during the first year of operation, which "
+            "include asset investment costs, operational expenditures and fuel costs."
+        )
+
+        self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
+
+        self.add_paragraph(
             "In total, the investment costs for the power supply system total to {system_capex:,.0f} NGN. The "
             "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN. Additionally, {fuel_costs:,.0f} NGN are "
-            "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. More detailed "
-            "information regarding system costs and financial data can be found in Section 4. The "
+            "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. The "
             "following graph displays the power flow for the system during one week:"
+        )
+
+        self.add_paragraph(
+            "These expenditures do not "
+            "include other costs not directly related to the power supply system operation, which will be listed "
+            "in more detail in Section 4."
         )
         # Stacked timeseries graph
         self.add_image_from_db("stacked_timeseries_graph", caption="Power flows during first week")
 
         ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
-        self.add_heading("Supply System Costs", level=2)
+        self.add_heading("Total Investment Costs", level=2)
 
         self.add_paragraph(
-            "Table 3 and Fig. 4 display the project's capital expenditures (CAPEX), which need to be covered "
+            "Table and Fig. 4 display the project's total capital expenditures (CAPEX), which need to be covered "
             "during the installation of technical equipment, i.e. the power supply system outlined in Section 3 and the "
             "transmission network. CAPEX are considered in a conservative way and also include "
             "logistical costs, insurance for construction as well as planning and labor costs. VAT is"
@@ -1068,13 +1080,15 @@ class ReportHandler:
 
         self.add_paragraph(
             "Additionally, the project includes operational expenditures (OPEX) that need to be covered"
-            " during the operation of the power supply system and the transmission network. OPEX are "
-            "considered in a conservative way and include service and maintenance for the mini-grid as "
-            "well as diesel fuel for the diesel generator. Table 4 displays total OPEX costs for the first"
-            "year of operation, as well as CAPEX broken down by system asset. During the remaining project lifetime, "
-            "OPEX costs are assumed to increase an average of {opex_growth_rate} per year."
+            " during the operation of the power supply system and the transmission network. Apart from service and "
+            "maintenance, total OPEX includes costs such as management and bookkeeping, land lease or security. Table "
+            "and Fig. 5 display total OPEX costs for the first year of operation. During the project lifetime, "
+            "operational expenditures are assumed to increase an average of {opex_growth_rate} per year. Cost "
+            "assumptions made for this financial analysis are listed in Table ... of the Annex"
         )
-        self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
+
+        self.add_df_as_table(self.get_df_from_db("opex_table"), caption="Distribution of mini-grid OPEX")
+        self.add_image_from_db("opex_graph", caption="Total mini-grid OPEX")
 
         self.add_heading("Key Financial Parameters", level=2)
         self.add_paragraph(
