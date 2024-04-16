@@ -82,13 +82,13 @@ def calculate_co2_mitigation(project):
     """
     assumptions = {"hh_kerosene_use": 55, "kerosene_emission_factor": 2.72, "genset_emission_factor": 0.8}
 
-    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
     total_hhs = get_aggregated_cgs(project)["households"]["nr_consumers"]
 
     # BAU Scenario
     kerosene_supply_bau = total_hhs * assumptions["hh_kerosene_use"]
     kerosene_emissions_bau = kerosene_supply_bau * assumptions["kerosene_emission_factor"]
-    diesel_supply_bau = total_demand - kerosene_supply_bau
+    diesel_supply_bau = fulfilled_demand - kerosene_supply_bau
     diesel_emissions_bau = diesel_supply_bau * assumptions["genset_emission_factor"]
     total_emissions_bau = (kerosene_emissions_bau + diesel_emissions_bau) * project.economic_data.duration
 
