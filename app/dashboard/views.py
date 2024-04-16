@@ -968,10 +968,27 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
             )
         )
 
+    color_mapping = {
+        "pv_plant_flow": "#F2CD5D",
+        "battery_charge_flow": "#12AB6D",
+        "battery_discharge_flow": "#71D0A1",
+        "total_demand_flow": "#A69F99",
+        "fulfilled_demand_flow": "#716A64",
+        "diesel_generator_flow": "#814400",
+        "excess_flow": "#EA9822",
+        "ac_bus_excess_flow": "#EA9822",
+        "dc_bus_excess_flow": "#EA9822",
+    }
+
+    timeseries_labels = [f"{ts['label']}_flow" for ts in results_json[1]["data"][0]["timeseries"]]
     descriptions = {
-        param: {"verbose": OUTPUT_PARAMS[param]["verbose"], "description": OUTPUT_PARAMS[param]["description"]}
-        for param in OUTPUT_PARAMS
-        if "_flow" in param
+        param: {
+            "verbose": OUTPUT_PARAMS[param]["verbose"],
+            "description": OUTPUT_PARAMS[param]["description"],
+            "line": {"shape": "hv", "dash": "dash" if param == "total_demand_flow" else "solid"},
+            "color": color_mapping[param],
+        }
+        for param in timeseries_labels
     }
 
     for scenario in results_json:

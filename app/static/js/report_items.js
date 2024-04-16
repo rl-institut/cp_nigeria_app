@@ -217,7 +217,7 @@ function addTimeseriesGraph(graphId, parameters){
 function addStackedTimeseriesGraph(graphId, parameters){
     // prepare stacked traces in plotly format
     var data = []
-    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
+//    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
     var descriptions = parameters.descriptions
     if(parameters.data.length == 1){
         compare = false;
@@ -234,7 +234,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
                 y: timeseries.value,
                 name: descriptions[timeseriesName].verbose,
                 type: 'scatter',
-                line: {shape: 'hv'},
+                line: descriptions[timeseriesName].line,
                 stackgroup: timeseries.group,
                 fill: timeseries.fill,
                 mode: timeseries.mode,
@@ -256,7 +256,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
             title: parameters.y_label,
         },
         hovermode:'x unified',
-        colorway: colorway,
+        colorway: Object.keys(descriptions).map(obj => descriptions[obj].color),
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);

@@ -11,7 +11,7 @@ import pandas as pd
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
 from django.db import models
-from django.db.models import Value, Q, F, Case, When
+from django.db.models import Value, Q, F, Case, When, Sum
 from django.db.models.functions import Concat, Replace
 from dashboard.helpers import (
     KPI_PARAMETERS,
@@ -988,8 +988,9 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 default=Value("tonexty"),
             ),
             group=Case(
-                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("sink")),
-                When(Q(oemof_type="sink"), then=Value("sink")),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="demand"), then=Value("demand")),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("neg")),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value("neg")),
                 default=Value("production"),
             ),
             mode=Case(
@@ -1003,14 +1004,47 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
             ),
         )
         y_values = []
+        excess_indices = []
         # set the stacked lines order, first demand, then storages and finally dsos
         for y_val in qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode"):
-            y_val["value"] = (
-                [val for val in json.loads(y_val["value"])]
-                if "charge" in y_val["group"]
-                else json.loads(y_val["value"])
-            )
+            if "charge" in y_val["group"]:
+                y_val["value"] = [val for val in json.loads(y_val["value"])]
+            elif "neg" in y_val["group"]:
+                y_val["value"] = [-val for val in json.loads(y_val["value"])]
+            else:
+                y_val["value"] = json.loads(y_val["value"])
+
             y_values.append(y_val)
+
+        if energy_vector == "Electricity":
+            # add the aggregated total and fulfilled demand from demand sinks to the y vals for the plot
+            qs_total = Asset.objects.filter(scenario=simulation.scenario, asset_type__asset_type="reducable_demand")
+
+            qs_fulfilled = FancyResults.objects.filter(
+                simulation=simulation, direction="out", bus="ac_bus", asset__contains="demand", total_flow__gt=0
+            )
+
+            demand = {}
+            for qs, label in zip([qs_total, qs_fulfilled], ["total", "fulfilled"]):
+                total_demand = []
+                for dem in qs:
+                    if label == "total":
+                        total_demand.append(json.loads(dem.input_timeseries))
+                    else:
+                        total_demand.append(dem.timeseries)
+                demand[label] = np.vstack(total_demand).sum(axis=0).tolist()
+
+                y_values.append(
+                    {
+                        "total_flow": np.sum(demand[label]),
+                        "value": demand[label],
+                        "label": f"{label}_demand",
+                        "unit": "kW",
+                        "fill": "none",
+                        "group": f"{label}_demand",
+                        "mode": "lines",
+                    }
+                )
 
         simulations_results.append(
             simulation_timeseries_to_json(
