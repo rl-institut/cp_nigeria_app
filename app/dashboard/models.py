@@ -1006,13 +1006,18 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
         y_values = []
         excess_indices = []
         # set the stacked lines order, first demand, then storages and finally dsos
-        for y_val in qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode"):
+        for idx, y_val in enumerate(
+            qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode")
+        ):
             if "charge" in y_val["group"]:
                 y_val["value"] = [val for val in json.loads(y_val["value"])]
             elif "neg" in y_val["group"]:
                 y_val["value"] = [-val for val in json.loads(y_val["value"])]
             else:
                 y_val["value"] = json.loads(y_val["value"])
+
+            if "excess" in y_val["label"]:
+                excess_indices.append(idx)
 
             y_values.append(y_val)
 
@@ -1045,6 +1050,27 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                         "mode": "lines",
                     }
                 )
+
+            # aggregate the excess busses into one for the stacked graph
+            excess_flows = {}
+            # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
+            for idx in sorted(excess_indices, reverse=True):
+                excess = y_values.pop(idx)
+                excess_flows[excess["label"]] = excess["value"]
+
+            total_value = np.sum(list(excess_flows.values()), axis=0)
+            total_flow = np.sum(total_value)
+            y_values.append(
+                {
+                    "total_flow": total_flow,
+                    "value": total_value.tolist(),
+                    "label": "excess",
+                    "unit": "kW",
+                    "fill": "tonexty",
+                    "group": "neg",
+                    "mode": "none",
+                }
+            )
 
         simulations_results.append(
             simulation_timeseries_to_json(
