@@ -1029,8 +1029,14 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 simulation=simulation, direction="out", bus="ac_bus", asset__contains="demand", total_flow__gt=0
             )
 
+            if qs_total.exists():
+                demand_queries = [qs_total, qs_fulfilled]
+                demand_labels = ["total", "fulfilled"]
+            else:
+                demand_queries = [qs_fulfilled]
+                demand_labels = ["fulfilled"]
             demand = {}
-            for qs, label in zip([qs_total, qs_fulfilled], ["total", "fulfilled"]):
+            for qs, label in zip(demand_queries, demand_labels):
                 total_demand = []
                 for dem in qs:
                     if label == "total":

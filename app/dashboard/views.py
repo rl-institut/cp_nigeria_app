@@ -974,17 +974,22 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
         "battery_discharge_flow": "#71D0A1",
         "total_demand_flow": "#A69F99",
         "fulfilled_demand_flow": "#716A64",
+        "electricity_demand_flow": "#716A64",
         "diesel_generator_flow": "#814400",
+        "diesel_fuel_consumption_flow": "#814400",
         "excess_flow": "#EA9822",
         "ac_bus_excess_flow": "#EA9822",
         "dc_bus_excess_flow": "#EA9822",
     }
 
-    timeseries_labels = [f"{ts['label']}_flow" for ts in results_json[1]["data"][0]["timeseries"]]
+    timeseries_labels = [
+        f"{ts['label']}_flow" for i in range(len(results_json)) for ts in results_json[i]["data"][0]["timeseries"]
+    ]
+
     descriptions = {
         param: {
-            "verbose": OUTPUT_PARAMS[param]["verbose"],
-            "description": OUTPUT_PARAMS[param]["description"],
+            "verbose": OUTPUT_PARAMS[param]["verbose"] if param in OUTPUT_PARAMS else param,
+            "description": OUTPUT_PARAMS[param]["description"] if param in OUTPUT_PARAMS else "bla",
             "line": {"shape": "hv", "dash": "dash" if param == "total_demand_flow" else "solid"},
             "color": color_mapping[param],
         }
