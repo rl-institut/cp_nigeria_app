@@ -336,16 +336,21 @@ def get_fulfilled_demand_indicators(project, total_only=False):
     qs_res = FancyResults.objects.filter(
         simulation__scenario=project.scenario, direction="out", bus="ac_bus", asset__contains="critical"
     )
-    total_fulfilled_demand = qs_res.aggregate(delivered_demand=Sum("total_flow"))["delivered_demand"]
+    if qs_res.exists() is False:
+        total_fulfilled_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    else:
+        total_fulfilled_demand = qs_res.aggregate(delivered_demand=Sum("total_flow"))["delivered_demand"]
+        if total_only is False:
+            delivered_demand = []
+            for dem in qs_res:
+                delivered_demand.append(dem.timeseries)
+            delivered_demand_np = np.vstack(delivered_demand).sum(axis=0)
+            peak_demand = round(delivered_demand_np.max(), 1)
+            daily_demand = round(total_fulfilled_demand / 365, 1)
+
     if total_only is True:
         return total_fulfilled_demand
     else:
-        delivered_demand = []
-        for dem in qs_res:
-            delivered_demand.append(dem.timeseries)
-        delivered_demand_np = np.vstack(delivered_demand).sum(axis=0)
-        peak_demand = round(delivered_demand_np.max(), 1)
-        daily_demand = round(total_fulfilled_demand / 365, 1)
         return total_fulfilled_demand, peak_demand, daily_demand
 
 
@@ -1295,6 +1300,7 @@ class FinancialTool:
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
+        # should come from the results
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
@@ -1389,7 +1395,7 @@ class FinancialTool:
             "estimated_tariff",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
-        financial_params = qs_ed.first() | qs_eq.first()
+        financial_params = {**qs_ed.first(), **qs_eq.first()}
         financial_params["capex_fix"] = self.project.scenario.capex_fix
         return financial_params
 
