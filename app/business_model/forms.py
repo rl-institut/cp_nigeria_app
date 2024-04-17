@@ -115,8 +115,9 @@ class EquityDataForm(forms.ModelForm):
         "debt_interest_SHS",
         "equity_interest_MG",
         "equity_interest_SHS",
+        "equity_developer_share",
     ]
-    million_fields = ["equity_community_amount", "equity_developer_amount"]
+    million_fields = ["equity_community_amount"]
 
     class Meta:
         model = EquityData

@@ -1179,10 +1179,7 @@ def scenario_visualize_capex(request, scen_id):
     ft = FinancialTool(scenario.project)
     capex_df = ft.capex
     capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
-    capex_by_category.drop("Opex", inplace=True)
     capex_by_category.loc["total"] = capex_by_category.sum()
-    categories = capex_by_category.index.tolist()
-    total_costs = capex_by_category.values.tolist()
 
     # create table from data
     capex_by_category = capex_by_category.to_dict()
@@ -1206,8 +1203,44 @@ def scenario_visualize_capex(request, scen_id):
 
     return JsonResponse(
         {
-            "categories": categories,
-            "costs": total_costs,
+            "chart_descriptions": descriptions,
+            "data": table_content,
+            "headers": table_headers,
+        }
+    )
+
+
+def scenario_visualize_opex(request, scen_id):
+    scenario = get_object_or_404(Scenario, pk=scen_id)
+    save_to_db = True if request.GET.get("save_to_db") == "true" else False
+    ft = FinancialTool(scenario.project)
+    opex_df = ft.om_costs["Total costs [NGN]"]
+    opex_df.loc["total"] = opex_df.sum()
+    # create table from data
+    opex = opex_df.to_dict()
+    table_content = {}
+
+    headers = ["costs"]
+    descriptions = []
+    categories = []
+
+    for param in opex:
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = f"{round(opex[param], -3):,.0f}"
+        categories.append(table_content[param]["verbose"])
+        descriptions.append(OUTPUT_PARAMS[param]["description"])
+
+    table_headers = {}
+    for header in headers:
+        table_headers[header] = set_outputs_table_format(header)
+
+    if save_to_db:
+        save_table_for_report(
+            scenario=scenario, attr_name="opex_table", cols=table_headers, rows=table_content, units_on=["cols"]
+        )
+
+    return JsonResponse(
+        {
             "chart_descriptions": descriptions,
             "data": table_content,
             "headers": table_headers,

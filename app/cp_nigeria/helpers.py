@@ -30,6 +30,7 @@ from django.templatetags.static import static
 from dashboard.models import get_costs
 from django.db.models import Case
 from django.db import transaction
+from django.utils.functional import cached_property
 from geopy.geocoders import Nominatim
 
 
@@ -73,14 +74,37 @@ OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
 
 
 def calculate_co2_mitigation(project):
-    # TODO implement the calculation
-    co2_mitigations = {"Ebute-Ipare": 6894, "Usungwe": 22123, "Unguwar Kure": 3088, "Ezere": 8981, "Egbuniwe": 7472}
+    """
+    The BAU scenario assumes the same demand as the project scenario. Of this demand, each household consumes 55kWh
+    of kerosene a year and the rest is covered by diesel generators. In the project scenario, the total generation
+    from the diesel genset is considered. For more information about the methodology and used default values, check
+    https://cdm.unfccc.int/methodologies/DB/KHK371SOJH99Z35OBUWUTWZ9KMW9YN
+    """
+    assumptions = {"hh_kerosene_use": 55, "kerosene_emission_factor": 2.72, "genset_emission_factor": 0.8}
 
-    for key in co2_mitigations.keys():
-        if project.name or project.options.community.name in key:
-            return f"{co2_mitigations[key]:,}"
+    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    total_hhs = get_aggregated_cgs(project)["households"]["nr_consumers"]
 
-    return "[not available]"
+    # BAU Scenario
+    kerosene_supply_bau = total_hhs * assumptions["hh_kerosene_use"]
+    kerosene_emissions_bau = kerosene_supply_bau * assumptions["kerosene_emission_factor"]
+    diesel_supply_bau = total_demand - kerosene_supply_bau
+    diesel_emissions_bau = diesel_supply_bau * assumptions["genset_emission_factor"]
+    total_emissions_bau = (kerosene_emissions_bau + diesel_emissions_bau) * project.economic_data.duration
+
+    # Project scenario
+    diesel_supply_mg = (
+        FancyResults.objects.filter(simulation__scenario=project.scenario, asset="diesel_generator", direction="in")
+        .values_list("total_flow", flat=True)
+        .get()
+    )
+    diesel_emissions_mg = diesel_supply_mg * assumptions["genset_emission_factor"]
+    total_emissions_mg = diesel_emissions_mg * project.economic_data.duration
+
+    # emission reduction in tonnes CO2
+    emission_reduction = (total_emissions_bau - total_emissions_mg) / 1000
+
+    return emission_reduction
 
 
 def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
@@ -108,20 +132,23 @@ def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
 
 def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):
     param_dict = {}
-    for item in ["verbose", "description", "unit"]:
-        if param == "":
-            param_dict[item] = ""
-            continue
-        if item == "description":
-            dict_value = "" if from_dict[param][item] == "" else help_icon(from_dict[param][item])
-        else:
-            dict_value = from_dict[param][item]
+    try:
+        for item in ["verbose", "description", "unit"]:
+            if param == "":
+                param_dict[item] = ""
+                continue
+            if item == "description":
+                dict_value = "" if from_dict[param][item] == "" else help_icon(from_dict[param][item])
+            else:
+                dict_value = from_dict[param][item]
 
-        if "currency" in dict_value:
-            # TODO make this custom depending on project currency
-            dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
+            if "currency" in dict_value:
+                # TODO make this custom depending on project currency
+                dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
 
-        param_dict[item] = dict_value
+            param_dict[item] = dict_value
+    except KeyError:
+        param_dict = {"verbose": param.title(), "description": "", "unit": ""}
 
     return param_dict
 
@@ -372,10 +399,14 @@ def get_community_region(project):
         "Ondo": "South West",
         "Lagos": "South West",
     }
-    geolocator = Nominatim(user_agent="cp_nigeria_app")
-    location = geolocator.reverse(f"{project.latitude}, {project.longitude}")
-    state = location.raw["address"]["state"]
-    region = state_region_mapping[state]
+    try:
+        geolocator = Nominatim(user_agent="cp_nigeria_app")
+        location = geolocator.reverse(f"{project.latitude}, {project.longitude}")
+        state = location.raw["address"]["state"]
+        region = state_region_mapping[state]
+    except:
+        state = "[could not locate state]"
+        region = "[region unavailable]"
     return state, region
 
 
@@ -449,7 +480,7 @@ class ReportHandler:
         )
 
         ft = FinancialTool(project)
-
+        self.cost_assumptions = ft.cost_assumption_tables
         total_demand, peak_demand, daily_demand = get_demand_indicators(project)
 
         if "inverter" in ft.system_params["supply_source"].tolist():
@@ -877,7 +908,7 @@ class ReportHandler:
             "construct a suitable mini-grid system. The system proposed in this implementation plan, by using the "
             "CP-Nigeria Toolbox, comprises {system_assets}. The project does not only present a robust business case "
             "but electrifying the community will also deliver vital socioeconomic benefits to its members. In "
-            "addition, the project approximately mitigates {co2_mitigation} tonnes of CO2 over the project lifetime."
+            "addition, the project approximately mitigates {co2_mitigation:,.1f} tonnes of CO2 over the project lifetime."
         )
 
         # Add page break
@@ -1011,21 +1042,33 @@ class ReportHandler:
         )
 
         self.add_paragraph(
+            "Table 3 displays the total costs for the mini-grid system during the first year of operation, which "
+            "include asset investment costs, operational expenditures and fuel costs."
+        )
+
+        self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
+
+        self.add_paragraph(
             "In total, the investment costs for the power supply system total to {system_capex:,.0f} NGN. The "
             "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN. Additionally, {fuel_costs:,.0f} NGN are "
-            "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. More detailed "
-            "information regarding system costs and financial data can be found in Section 4. The "
+            "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. The "
             "following graph displays the power flow for the system during one week:"
+        )
+
+        self.add_paragraph(
+            "These expenditures do not "
+            "include other costs not directly related to the power supply system operation, which will be listed "
+            "in more detail in Section 4."
         )
         # Stacked timeseries graph
         self.add_image_from_db("stacked_timeseries_graph", caption="Power flows during first week")
 
         ### FINANCIAL ANALYSIS SECTION ###
         self.add_heading("Financial Analysis")
-        self.add_heading("Supply System Costs", level=2)
+        self.add_heading("Total Investment Costs", level=2)
 
         self.add_paragraph(
-            "Table 3 and Fig. 4 display the project's capital expenditures (CAPEX), which need to be covered "
+            "Table and Fig. 4 display the project's total capital expenditures (CAPEX), which need to be covered "
             "during the installation of technical equipment, i.e. the power supply system outlined in Section 3 and the "
             "transmission network. CAPEX are considered in a conservative way and also include "
             "logistical costs, insurance for construction as well as planning and labor costs. VAT is"
@@ -1037,13 +1080,15 @@ class ReportHandler:
 
         self.add_paragraph(
             "Additionally, the project includes operational expenditures (OPEX) that need to be covered"
-            " during the operation of the power supply system and the transmission network. OPEX are "
-            "considered in a conservative way and include service and maintenance for the mini-grid as "
-            "well as diesel fuel for the diesel generator. Table 4 displays total OPEX costs for the first"
-            "year of operation, as well as CAPEX broken down by system asset. During the remaining project lifetime, "
-            "OPEX costs are assumed to increase an average of {opex_growth_rate} per year."
+            " during the operation of the power supply system and the transmission network. Apart from service and "
+            "maintenance, total OPEX includes costs such as management and bookkeeping, land lease or security. Table "
+            "and Fig. 5 display total OPEX costs for the first year of operation. During the project lifetime, "
+            "operational expenditures are assumed to increase an average of {opex_growth_rate} per year. Cost "
+            "assumptions made for this financial analysis are listed in Tables 9 and 10 (see Annex)"
         )
-        self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
+
+        self.add_df_as_table(self.get_df_from_db("opex_table"), caption="Distribution of mini-grid OPEX")
+        self.add_image_from_db("opex_graph", caption="Total mini-grid OPEX")
 
         self.add_heading("Key Financial Parameters", level=2)
         self.add_paragraph(
@@ -1077,7 +1122,7 @@ class ReportHandler:
         )
 
         self.add_paragraph(
-            "*In addition to the parameters in the table above, the overall tool calculation also "
+            "*In addition to the parameters in Table 7, the overall tool calculation also "
             "considers an additional loan that is required for the replacement of certain mini-grid "
             "assets during the project lifetime. As it does not add to the total investment costs, "
             "it is not included here. The replacement is assumed to happen after approx. ten years of "
@@ -1128,6 +1173,8 @@ class ReportHandler:
         # TODO add tables about cost assumptions etc here
         self.add_heading("Tool assumptions", level=2)
         self.add_df_as_table(get_asset_assumptions(self.project), caption="Asset assumptions")
+        self.add_df_as_table(self.cost_assumptions[0], caption="CAPEX cost assumptions")
+        self.add_df_as_table(self.cost_assumptions[1], caption="OPEX cost assumptions")
 
 
 class FinancialTool:
@@ -1150,6 +1197,7 @@ class FinancialTool:
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
+        self.financial_params["equity_developer_amount"] = self.equity_developer
         # automatically set the tariff if it has already been previously calculated
         if self.financial_params["estimated_tariff"] is not None:
             self.set_tariff(self.financial_params["estimated_tariff"])
@@ -1229,19 +1277,40 @@ class FinancialTool:
         # TODO include excess generation (to be used by excess gen tariff - also not prio while not considering feedin)
         return system_params
 
-    @property
+    @cached_property
+    def cost_assumption_tables(self):
+        capex_assumptions = self.cost_assumptions[
+            (~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems", "Opex"]))
+            & (self.cost_assumptions["Qty"] > 0)
+            & (~self.cost_assumptions["USD/Unit"].isna())
+            & (self.cost_assumptions["USD/Unit"] != 0.0)
+        ].copy()
+        opex_assumptions = self.cost_assumptions[
+            (self.cost_assumptions["Category"] == "Opex")
+            & (self.cost_assumptions["Qty"] > 0)
+            & (~self.cost_assumptions["USD/Unit"].isna())
+            & (self.cost_assumptions["USD/Unit"] != 0.0)
+        ].copy()
+
+        for df in [capex_assumptions, opex_assumptions]:
+            df.drop(columns=["Qty", "Growth rate", "Target"], inplace=True)
+            df.set_index("Description", inplace=True)
+
+        return capex_assumptions, opex_assumptions
+
+    @cached_property
     def yearly_production_electricity(self):
         flow_df = self.system_params[self.system_params["category"] == "total_flow"]
         return flow_df[flow_df["supply_source"].isin(["diesel_generator", "pv_plant", "dso"])].value.sum()
 
-    @property
+    @cached_property
     def fuel_costs(self):
         return self.system_params[
             (self.system_params["supply_source"] == "diesel_generator")
             & (self.system_params["category"] == "fuel_costs_total")
         ].value.iloc[0]
 
-    @property
+    @cached_property
     def fuel_consumption_liter(self):
         return (
             self.system_params[
@@ -1267,7 +1336,7 @@ class FinancialTool:
             "equity_interest_MG",
             "equity_interest_SHS",
             "equity_community_amount",
-            "equity_developer_amount",
+            "equity_developer_share",
             "estimated_tariff",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
@@ -1319,7 +1388,7 @@ class FinancialTool:
 
         return df
 
-    @property
+    @cached_property
     def capex(self):
         """
         This method takes the given general cost assumptions and merges them with the specific project results
@@ -1327,7 +1396,7 @@ class FinancialTool:
         VAT tax is calculated. The method returns a dataframe with all CAPEX costs by category.
         """
         capex_df = pd.merge(
-            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems"])],
+            self.cost_assumptions[~self.cost_assumptions["Category"].isin(["Revenue", "Solar home systems", "Opex"])],
             self.system_params[["label", "value"]],
             left_on="Target",
             right_on="label",
@@ -1383,9 +1452,13 @@ class FinancialTool:
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
         return costs_om_df.value.sum()
 
-    @property
+    @cached_property
     def opex_growth_rate(self):
         return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
+
+    @cached_property
+    def equity_developer(self):
+        return self.total_capex("NGN") * self.financial_params["equity_developer_share"]
 
     @property
     def revenue_over_lifetime(self):
@@ -1416,16 +1489,63 @@ class FinancialTool:
 
         return revenue_flows
 
-    @property
+    @cached_property
+    def om_costs(self):
+        # get the opex costs for the system
+        costs_om_system = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
+        costs_om_system = costs_om_system[costs_om_system["value"] != 0]
+        # group the system opex costs
+        total_system_opex = costs_om_system.groupby(["category"])["value"].sum().opex_total
+        total_row = {
+            "category": "Total costs",
+            "value": total_system_opex,
+            "growth_rate": self.opex_growth_rate,
+            "label": "energy_system_opex_total",
+        }
+        costs_om_system = pd.concat([costs_om_system, pd.DataFrame(total_row, index=[0])], ignore_index=True)
+        costs_om_system = costs_om_system[costs_om_system["category"] != "opex_total"]
+        costs_om_system.drop(columns=["supply_source", "category"], inplace=True)
+        costs_om_system.rename(
+            columns={
+                "label": "Description",
+                "growth_rate": "Growth rate",
+                "value": "Total costs [NGN]",
+            },
+            inplace=True,
+        )
+
+        # get the other OPEX costs (management, insurances etc.) from the assumptions
+        costs_om_other = pd.merge(
+            self.cost_assumptions[
+                (self.cost_assumptions["Category"] == "Opex") & (~self.cost_assumptions["USD/Unit"].isna())
+            ],
+            self.system_params[["label", "value"]],
+            left_on="Target",
+            right_on="label",
+            suffixes=("_costs", "_outputs"),
+            how="left",
+        )
+        costs_om_other["Total costs [NGN]"] = costs_om_other["USD/Unit"] * costs_om_other["value"] * self.exchange_rate
+
+        costs_om_total = pd.concat(
+            [costs_om_system, costs_om_other[["Description", "Category", "Growth rate", "Total costs [NGN]"]]],
+            ignore_index=True,
+        )
+        # set the descriptions as the index
+        costs_om_total.index = costs_om_total["Description"]
+
+        return costs_om_total
+
+    @cached_property
     def om_costs_over_lifetime(self):
         """
         This method returns a wide table calculating the OM cost flows over project lifetime based on the OM costs of
         the system together with the annual cost increase assumptions.
         """
 
-        costs_om_df = self.system_params[self.system_params["category"].isin(["opex_total", "fuel_costs_total"])]
-        costs_om_df = costs_om_df[costs_om_df["value"] != 0]
-        om_lifetime = self.growth_over_lifetime_table(costs_om_df, "value", growth_col="growth_rate", index_col="label")
+        costs_om_lifetime = self.growth_over_lifetime_table(
+            self.om_costs, "Total costs [NGN]", growth_col="Growth rate"
+        )
 
         # TODO include these costs in extra information about solar home systems but not general mini-grid
         # shs_costs_om = (
@@ -1436,12 +1556,12 @@ class FinancialTool:
         # )
 
         # multiply the unit prices by the amount
-        # om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
+        # costs_om_lifetime.loc["opex_total_shs"] = self.system_lifetime.loc["shs_nr_consumers"] * shs_costs_om
 
         # calculate total operating expenses
-        om_lifetime.loc["opex_total"] = om_lifetime.sum()
+        costs_om_lifetime.loc["opex_total"] = costs_om_lifetime.sum()
 
-        return om_lifetime
+        return costs_om_lifetime
 
     def debt_service_table(self, amount, tenor, gp, ir, debt_start):
         debt_service = pd.DataFrame(
@@ -1487,7 +1607,7 @@ class FinancialTool:
             amount=amount, tenor=tenor, gp=grace_period, ir=interest_rate, debt_start=debt_start
         )
 
-    @property
+    @cached_property
     def replacement_loan_table(self):
         """
         This method creates a table for the replacement costs debt (accounts for replacing battery, inverter and diesel
@@ -1576,7 +1696,7 @@ class FinancialTool:
         This method returns the internal return on investment % based on project CAPEX, grant share and cash flows
         after a given number of project years.
         """
-        gross_capex = self.capex["Total costs [NGN]"].sum()
+        gross_capex = self.total_capex("NGN")
         grant = self.financial_params["grant_share"] * gross_capex
         cash_flow = self.cash_flow_over_lifetime
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
@@ -1629,7 +1749,7 @@ class FinancialTool:
         x = np.arange(0.1, 0.5, 0.1)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)
         # as this is a linear function of the tariff, we can fit it and then find the tariff value x0
-        # for which the sum of the cashflow for the first 4 years is 0
+        # for which the sum of the cashflow for the first 5 years is 0
         m, h = np.polyfit(x, [self.goal_seek_helper(xi) for xi in x], deg=1)
         x0 = -h / m
 
@@ -1644,89 +1764,3 @@ class FinancialTool:
     def set_tariff(self, tariff):
         # set FinancialTool tariff value to the computed tariff
         self.cost_assumptions.loc[self.cost_assumptions["Description"] == "Community tariff", "USD/Unit"] = tariff
-
-
-# TODO if linear fit yields same results this can be deleted
-def GoalSeek(fun, goal, x0, fTol=0.0001, MaxIter=1000):
-    """
-    code taken from https://github.com/DrTol/GoalSeek_Python
-    Copyright (c) 2019 Hakan İbrahim Tol
-    """
-    # Goal Seek function of Excel
-    #   via use of Line Search and Bisection Methods
-
-    # Inputs
-    #   fun     : Function to be evaluated
-    #   goal    : Expected result/output
-    #   x0      : Initial estimate/Starting point
-
-    # Initial check
-    if fun(x0) == goal:
-        print("Exact solution found")
-        return x0
-
-    # Line Search Method
-    step_sizes = np.logspace(-1, 4, 6)
-    scopes = np.logspace(1, 5, 5)
-
-    vFun = np.vectorize(fun)
-
-    for scope in scopes:
-        break_nested = False
-        for step_size in step_sizes:
-            cApos = np.linspace(x0, x0 + step_size * scope, int(scope))
-            cAneg = np.linspace(x0, x0 - step_size * scope, int(scope))
-
-            cA = np.concatenate((cAneg[::-1], cApos[1:]), axis=0)
-
-            fA = vFun(cA) - goal
-
-            if np.any(np.diff(np.sign(fA))):
-                index_lb = np.nonzero(np.diff(np.sign(fA)))
-
-                if len(index_lb[0]) == 1:
-                    index_ub = index_lb + np.array([1])
-
-                    x_lb = np.ndarray.item(np.array(cA)[index_lb])
-                    x_ub = np.ndarray.item(np.array(cA)[index_ub])
-                    break_nested = True
-                    break
-                else:  # Two or more roots possible
-                    index_ub = index_lb + np.array([1])
-
-                    print("Other solution possible at around, x0 = ", np.array(cA)[index_lb[0][1]])
-
-                    x_lb = np.ndarray.item()(np.array(cA)[index_lb[0][0]])
-                    x_ub = np.ndarray.item()(np.array(cA)[index_ub[0][0]])
-                    break_nested = True
-                    break
-
-        if break_nested:
-            break
-    if not x_lb or not x_ub:
-        print("No Solution Found")
-        return
-
-    # Bisection Method
-    iter_num = 0
-    error = 10
-
-    while iter_num < MaxIter and fTol < error:
-        x_m = (x_lb + x_ub) / 2
-        f_m = fun(x_m) - goal
-
-        error = abs(f_m)
-
-        if (fun(x_lb) - goal) * (f_m) < 0:
-            x_ub = x_m
-        elif (fun(x_ub) - goal) * (f_m) < 0:
-            x_lb = x_m
-        elif f_m == 0:
-            print("Exact spolution found")
-            return x_m
-        else:
-            print("Failure in Bisection Method")
-
-        iter_num += 1
-
-    return x_m

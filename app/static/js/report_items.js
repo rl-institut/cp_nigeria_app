@@ -742,14 +742,13 @@ function downloadReport(proj_id) {
 function addPieChart(parameters, plot_id="") {
 	var plotDiv = document.getElementById(plot_id);
 
-	// delete the last element of all arrays (total - only needed for table, not graph)
-	parameters.categories.pop();
-	parameters.costs.pop();
-	parameters.chart_descriptions.pop();
-
-    var labels = parameters.categories;
-    var costs = parameters.costs;
+    var labels = Object.keys(parameters.data).map(key => parameters.data[key].verbose)
+    var costs = Object.keys(parameters.data).map(key => parseFloat(parameters.data[key].value.replace(/,/g,"")))
     var descriptions = parameters.chart_descriptions
+	// delete the last element of all arrays (total - only needed for table, not graph)
+	labels.pop();
+	costs.pop();
+	descriptions.pop();
     descriptions = descriptions.map(desc => insertLineBreaks(desc, 50))
 
     // Create a Plotly Pie Chart

@@ -1206,6 +1206,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
                 "project_summary": project_summary,
                 "opt_caps": opt_caps,
                 "capex_by_category": capex_by_category,
+                "revenue_flows": revenue_flows,
                 "cgs_df": cgs_df,
                 "capex_df": capex_df,
                 "capex_assumptions": capex_assumptions,
