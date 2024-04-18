@@ -217,6 +217,45 @@ function addTimeseriesGraph(graphId, parameters){
 function addStackedTimeseriesGraph(graphId, parameters){
     // prepare stacked traces in plotly format
     var data = []
+    var descriptions = parameters.descriptions
+    if(parameters.data.length == 1){
+        compare = false;
+        parameters.title = parameters.title + " sector of scenario " + parameters.data[0].scenario_name;
+    }
+    axisRange = []
+
+    parameters.data.forEach(scenario => {
+        scenario.timeseries.forEach(timeseries => {
+            // todo provide a function to format the name of the timeseries
+            var trace = {x: scenario.timestamps,
+                y: timeseries.value,
+                name: format_trace_name(scenario.scenario_name, timeseries.label, timeseries.unit, compare=compare),
+                type: 'scatter',
+                line: {shape: 'hv'},
+                stackgroup: timeseries.group,
+                fill: timeseries.fill,
+                mode: timeseries.mode,
+            };
+            data.push(trace);
+        });
+    });
+    // prepare graph layout in plotly format
+    const layout= {
+        xaxis:{
+            title: parameters.x_label,
+        },
+        yaxis:{
+            title: parameters.y_label,
+        },
+        hovermode:'x unified',
+    }
+    // create plot
+    Plotly.newPlot(graphId, data, layout);
+};
+
+function addCPNStackedTimeseriesGraph(graphId, parameters){
+    // prepare stacked traces in plotly format
+    var data = []
 //    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
     var descriptions = parameters.descriptions
     if(parameters.data.length == 1){
@@ -729,7 +768,7 @@ function downloadReport(proj_id) {
         success: function (response) {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(response);
-            link.download = 'report.docx';
+            link.download = 'Implementation_Plan.docx';
             link.click();
         },
         error: function (error) {
@@ -860,7 +899,7 @@ function insertLineBreaks(inputString, charactersPerLine) {
 var graph_type_mapping={
     timeseries: addTimeseriesGraph,
     timeseries_stacked: addStackedTimeseriesGraph,
-    timeseries_stacked_cpn: addStackedTimeseriesGraph,
+    timeseries_stacked_cpn: addCPNStackedTimeseriesGraph,
     capacities: addCapacitiyGraph,
     costs: addCostGraph,
     costsScenarios: addCostScenariosGraph,
