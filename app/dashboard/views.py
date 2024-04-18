@@ -954,7 +954,7 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
         raise PermissionDenied
 
     results_json = []
-    for energy_vector in scenario.energy_vectors:
+    for energy_vector in ["Electricity"]:  # scenario.energy_vectors
         results_json.append(
             report_item_render_to_json(
                 report_item_id=energy_vector,
