@@ -1422,7 +1422,8 @@ def graph_costs(simulations, y_variables=None, arrangement=COSTS_PER_CATEGORY): 
     return simulations_results
 
 
-def graph_sankey(simulation, energy_vector):
+def graph_sankey(simulation, energy_vector, timestep=None):
+    ts = timestep
     if isinstance(energy_vector, list) is False:
         energy_vector = [energy_vector]
     if energy_vector is not None:
@@ -1446,8 +1447,10 @@ def graph_sankey(simulation, energy_vector):
             bus_label = bus.name
             labels.append(bus_label)
             colors.append("blue")
-
-            asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "total_flow")
+            if ts is None:
+                asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "total_flow")
+            else:
+                asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "flow_data")
 
             for component_label, val in asset_to_bus_names:
                 # draw link from the component to the bus
@@ -1458,15 +1461,21 @@ def graph_sankey(simulation, energy_vector):
                 sources.append(labels.index(component_label))
                 targets.append(labels.index(bus_label))
 
+                if ts is not None:
+                    val = json.loads(val)
+                    val = val[ts]
+
                 if component_label in chp_in_flow:
                     chp_in_flow[component_label]["value"] += val
 
                 if val == 0:
-                    val = 1e-6
-
+                    val = 1e-9
                 values.append(val)
+            if ts is None:
+                bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "total_flow")
+            else:
+                bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "flow_data")
 
-            bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "total_flow")
             # TODO potentially rename feedin period and consumption period
             for component_label, val in bus_to_asset_names:
                 # draw link from the bus to the component
@@ -1480,8 +1489,12 @@ def graph_sankey(simulation, energy_vector):
                 if component_label in chp_in_flow:
                     chp_in_flow[component_label]["bus"] = bus_label
 
+                if ts is not None:
+                    val = json.loads(val)
+                    val = val[ts]
+
                 if val == 0:
-                    val = 1e-6
+                    val = 1e-9
                 values.append(val)
 
         # TODO display the installed capacity, max capacity and optimized_add_capacity on the nodes if applicable
