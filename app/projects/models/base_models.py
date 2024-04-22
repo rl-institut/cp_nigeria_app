@@ -610,6 +610,11 @@ class COPCalculator(models.Model):
 
 class Bus(TopologyNode):
     type = models.CharField(max_length=20, choices=ENERGY_VECTOR)
+    price = models.FloatField(
+        default=0,
+        blank=True,
+        validators=[MinValueValidator(0.0)],
+    )
     # TODO now these parameters are useless ...
     input_ports = models.IntegerField(null=False, default=1)
     output_ports = models.IntegerField(null=False, default=1)

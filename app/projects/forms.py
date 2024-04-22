@@ -604,7 +604,7 @@ class BusForm(OpenPlanModelForm):
 
     class Meta:
         model = Bus
-        fields = ["name", "type"]
+        fields = ["name", "type", "price"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -620,8 +620,15 @@ class BusForm(OpenPlanModelForm):
                     "style": "font-weight:400; font-size:13px;",
                 },
             ),
+            "price": forms.NumberInput(
+                attrs={
+                    "title": _(
+                        "The penalty price of the flow into excess sink from this bus (keep it low with respect to other price in the system)"
+                    ),
+                }
+            ),
         }
-        labels = {"name": _("Name"), "type": _("Energy carrier")}
+        labels = {"name": _("Name"), "type": _("Energy carrier"), "price": _("Excess energy penalty")}
 
 
 class AssetCreateForm(OpenPlanModelForm):

@@ -174,9 +174,10 @@ class EssDto:
 
 
 class BusDto:
-    def __init__(self, label: str, energy_vector: str, assets: List[AssetDto]):
+    def __init__(self, label: str, energy_vector: str, price: float, assets: List[AssetDto]):
         self.label = label
         self.energy_vector = energy_vector
+        self.price = price
         self.assets = assets
 
 
@@ -572,7 +573,7 @@ def convert_to_dto(scenario: Scenario, testing: bool = False):
         # Find all assets associated with the connections
         bus_asset_list = list(set([connection.asset.name for connection in connections_list]))
 
-        bus_dto = BusDto(bus.name, bus.type, bus_asset_list)
+        bus_dto = BusDto(bus.name, bus.type, bus.price, bus_asset_list)
 
         bus_dto_list.append(bus_dto)
 
