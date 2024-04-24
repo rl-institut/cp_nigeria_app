@@ -167,7 +167,7 @@ def get_project_summary(project):
     yearly_production = ft.yearly_production_electricity
     total_investments = ft.total_capex("NGN")
     fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
-    renewable_share = inverter_aggregated_flow / fulfilled_demand * 100
+    renewable_share = get_renewable_share(project)
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
     state, region = get_community_region(project)
@@ -449,6 +449,25 @@ def get_community_region(project):
     return state, region
 
 
+def get_renewable_share(project):
+    # TODO this may not be completely accurate when there is a minimal load set on the diesel genset, as there might be
+    #  excess diesel generation, but inverter flow is also not accurate when there is ac_excess
+    qs_sim = Simulation.objects.filter(scenario=project.scenario)
+    if not qs_sim.exists():
+        return logging.error("Simulation does not exist")
+
+    diesel_supply_mg = (
+        FancyResults.objects.filter(simulation=project.scenario.simulation, asset="diesel_generator", direction="in")
+        .values_list("total_flow", flat=True)
+        .get()
+    )
+
+    fulfilled_demand = get_fulfilled_demand_indicators(project, total_only=True)
+    renewable_share = (fulfilled_demand - diesel_supply_mg) / fulfilled_demand * 100
+
+    return renewable_share
+
+
 class ReportHandler:
     def __init__(self, project):
         self.doc = Document()
@@ -574,7 +593,7 @@ class ReportHandler:
             avg_daily_demand=daily_demand,
             peak_demand=peak_demand,
             diesel_price_increase=ft.financial_params["fuel_price_increase"],
-            renewable_share=(inverter_aggregated_flow / fulfilled_demand) * 100,
+            renewable_share=get_renewable_share(project),
             lcoe=lcoe,
             opex_total=ft.total_opex(),
             opex_growth_rate=ft.opex_growth_rate * 100,

@@ -1468,7 +1468,7 @@ def cpn_kpi_results(request, proj_id=None):
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-                scen_values = round(inverter_flow / total_demand * factor, 2)
+                scen_values = round(get_renewable_share(project), 2)
             else:
                 if project.economic_data.currency_symbol in unit:
                     factor = project.economic_data.exchange_rate
