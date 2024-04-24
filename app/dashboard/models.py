@@ -1289,7 +1289,7 @@ def get_costs(simulation, y_variables=None):
     df = df.fillna(0)
     # TODO costs for batteries are skewed as battery capacity does not exists in fancy results
     # TODO costs for dso not implemented yet
-    # why is it this formula and why is the installed capacity included in capex, i dont understand
+    # TODO this should be called annuity instead of CAPEX total if that's what it is
     df["capex_total"] = df.apply(
         lambda x: (x.installed_capacity + x.optimized_capacity)
         * x.capex_var
