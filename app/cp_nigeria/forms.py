@@ -292,9 +292,8 @@ class BessForm(StorageForm):
             self.initial["soc_min"] = round(1 - asset.soc_min, 3)
 
         self.initial["optimize_cap"] = True
-        for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 1e-9)):
-            if field != "opex_var":
-                self.fields[field].widget = forms.HiddenInput()
+        for field, value in zip(("name", "capex_fix", "opex_var"), (self.asset_type_name, 0, 1e-4)):
+            self.fields[field].widget = forms.HiddenInput()
             self.initial[field] = value
         self.fields["capex_var"].label = self.fields["capex_var"].label.replace(
             "(CAPEX)", "(CAPEX). It should include inverter costs."

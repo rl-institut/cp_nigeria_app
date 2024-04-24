@@ -483,6 +483,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         ac_bus.pos_y = 100
         dc_bus.pos_x = 700
         dc_bus.pos_y = 450
+        ac_bus.price = 1e-6
+        dc_bus.price = 1e-6
         ac_bus.save()
         dc_bus.save()
 

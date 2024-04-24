@@ -922,7 +922,7 @@ class AssetCreateForm(OpenPlanModelForm):
             "capex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 10000", "min": "0.0", "step": ".01"}),
             "capex_var": forms.NumberInput(attrs={"placeholder": "e.g. 4000", "min": "0.0", "step": ".01"}),
             "opex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 0", "min": "0.0", "step": ".01"}),
-            "opex_var": forms.NumberInput(attrs={"placeholder": "Currency", "min": "0.0", "step": ".01"}),
+            "opex_var": forms.NumberInput(attrs={"placeholder": "Currency", "min": "0.0"}),
             "lifetime": forms.NumberInput(attrs={"placeholder": "e.g. 10 years", "min": "0", "step": "1"}),
             # TODO: Try changing this to FileInput
             "input_timeseries": forms.FileInput(
