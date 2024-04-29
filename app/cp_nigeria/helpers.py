@@ -585,8 +585,8 @@ class ReportHandler:
             + self.aggregated_cgs["shs"]["nr_consumers"],
             shs_threshold=dict(HOUSEHOLD_TIERS)[self.options.shs_threshold],
             system_assets=system_assets,
-            system_capex=ft.total_capex("NGN"),
-            system_opex=ft.total_opex(),
+            system_capex=round(ft.system_params[ft.system_params["category"] == "capex_initial"].value.sum(), -3),
+            system_opex=round(ft.total_opex(), -3),
             grant_share=ft.financial_params["grant_share"] * 100,
             yearly_production=ft.yearly_production_electricity,
             total_demand=total_demand,
@@ -595,9 +595,9 @@ class ReportHandler:
             diesel_price_increase=ft.financial_params["fuel_price_increase"],
             renewable_share=get_renewable_share(project),
             lcoe=lcoe,
-            opex_total=ft.total_opex(),
+            opex_total=round(ft.total_opex(), -3),
             opex_growth_rate=ft.opex_growth_rate * 100,
-            fuel_costs=ft.fuel_costs,
+            fuel_costs=round(ft.fuel_costs, -3),
             fuel_consumption_liter=ft.fuel_consumption_liter,
             energy_system_components_string=self.options.component_list,
             community_latitude=self.project.latitude,
@@ -1118,7 +1118,7 @@ class ReportHandler:
         self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
 
         self.add_paragraph(
-            "In total, the investment costs for the power supply system total to {system_capex:,.0f} NGN. The "
+            "In total, the investment costs for the assets relating to the power supply system total to {system_capex:,.0f} NGN. The "
             "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN. Additionally, {fuel_costs:,.0f} NGN are "
             "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. The "
             "following graph displays the power flow for the system during one week:"
