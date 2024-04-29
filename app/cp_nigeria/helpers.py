@@ -597,6 +597,7 @@ class ReportHandler:
             lcoe=lcoe,
             opex_total=round(ft.total_opex(), -3),
             opex_growth_rate=ft.opex_growth_rate * 100,
+            tariff_growth_rate=ft.tariff_growth_rate * 100,
             fuel_costs=round(ft.fuel_costs, -3),
             fuel_consumption_liter=ft.fuel_consumption_liter,
             energy_system_components_string=self.options.component_list,
@@ -1175,6 +1176,27 @@ class ReportHandler:
 
         self.add_df_as_table(self.get_df_from_db("financial_kpi_table"), caption="Key Financial Parameters")
 
+        self.add_paragraph(
+            "The estimated tariff (as per Table 6) represents an average cost per consumer per kWh of "
+            "used electricity from the mini-grid. Furthermore, an increase rate of {tariff_growth_rate:.0f}% "
+            "per year is assumed. Applying different tariff models will be subject to the further "
+            "project development process. Project partners should, for instance, evaluate the following"
+            " tariff models:"
+        )
+
+        self.add_list(
+            [
+                "Customer-class tariffs: Diverse tariffs are set according to consumer group, e.g. residents, institutions and businesses.",
+                "Time-based tariffs: This model applying a higher tariff during night hours and a cheaper tariff"
+                " at the daytime during the peak hours of the electricity generation to enhance the system's efficiency.",
+            ]
+        )
+
+        self.add_paragraph(
+            "Moreover, the final project tariff requires clearance from the Nigerian Electricity "
+            "Regulatory Commission (NERC). The NREC Mini-grid Tariff Tool is obligatory to use for the tariff calculation."
+        )
+
         self.add_heading("Financing Structure", level=2)
         self.add_paragraph(
             "The financing structure shows the key financial conditions including the communities’ and "
@@ -1529,6 +1551,12 @@ class FinancialTool:
     @cached_property
     def opex_growth_rate(self):
         return self.cost_assumptions.loc[self.cost_assumptions["Category"] == "Opex", "Growth rate"].iloc[0]
+
+    @cached_property
+    def tariff_growth_rate(self):
+        return self.cost_assumptions.loc[
+            self.cost_assumptions["Description"] == "Community tariff", "Growth rate"
+        ].iloc[0]
 
     @cached_property
     def equity_developer(self):
