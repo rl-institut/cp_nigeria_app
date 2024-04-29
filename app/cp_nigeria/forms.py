@@ -218,7 +218,7 @@ class DieselForm(AssetCreateForm):
         field_order = [field for field in self.fields]
         field_order.insert((field_order.index("opex_var_extra") + 1), "fuel_price_increase")
         ed = EquityData.objects.filter(scenario__project_id=kwargs.get("proj_id"))
-        initial_increase = (ed.first().fuel_price_increase * 100) if ed.exists() else 0
+        initial_increase = (ed.first().fuel_price_increase * 100) if ed.exists() else 3.8
         self.fields["fuel_price_increase"] = forms.FloatField(
             help_text=_("Estimated annual fuel price increase (%)"),
             initial=initial_increase,
