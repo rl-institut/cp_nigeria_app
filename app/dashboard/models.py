@@ -1005,6 +1005,7 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
         )
         y_values = []
         excess_indices = []
+        battery_indices = []
         # set the stacked lines order, first demand, then storages and finally dsos
         for idx, y_val in enumerate(
             qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode")
@@ -1018,62 +1019,68 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
 
             if "excess" in y_val["label"]:
                 excess_indices.append(idx)
+            elif "battery" in y_val["label"]:
+                battery_indices.append(idx)
 
             y_values.append(y_val)
 
-        if energy_vector == "Electricity":
-            # add the aggregated total and fulfilled demand from demand sinks to the y vals for the plot
-            qs_total = Asset.objects.filter(scenario=simulation.scenario, asset_type__asset_type="reducable_demand")
+        # add the aggregated total and fulfilled demand from demand sinks to the y vals for the plot
+        qs_total = Asset.objects.filter(scenario=simulation.scenario, asset_type__asset_type="reducable_demand")
 
-            qs_fulfilled = FancyResults.objects.filter(
-                simulation=simulation, direction="out", bus="ac_bus", asset__contains="demand", total_flow__gt=0
+        qs_fulfilled = FancyResults.objects.filter(
+            simulation=simulation, direction="out", bus="ac_bus", asset__contains="demand", total_flow__gt=0
+        )
+
+        if qs_total.exists():
+            demand_queries = [qs_total, qs_fulfilled]
+            demand_labels = ["total", "fulfilled"]
+        else:
+            demand_queries = [qs_fulfilled]
+            demand_labels = ["fulfilled"]
+        demand = {}
+        for qs, label in zip(demand_queries, demand_labels):
+            total_demand = []
+            for dem in qs:
+                if label == "total":
+                    total_demand.append(json.loads(dem.input_timeseries))
+                else:
+                    total_demand.append(dem.timeseries)
+            demand[label] = np.vstack(total_demand).sum(axis=0).tolist()
+
+            y_values.append(
+                {
+                    "total_flow": np.sum(demand[label]),
+                    "value": demand[label],
+                    "label": f"{label}_demand",
+                    "unit": "kW",
+                    "fill": "none",
+                    "group": f"{label}_demand",
+                    "mode": "lines",
+                }
             )
 
-            if qs_total.exists():
-                demand_queries = [qs_total, qs_fulfilled]
-                demand_labels = ["total", "fulfilled"]
-            else:
-                demand_queries = [qs_fulfilled]
-                demand_labels = ["fulfilled"]
-            demand = {}
-            for qs, label in zip(demand_queries, demand_labels):
-                total_demand = []
-                for dem in qs:
-                    if label == "total":
-                        total_demand.append(json.loads(dem.input_timeseries))
-                    else:
-                        total_demand.append(dem.timeseries)
-                demand[label] = np.vstack(total_demand).sum(axis=0).tolist()
+        # aggregate the excess buses and the battery flow into one for the stacked graph
+        excess_flows = {}
+        battery_flows = {}
+        # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
+        for idx in sorted(excess_indices + battery_indices, reverse=True):
+            y_val = y_values.pop(idx)
+            if idx in excess_indices:
+                excess_flows[y_val["label"]] = y_val["value"]
+            elif idx in battery_indices:
+                battery_flows[y_val["label"]] = y_val["value"]
 
-                y_values.append(
-                    {
-                        "total_flow": np.sum(demand[label]),
-                        "value": demand[label],
-                        "label": f"{label}_demand",
-                        "unit": "kW",
-                        "fill": "none",
-                        "group": f"{label}_demand",
-                        "mode": "lines",
-                    }
-                )
-
-            # aggregate the excess busses into one for the stacked graph
-            excess_flows = {}
-            # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
-            for idx in sorted(excess_indices, reverse=True):
-                excess = y_values.pop(idx)
-                excess_flows[excess["label"]] = excess["value"]
-
-            total_value = np.sum(list(excess_flows.values()), axis=0)
+        for flow_dict, label in zip([excess_flows, battery_flows], ["excess", "battery"]):
+            total_value = np.sum(list(flow_dict.values()), axis=0)
             total_flow = np.sum(total_value)
             y_values.append(
                 {
                     "total_flow": total_flow,
                     "value": total_value.tolist(),
-                    "label": "excess",
+                    "label": label,
                     "unit": "kW",
                     "fill": "tonexty",
-                    "group": "neg",
+                    "group": "production",
                     "mode": "none",
                 }
             )
@@ -1641,7 +1648,7 @@ class ReportItem(models.Model):
                 return graph_timeseries_stacked_cpn(
                     simulations=self.simulations.all(),
                     y_variables=y_variables,
-                    energy_vector=parameters.get("energy_vector"),
+                    energy_vector="Electricity",
                 )
 
         if self.report_type == GRAPH_CAPACITIES:

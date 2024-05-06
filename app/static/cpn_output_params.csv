@@ -45,6 +45,7 @@ dc_bus_excess_flow,Unused electricity,Excess electricity that is unused by the s
 pv_plant_flow,Solar PV generation,Demand directly satisfied by the solar PV plant,kW
 battery_charge_flow,Battery charge,Battery charging from excess generation,kW
 battery_discharge_flow,Battery discharge,Demand satisfied by the storage system,kW
+battery_flow,Battery charge/discharge,Charging and discharging by the storage system,kW
 electricity_demand_flow,Electricity demand,Total demand to be satisfied by the system,kW
 diesel_generator_flow,Diesel generator,Demand satisfied by the diesel generator,kW
 fulfilled_demand_flow,Fulfilled demand,"Total demand covered by the mini-grid",kWh
