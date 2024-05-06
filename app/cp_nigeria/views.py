@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 import os
 import base64
+import re
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -1575,6 +1576,7 @@ def ajax_download_report(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
+        sanitized_project_name = re.sub(r"\W+", "_", project.name)
         logging.info("Downloading implementation plan")
 
         implementation_plan = ReportHandler(project)
@@ -1583,8 +1585,13 @@ def ajax_download_report(request):
         implementation_plan.add_footer()
         implementation_plan.prevent_table_splitting()
 
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response["Content-Disposition"] = f"attachment; filename=report.docx"
+        response = HttpResponse(
+            headers={
+                "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Content-Disposition": f"attachment",
+                "Filename": f"{sanitized_project_name}_Implementation_Plan.docx",
+            }
+        )
         implementation_plan.save(response)
 
         return response
