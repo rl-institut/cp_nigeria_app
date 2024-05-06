@@ -29,7 +29,9 @@ def validate_not_zero(value):
 
 class ProjectForm(OpenPlanModelForm):
     community = forms.ModelChoiceField(
-        queryset=Community.objects.all(), required=False, label="Pre-select a community (optional)"
+        queryset=Community.objects.exclude(name__contains="old"),
+        required=False,
+        label="Pre-select a community (optional)",
     )
     start_date = forms.DateField(
         label=_("Simulation start"),
