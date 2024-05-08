@@ -998,9 +998,9 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 default=Value("none"),
             ),
             plot_order=Case(
-                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value(1)),
-                When(Q(oemof_type="storage") & Q(direction="out"), then=Value(1)),
-                default=Value(0),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value(0)),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value(0)),
+                default=Value(1),
             ),
         )
         y_values = []
@@ -1010,9 +1010,7 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
         for idx, y_val in enumerate(
             qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode")
         ):
-            if "charge" in y_val["group"]:
-                y_val["value"] = [val for val in json.loads(y_val["value"])]
-            elif "neg" in y_val["group"]:
+            if "neg" in y_val["group"]:
                 y_val["value"] = [-val for val in json.loads(y_val["value"])]
             else:
                 y_val["value"] = json.loads(y_val["value"])
@@ -1059,31 +1057,41 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 }
             )
 
-        # aggregate the excess buses and the battery flow into one for the stacked graph
-        excess_flows = {}
-        battery_flows = {}
-        # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
-        for idx in sorted(excess_indices + battery_indices, reverse=True):
-            y_val = y_values.pop(idx)
-            if idx in excess_indices:
-                excess_flows[y_val["label"]] = y_val["value"]
-            elif idx in battery_indices:
-                battery_flows[y_val["label"]] = y_val["value"]
+        total_charge_clean, total_discharge_clean, losses = clean_battery_flows(battery_indices, y_values)
 
-        for flow_dict, label in zip([excess_flows, battery_flows], ["excess", "battery"]):
-            total_value = np.sum(list(flow_dict.values()), axis=0)
-            total_flow = np.sum(total_value)
-            y_values.append(
-                {
-                    "total_flow": total_flow,
-                    "value": total_value.tolist(),
-                    "label": label,
-                    "unit": "kW",
-                    "fill": "tonexty",
-                    "group": "production",
-                    "mode": "none",
-                }
-            )
+        # replace the original battery flow values with the cleaned values
+        for idx in battery_indices:
+            y_val = y_values[idx]
+            if y_val["label"] == "battery_charge":
+                y_val["value"] = total_charge_clean
+                y_val["group"] = "production"
+            else:
+                y_val["value"] = total_discharge_clean
+
+            y_values[idx] = y_val
+
+        # aggregate the excess buses into one for the stacked graph
+        excess_flows = {}
+
+        # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
+        for idx in sorted(excess_indices, reverse=True):
+            y_val = y_values.pop(idx)
+            excess_flows[y_val["label"]] = y_val["value"]
+
+        # aggregate excess flows
+        total_value = np.sum(list(excess_flows.values()), axis=0)
+        total_flow = np.sum(total_value)
+        y_values.append(
+            {
+                "total_flow": total_flow,
+                "value": total_value.tolist(),
+                "label": "excess",
+                "unit": "kW",
+                "fill": "tonexty",
+                "group": "production",
+                "mode": "none",
+            }
+        )
 
         simulations_results.append(
             simulation_timeseries_to_json(
@@ -1531,6 +1539,34 @@ def graph_sankey(simulation, energy_vector, timestep=None):
 
         fig.update_layout(font_size=10)
         return fig.to_dict()
+
+
+def clean_battery_flows(battery_indices, y_values):
+    battery_flows = {y_values[idx]["label"]: y_values[idx]["value"] for idx in battery_indices}
+
+    # calculate the total charge and discharge and losses
+    total_charge = np.array(battery_flows["battery_charge"])
+    total_discharge = np.array(battery_flows["battery_discharge"])
+    # create a mask for the timesteps where the battery is both charging and discharging (dumping electricity)
+    dumping_mask = (total_charge != 0) & (total_discharge != 0)
+
+    # trigger a warning if the battery is dumping energy in more than 20% of timesteps (arbitrarily chosen)
+    if len(np.where(dumping_mask)[0]) > int(0.2 * 8760):
+        # TODO what else should this warning message say?
+        logger.warning("The energy system is dumping a large amount of excess energy through the storage.")
+
+    # the total excess flow being dumped through the battery is the flow during the dumping timesteps, else 0
+    # TODO this isn't quite correct because sometimes part of the discharge still goes toward fulfilling demand
+    losses = np.where(dumping_mask, total_charge, 0)
+
+    # the cleaned total flows are calculated as the difference between the charge and discharge flows
+    total_flow = np.add(total_charge, total_discharge)
+
+    # assign to charge if negative flow and discharge if positive
+    total_charge_clean = [y if y < 0 else 0 for y in total_flow]
+    total_discharge_clean = [y if y > 0 else 0 for y in total_flow]
+
+    return total_charge_clean, total_discharge_clean, losses
 
 
 # These graphs are related to the graphs in static/js/report_items.js

@@ -973,6 +973,8 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
     color_mapping = {
         "pv_plant_flow": "#F2CD5D",
         "battery_flow": "#12AB6D",
+        "battery_charge_flow": "#12AB6D",
+        "battery_discharge_flow": "#71D0A1",
         "total_demand_flow": "#A69F99",
         "fulfilled_demand_flow": "#716A64",
         "electricity_demand_flow": "#716A64",
