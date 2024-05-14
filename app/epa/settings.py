@@ -203,6 +203,10 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 EXCHANGE_RATES_API_KEY = os.getenv("EXCHANGE_RATES_API_KEY")
 EXCHANGE_RATES_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_RATES_API_KEY}/latest/USD"
 
+# API to connect with KoboToolbox
+KOBO_API_URL = "https://kf.kobotoolbox.org/api/v2/"
+KOBO_API_TOKEN = os.getenv("KOBO_API_TOKEN")
+
 import sys
 
 LOGGING = {
