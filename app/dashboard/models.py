@@ -1057,7 +1057,7 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 }
             )
 
-        total_charge_clean, total_discharge_clean, losses = clean_battery_flows(battery_indices, y_values)
+        total_charge_clean, total_discharge_clean = clean_battery_flows(battery_indices, y_values)
 
         # replace the original battery flow values with the cleaned values
         for idx in battery_indices:
@@ -1547,17 +1547,14 @@ def clean_battery_flows(battery_indices, y_values):
     # calculate the total charge and discharge and losses
     total_charge = np.array(battery_flows["battery_charge"])
     total_discharge = np.array(battery_flows["battery_discharge"])
+
     # create a mask for the timesteps where the battery is both charging and discharging (dumping electricity)
     dumping_mask = (total_charge != 0) & (total_discharge != 0)
 
     # trigger a warning if the battery is dumping energy in more than 20% of timesteps (arbitrarily chosen)
-    if len(np.where(dumping_mask)[0]) > int(0.2 * 8760):
-        # TODO what else should this warning message say?
+    # TODO if this keeps happening often we can try and calculate the losses from the battery dumping (efficiency losses) and add them to the unused electricity stack
+    if len(np.where(dumping_mask)[0]) > int(0.1 * 8760):
         logger.warning("The energy system is dumping a large amount of excess energy through the storage.")
-
-    # the total excess flow being dumped through the battery is the flow during the dumping timesteps, else 0
-    # TODO this isn't quite correct because sometimes part of the discharge still goes toward fulfilling demand
-    losses = np.where(dumping_mask, total_charge, 0)
 
     # the cleaned total flows are calculated as the difference between the charge and discharge flows
     total_flow = np.add(total_charge, total_discharge)
@@ -1566,7 +1563,7 @@ def clean_battery_flows(battery_indices, y_values):
     total_charge_clean = [y if y < 0 else 0 for y in total_flow]
     total_discharge_clean = [y if y > 0 else 0 for y in total_flow]
 
-    return total_charge_clean, total_discharge_clean, losses
+    return total_charge_clean, total_discharge_clean
 
 
 # These graphs are related to the graphs in static/js/report_items.js
