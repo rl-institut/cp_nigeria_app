@@ -804,6 +804,19 @@ def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
                         }
                     )
 
+            if existing_asset.is_storage is True:
+                # add the SOC as a trace to the plot
+                assets_results_obj = AssetsResults.objects.get(simulation=scenario.simulation)
+                assets_results_json = json.loads(assets_results_obj.assets_list)
+                soc = assets_results_json["energy_storage"][0]["timeseries_soc"]["value"]
+                traces.append(
+                    {
+                        "value": soc,
+                        "name": "SOC",
+                        "unit": "%",
+                    }
+                )
+
         context.update(
             {
                 "form": form,

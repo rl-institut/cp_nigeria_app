@@ -2,7 +2,7 @@
 
 var timeseriesFlowTitle = "Energy flow";
 var timeseriesTimeTitle = "Time";
-var timeseriesCapacityTitle = "Capacity";
+var timeseriesSOCTitle = "SOC";
 var timeseriesChargeDischargeTitle = "Charge/discharge";
 var colorway = ["008753", "F2CD5D", "B2916C", "778EB5", "824670", "991818", "E86C1A"]
 
@@ -320,7 +320,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     }
     */
 
-    // TODO add two y axis, one for charge/discharge and the other for SoC
+    // TODO align the two axis for charge/discharge and SOC on 0
 
     var plotLayout = {
         height: 220,
@@ -340,7 +340,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
             autorange: "true",
         },
         yaxis2:{
-            title: timeseriesCapacityTitle ,
+            title: timeseriesSOCTitle,
             overlaying: "y",
             side: "right",
             autorange: "true",
@@ -353,7 +353,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     for(var i=0; i<ts_data.length;++i){
         console.log(ts_data[i])
     // change legend layout
-        plot_y_axis = (ts_data[i].name.includes("capacity") ? "y2" : "y");
+        plot_y_axis = (ts_data[i].name.includes("SOC") ? "y2" : "y");
         traces.push({type: "scatter", x: x, y: ts_data[i].value, name: ts_data[i].name + "(" + ts_data[i].unit + ")", yaxis: plot_y_axis});
     }
 
