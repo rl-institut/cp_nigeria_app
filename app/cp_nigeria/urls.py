@@ -36,4 +36,6 @@ urlpatterns = [
     path("ajax/<int:proj_id>/cpn_kpi_results", cpn_kpi_results, name="cpn_kpi_results"),
     path("simulation/cancel/<int:proj_id>", cpn_simulation_cancel, name="cpn_simulation_cancel"),
     path("simulation/request/<int:proj_id>", cpn_simulation_request, name="cpn_simulation_request"),
+    path("help", help_page, name="help_page"),
+    path("ajax/help/selected_step", ajax_help_page, name="ajax_help_page"),
 ]

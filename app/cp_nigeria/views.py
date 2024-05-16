@@ -48,7 +48,7 @@ STEP_MAPPING = {
     "outputs": 8,
 }
 
-CPN_STEP_VERBOSE = {
+CPN_STEP_VERBOSE_DICT = {
     "choose_location": _("Choose location"),
     "grid_conditions": _("Grid conditions"),
     "demand_profile": _("Demand load profile selection"),
@@ -60,7 +60,7 @@ CPN_STEP_VERBOSE = {
 }
 
 # sorts the step names based on the order defined in STEP_MAPPING (for ribbon)
-CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
+CPN_STEP_VERBOSE = [CPN_STEP_VERBOSE_DICT[k] for k, v in sorted(STEP_MAPPING.items(), key=lambda x: x[1])]
 
 
 @require_http_methods(["GET"])
@@ -1275,7 +1275,10 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     return render(request, html_template, context)
 
 
-# TODO for later create those views instead of simply serving the html templates
+def help_page(request):
+    return render(request, "cp_nigeria/help_pages/help_page.html", context={"steps": CPN_STEP_VERBOSE_DICT})
+
+
 CPN_STEPS = {
     "choose_location": cpn_scenario_create,
     "grid_conditions": cpn_grid_conditions,
@@ -1404,6 +1407,17 @@ def ajax_bmodel_infos(request):
                 "model_disadvantages": B_MODELS[model]["Disadvantages"],
             },
         )
+    return None
+
+
+@login_required
+@json_view
+@require_http_methods(["GET", "POST"])
+def ajax_help_page(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        selected_step = request.GET.get("selected_step")
+
+        return render(request, f"cp_nigeria/help_pages/{selected_step}.html")
     return None
 
 
