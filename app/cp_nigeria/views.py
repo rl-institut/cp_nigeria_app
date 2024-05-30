@@ -1276,7 +1276,10 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
 
 
 def help_page(request):
-    return render(request, "cp_nigeria/help_pages/help_page.html", context={"steps": CPN_STEP_VERBOSE_DICT})
+    # have a help page for each of the steps and add a "General" help page
+    help_steps = list(CPN_STEP_VERBOSE_DICT.items())
+    help_steps.insert(0, ("general", "General"))
+    return render(request, "cp_nigeria/help_pages/help_page.html", context={"steps": help_steps})
 
 
 CPN_STEPS = {
@@ -1415,7 +1418,7 @@ def ajax_bmodel_infos(request):
 @require_http_methods(["GET", "POST"])
 def ajax_help_page(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        selected_step = request.GET.get("selected_step")
+        selected_step = request.GET.get("selected_step", "general")
 
         return render(request, f"cp_nigeria/help_pages/{selected_step}.html")
     return None

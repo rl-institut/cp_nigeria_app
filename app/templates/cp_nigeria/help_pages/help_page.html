@@ -47,18 +47,27 @@
 {% block end_body_scripts %}
 
  <script>
-        document.getElementById("step").addEventListener("change", function() {
-            var selectedStep = this.value;
-            $.ajax({
-				url: `{% url 'ajax_help_page' %}`,
-				data: {
-					'selected_step': selectedStep
-				},
-				success: function (data) {
-					document.getElementById("help_content").innerHTML = data
-				}
-			});
-        });
+    $(document).ready(function() {
+        loadHelpText();
+    });
+
+    document.getElementById("step").addEventListener("change", function() {
+        loadHelpText();
+    });
+
+    function loadHelpText () {
+    var selectedStep = document.getElementById("step").value;
+        $.ajax({
+            url: `{% url 'ajax_help_page' %}`,
+            data: {
+                'selected_step': selectedStep
+                },
+            success: function (data) {
+                document.getElementById("help_content").innerHTML = data
+                }
+            });
+    };
+
     </script>
 
 {% endblock end_body_scripts %}
