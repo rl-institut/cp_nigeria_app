@@ -1413,7 +1413,6 @@ def ajax_bmodel_infos(request):
     return None
 
 
-@login_required
 @json_view
 @require_http_methods(["GET", "POST"])
 def ajax_help_page(request):
