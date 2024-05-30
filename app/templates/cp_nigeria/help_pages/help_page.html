@@ -19,6 +19,8 @@
 {% block title %}{% translate "Help" %}{% endblock title %}
 
 {% block content %}
+
+
 <main>
     <section class="header">
         <div>
@@ -27,62 +29,70 @@
             <div class="header__back"></div>
         </div>
     </section>
-    <section class="container cpn">
-        <label for="step">Select a step to display further information:</label>
-        <select class="form-select" id="step" name="step">
-            {% for step, verbose in steps %}
-            <option value="{{ step }}" >{{ verbose }}</option>
-            {% endfor %}
-        </select>
-        <hr>
-        <div class="container" id="help_content">
-
+    <section class="project-setup two-columns">
+        <div class="col-md-3">
+            <nav style="position: fixed; background-color:#E6F7EE">
+                <ul class="nav flex-column" id="help_sidebar">
+                    {% for step, verbose in steps %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#section-{{ step }}">{{ verbose }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
         </div>
+		<div class="col-md-7" id="help_content">
+            <div>
+			{% for step, verbose in steps %}
+			<div id="section-{{ step }}" style="padding-top: 1rem; padding-bottom: 1rem">
+				<h2>{{ verbose }}</h2>
+				<div class="section-content" data-step="{{ step }}"></div>
+			</div>
+			{% endfor %}
+            </div>
+		</div>
     </section>
-
 </main>
 
 
 {% endblock content %}
 
-<!-- TODO create next/previous buttons at bottom of help page-->
-<!--{% block step_footer %}-->
-<!--<footer class="step-footer">-->
-<!--	<div>-->
-<!--		<div class="step-footer__left"></div>-->
-<!--		<div class="step-footer__center">-->
-<!--			<a href="{% url 'cpn_steps' proj_id step_id|add:'-1' %}" aria-disabled="true">{% translate "Previous" %}</a>-->
-<!--			<a class="btn btn&#45;&#45;medium btn&#45;&#45;hollow" href="{% url 'cpn_simulation_cancel' proj_id %}" onclick="return confirm('Are you sure?')">{% translate "Cancel simulation" %}</a>-->
-<!--		</div>-->
-<!--		<div class="step-footer__right"></div>-->
-<!--	</div>-->
-<!--</footer>-->
-<!--{% endblock step_footer %}-->
-
 {% block end_body_scripts %}
 
- <script>
-    $(document).ready(function() {
-        loadHelpText();
-    });
-
-    document.getElementById("step").addEventListener("change", function() {
-        loadHelpText();
-    });
-
-    function loadHelpText () {
-    var selectedStep = document.getElementById("step").value;
+<script>
+    function loadHelpContent(step) {
         $.ajax({
-            url: `{% url 'ajax_help_page' %}`,
+            url: "{% url 'ajax_help_page' %}",
             data: {
-                'selected_step': selectedStep
-                },
+                'selected_step': step
+            },
             success: function (data) {
-                document.getElementById("help_content").innerHTML = data
-                }
-            });
-    };
+                document.querySelector(`#section-${step} .section-content`).innerHTML = data;
+            }
+        });
+    }
 
-    </script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Load content for each section
+        document.querySelectorAll('.section-content').forEach(function(section) {
+            var step = section.getAttribute('data-step');
+            loadHelpContent(step);
+        });
+
+        // Add smooth scrolling to sidebar links
+        document.querySelectorAll('#help_sidebar .nav-link').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                var targetId = link.getAttribute('href');
+                var targetElement = document.querySelector(targetId);
+                var offset = 120;
+                var targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });            });
+        });
+    });
+</script>
 
 {% endblock end_body_scripts %}
