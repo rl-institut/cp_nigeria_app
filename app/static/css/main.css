@@ -484,6 +484,11 @@ body {
 p {
   line-height: 1.75rem; }
 
+p.example {
+  background-color: #F9F8F7;
+  border: #F9F8F7;
+  padding: 0.5em 0.5em 0.5em 0.5em; }
+
 h1 {
   font-size: 40px;
   color: #008753;
@@ -500,7 +505,15 @@ h3 {
 
 h4 {
   font-size: 18px;
-  text-transform: uppercase; }
+  text-transform: uppercase;
+  margin-top: .5rem !important; }
+
+span.helpvar {
+  font-weight: bold;
+  color: #2c3e50;
+  background-color: #ecf0f1;
+  padding: 0.2rem 0.2rem;
+  border-radius: 0.2rem; }
 
 .cpn-accordion .accordion-button {
   color: #54504C;
