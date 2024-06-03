@@ -1,36 +1,143 @@
-<main>
-<!--    TODO change this description based on if we keep the different wealth tiers or not-->
-    <div>
-    <h2>Community load input</h2>
-    Several typical standardized demand profiles have been developed from roughly 3600 energy appliance
-    ownership and usage surveys that were conducted across Nigeria in 2020 in 3 prioritized geopolitical zones.
-    Survey details can be found in the following publication:
-    <a href="https://www.nature.com/articles/s41597-023-02185-0">PeopleSuN (2023) Electricity supply quality and
-    use among rural and peri-urban households and small firms in Nigeria</a> <br>
-    Since the toolbox uses standardized demand profiles from electrified regions, the aggregated demand estimated in this
-        step is assumed to be able to cover future demand, and thus does not include a growth factor over time. To address concerns regarding
-        system oversizing, the household coverage parameter was introduced <!-- TODO link to the section where that is explained-->
-    In this step, the user should input all households, enterprises and public facilities present in the community.
-    All enterprise load profiles only include typical low power appliances in their respective demand profiles. As such,
-    if machinery responsible for large loads should be included, this needs to be done separately by adding "Machinery"
-    consumers to the list. As such, the user filling out the community demand should not only have information about
-    the general community size and consumers, but also about specific large load related to existing enterprises. If a
-    specific demand profile is not found on the list, the user may default to the generic load profiles included in the list.
-    <h2>SHS Threshold</h2>
-        Typically, not all households would be connected to the mini-grid. Instead, for households for which the grid connection
-        cost is too high, a Solar Home System might provide a more feasible alternative. Normally, both spatial distribution
-        and estimated demand play a part in defining these households. Since the spatial component is not included in this
-        toolbox, households can instead be excluded from the simulation based on their estimated demand. By default,
-        all households assumed to belong to the "Very Low Consumption" tier are assumed to be served by Solar Home Systems
-        instead. For the toolbox, this means that the demand belonging to these households is not included when sizing the mini-grid. <br>
-        By de-selecting the "Served by SHS" trace in the given graph, the total demand used to size the mini-grid can be seen.
-        If the SHS Threshold is set to the highest demand tier, the demand is equivalent to only considering enterprises and public facilities.
+{% load static %}
 
-    <h2>Household demand coverage</h2>
-        To avoid oversizing the mini-grid, it can sometimes be helpful to size a system not according to the total demand
-        (which in the case of this toolbox represents future demand), but to only reliably satisfy a percentage of the total demand.
-        The percentage given in this factor indicates what percentage of the household demand should be able to be satisfied by the mini-grid.
-        Demand from enterprises and facilities is always 100% satisfied.
+<main xmlns="http://www.w3.org/1999/html">
+    <div>
+        <h4>General Information</h4>
+        <p>
+            Several typical standardized demand profiles have been developed from roughly 3600 energy appliance
+            ownership and usage surveys that were conducted across Nigeria in 2020 in 3 prioritized geopolitical zones.
+            Survey details can be found in the following publication:
+            <a href="https://www.nature.com/articles/s41597-023-02185-0">PeopleSuN (2023) Electricity supply quality and
+                use among rural and peri-urban households and small firms in Nigeria</a>. Within this toolbox, the standardized
+            load profiles are aggregated based on user input to create an estimated demand profile for the community. To construct
+            this profile, you should have information about households, public facilities and enterprises (including specific machinery) available.
+        </p>
+        <!--    TODO change this description based on if we keep the different wealth tiers or not-->
+        <p>
+            <span class="helpvar">Households:</span> Please input the number of households in the community. If no community
+            was pre-selected, all households are assumed to have the same demand, which corresponds to the Nigerian national
+            average for electrified households as estimated within the <i>PeopleSun</i> project. Within this demand estimate, the following table
+            displays which percentage of household is assumed to own one or more of the following assets:
+        </p>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Appliance</th>
+                <th>Ownership rate</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr><th>Light bulb</th><th>99.5 %</th></tr>
+                <tr><th>Radio</th><th>31.1 %</th></tr>
+                <tr><th>Cell phone charger</th><th>88.0 %</th></tr>
+                <tr><th>Television</th><th>63.5 %</th></tr>
+                <tr><th>Laptop/Computer</th><th>8.0 %</th></tr>
+                <tr><th>Fan</th><th>74.7 %</th></tr>
+                <tr><th>Fridge</th><th>45.7 %</th></tr>
+                <tr><th>Washing machine</th><th>3.9 %</th></tr>
+                <tr><th>Air conditioner</th><th>5.7 %</th></tr>
+                <tr><th>Electric water heater</th><th>5.2 %</th></tr>
+                <tr><th>Electric cooker</th><th>4.7 %</th></tr>
+                <tr><th>Rice cooker</th><th>1.5 %</th></tr>
+                <tr><th>Sewing machine</th><th>3.9 %</th></tr>
+                <tr><th>Home mechanical appliances (e.g., Mixer, Blender)</th><th>14.5 %</th></tr>
+                <tr><th>Home thermal appliances (e.g., Kettle, Iron)</th><th>39.9 %</th></tr>
+            </tbody>
+
+        </table>
+        <p><i><b>Note:</b> If a community was pre-selected, households will be assigned to difference electricity consumption tiers. The assignment
+            of the households to each tier is based on wealth level estimations made from survey data.</i></p>
+        <p>
+            <span class="helpvar">Enterprises:</span> Please input the enterprises in the community.
+            The standardized demand profiles for enterprises only include typical low power appliances. If the enterprise
+            employs high power appliances, these should be added separately by adding additional consumers with the
+            <span class="helpvar">Consumer Type</span> "Machinery". If a specific demand profile is not found,
+            you may default to the generic load profiles included in the list.
+        </p>
+        <p class="example">
+            <i>
+                <b>Example:</b> The community has a car repair shop. Apart from basic appliances, such as lighting, the shop
+                also has a welder and two angle grinders. For this, three consumer groups need to be input:
+            </i>
+        <p>
+        <ol>
+            <li><i>Enterprise - Trades_Car or Motorbike Repair - 1</i></li>
+            <li><i>Machinery - Welder - 1</i></li>
+            <li><i>Machinery - Angle Grinder - 2</i></li>
+        </ol>
+        <p>
+            <span class="helpvar">Public facilities:</span> Please input the public facilities in the community. If a
+            specific demand profile is not found, you may default to the generic load profiles included in the list.
+        </p>
+        <h4>Adding consumers</h4>
+        <p>
+            To add a consumer, first select its <span class="helpvar">Consumer Type</span> from the drop-down menu. The possible
+            consumer types are <i>Household, Public facility, Enterprise</i> and <i>Machinery</i>. After selecting the consumer type,
+            you can select the specific <span class="helpvar">Demand Profile</span> from the next drop-down menu. Finally,
+            you can input the number of consumers. </p>
+        <p class="example">
+            <i><b>Example:</b> The community has three restaurants. First, we select "Enterprise" from the <span class="helpvar">Consumer Type</span> menu.
+            </i></p>
+        <p style="text-align: center">
+            <img src="{% static 'help_pages/demand_input_1.png' %}" alt="Demand input: Step 1" style="width: 80%">
+        </p>
+        <p class="example"><i>Next, we select "Food_Restaurant" from the <span class="helpvar">Demand Profile</span> menu.</i></p>
+        <p style="text-align: center">
+            <img src="{% static 'help_pages/demand_input_2.png' %}" alt="Demand input: Step 1" style="width: 80%">
+        </p>
+        <p class="example"><i>
+            Finally, we input the number "3" in the <span class="helpvar">Nr. of consumers</span> field.</i></p>
+        <p style="text-align: center">
+            <img src="{% static 'help_pages/demand_input_3.png' %}" alt="Demand input: Step 3" style="width: 80%">
+        </p>
+        <p class="example"><i>
+            To add more consumer groups, we click on the <a>Add Consumer Group</a> button.
+        </i></p>
+        <p style="text-align: center">
+            <img src="{% static 'help_pages/demand_input_4.png' %}" alt="Demand input: Step 4" style="width: 80%">
+        </p>
+
+        <h4> Advanced Options</h4>
+        <p>
+            Since the toolbox uses standardized demand profiles from electrified regions, the aggregated demand estimated in this
+            step is assumed to be able to cover future demand, and thus does not include a growth factor over time. To address concerns regarding
+            system oversizing, two advanced options are available.
+        </p>
+
+        <p>
+            <span class="helpvar">Minimal percentage of demand to fulfill:</span>
+            To avoid oversizing the mini-grid, it may make sense to size a system to only reliably satisfy a percentage of the future demand.
+            The percentage given in this factor indicates what percentage of the household demand should be satisfied by the mini-grid.
+            Demand from enterprises and facilities is always 100% satisfied.
+        </p>
+        <p>
+            <i><b>Note:</b> This option is only available if a community was pre-selected and thus there are multiple
+                possible consumption tiers for households. </i><br>
+            <span class="helpvar">Threshold for SHS users:</span>
+            Typically, not all households would be connected to the mini-grid. Instead, a Solar Home System might provide a
+            more feasible alternative for households where the grid connection
+            cost would be too high. Normally, both spatial distribution
+            and estimated demand play a part in defining these households. Since the spatial component is not included in this
+            toolbox, households can instead be excluded from the simulation based on their estimated demand. By default,
+            all households assumed to belong to the "Very Low Consumption" tier are assumed to be served by Solar Home Systems
+            instead. For the toolbox, this means that the demand belonging to these households is not included when sizing the mini-grid.
+            If the SHS Threshold is set to the highest demand tier, the demand is equivalent to only considering enterprises and public facilities. </p>
+        <p>When changing the Solar Home Threshold, the corresponding demand is displayed as hashed in the demand graph.
+            By de-selecting the <i>"Served by SHS"</i> trace in the graph legend, the demand to be covered by the mini-grid can be displayed.
+        </p>
+        <p class="example">
+            <i>
+                <b>Example:</b> The community has been added into the tool represented by its consumer groups. To simulate
+                an alternative system, we want to consider a mini-grid that only consumers with a <i>Middle Consumption Estimate</i>
+                or higher will be connected to. Additionally, we want to size the initial system to only
+                satisfy 80% of the estimated demand. To accomplish this:
+
+            </i>
+        </p>
+        <ol>
+            <li><i>We set the <span class="helpvar">Threshold for SHS users</span> to "Middle Consumption Estimate"</i></li>
+            <li><i>We set the <span class="helpvar">Minimal percentage of demand to fulfill</span> to 80%</i></li>
+        </ol>
     </div>
 
 </main>

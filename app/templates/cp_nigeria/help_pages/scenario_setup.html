@@ -3,17 +3,24 @@
 <main>
     <div>
         <h4>Energy System Layout</h4>
-            Once the community demand has been estimated, the supply system can be defined. To guarantee simple
+        <p>
+            Once the community demand has been estimated, the supply system can be defined. To simplify
             usage to non-experts, the interface only provides options to select or un-select the following components:
-            diesel generator, solar PV plant and battery storage. In the background of the tool, selecting all assets
-            corresponds to the following energy system being built:
+        <span class="helpvar">diesel generator</span>, <span class="helpvar">solar PV plant</span> and <span class="helpvar">battery storage</span>. In the background of the tool, selecting all assets
+            corresponds to the following energy system:
+        </p>
             <div style="text-align: center">
                 <img src="{% static 'help_pages/open-plan-es.png' %}" alt="Energy System Graph" style="width: 80%"><br>
             </div>
+
         <h4>Default values</h4>
-            For each of the assets, a number of technical and economic parameters can be expanded and edited.
-            However, the toolbox provides default values for all parameters based
+        <p>
+            For each of the assets, you may expand and edit a number of technical and economic parameters. Hovering over
+            the <span class="icon icon-question"></span> button provides a more detailed explanation for each parameter. </p>
+        <p>
+            The toolbox provides default values for all parameters based
             on the current state of the art. The sources for the given default parameters include:
+        </p>
         <ul>
             <li>
                 <a href="https://openknowledge.worldbank.org/server/api/core/bitstreams/32287154-1ccb-46ce-83af-08facf7a3b49/content">Mini
@@ -30,8 +37,9 @@
         </ul>
 
         <h4>PV Timeseries</h4>
-        For the PV generation potential of the site, a timeseries is
+        If <span class="helpvar">solar PV plant</span> is selected, a timeseries representing the solar generation potential
+        of the site is needed. In the toolbox, a timeseries is
         automatically downloaded from <a href="https://renewables.ninja/">Renewables.ninja</a> based on the project
-        coordinates selected during step 1.
+        coordinates selected during <a href="#section-choose_location">step 1</a>.
 </div>
 </main>
