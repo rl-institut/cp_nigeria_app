@@ -1278,8 +1278,13 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
 def help_page(request):
     # have a help page for each of the steps and add a "General" help page
     help_steps = list(CPN_STEP_VERBOSE_DICT.items())
-    help_steps.insert(0, ("general", "General"))
-    return render(request, "cp_nigeria/help_pages/help_page.html", context={"steps": help_steps})
+    numbered_steps = []
+    for ix, step in enumerate(help_steps):
+        numbered_verbose = f"{ix + 1}. {step[1]}"
+        numbered_steps.append((step[0], numbered_verbose))
+    numbered_steps.insert(0, ("general", "General"))
+
+    return render(request, "cp_nigeria/help_pages/help_page.html", context={"steps": numbered_steps})
 
 
 CPN_STEPS = {
