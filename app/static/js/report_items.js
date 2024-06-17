@@ -2,7 +2,7 @@
 
 var timeseriesFlowTitle = "Energy flow";
 var timeseriesTimeTitle = "Time";
-var timeseriesCapacityTitle = "Capacity";
+var timeseriesSOCTitle = "SOC";
 var timeseriesChargeDischargeTitle = "Charge/discharge";
 var colorway = ["008753", "F2CD5D", "B2916C", "778EB5", "824670", "991818", "E86C1A"]
 
@@ -217,7 +217,46 @@ function addTimeseriesGraph(graphId, parameters){
 function addStackedTimeseriesGraph(graphId, parameters){
     // prepare stacked traces in plotly format
     var data = []
-    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
+    var descriptions = parameters.descriptions
+    if(parameters.data.length == 1){
+        compare = false;
+        parameters.title = parameters.title + " sector of scenario " + parameters.data[0].scenario_name;
+    }
+    axisRange = []
+
+    parameters.data.forEach(scenario => {
+        scenario.timeseries.forEach(timeseries => {
+            // todo provide a function to format the name of the timeseries
+            var trace = {x: scenario.timestamps,
+                y: timeseries.value,
+                name: format_trace_name(scenario.scenario_name, timeseries.label, timeseries.unit, compare=compare),
+                type: 'scatter',
+                line: {shape: 'hv'},
+                stackgroup: timeseries.group,
+                fill: timeseries.fill,
+                mode: timeseries.mode,
+            };
+            data.push(trace);
+        });
+    });
+    // prepare graph layout in plotly format
+    const layout= {
+        xaxis:{
+            title: parameters.x_label,
+        },
+        yaxis:{
+            title: parameters.y_label,
+        },
+        hovermode:'x unified',
+    }
+    // create plot
+    Plotly.newPlot(graphId, data, layout);
+};
+
+function addCPNStackedTimeseriesGraph(graphId, parameters){
+    // prepare stacked traces in plotly format
+    var data = []
+//    var colorway = ["F2CD5D", "991818", "008753", "B2916C", "71D0A1", "778EB5", "E86C1A"]
     var descriptions = parameters.descriptions
     if(parameters.data.length == 1){
         compare = false;
@@ -234,7 +273,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
                 y: timeseries.value,
                 name: descriptions[timeseriesName].verbose,
                 type: 'scatter',
-                line: {shape: 'hv'},
+                line: descriptions[timeseriesName].line,
                 stackgroup: timeseries.group,
                 fill: timeseries.fill,
                 mode: timeseries.mode,
@@ -256,7 +295,7 @@ function addStackedTimeseriesGraph(graphId, parameters){
             title: parameters.y_label,
         },
         hovermode:'x unified',
-        colorway: colorway,
+        colorway: Object.keys(descriptions).map(obj => descriptions[obj].color),
     }
     // create plot
     Plotly.newPlot(graphId, data, layout);
@@ -281,7 +320,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     }
     */
 
-    // TODO add two y axis, one for charge/discharge and the other for SoC
+    // TODO align the two axis for charge/discharge and SOC on 0
 
     var plotLayout = {
         height: 220,
@@ -301,7 +340,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
             autorange: "true",
         },
         yaxis2:{
-            title: timeseriesCapacityTitle ,
+            title: timeseriesSOCTitle,
             overlaying: "y",
             side: "right",
             autorange: "true",
@@ -314,7 +353,7 @@ function storageResultGraph(x, ts_data, plot_id="",userLayout=null){
     for(var i=0; i<ts_data.length;++i){
         console.log(ts_data[i])
     // change legend layout
-        plot_y_axis = (ts_data[i].name.includes("capacity") ? "y2" : "y");
+        plot_y_axis = (ts_data[i].name.includes("SOC") ? "y2" : "y");
         traces.push({type: "scatter", x: x, y: ts_data[i].value, name: ts_data[i].name + "(" + ts_data[i].unit + ")", yaxis: plot_y_axis});
     }
 
@@ -729,7 +768,7 @@ function downloadReport(proj_id) {
         success: function (response) {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(response);
-            link.download = 'report.docx';
+            link.download = 'Implementation_Plan.docx';
             link.click();
         },
         error: function (error) {
@@ -860,7 +899,7 @@ function insertLineBreaks(inputString, charactersPerLine) {
 var graph_type_mapping={
     timeseries: addTimeseriesGraph,
     timeseries_stacked: addStackedTimeseriesGraph,
-    timeseries_stacked_cpn: addStackedTimeseriesGraph,
+    timeseries_stacked_cpn: addCPNStackedTimeseriesGraph,
     capacities: addCapacitiyGraph,
     costs: addCostGraph,
     costsScenarios: addCostScenariosGraph,

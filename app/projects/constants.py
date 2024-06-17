@@ -360,6 +360,7 @@ ASSET_TYPE = (
     ("h2_dso", "h2_dso"),
     ("heat_dso", "heat_dso"),
     ("demand", "demand"),
+    ("reducable_demand", "reducable_demand"),
     ("gas_demand", "gas_demand"),
     ("h2_demand", "h2_demand"),
     ("heat_demand", "heat_demand"),

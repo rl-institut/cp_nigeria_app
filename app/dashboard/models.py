@@ -11,7 +11,7 @@ import pandas as pd
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import get_object_or_404
 from django.db import models
-from django.db.models import Value, Q, F, Case, When
+from django.db.models import Value, Q, F, Case, When, Sum
 from django.db.models.functions import Concat, Replace
 from dashboard.helpers import (
     KPI_PARAMETERS,
@@ -988,8 +988,9 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 default=Value("tonexty"),
             ),
             group=Case(
-                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("sink")),
-                When(Q(oemof_type="sink"), then=Value("sink")),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="demand"), then=Value("demand")),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value("neg")),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value("neg")),
                 default=Value("production"),
             ),
             mode=Case(
@@ -997,20 +998,100 @@ def graph_timeseries_stacked_cpn(simulations, y_variables, energy_vector):
                 default=Value("none"),
             ),
             plot_order=Case(
-                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value(1)),
-                When(Q(oemof_type="storage") & Q(direction="out"), then=Value(1)),
-                default=Value(0),
+                When(Q(oemof_type="sink") & Q(asset_type__contains="excess"), then=Value(0)),
+                When(Q(oemof_type="storage") & Q(direction="out"), then=Value(0)),
+                default=Value(1),
             ),
         )
         y_values = []
+        excess_indices = []
+        battery_indices = []
         # set the stacked lines order, first demand, then storages and finally dsos
-        for y_val in qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode"):
-            y_val["value"] = (
-                [val for val in json.loads(y_val["value"])]
-                if "charge" in y_val["group"]
-                else json.loads(y_val["value"])
-            )
+        for idx, y_val in enumerate(
+            qs.order_by("-plot_order").values("value", "label", "total_flow", "unit", "fill", "group", "mode")
+        ):
+            if "neg" in y_val["group"]:
+                y_val["value"] = [-val for val in json.loads(y_val["value"])]
+            else:
+                y_val["value"] = json.loads(y_val["value"])
+
+            if "excess" in y_val["label"]:
+                excess_indices.append(idx)
+            elif "battery" in y_val["label"]:
+                battery_indices.append(idx)
+
             y_values.append(y_val)
+
+        # add the aggregated total and fulfilled demand from demand sinks to the y vals for the plot
+        qs_total = Asset.objects.filter(scenario=simulation.scenario, asset_type__asset_type="reducable_demand")
+
+        qs_fulfilled = FancyResults.objects.filter(
+            simulation=simulation, direction="out", bus="ac_bus", asset__contains="demand", total_flow__gt=0
+        )
+
+        if qs_total.exists():
+            demand_queries = [qs_total, qs_fulfilled]
+            demand_labels = ["total", "fulfilled"]
+        else:
+            demand_queries = [qs_fulfilled]
+            demand_labels = ["fulfilled"]
+        demand = {}
+        for qs, label in zip(demand_queries, demand_labels):
+            total_demand = []
+            for dem in qs:
+                if label == "total":
+                    total_demand.append(json.loads(dem.input_timeseries))
+                else:
+                    total_demand.append(dem.timeseries)
+            demand[label] = np.vstack(total_demand).sum(axis=0).tolist()
+
+            y_values.append(
+                {
+                    "total_flow": np.sum(demand[label]),
+                    "value": demand[label],
+                    "label": f"{label}_demand",
+                    "unit": "kW",
+                    "fill": "none",
+                    "group": f"{label}_demand",
+                    "mode": "lines",
+                }
+            )
+
+        total_charge_clean, total_discharge_clean = clean_battery_flows(battery_indices, y_values)
+
+        # replace the original battery flow values with the cleaned values
+        for idx in battery_indices:
+            y_val = y_values[idx]
+            if y_val["label"] == "battery_charge":
+                y_val["value"] = total_charge_clean
+                y_val["group"] = "production"
+            else:
+                y_val["value"] = total_discharge_clean
+
+            y_values[idx] = y_val
+
+        # aggregate the excess buses into one for the stacked graph
+        excess_flows = {}
+
+        # the indices are iterated in reverse order so that the indexing does not change when deleting the entries
+        for idx in sorted(excess_indices, reverse=True):
+            y_val = y_values.pop(idx)
+            excess_flows[y_val["label"]] = y_val["value"]
+
+        # aggregate excess flows
+        total_value = np.sum(list(excess_flows.values()), axis=0)
+        total_flow = np.sum(total_value)
+        y_values.append(
+            {
+                "total_flow": total_flow,
+                "value": total_value.tolist(),
+                "label": "excess",
+                "unit": "kW",
+                "fill": "tonexty",
+                "group": "production",
+                "mode": "none",
+            }
+        )
 
         simulations_results.append(
             simulation_timeseries_to_json(
@@ -1223,7 +1304,7 @@ def get_costs(simulation, y_variables=None):
     df = df.fillna(0)
     # TODO costs for batteries are skewed as battery capacity does not exists in fancy results
     # TODO costs for dso not implemented yet
-    # why is it this formula and why is the installed capacity included in capex, i dont understand
+    # TODO this should be called annuity instead of CAPEX total if that's what it is
     df["capex_total"] = df.apply(
         lambda x: (x.installed_capacity + x.optimized_capacity)
         * x.capex_var
@@ -1356,7 +1437,8 @@ def graph_costs(simulations, y_variables=None, arrangement=COSTS_PER_CATEGORY): 
     return simulations_results
 
 
-def graph_sankey(simulation, energy_vector):
+def graph_sankey(simulation, energy_vector, timestep=None):
+    ts = timestep
     if isinstance(energy_vector, list) is False:
         energy_vector = [energy_vector]
     if energy_vector is not None:
@@ -1380,8 +1462,10 @@ def graph_sankey(simulation, energy_vector):
             bus_label = bus.name
             labels.append(bus_label)
             colors.append("blue")
-
-            asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "total_flow")
+            if ts is None:
+                asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "total_flow")
+            else:
+                asset_to_bus_names = qs.filter(bus=bus.name, direction="in").values_list("asset", "flow_data")
 
             for component_label, val in asset_to_bus_names:
                 # draw link from the component to the bus
@@ -1392,15 +1476,21 @@ def graph_sankey(simulation, energy_vector):
                 sources.append(labels.index(component_label))
                 targets.append(labels.index(bus_label))
 
+                if ts is not None:
+                    val = json.loads(val)
+                    val = val[ts]
+
                 if component_label in chp_in_flow:
                     chp_in_flow[component_label]["value"] += val
 
                 if val == 0:
-                    val = 1e-6
-
+                    val = 1e-9
                 values.append(val)
+            if ts is None:
+                bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "total_flow")
+            else:
+                bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "flow_data")
 
-            bus_to_asset_names = qs.filter(bus=bus.name, direction="out").values_list("asset", "total_flow")
             # TODO potentially rename feedin period and consumption period
             for component_label, val in bus_to_asset_names:
                 # draw link from the bus to the component
@@ -1414,8 +1504,12 @@ def graph_sankey(simulation, energy_vector):
                 if component_label in chp_in_flow:
                     chp_in_flow[component_label]["bus"] = bus_label
 
+                if ts is not None:
+                    val = json.loads(val)
+                    val = val[ts]
+
                 if val == 0:
-                    val = 1e-6
+                    val = 1e-9
                 values.append(val)
 
         # TODO display the installed capacity, max capacity and optimized_add_capacity on the nodes if applicable
@@ -1445,6 +1539,31 @@ def graph_sankey(simulation, energy_vector):
 
         fig.update_layout(font_size=10)
         return fig.to_dict()
+
+
+def clean_battery_flows(battery_indices, y_values):
+    battery_flows = {y_values[idx]["label"]: y_values[idx]["value"] for idx in battery_indices}
+
+    # calculate the total charge and discharge and losses
+    total_charge = np.array(battery_flows["battery_charge"])
+    total_discharge = np.array(battery_flows["battery_discharge"])
+
+    # create a mask for the timesteps where the battery is both charging and discharging (dumping electricity)
+    dumping_mask = (total_charge != 0) & (total_discharge != 0)
+
+    # trigger a warning if the battery is dumping energy in more than 20% of timesteps (arbitrarily chosen)
+    # TODO if this keeps happening often we can try and calculate the losses from the battery dumping (efficiency losses) and add them to the unused electricity stack
+    if len(np.where(dumping_mask)[0]) > int(0.1 * 8760):
+        logger.warning("The energy system is dumping a large amount of excess energy through the storage.")
+
+    # the cleaned total flows are calculated as the difference between the charge and discharge flows
+    total_flow = np.add(total_charge, total_discharge)
+
+    # assign to charge if negative flow and discharge if positive
+    total_charge_clean = [y if y < 0 else 0 for y in total_flow]
+    total_discharge_clean = [y if y > 0 else 0 for y in total_flow]
+
+    return total_charge_clean, total_discharge_clean
 
 
 # These graphs are related to the graphs in static/js/report_items.js
@@ -1562,7 +1681,7 @@ class ReportItem(models.Model):
                 return graph_timeseries_stacked_cpn(
                     simulations=self.simulations.all(),
                     y_variables=y_variables,
-                    energy_vector=parameters.get("energy_vector"),
+                    energy_vector="Electricity",
                 )
 
         if self.report_type == GRAPH_CAPACITIES:

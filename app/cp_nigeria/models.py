@@ -66,6 +66,7 @@ class Options(models.Model):
     main_grid = models.BooleanField(null=True)
     community = models.ForeignKey(Community, on_delete=models.CASCADE, blank=True, null=True)
     shs_threshold = models.TextField(default="very_low", blank=True)
+    demand_coverage_factor = models.FloatField(blank=True, default=1)
 
     @property
     def schema_name(self):

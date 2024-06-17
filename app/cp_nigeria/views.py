@@ -266,12 +266,19 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
     # with option advanced_view set by user choice
     if request.method == "POST":
         qs_demand = Asset.objects.filter(
-            scenario=project.scenario, asset_type__asset_type="demand", name="electricity_demand"
+            scenario=project.scenario,
+            asset_type__asset_type="reducable_demand",
         )
+        demand_options_form = DemandOptionsForm(request.POST)
+        if demand_options_form.is_valid():
+            options.shs_threshold = demand_options_form.cleaned_data["shs_threshold"]
 
-        shs_form = SHSTiersForm(request.POST)
-        if shs_form.is_valid():
-            options.shs_threshold = shs_form.cleaned_data["shs_threshold"]
+            hh_demand = qs_demand.filter(name="electricity_demand_hh")
+            if hh_demand.exists():
+                hh_demand = hh_demand.get()
+                hh_demand.efficiency = demand_options_form.cleaned_data["demand_coverage_factor"]
+                hh_demand.save()
+            options.demand_coverage_factor = demand_options_form.cleaned_data["demand_coverage_factor"]
             options.save()
 
         formset_qs = ConsumerGroup.objects.filter(project=project)
@@ -316,17 +323,22 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         if formset.is_valid():
             # update demand if exists
             if qs_demand.exists():
-                total_demand = get_aggregated_demand(project)
-                demand = qs_demand.get()
-                demand.input_timeseries = json.dumps(total_demand)
-                demand.save()
+                for demand, cg_type in zip(qs_demand.order_by("name"), ("Enterprise", "Household", "Public facility")):
+                    total_demand = get_aggregated_demand(project, consumer_type=cg_type)
+                    demand.input_timeseries = json.dumps(total_demand)
+                    demand.save()
 
             step_id = STEP_MAPPING["demand_profile"] + 1
             return HttpResponseRedirect(reverse("cpn_steps", args=[proj_id, step_id]))
 
     elif request.method == "GET":
         formset_qs = ConsumerGroup.objects.filter(project=proj_id)
-        shs_form = SHSTiersForm(initial={"shs_threshold": options.shs_threshold})
+        demand_options_form = DemandOptionsForm(
+            initial={
+                "shs_threshold": options.shs_threshold,
+                "demand_coverage_factor": options.demand_coverage_factor * 100,
+            }
+        )
 
         if options.community is not None and not formset_qs.exists():
             cg_qs = ConsumerGroup.objects.filter(community=options.community)
@@ -358,7 +370,7 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
         "cp_nigeria/steps/scenario_demand.html",
         {
             "formset": formset,
-            "shs_form": shs_form,
+            "demand_options_form": demand_options_form,
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
@@ -471,6 +483,8 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
         ac_bus.pos_y = 100
         dc_bus.pos_x = 700
         dc_bus.pos_y = 450
+        ac_bus.price = 1e-6
+        dc_bus.price = 1e-6
         ac_bus.save()
         dc_bus.save()
 
@@ -506,23 +520,58 @@ def cpn_scenario(request, proj_id, step_id=STEP_MAPPING["scenario_setup"]):
             bus=ac_bus, bus_connection_port="input_1", asset=inverter, flow_direction="A2B", scenario=scenario
         )
 
-        asset_type_name = "demand"
+        # demand is split between household (hh), public facilities (pf) and enterprises (ent)
+        asset_type_name = "reducable_demand"
 
-        demand, created = Asset.objects.get_or_create(
-            scenario=scenario, asset_type=AssetType.objects.get(asset_type=asset_type_name), name="electricity_demand"
+        demand_hh, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_hh",
         )
-        demand.pos_x = 900
-        demand.pos_y = ac_bus.pos_y
-        demand.save()
+        demand_ent, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_ent",
+            efficiency=1,
+        )
+        demand_pf, created = Asset.objects.get_or_create(
+            scenario=scenario,
+            asset_type=AssetType.objects.get(asset_type=asset_type_name),
+            name="electricity_demand_pf",
+            efficiency=1,
+        )
+        demand_hh.pos_x = 900
+        demand_ent.pos_x = 900
+        demand_pf.pos_x = 900
+        demand_hh.pos_y = ac_bus.pos_y + 150
+        demand_ent.pos_y = ac_bus.pos_y
+        demand_pf.pos_y = ac_bus.pos_y - 150
+        # reduce the coverage of the household demand
+        demand_hh.efficiency = options.demand_coverage_factor
+        demand_hh.save()
+        demand_ent.save()
+        demand_pf.save()
         if created is True:
-            total_demand = get_aggregated_demand(project)
-            demand.input_timeseries = json.dumps(total_demand)
-            demand.save()
+            for dem, cg_type in zip((demand_ent, demand_hh, demand_pf), ("Enterprise", "Household", "Public facility")):
+                total_demand = get_aggregated_demand(project, consumer_type=cg_type)
+                dem.input_timeseries = json.dumps(total_demand)
+                dem.save()
 
-        peak_demand = round(np.array(json.loads(demand.input_timeseries)).max(), 1)
+        peak_demand = (
+            np.array(json.loads(demand_hh.input_timeseries))
+            + np.array(json.loads(demand_ent.input_timeseries))
+            + np.array(json.loads(demand_pf.input_timeseries))
+        )
+        peak_demand = round(peak_demand.max(), 1)
 
         ConnectionLink.objects.get_or_create(
-            bus=ac_bus, bus_connection_port="output_1", asset=demand, flow_direction="B2A", scenario=scenario
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_hh, flow_direction="B2A", scenario=scenario
+        )
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_ent, flow_direction="B2A", scenario=scenario
+        )
+        ConnectionLink.objects.get_or_create(
+            bus=ac_bus, bus_connection_port="output_1", asset=demand_pf, flow_direction="B2A", scenario=scenario
         )
 
         for i, asset_name in enumerate(user_assets):
@@ -880,15 +929,7 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
             # TODO this seems to redirect to wrong page is the form is wrong
             qs_bm = BusinessModel.objects.filter(scenario=project.scenario)
 
-            demand, total_demand, peak_demand, daily_demand = get_demand_indicators(
-                with_timeseries=True, project=project
-            )
-
-            qs_pv = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="pv_plant")
-            if qs_pv.exists():
-                pv_timeseries = json.loads(qs_pv.get().input_timeseries)
-            else:
-                pv_timeseries = None
+            total_demand, peak_demand, daily_demand = get_demand_indicators(project=project)
 
             if qs_bm.exists():
                 bm = qs_bm.get()
@@ -900,11 +941,6 @@ def cpn_constraints(request, proj_id, step_id=STEP_MAPPING["economic_params"]):
                 {
                     "form": form,
                     "equity_form": equity_form,
-                    "timestamps": [
-                        i for i in range(len(demand))
-                    ],  # json.dumps(project.scenario.get_timestamps(json_format=True)),
-                    "demand": demand,
-                    "pv_timeseries": pv_timeseries,
                     "daily_demand": daily_demand,
                     "peak_demand": peak_demand,
                     "model_name": model_name,
@@ -1424,7 +1460,7 @@ def cpn_kpi_results(request, proj_id=None):
         if qs_inverter.exists():
             inverter_flow = qs_inverter.get().total_flow
 
-        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+        total_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
 
         for kpi in kpis_of_interest:
             unit = KPI_PARAMETERS[kpi]["unit"].replace("currency", project.economic_data.currency_symbol)
@@ -1432,7 +1468,7 @@ def cpn_kpi_results(request, proj_id=None):
                 factor = 100.0
                 unit = "%"
                 # TODO quick fix for renewable share, fix properly later (this also doesnt include possible renewable share from grid)
-                scen_values = round(inverter_flow / total_demand * factor, 2)
+                scen_values = round(get_renewable_share(project), 2)
             else:
                 if project.economic_data.currency_symbol in unit:
                     factor = project.economic_data.exchange_rate

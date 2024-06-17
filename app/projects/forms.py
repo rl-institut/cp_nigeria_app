@@ -604,7 +604,7 @@ class BusForm(OpenPlanModelForm):
 
     class Meta:
         model = Bus
-        fields = ["name", "type"]
+        fields = ["name", "type", "price"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -620,8 +620,15 @@ class BusForm(OpenPlanModelForm):
                     "style": "font-weight:400; font-size:13px;",
                 },
             ),
+            "price": forms.NumberInput(
+                attrs={
+                    "title": _(
+                        "The penalty price of the flow into excess sink from this bus (keep it low with respect to other price in the system)"
+                    ),
+                }
+            ),
         }
-        labels = {"name": _("Name"), "type": _("Energy carrier")}
+        labels = {"name": _("Name"), "type": _("Energy carrier"), "price": _("Excess energy penalty")}
 
 
 class AssetCreateForm(OpenPlanModelForm):
@@ -637,6 +644,10 @@ class AssetCreateForm(OpenPlanModelForm):
         self.input_output_mapping = kwargs.pop("input_output_mapping", None)
 
         super().__init__(*args, **kwargs)
+
+        if not hasattr(self, "exchange_rate"):
+            self.exchange_rate = 1
+
         # which fields exists in the form are decided upon AssetType saved in the db
         asset_type = AssetType.objects.get(asset_type=self.asset_type_name)
         [self.fields.pop(field) for field in list(self.fields) if field not in asset_type.visible_fields]
@@ -911,7 +922,7 @@ class AssetCreateForm(OpenPlanModelForm):
             "capex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 10000", "min": "0.0", "step": ".01"}),
             "capex_var": forms.NumberInput(attrs={"placeholder": "e.g. 4000", "min": "0.0", "step": ".01"}),
             "opex_fix": forms.NumberInput(attrs={"placeholder": "e.g. 0", "min": "0.0", "step": ".01"}),
-            "opex_var": forms.NumberInput(attrs={"placeholder": "Currency", "min": "0.0", "step": ".01"}),
+            "opex_var": forms.NumberInput(attrs={"placeholder": "Currency", "min": "0.0"}),
             "lifetime": forms.NumberInput(attrs={"placeholder": "e.g. 10 years", "min": "0", "step": "1"}),
             # TODO: Try changing this to FileInput
             "input_timeseries": forms.FileInput(

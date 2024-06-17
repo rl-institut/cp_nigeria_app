@@ -9,6 +9,8 @@ tariff,Estimated tariff,"The estimated cost for the consumer, taking into accoun
 project_lifetime,Project lifetime,Number of years the project is intended to be operational,years
 bm_name,Aspired business model,"The selected approach for the delivery of the mini-grid project. In this case, the business model refers to the determination of roles and responsibilities of project proponents in the fields of ownership, development and implementation, operation and maintenance and financing",
 exchange_rate,Assumed exchange rate,Price of the given currency in relation to USD,currency/USD
+fulfilled_demand_share,Fulfilled share of total demand,"Actually fulfilled share of the total demand. Enterprise and public facility demands are always fulfilled, while household coverage may be lower than the estimated demand.",%
+fulfilled_demand,Fulfilled demand,"Total annual demand covered by the mini-grid. The covered demand might vary from the total demand depending on the demand coverage factor defined during step 3.",kWh
 equity_community,Equity community,"The sum of equity that is provided by the communit, e.g. through a community energy cooperative",currency
 equity_developer,Equity mini-grid company, "The sum of equity that is provided by a mini-grid company",currency
 total_equity,Total equity,"The sum of equity that is provided, e.g. by a mini-grid company and/or community energy cooperative",currency
@@ -22,7 +24,7 @@ irr_10,Internal Return on Investment (10 years),Placeholder,%
 irr_20,Internal Return on Investment (20 years),Placeholder,%
 wacc,WACC,Weighted average cost of capital for the project activity,%
 shs,Solar home systems,Consumers assumed to be served by solar home systems instead of the mini-grid,
-households,Households,Households connected to the mini-grid,
+households,Households,"Households connected to the mini-grid. Household demand may be higher than fulfilled demand depending on the given demand coverage factor",
 enterprises,Enterprises,"Enterprises connected to the mini-grid, including machinery",
 public,Public facilities,Public facilities connected to the mini-grid,
 nr_consumers,Number of consumers,,
@@ -37,13 +39,17 @@ pv_plant,Solar PV plant,,
 diesel_generator,Diesel generator,,
 inverter,Inverter,,
 costs,Costs,,currency
-ac_bus_excess_flow,Total excess solar PV generation,Excess solar PV electricity that may be fed into the storage,kW
-dc_bus_excess_flow,Unused electricity,Excess solar PV generation that is unused by the system,kW
+excess_flow,Unused electricity,Excess electricity that is unused by the system,kW
+ac_bus_excess_flow,Unused electricity,Excess electricity that is unused by the system,kW
+dc_bus_excess_flow,Unused electricity,Excess electricity that is unused by the system,kW
 pv_plant_flow,Solar PV generation,Demand directly satisfied by the solar PV plant,kW
 battery_charge_flow,Battery charge,Battery charging from excess generation,kW
 battery_discharge_flow,Battery discharge,Demand satisfied by the storage system,kW
+battery_flow,Battery charge/discharge,Charging and discharging by the storage system,kW
 electricity_demand_flow,Electricity demand,Total demand to be satisfied by the system,kW
 diesel_generator_flow,Diesel generator,Demand satisfied by the diesel generator,kW
+fulfilled_demand_flow,Fulfilled demand,"Total demand covered by the mini-grid",kWh
+total_demand_flow,Total demand,"Total community demand",kWh
 with_grant,With grant,Financial parameters assuming the given grant share provided by REA or similar institutions,
 without_grant,Without grant,Financial parameters assuming no grant ,
 Cash flow after debt service,Cash flow after debt service,The remaining cash flow from operating activities after the interest and debt service payments,

@@ -216,11 +216,13 @@ def scenario_visualize_results(request, proj_id=None, scen_id=None):
 
                 topology_data_list = load_scenario_topology_from_db(scen_id)
 
+                timestamps = scenario.get_timestamps()
                 answer = render(
                     request,
                     "report/single_scenario.html",
                     {
                         "scen_id": scen_id,
+                        "timestamps": timestamps,
                         "proj_id": proj_id,
                         "project_list": user_projects,
                         "scenario_list": user_scenarios,
@@ -802,6 +804,19 @@ def view_asset_parameters(request, scen_id, asset_type_name, asset_uuid):
                         }
                     )
 
+            if existing_asset.is_storage is True:
+                # add the SOC as a trace to the plot
+                assets_results_obj = AssetsResults.objects.get(simulation=scenario.simulation)
+                assets_results_json = json.loads(assets_results_obj.assets_list)
+                soc = assets_results_json["energy_storage"][0]["timeseries_soc"]["value"]
+                traces.append(
+                    {
+                        "value": soc,
+                        "name": "SOC",
+                        "unit": "%",
+                    }
+                )
+
         context.update(
             {
                 "form": form,
@@ -954,7 +969,7 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
         raise PermissionDenied
 
     results_json = []
-    for energy_vector in scenario.energy_vectors:
+    for energy_vector in ["Electricity"]:  # scenario.energy_vectors
         results_json.append(
             report_item_render_to_json(
                 report_item_id=energy_vector,
@@ -968,10 +983,33 @@ def scenario_visualize_cpn_stacked_timeseries(request, scen_id):
             )
         )
 
+    color_mapping = {
+        "pv_plant_flow": "#F2CD5D",
+        "battery_flow": "#12AB6D",
+        "battery_charge_flow": "#12AB6D",
+        "battery_discharge_flow": "#71D0A1",
+        "total_demand_flow": "#A69F99",
+        "fulfilled_demand_flow": "#716A64",
+        "electricity_demand_flow": "#716A64",
+        "diesel_generator_flow": "#814400",
+        "diesel_fuel_consumption_flow": "#814400",
+        "excess_flow": "#EA9822",
+        "ac_bus_excess_flow": "#EA9822",
+        "dc_bus_excess_flow": "#EA9822",
+    }
+
+    timeseries_labels = [
+        f"{ts['label']}_flow" for i in range(len(results_json)) for ts in results_json[i]["data"][0]["timeseries"]
+    ]
+
     descriptions = {
-        param: {"verbose": OUTPUT_PARAMS[param]["verbose"], "description": OUTPUT_PARAMS[param]["description"]}
-        for param in OUTPUT_PARAMS
-        if "_flow" in param
+        param: {
+            "verbose": OUTPUT_PARAMS[param]["verbose"] if param in OUTPUT_PARAMS else param,
+            "description": OUTPUT_PARAMS[param]["description"] if param in OUTPUT_PARAMS else "bla",
+            "line": {"shape": "hv", "dash": "dash" if param == "total_demand_flow" else "solid"},
+            "color": color_mapping[param],
+        }
+        for param in timeseries_labels
     }
 
     for scenario in results_json:
@@ -1049,16 +1087,19 @@ def scenario_visualize_costs(request, proj_id, scen_id=None):
 
 
 # TODO: Sector coupling must be refined (including transformer flows)
-def scenario_visualize_sankey(request, scen_id):
+def scenario_visualize_sankey(request, scen_id, ts=None):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     if (scenario.project.user != request.user) and (
         scenario.project.viewers.filter(user__email=request.user.email).exists() is False
     ):
         raise PermissionDenied
-
+    if ts is not None:
+        ts = int(ts)
     results_json = report_item_render_to_json(
         report_item_id="sankey",
-        data=REPORT_GRAPHS[GRAPH_SANKEY](simulation=scenario.simulation, energy_vector=scenario.energy_vectors),
+        data=REPORT_GRAPHS[GRAPH_SANKEY](
+            simulation=scenario.simulation, energy_vector=scenario.energy_vectors, timestep=ts
+        ),
         title="Sankey",
         report_item_type=GRAPH_SANKEY,
     )

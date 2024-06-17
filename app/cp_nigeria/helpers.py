@@ -24,7 +24,7 @@ from business_model.helpers import B_MODELS
 from dashboard.models import FancyResults, KPIScalarResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
-from django.db.models import Func, Sum
+from django.db.models import Func, Sum, Avg, Max
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
@@ -82,13 +82,13 @@ def calculate_co2_mitigation(project):
     """
     assumptions = {"hh_kerosene_use": 55, "kerosene_emission_factor": 2.72, "genset_emission_factor": 0.8}
 
-    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
     total_hhs = get_aggregated_cgs(project)["households"]["nr_consumers"]
 
     # BAU Scenario
     kerosene_supply_bau = total_hhs * assumptions["hh_kerosene_use"]
     kerosene_emissions_bau = kerosene_supply_bau * assumptions["kerosene_emission_factor"]
-    diesel_supply_bau = total_demand - kerosene_supply_bau
+    diesel_supply_bau = fulfilled_demand - kerosene_supply_bau
     diesel_emissions_bau = diesel_supply_bau * assumptions["genset_emission_factor"]
     total_emissions_bau = (kerosene_emissions_bau + diesel_emissions_bau) * project.economic_data.duration
 
@@ -166,8 +166,8 @@ def get_project_summary(project):
 
     yearly_production = ft.yearly_production_electricity
     total_investments = ft.total_capex("NGN")
-    total_demand, peak_demand, daily_demand = get_demand_indicators(project)
-    renewable_share = inverter_aggregated_flow / total_demand * 100
+    fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
+    renewable_share = get_renewable_share(project)
     project_lifetime = project.economic_data.duration
     bm_name = B_MODELS[bm_name]["Verbose"]
     state, region = get_community_region(project)
@@ -178,12 +178,16 @@ def get_project_summary(project):
         community_name = project.name
 
     currency_symbol = project.economic_data.currency_symbol
+    fulfilled_demand_share = (
+        get_fulfilled_demand_indicators(project, total_only=True) / np.sum(get_aggregated_demand(project)) * 100
+    )
 
     project_summary = {
         "project_name": f"{project.name}",
         # "Community name": f"{community_name}",
         "location": f"{state} State",
-        "yearly_production": f"{yearly_production:,.0f} kWh",
+        "fulfilled_demand": f"{fulfilled_demand:,.0f} kWh",
+        "fulfilled_demand_share": f"{fulfilled_demand_share:.2f}%",
         # "Firm power output": f"{firm_power_output:,.2f} kW_firm",
         "renewable_share": f"{renewable_share:.2f}%",
         # "Investment per kW_firm": f"{investment_per_kwfirm:,.2f} {currency_symbol}/kW_firm",
@@ -270,7 +274,7 @@ def get_aggregated_cgs(project, as_ts=False):
     return results_dict
 
 
-def get_aggregated_demand(project):
+def get_aggregated_demand(project, consumer_type=None):
     options = get_object_or_404(Options, project=project)
     shs_threshold = options.shs_threshold
     # Prevent error if no timeseries are present
@@ -283,12 +287,19 @@ def get_aggregated_demand(project):
             shs_consumers = get_shs_threshold(options.shs_threshold)
             # TODO need to warn the user if the total_demand is empty due to shs threshold
             cg_qs = cg_qs.exclude(timeseries__name__in=shs_consumers)
-
+        if consumer_type is not None:
+            # include the machinery demand in the enterprise demand
+            if consumer_type == "Enterprise":
+                consumer_types = ["Enterprise", "Machinery"]
+                cg_qs = cg_qs.filter(consumer_type__consumer_type__in=consumer_types)
+            else:
+                cg_qs = cg_qs.filter(consumer_type__consumer_type=consumer_type)
         for cg in cg_qs:
             timeseries_values = np.array(cg.timeseries.get_values_with_unit("kWh"))
             nr_consumers = cg.number_consumers
             total_demand.append(timeseries_values * nr_consumers)
-        return np.vstack(total_demand).sum(axis=0).tolist()
+        total_demand_list = np.vstack(total_demand).sum(axis=0).tolist()
+        return total_demand_list
     else:
         return []
 
@@ -298,11 +309,13 @@ def get_demand_indicators(project, with_timeseries=False):
 
     :param with_timeseries: when True return the full timeseries as well
     """
-    qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="demand")
+    qs_demand = Asset.objects.filter(scenario=project.scenario, asset_type__asset_type="reducable_demand")
     if qs_demand.exists():
-        demand = json.loads(qs_demand.get().input_timeseries)
-        demand_np = np.array(demand)
-
+        demand_np = []
+        for dem in qs_demand:
+            demand = json.loads(dem.input_timeseries)
+            demand_np.append(demand)
+        demand_np = np.vstack(demand_np).sum(axis=0)
     else:
         demand_np = np.array(get_aggregated_demand(project))
 
@@ -310,9 +323,35 @@ def get_demand_indicators(project, with_timeseries=False):
     peak_demand = round(demand_np.max(), 1)
     daily_demand = round(total_demand / 365, 1)
     if with_timeseries is True:
-        return (demand, total_demand, peak_demand, daily_demand)
+        return (demand_np.tolist(), total_demand, peak_demand, daily_demand)
     else:
         return (total_demand, peak_demand, daily_demand)
+
+
+def get_fulfilled_demand_indicators(project, total_only=False):
+    """Provide the aggregated, peak and daily averaged fulfilled demand
+
+    :param total_only: when True return only the aggragated value over the simulation time
+    """
+    qs_res = FancyResults.objects.filter(
+        simulation__scenario=project.scenario, direction="out", bus="ac_bus", asset__contains="critical"
+    )
+    if qs_res.exists() is False:
+        total_fulfilled_demand, peak_demand, daily_demand = get_demand_indicators(project)
+    else:
+        total_fulfilled_demand = qs_res.aggregate(delivered_demand=Sum("total_flow"))["delivered_demand"]
+        if total_only is False:
+            delivered_demand = []
+            for dem in qs_res:
+                delivered_demand.append(dem.timeseries)
+            delivered_demand_np = np.vstack(delivered_demand).sum(axis=0)
+            peak_demand = round(delivered_demand_np.max(), 1)
+            daily_demand = round(total_fulfilled_demand / 365, 1)
+
+    if total_only is True:
+        return total_fulfilled_demand
+    else:
+        return total_fulfilled_demand, peak_demand, daily_demand
 
 
 def get_asset_assumptions(project):
@@ -410,6 +449,25 @@ def get_community_region(project):
     return state, region
 
 
+def get_renewable_share(project):
+    # TODO this may not be completely accurate when there is a minimal load set on the diesel genset, as there might be
+    #  excess diesel generation, but inverter flow is also not accurate when there is ac_excess
+    qs_sim = Simulation.objects.filter(scenario=project.scenario)
+    if not qs_sim.exists():
+        return logging.error("Simulation does not exist")
+
+    diesel_supply_mg = (
+        FancyResults.objects.filter(simulation=project.scenario.simulation, asset="diesel_generator", direction="in")
+        .values_list("total_flow", flat=True)
+        .get()
+    )
+
+    fulfilled_demand = get_fulfilled_demand_indicators(project, total_only=True)
+    renewable_share = (fulfilled_demand - diesel_supply_mg) / fulfilled_demand * 100
+
+    return renewable_share
+
+
 class ReportHandler:
     def __init__(self, project):
         self.doc = Document()
@@ -481,7 +539,9 @@ class ReportHandler:
 
         ft = FinancialTool(project)
         self.cost_assumptions = ft.cost_assumption_tables
-        total_demand, peak_demand, daily_demand = get_demand_indicators(project)
+
+        fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
+        total_demand = np.sum(get_aggregated_demand(project))
 
         if "inverter" in ft.system_params["supply_source"].tolist():
             inverter_aggregated_flow = ft.system_params.loc[
@@ -533,7 +593,7 @@ class ReportHandler:
             avg_daily_demand=daily_demand,
             peak_demand=peak_demand,
             diesel_price_increase=ft.financial_params["fuel_price_increase"],
-            renewable_share=(inverter_aggregated_flow / total_demand) * 100,
+            renewable_share=get_renewable_share(project),
             lcoe=lcoe,
             opex_total=ft.total_opex(),
             opex_growth_rate=ft.opex_growth_rate * 100,
@@ -548,8 +608,9 @@ class ReportHandler:
             disco="DiscoName",
             ent_demand_categories=cg_sentences["Enterprise"],
             pf_demand_categories=cg_sentences["Public facility"],
-            # TODO change when demand coverage is merged
-            demand_coverage=100,
+            demand_coverage_factor=self.options.demand_coverage_factor * 100,
+            fulfilled_demand=fulfilled_demand,
+            fulfilled_demand_share=fulfilled_demand / total_demand * 100,
             grant_deduction=(1 - ft.usable_grant) * 100,
         )
         if self.text_parameters["grid_option"] == "isolated":
@@ -1007,7 +1068,7 @@ class ReportHandler:
         self.add_paragraph(
             "In total, {hh_number_mg} households, {ent_number} enterprises and {pf_number} public "
             "facilities would be connected to the mini-grid. Table 1 displays the "
-            "number of consumers and their respective yearly electricity demand."
+            "number of consumers and their respective yearly electricity demand to be fulfilled by the mini-grid."
         )
 
         self.add_df_as_table(self.get_df_from_db("demand_table"), caption="Community demand summary")
@@ -1025,18 +1086,26 @@ class ReportHandler:
         self.add_heading("Electricity Supply System Size and Composition")
         self.add_image(self.image_path["es_schema"], width=Inches(3), caption="System schematic")
 
-        self.add_paragraph(
+        system_paragraph = (
             "Based on the calculated yearly demand, a least-cost-optimization was conducted for a supply system with "
-            "the following components: {energy_system_components_string}. The optimization assumes a {demand_coverage}% "
-            "demand coverage. The cost and asset characteristics used to "
-            "conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
-            "asset sizes result in the least-cost solution:"
+            "the following components: {energy_system_components_string}."
+            + (
+                " The optimization assumes a minimum " "{demand_coverage_factor}% household demand coverage."
+                if self.options.shs_threshold != "very_high"
+                else ""
+            )
+            + " The cost and asset characteristics used to conduct the system optimization can be seen in the Annex. Based on the given system setup, the following "
+            "asset sizes displayed in Table 2 result in the least-cost solution."
         )
+
+        self.add_paragraph(system_paragraph)
 
         # Table with optimized capacities
         self.add_df_as_table(self.get_df_from_db("system_table"), caption="System size")
 
         self.add_paragraph(
+            "Based on the given asset sizes, the system is able to fulfill {fulfilled_demand_share:.2f}% of the total demand, "
+            "providing {fulfilled_demand:,.0f} kWh of electricity during the simulated year. "
             "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
             "with {renewable_share:.1f}% of the generation coming from renewable sources."
         )
@@ -1250,9 +1319,14 @@ class FinancialTool:
         costs["opex_total"] = costs["opex_var_total"] + costs["opex_fix_total"]
         costs.drop(columns=["opex_var_total", "opex_fix_total", "capex_total"], inplace=True)
 
+        # should come from the results
         total_demand = (
             pd.DataFrame.from_dict(get_aggregated_cgs(self.project), orient="index").groupby("supply_source").sum()
         )
+
+        total_fulfilled_demand = get_fulfilled_demand_indicators(self.project, total_only=True)
+        total_demand.loc["mini_grid", "total_demand"] = total_fulfilled_demand
+
         asset_sizes = pd.DataFrame.from_records(opt_caps).set_index("asset")
         asset_sizes["installed_capacity"] = inst_caps
         assets = pd.concat([asset_sizes, costs], axis=1)
@@ -1340,7 +1414,7 @@ class FinancialTool:
             "estimated_tariff",
         )
         qs_ed = EconomicData.objects.filter(project=self.project).values("discount", "tax")
-        financial_params = qs_ed.first() | qs_eq.first()
+        financial_params = {**qs_ed.first(), **qs_eq.first()}
         financial_params["capex_fix"] = self.project.scenario.capex_fix
         return financial_params
 
@@ -1759,7 +1833,6 @@ class FinancialTool:
 
     def remove_grant(self):
         self.financial_params["grant_share"] = 0.0
-        self.calculate_tariff()
 
     def set_tariff(self, tariff):
         # set FinancialTool tariff value to the computed tariff
