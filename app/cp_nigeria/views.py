@@ -206,7 +206,12 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
                 qs_report = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
                 if qs_report.exists() and economic_data.has_changed():
                     qs_report.delete()
-            economic_data = economic_data.save()
+            economic_data = economic_data.save(commit=False)
+            # set the initial values for discount and tax
+            economic_data.discount = 0.12
+            economic_data.tax = 0.075
+            economic_data.save()
+
             project = form.save(user=request.user, commit=False)
             project.economic_data = economic_data
             project.save()

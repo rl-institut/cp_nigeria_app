@@ -118,8 +118,6 @@ class EconomicDataForm(OpenPlanModelForm):
 
         super().__init__(*args, **kwargs)
         self.fields["discount"].validators.append(validate_not_zero)
-        self.initial["discount"] = 12.0
-        self.initial["tax"] = 7.5
 
     # def save(self, *args, **kwargs):
     #     ed = super().save(*args, **kwargs)
