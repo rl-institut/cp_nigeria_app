@@ -1390,10 +1390,16 @@ def ajax_bmodel_infos(request):
 @login_required
 @json_view
 @require_http_methods(["GET", "POST"])
-def ajax_load_timeseries(request):
+def ajax_load_timeseries(request, proj_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        consumer_type_id = request.GET.get("consumer_type")
-        timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+        options = Options.objects.get(project__id=proj_id)
+        consumer_type_id = int(request.GET.get("consumer_type"))
+        # only offer the national average load profile for households if not using one of the pre-loaded CPs
+        if options.community is None and consumer_type_id == 1:
+            timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id, name__contains="Average")
+        else:
+            timeseries_qs = DemandTimeseries.objects.filter(consumer_type_id=consumer_type_id)
+
         return render(
             request, "cp_nigeria/steps/timeseries_dropdown_options.html", context={"timeseries_qs": timeseries_qs}
         )
