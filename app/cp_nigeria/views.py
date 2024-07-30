@@ -275,9 +275,14 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             scenario=project.scenario,
             asset_type__asset_type="reducable_demand",
         )
-        demand_options_form = DemandOptionsForm(request.POST)
+        single_hh_demand = True if options.community is None else False
+        demand_options_form = DemandOptionsForm(request.POST, single_hh_demand=single_hh_demand)
         if demand_options_form.is_valid():
-            options.shs_threshold = demand_options_form.cleaned_data["shs_threshold"]
+            if single_hh_demand:
+                shs_threshold = "very_high" if demand_options_form.cleaned_data["exclude_households"] is True else ""
+            else:
+                shs_threshold = demand_options_form.cleaned_data["shs_threshold"]
+            options.shs_threshold = shs_threshold
 
             hh_demand = qs_demand.filter(name="electricity_demand_hh")
             if hh_demand.exists():
@@ -344,7 +349,9 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
             initial={
                 "shs_threshold": options.shs_threshold,
                 "demand_coverage_factor": options.demand_coverage_factor * 100,
-            }
+                "exclude_households": True if options.shs_threshold == "very_high" else False,
+            },
+            single_hh_demand=True if options.community is None else False,
         )
 
         if options.community is not None and not formset_qs.exists():
@@ -1425,7 +1432,7 @@ def ajax_update_graph(request):
 @require_http_methods(["POST"])
 def ajax_shs_tiers(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        shs_tier = request.POST.get("shs_tier")
+        shs_tier = request.POST.get("shs_tier", "")
         excluded_tiers = get_shs_threshold(shs_tier)
 
         return JsonResponse({"excluded_tiers": excluded_tiers})
