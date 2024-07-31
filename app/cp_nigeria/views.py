@@ -301,7 +301,9 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     )
                 except (ValueError, TypeError):
                     pass
-            if form.is_valid():
+
+        if formset.is_valid():
+            for form in formset:
                 # update consumer group if already in database and create new entry if not
                 if len(form.cleaned_data) == 0:
                     continue
@@ -326,7 +328,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     consumer_group.project = project
                     consumer_group.save()
 
-        if formset.is_valid():
             # update demand if exists
             if qs_demand.exists():
                 for demand, cg_type in zip(qs_demand.order_by("name"), ("Enterprise", "Household", "Public facility")):
