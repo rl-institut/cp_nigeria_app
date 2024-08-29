@@ -1,0 +1,39 @@
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+<div class="modal-body">
+	<body>
+		<h1>Test View</h1>
+		<p>Result 1: <span id="result1"></span></p>
+		<p>Result 2: <span id="result2"></span></p>
+
+		<button id="button1">Clone survey</button>
+		<button id="button2">Deploy survey</button>
+
+		<script>
+			$(document).ready(function() {
+				$("#button1").click(function() {
+					$.ajax({
+						url: "{% url 'test_view' %}",
+						type: "GET",
+						data: { function: "function1" },
+						success: function(response) {
+							$("#result1").text(response.result1);
+						}
+					});
+				});
+
+				$("#button2").click(function() {
+					$.ajax({
+						url: "{% url 'test_view' %}",
+						type: "GET",
+						data: { function: "function2" },
+						success: function(response) {
+							$("#result2").text(response.result2);
+						}
+					});
+				});
+			});
+		</script>
+	</body>
+</div>
