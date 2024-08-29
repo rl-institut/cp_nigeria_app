@@ -1268,6 +1268,16 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
     return render(request, html_template, context)
 
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def kobo_testing(request):
+    if request.method == "GET":
+        return render(request, "kobo_testing.html")
+
+    else:
+        return HttpResponse("Only GET requests are allowed for this view.")
+
+
 # TODO for later create those views instead of simply serving the html templates
 CPN_STEPS = {
     "choose_location": cpn_scenario_create,
@@ -1601,3 +1611,125 @@ def ajax_download_report(request):
         implementation_plan.save(response)
 
         return response
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def calculate_consumption_tiers(request, kobo_file):
+    # this file should correspond to the file created when you export the data from kobotoolbox
+    # TODO set this up to be able to handle both the csv and excel exports
+    survey = pd.read_excel(kobo_file)
+    # TODO create csv for the IWI scores that will be saved in the static folder, include bool column for multiple choice
+    IWI_scores = pd.read_excel(IWI_scores_file)
+
+    # define question names relevant for IWI scores
+    IWI_questions = list(set([name for name in IWI_scores.kobo_name[1:]]))
+    multiple_choice_qs = list(set([name for name in IWI_scores.loc[IWI_scores.multiple_choice == True].kobo_name]))
+
+    # convert possible survey answers for each IWI score to list of integers
+    clean_list = [
+        [int(item)] if isinstance(item, (int, float)) else list(map(int, item.split(", ")))
+        for item in IWI_scores.kobo_value.tolist()[1:]
+    ]
+    clean_list.insert(0, np.nan)
+    IWI_scores.kobo_value = clean_list
+
+    # convert multiple choice survey to  list of integers
+    for question in multiple_choice_qs:
+        nan_indices = survey.index[survey[question].isna()].tolist()
+        # clean the survey answers if not nan
+        clean_list = [
+            [int(item)] if isinstance(item, (int, float)) else list(map(int, item.split(" ")))
+            for item in survey[question].tolist()
+            if not pd.isna(item)
+        ]
+        # reinsert nan back into list
+        for index in nan_indices:
+            clean_list.insert(index, np.nan)
+
+        survey[question] = clean_list
+
+    # TODO maybe do this at the very beginning
+    # filter out only relevant questions for IWI calculations
+    iwi_df = survey.loc[:, IWI_questions]
+
+    # check if any of the questions are not answered and drop the columns with empty values
+    iwi_df.isnull().T.any()
+    empty_list = np.where(iwi_df.isnull().T.any())[0]
+    iwi_df.drop(empty_list, inplace=True)
+
+    # TODO figure out how to handle this properly
+    if len(empty_list) > 0:
+        print(
+            f"The survey contains non answered questions in the following rows: {empty_list}. These surveys will not"
+            f"be included in the calculation. Please be aware that missing data will lead to a less reliable estimate."
+        )
+
+    bool_dict = {}
+
+    # create boolean values according to survey results
+    for index, row in IWI_scores.iterrows():
+        if index == 0:
+            continue
+        name = f"{row.kobo_name.replace('_', ' ').title()}: {row.Characteristic}"
+        # bool_list = []
+        if row.kobo_name in multiple_choice_qs:
+            bool_list = iwi_df[row.kobo_name].apply(lambda x: any(answer in x for answer in row.kobo_value))
+        else:
+            bool_list = iwi_df[row.kobo_name].apply(lambda x: x in row.kobo_value)
+
+        bool_dict[name] = bool_list
+
+    # join the expensive utensils categories
+    bool_dict["Expensive utensils"] = (
+        bool_dict["Appliances: Expensive utensils"] | bool_dict["Vehicles: Expensive utensils"]
+    )
+    del bool_dict["Appliances: Expensive utensils"]
+    del bool_dict["Vehicles: Expensive utensils"]
+
+    # create dataframe and move expensive utensils back to its place
+    bool_table = pd.DataFrame(bool_dict)
+    col = bool_table.pop("Expensive utensils")
+    bool_table.insert(6, col.name, col)
+
+    # calculate IWI scores
+    scores = IWI_scores.Weights.tolist()[1:]
+    IWI_constant = IWI_scores.Weights.tolist()[0]
+    scores.pop(7)
+    scores = list(zip(bool_table.columns.tolist(), scores))
+
+    IWI_score = IWI_constant
+    for i in range(len(scores)):
+        IWI_score += bool_table[scores[i][0]] * scores[i][1]
+
+    survey["IWI_score"] = IWI_score
+
+    # construct quintiles and divide scores into them
+    quintiles = [20, 40, 60, 80, 100]
+    iwi_quintiles = {}
+    previous_quintile = 0
+    for quintile in quintiles:
+        iwi_quintiles[quintile] = {}
+        iwi_quintiles[quintile] = len(
+            survey[(survey["IWI_score"] < quintile) & (survey["IWI_score"] > previous_quintile)].IWI_score
+        )
+        previous_quintile = quintile
+
+
+@json_view
+@login_required
+@require_http_methods(["GET", "POST"])
+def upload_survey(request):
+    if request.method == "GET":
+        form = UploadFileForm(labels=dict(file=_("Survey file")))
+        context = {"form": form}
+
+        return render(request, "asset/upload_timeseries.html", context)
+
+    elif request.method == "POST":
+        qs = request.POST
+        form = UploadTimeseriesForm(qs)
+
+        if form.is_valid():
+            ts = form.save(commit=False)
+            ts.user = request.user
