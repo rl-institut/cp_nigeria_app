@@ -29,7 +29,9 @@ def validate_not_zero(value):
 
 class ProjectForm(OpenPlanModelForm):
     community = forms.ModelChoiceField(
-        queryset=Community.objects.all(), required=False, label="Pre-select a community (optional)"
+        queryset=Community.objects.exclude(name__contains="old"),
+        required=False,
+        label="Pre-select a community (optional)",
     )
     start_date = forms.DateField(
         label=_("Simulation start"),
@@ -116,8 +118,6 @@ class EconomicDataForm(OpenPlanModelForm):
 
         super().__init__(*args, **kwargs)
         self.fields["discount"].validators.append(validate_not_zero)
-        self.initial["discount"] = 12.0
-        self.initial["tax"] = 7.5
 
     # def save(self, *args, **kwargs):
     #     ed = super().save(*args, **kwargs)
@@ -218,7 +218,7 @@ class DieselForm(AssetCreateForm):
         field_order = [field for field in self.fields]
         field_order.insert((field_order.index("opex_var_extra") + 1), "fuel_price_increase")
         ed = EquityData.objects.filter(scenario__project_id=kwargs.get("proj_id"))
-        initial_increase = (ed.first().fuel_price_increase * 100) if ed.exists() else 0
+        initial_increase = (ed.first().fuel_price_increase * 100) if ed.exists() else 3.8
         self.fields["fuel_price_increase"] = forms.FloatField(
             help_text=_("Estimated annual fuel price increase (%)"),
             initial=initial_increase,

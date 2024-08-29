@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 import os
 import base64
+import re
 from django.http import JsonResponse
 from jsonview.decorators import json_view
 from django.utils.translation import gettext_lazy as _
@@ -205,7 +206,12 @@ def cpn_scenario_create(request, proj_id=None, step_id=STEP_MAPPING["choose_loca
                 qs_report = ImplementationPlanContent.objects.filter(simulation=project.scenario.simulation)
                 if qs_report.exists() and economic_data.has_changed():
                     qs_report.delete()
-            economic_data = economic_data.save()
+            economic_data = economic_data.save(commit=False)
+            # set the initial values for discount and tax
+            economic_data.discount = 0.12
+            economic_data.tax = 0.075
+            economic_data.save()
+
             project = form.save(user=request.user, commit=False)
             project.economic_data = economic_data
             project.save()
@@ -295,7 +301,9 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     )
                 except (ValueError, TypeError):
                     pass
-            if form.is_valid():
+
+        if formset.is_valid():
+            for form in formset:
                 # update consumer group if already in database and create new entry if not
                 if len(form.cleaned_data) == 0:
                     continue
@@ -320,7 +328,6 @@ def cpn_demand_params(request, proj_id, step_id=STEP_MAPPING["demand_profile"]):
                     consumer_group.project = project
                     consumer_group.save()
 
-        if formset.is_valid():
             # update demand if exists
             if qs_demand.exists():
                 for demand, cg_type in zip(qs_demand.order_by("name"), ("Enterprise", "Household", "Public facility")):
@@ -1575,6 +1582,7 @@ def ajax_download_report(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         proj_id = int(request.POST.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
+        sanitized_project_name = re.sub(r"\W+", "_", project.name)
         logging.info("Downloading implementation plan")
 
         implementation_plan = ReportHandler(project)
@@ -1583,8 +1591,13 @@ def ajax_download_report(request):
         implementation_plan.add_footer()
         implementation_plan.prevent_table_splitting()
 
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response["Content-Disposition"] = f"attachment; filename=report.docx"
+        response = HttpResponse(
+            headers={
+                "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Content-Disposition": f"attachment",
+                "Filename": f"{sanitized_project_name}_Implementation_Plan.docx",
+            }
+        )
         implementation_plan.save(response)
 
         return response

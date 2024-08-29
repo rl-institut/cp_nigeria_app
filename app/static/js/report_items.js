@@ -765,10 +765,11 @@ function downloadReport(proj_id) {
         url: urlDownloadReport,
         data: {proj_id: proj_id},
         xhrFields: {responseType: 'blob'},
-        success: function (response) {
+        success: function (response, status, xhr) {
+            const filename = xhr.getResponseHeader("Filename")
             const link = document.createElement('a');
             link.href = URL.createObjectURL(response);
-            link.download = 'Implementation_Plan.docx';
+            link.download = filename;
             link.click();
         },
         error: function (error) {
