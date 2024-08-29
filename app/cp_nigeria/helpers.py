@@ -42,6 +42,7 @@ class Unnest(Func):
 HOUSEHOLD_TIERS = [
     ("", "Remove SHS threshold"),
     ("very_low", "Very Low Consumption Estimate"),
+    ("avg", "National Average Consumption Estimate"),
     ("low", "Low Consumption Estimate"),
     ("middle", "Middle Consumption Estimate"),
     ("high", "High Consumption Estimate"),

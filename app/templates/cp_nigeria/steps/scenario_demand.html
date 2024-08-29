@@ -7,8 +7,9 @@
 {% block start_body_scripts %}
 <script src="https://cdn.plot.ly/plotly-2.27.1.min.js"></script>
 <script>
+	const proj_id = `{{ proj_id }}`;
     const csrfToken = `{{ csrf_token }}`;
-	const dropdownUrl = `{% url 'ajax_load_timeseries' %}`;
+	const dropdownUrl = `{% url 'ajax_load_timeseries' proj_id %}`;
     const updateGraphUrl = `{% url 'ajax_update_graph' %}`;
     const getThresholdUrl = `{% url 'ajax_shs_tiers' %}`;
 	var householdTiers = {{ household_tiers | safe }};
