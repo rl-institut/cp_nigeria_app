@@ -4,7 +4,16 @@ import json
 import numpy as np
 
 # from requests.exceptions import HTTPError
-from epa.settings import PROXY_CONFIG, MVS_POST_URL, MVS_GET_URL, MVS_SA_POST_URL, MVS_SA_GET_URL, EXCHANGE_RATES_URL
+from epa.settings import (
+    PROXY_CONFIG,
+    MVS_POST_URL,
+    MVS_GET_URL,
+    MVS_SA_POST_URL,
+    MVS_SA_GET_URL,
+    EXCHANGE_RATES_URL,
+    KOBO_API_TOKEN,
+    KOBO_API_URL,
+)
 from dashboard.models import (
     FancyResults,
     AssetsResults,
@@ -16,6 +25,129 @@ from projects.constants import DONE, PENDING, ERROR
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class KoboToolbox:
+    base_survey_id = "aEpaGRFXWbaDyLSXTiQTZQ"
+    request_headers = {"Accept": "application/json", "Authorization": "Token " + KOBO_API_TOKEN}
+
+    def __init__(self, project_id=None):
+        """When the class is initialized, a survey is cloned from the base survey, deployed and the permissions
+        are changed so that anonymous users can submit to the form. The web form url is returned when the form is
+        deployed"""
+        # TODO save these somewhere (maybe in Options) so that the survey stays assigned to the project
+        # TODO set up multiple scenarios for one project so that one community can all have the same survey across multiple scenarios
+        # TODO only create a new survey if this project doesn't already have a survey assigned to it
+        # project = Project.objects.get(pk=project_id)
+        # if project.options.kobo_survey is None:
+        self.project_survey_id = self.clone_form()
+        self.assign_permissions("add_submissions", "AnonymousUser")
+        self.assign_permissions("view_asset", "AnonymousUser")
+        self.project_survey_url = self.deploy_form()
+
+    def request_data(self, form_id):
+        pass
+
+    def clone_form(self, form_id=None):
+        """Clones a KoboToolbox form. If no form is given, the base form given in the class will be cloned
+        (corresponds to the basic IWI household questions survey). Returns the id of the newly created survey"""
+        if form_id is None:
+            form_id = self.base_survey_id
+
+        payload = {"clone_from": form_id, "name": "API_test", "asset_type": "survey"}
+
+        try:
+            response = requests.post(KOBO_API_URL + "assets/", data=payload, headers=self.request_headers, timeout=10)
+            # If the response was successful, no Exception will be raised
+            response.raise_for_status()
+        except requests.HTTPError as http_err:
+            logger.error(f"HTTP error occurred: {http_err}")
+            return None
+        except Exception as err:
+            logger.error(f"Other error occurred: {err}")
+            return None
+        else:
+            new_form_id = json.loads(response.text)["uid"]
+            logger.info(f"Cloned household survey to survey with id {new_form_id}.")
+            return new_form_id
+        pass
+
+    def deploy_form(self, form_id=None):
+        """This call deploys the form. Form_id should be the id returned by clone_form. When the form is cloned,
+        it is initially saved as a draft before being deployed. Returns the enketo url needed to fill
+         out the survey"""
+
+        if form_id is None:
+            form_id = self.project_survey_id
+
+        # this parameter makes sure that the form is deployed as active (otherwise it will default to archived)
+        payload = {"active": True}
+
+        try:
+            response = requests.post(
+                KOBO_API_URL + f"assets/{form_id}/deployment/", data=payload, headers=self.request_headers, timeout=10
+            )
+
+            # If the response was successful, no Exception will be raised
+            response.raise_for_status()
+        except requests.HTTPError as http_err:
+            logger.error(f"HTTP error occurred: {http_err}")
+            return None
+        except Exception as err:
+            logger.error(f"Other error occurred: {err}")
+            return None
+        else:
+            enketo_url = json.loads(response.text)["asset"]["deployment__links"]["offline_url"]
+            logger.info(f"Successfully deployed survey with id {form_id}. Survey available at {enketo_url}.")
+            return enketo_url
+
+    def assign_permissions(self, permission_codename, username, form_id=None):
+        """Assigns user permissions on a given form. For permissions without a KoboToolbox account, username should
+        be 'AnonymousUser'. The basic permissions needed to anonymously submit to the form are view_asset and
+        add_submissions"""
+        if form_id is None:
+            form_id = self.project_survey_id
+
+        permission_list = [
+            "change_asset",
+            "view_asset",
+            "manage_asset",
+            "delete_asset",
+            "change_submissions",
+            "delete_submissions",
+            "validate_submissions",
+            "add_submissions",
+            "view_submissions",
+        ]
+
+        if permission_codename not in permission_list:
+            logger.warning(f"Permission doesn't exist. Available permission codenames are: '{permission_list}'")
+            return None
+
+        payload = {
+            "permission": f"https://kf.kobotoolbox.org/api/v2/permissions/{permission_codename}/",
+            "user": f"https://kf.kobotoolbox.org/api/v2/users/{username}/",
+        }
+
+        try:
+            response = requests.post(
+                KOBO_API_URL + f"assets/{form_id}/permission-assignments/",
+                data=payload,
+                headers=self.request_headers,
+                timeout=5,
+            )
+
+            # If the response was successful, no Exception will be raised
+            response.raise_for_status()
+        except requests.HTTPError as http_err:
+            logger.error(f"HTTP error occurred: {http_err}")
+            return None
+        except Exception as err:
+            logger.error(f"Other error occurred: {err}")
+            return None
+        else:
+            logger.info(f"Successfully assigned permission '{permission_codename}' to {form_id}. ")
+            return None
 
 
 def request_exchange_rate(currency):
