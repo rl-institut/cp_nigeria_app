@@ -1,0 +1,1011 @@
+[
+
+    {
+        "model": "cp_nigeria.community", "pk": null,
+        "fields": {
+            "name": "Ebute-Ipare (updated)",
+            "lat": 6.264858551370542,
+            "lon": 4.6873677122178865,
+            "pv_timeseries": ["Ebute-Ipare PV Output"]
+        }
+    },
+    {
+        "model": "cp_nigeria.community", "pk": null,
+        "fields": {
+            "name": "Ezere (updated)",
+            "lat": 5.743309814888137,
+            "lon": 7.525518866763596,
+            "pv_timeseries": ["Ezere PV Output"]
+        }
+    },
+    {
+        "model": "cp_nigeria.community", "pk": null,
+        "fields": {
+            "name": "Usungwe (updated)",
+            "lat": 7.631209495569164,
+            "lon": 6.21239729042989,
+            "pv_timeseries": ["Usungwe PV Output"]
+        }
+    },
+    {
+        "model": "cp_nigeria.community", "pk": null,
+        "fields": {
+            "name": "Unguwar Kure (updated)",
+            "lat": 11.806950924970087,
+            "lon": 8.065393779619265,
+            "pv_timeseries": ["Unguwar Kure PV Output"]
+        }
+    },
+    {
+        "model": "cp_nigeria.community", "pk": null,
+        "fields": {
+            "name": "Egbuniwe (Okpanam) (updated)",
+            "lat": 6.231665049251768,
+            "lon": 6.652035681516617,
+            "pv_timeseries": ["Egbuniwa (Okpanam) PV Output"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 6.0,
+            "timeseries": ["Food_Groceries"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Food_Restaurant"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Food_Bar"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 7.0,
+            "timeseries": ["Food_Drinks"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Retail_Clothes and accessories"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Retail_Electronics"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Retail_Medical"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Trades_Beauty or Hair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Trades_Tailoring"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Trades_Carpentry"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Digital_Cinema or Betting"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Digital_Mobile or Electronics Repair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Digital_Other"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Agricultural_Other"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["CHPS"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Clinic"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 58.0,
+            "timeseries": ["Very Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 200.0,
+            "timeseries": ["Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 167.0,
+            "timeseries": ["Middle Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 74.0,
+            "timeseries": ["High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Health Centre"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 28.0,
+            "timeseries": ["Church"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["School"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Jigsaw"],
+            "consumer_type": ["Machinery"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 30.0,
+            "timeseries": ["Retail_Other"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 10.0,
+            "timeseries": ["Generic machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Ebute-Ipare (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Food_Groceries"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Food_Restaurant"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Retail_Medical"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Trades_Beauty or Hair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Trades_Tailoring"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Trades_Carpentry"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Trades_Car or Motorbike Repair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 6.0,
+            "timeseries": ["Agricultural_Mill or Thresher or Grater"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Health Centre"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 37.0,
+            "timeseries": ["Very Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 127.0,
+            "timeseries": ["Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 334.0,
+            "timeseries": ["Middle Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 154.0,
+            "timeseries": ["High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 8.0,
+            "timeseries": ["Very High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 6.0,
+            "timeseries": ["Milling Machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Generic machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["School"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Generic public facility"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Church"],
+            "consumer_type": ["Public facility"],
+            "community": ["Ezere (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Food_Restaurant"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 15.0,
+            "timeseries": ["Food_Groceries"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 6.0,
+            "timeseries": ["Trades_Carpentry"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 10.0,
+            "timeseries": ["Retail_Medical"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 25.0,
+            "timeseries": ["Trades_Metalworks"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 15.0,
+            "timeseries": ["Trades_Car or Motorbike Repair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 12.0,
+            "timeseries": ["Agricultural_Mill or Thresher or Grater"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 12.0,
+            "timeseries": ["Milling Machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Clinic"],
+            "consumer_type": ["Public facility"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Church"],
+            "consumer_type": ["Public facility"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 7.0,
+            "timeseries": ["School"],
+            "consumer_type": ["Public facility"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Generic public facility"],
+            "consumer_type": ["Public facility"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 10.0,
+            "timeseries": ["Food_Drinks"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 5.0,
+            "timeseries": ["Trades_Beauty or Hair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 20.0,
+            "timeseries": ["Retail_Agricultural"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 12.0,
+            "timeseries": ["Trades_Tailoring"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Retail_Electronics"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Generic enterprise"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Generic machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 10.0,
+            "timeseries": ["Welder"],
+            "consumer_type": ["Machinery"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 6.0,
+            "timeseries": ["Jigsaw"],
+            "consumer_type": ["Machinery"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["Jigsaw"],
+            "consumer_type": ["Machinery"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 21.0,
+            "timeseries": ["Very Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 491.0,
+            "timeseries": ["Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 650.0,
+            "timeseries": ["Middle Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 297.0,
+            "timeseries": ["High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 41.0,
+            "timeseries": ["Very High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Usungwe (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Food_Groceries"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Food_Fruits or vegetables"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Trades_Cycle Repair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Digital_Cybercafé"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Agricultural_Mill or Thresher or Grater"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Milling Machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Crop Dryer"],
+            "consumer_type": ["Machinery"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Mosque"],
+            "consumer_type": ["Public facility"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["School"],
+            "consumer_type": ["Public facility"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Health Centre"],
+            "consumer_type": ["Public facility"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 11.0,
+            "timeseries": ["Very Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 119.0,
+            "timeseries": ["Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 70.0,
+            "timeseries": ["Middle Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Unguwar Kure (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Food_Groceries"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Food_Restaurant"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Food_Bar"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Food_Drinks"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Trades_Car or Motorbike Repair"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Agricultural_Other"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Sawmill"],
+            "consumer_type": ["Machinery"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Circular Wood Saw"],
+            "consumer_type": ["Machinery"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Trades_Metalworks"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Welder"],
+            "consumer_type": ["Machinery"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 3.0,
+            "timeseries": ["Generic enterprise"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+        {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Generic public facility"],
+            "consumer_type": ["Public facility"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+        {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 7.0,
+            "timeseries": ["Church"],
+            "consumer_type": ["Public facility"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+        {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 4.0,
+            "timeseries": ["School"],
+            "consumer_type": ["Public facility"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Agricultural_Mill or Thresher or Grater"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 30.0,
+            "timeseries": ["Retail_Other"],
+            "consumer_type": ["Enterprise"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 1.0,
+            "timeseries": ["Thresher"],
+            "consumer_type": ["Machinery"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 2.0,
+            "timeseries": ["Generic machine"],
+            "consumer_type": ["Machinery"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 21.0,
+            "timeseries": ["Low Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 31.0,
+            "timeseries": ["Middle Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 191.0,
+            "timeseries": ["High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    },
+    {
+        "model": "cp_nigeria.consumergroup", "pk": null,
+        "fields": {
+            "number_consumers": 207.0,
+            "timeseries": ["Very High Consumption Estimate"],
+            "consumer_type": ["Household"],
+            "community": ["Egbuniwe (Okpanam) (updated)"]
+        }
+    }
+]
