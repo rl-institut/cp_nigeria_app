@@ -724,7 +724,7 @@
         "model": "cp_nigeria.consumergroup", "pk": null,
         "fields": {
             "number_consumers": 2.0,
-            "timeseries": ["Digital_Cybercafé"],
+            "timeseries": ["Digital_Cybercafe"],
             "consumer_type": ["Enterprise"],
             "community": ["Unguwar Kure (updated)"]
         }
