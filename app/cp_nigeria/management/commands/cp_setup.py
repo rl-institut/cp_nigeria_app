@@ -9,7 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # delete existing entries
-        communities = ["Ebute-Ipare", "Ezere","Usungwe","Unguwar Kure", "Egbuniwa (Okpanam)"]
+        communities = ["Ebute-Ipare", "Ezere", "Usungwe", "Unguwar Kure", "Egbuniwa (Okpanam)"]
         for model in [DemandTimeseries, Community, ConsumerType]:
             qs = model.objects.all()
             if qs.exists():
@@ -24,6 +24,5 @@ class Command(BaseCommand):
         if qs.exists():
             qs.delete()
 
-        call_command("loaddata", "fixtures/peoplesun_demand_profiles.json")
-        call_command("loaddata", "fixtures/cp_setup.json")
-
+        call_command("loaddata", "fixtures/cp_data/all_demand_profiles.json")
+        call_command("loaddata", "fixtures/cp_data/cp_setup.json")
