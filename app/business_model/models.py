@@ -161,7 +161,7 @@ class EquityData(models.Model):
         null=True,
     )
     equity_community_amount = models.FloatField(
-        verbose_name=_("Community equity (Million NGN)"),
+        verbose_name=_("Community equity (currency)"),
         help_text=_("Amount of equity the community would be able to mobilize"),
         default=0,
     )
