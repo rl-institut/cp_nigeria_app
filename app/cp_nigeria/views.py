@@ -1357,6 +1357,19 @@ def get_community_details(request):
 
 @login_required
 @json_view
+@require_http_methods(["GET", "POST"])
+def get_exchange_rate(request):
+    currency = request.GET.get("currency")
+    if currency == "":
+        data = {"exchange_rate": ""}
+    else:
+        exchange_rate = request_exchange_rate(currency)
+        data = {"exchange_rate": exchange_rate}
+    return JsonResponse(data)
+
+
+@login_required
+@json_view
 @require_http_methods(["POST"])
 def ajax_consumergroup_form(request, scen_id=None, user_group_id=None):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
