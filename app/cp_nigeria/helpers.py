@@ -1869,6 +1869,14 @@ class FinancialTool:
 
         return financial_kpis
 
+    @cached_property
+    def rounding_magnitude(self):
+        if self.currency == "NGN":
+            rounding_magnitude = 3
+        else:
+            rounding_magnitude = 2
+        return rounding_magnitude
+
     def calculate_tariff(self):
         x = np.arange(0.1, 0.5, 0.1)
         # compute the sum of the cashflow for the first 4 years for different tariff (x)

@@ -1231,8 +1231,7 @@ def scenario_visualize_capex(request, scen_id):
     descriptions = []
     for param in capex_by_category:
         table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
-        table_content[param]["value"] = f"{round(capex_by_category[param], -3):,.0f}"
-        table_content[param] = set_outputs_table_format(scenario, param)
+        table_content[param]["value"] = f"{round(capex_by_category[param], -ft.rounding_magnitude):,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
@@ -1270,8 +1269,7 @@ def scenario_visualize_opex(request, scen_id):
 
     for param in opex:
         table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
-        table_content[param]["value"] = f"{round(opex[param], -3):,.0f}"
-        table_content[param] = set_outputs_table_format(scenario, param)
+        table_content[param]["value"] = f"{round(opex[param], -ft.rounding_magnitude):,.0f}"
         categories.append(table_content[param]["verbose"])
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
@@ -1450,7 +1448,7 @@ def request_financial_kpi_table(request, scen_id):
                     table_content[param]["value"] = [f"{value:,.0f}" for value in values.values()]
                 else:
                     headers = [""]
-                    values = round(values, -3) if isinstance(values, float) else values
+                    values = round(values, -ft.rounding_magnitude) if isinstance(values, float) else values
                     table_content[param]["value"] = f"{values:,.0f}"
 
         tables[name]["data"] = table_content
