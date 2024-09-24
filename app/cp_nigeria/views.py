@@ -1215,7 +1215,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         replacement_loan_table = ft.replacement_loan_table
         om_costs_over_lifetime = ft.om_costs_over_lifetime
         exchange_rate = ft.exchange_rate
-        tariff_ngn = tariff * exchange_rate
+        tariff_currency = tariff * exchange_rate
         senior_debt = ft.initial_loan_table
         cash_flow = ft.cash_flow_over_lifetime
         cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
@@ -1265,7 +1265,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
                 "cash_flow": cash_flow,
                 "opex_costs": om_costs_over_lifetime,
                 "losses": losses,
-                "tariff_NGN": tariff_ngn,
+                "tariff_currency": tariff_currency,
                 "tariff_USD": tariff,
                 "financial_kpis": financial_kpis,
                 "comparison_kpi_df": comparison_kpi_df,
