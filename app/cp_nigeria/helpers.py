@@ -1556,9 +1556,7 @@ class FinancialTool:
     @property
     def total_capex(self):
         """Sum of all capex costs"""
-        print("capex table\t", self.capex[f"Total costs [{self.currency}]"].sum())
         capex_df = self.system_params[self.system_params["category"].isin(["capex_initial", "capex_replacement"])]
-        print("system params\t", capex_df.value.sum())
         return self.capex[f"Total costs [{self.currency}]"].sum()
 
     def total_opex(self):
@@ -1766,7 +1764,7 @@ class FinancialTool:
             - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
-        losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
+        losses.loc["Depreciation", :depreciation_yrs] = system_capex / depreciation_yrs
         losses.loc["Equity interest"] = equity * self.financial_params["equity_interest_MG"]
         losses.loc["Debt interest"] = (
             self.initial_loan_table.loc["Interest"] + self.replacement_loan_table.loc["Interest"]
