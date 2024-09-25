@@ -31,9 +31,9 @@ Prior to be able to develop locally, you might need to install postgres and crea
 
 1. Create a virtual environment
 2. Activate your virtual environment
-3. Install the dependencies with `pip install -r app/requirements/postgres.txt`
-4. Install extra local development dependencies with `pip install -r app/dev_requirements.txt`
-5. Move to the `app` folder with `cd app`
+3. Move to the `app` folder with `cd app`
+4. Install the dependencies with `pip install -r requirements/postgres.txt`
+5. Install extra local development dependencies with `pip install -r dev_requirements.txt`
 6. Create environment variables for communication with the database (only replace content surrounded by `<>`)
 ```
 SQL_ENGINE=django.db.backends.postgresql
