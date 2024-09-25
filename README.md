@@ -25,16 +25,16 @@ This repository contains the code for the user interface. The simulations are pe
 
 # Getting Started
 
-## Deploy locally using and using our open plan MVS server
+## Deploy locally using the open plan MVS server
 
-Prior to be able to develop locally, you might need to install postgres, simply google `install postgres` followed by your os name (`linux/mac/windows`)
+Prior to be able to develop locally, you might need to install postgres and create a local database, simply google `install postgres` followed by your os name (`linux/mac/windows`)
 
 1. Create a virtual environment
 2. Activate your virtual environment
 3. Install the dependencies with `pip install -r app/requirements/postgres.txt`
 4. Install extra local development dependencies with `pip install -r app/dev_requirements.txt`
 5. Move to the `app` folder with `cd app`
-6. Create environment variables (only replace content surrounded by `<>`)
+6. Create environment variables for communication with the database (only replace content surrounded by `<>`)
 ```
 SQL_ENGINE=django.db.backends.postgresql
 SQL_DATABASE=<your db name>
@@ -44,10 +44,12 @@ SQL_HOST=localhost
 SQL_PORT=5432
 DEBUG=(True|False)
 ```
-8. Add an environment variable `MVS_HOST_API` and set the url of the simulation server you wish to use for your models
-9. Execute the `local_setup.sh` file (`. local_setup.sh` on linux/mac `bash local_setup.sh` on windows) you might have to make it executable first. Answer yes to the question
-10. Start the local server with `python manage.py runserver`
-11. You can then login with `testUser` and `ASas12,.` or create your own account
+7. Add an environment variable `MVS_API_HOST` and set the url of the simulation server you wish to use for your models (to use the MVS server, it should be https://mvs-open-plan.rl-institut.de)
+8. To automatically download PV potential based on coordinates, add an environment variable `RN_API_TOKEN` containing your API token from https://www.renewables.ninja/
+9. To automatically fetch currency exchange rates, add an environment variable `EXCHANGE_RATES_API_TOKEN` containing your API token from https://www.exchangerate-api.com/
+8. Execute the `local_setup.sh` file (`. local_setup.sh` on linux/mac `bash local_setup.sh` on windows). Answer yes if prompted
+9. Start the local server with `python manage.py runserver`
+10. You can then login with `testUser` and `ASas12,.` or create your own account
 
 ## Deploy using Docker Compose
 The following commands should get everything up and running, using the web based version of the MVS API.
@@ -65,6 +67,8 @@ You need to be able to run docker-compose inside your terminal. If you can't you
 
    * Define an environment variable `MVS_HOST_API` in `.envs/epa.postgres` and set the url of the simulation server
    you wish to use for your models (for example `MVS_API_HOST="<url to your favorite simulation server>"`), you can deploy your own [simulation server](https://github.com/open-plan-tool/simulation-server) locally if you need
+    * To automatically download PV potential based on coordinates, add an environment variable `RN_API_TOKEN` containing your API token from https://www.renewables.ninja/
+    * To automatically fetch currency exchange rates, add an environment variable `EXCHANGE_RATES_API_TOKEN` containing your API token from https://www.exchangerate-api.com/
 
     * Assign the domain of your website (without `http://` or `https://`) to `TRUSTED_HOST` , see https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins for more information
 
