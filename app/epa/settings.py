@@ -199,9 +199,9 @@ MVS_SA_GET_URL = f"{MVS_API_HOST}/check-sensitivity-analysis/"
 # Allow iframes to show in page
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
-# API key to fetch exchange rates
-EXCHANGE_RATES_API_KEY = os.getenv("EXCHANGE_RATES_API_KEY")
-EXCHANGE_RATES_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_RATES_API_KEY}/latest/USD"
+# API token to fetch exchange rates
+EXCHANGE_RATES_API_TOKEN = os.getenv("EXCHANGE_RATES_API_TOKEN")
+EXCHANGE_RATES_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_RATES_API_TOKEN}/latest/USD"
 
 import sys
 
