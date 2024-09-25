@@ -1,5 +1,5 @@
 # Welcome to the Communities of Practice Nigeria gui repository
-![CP_Nigeria loco (10X1)](https://github.com/rl-institut/cp_nigeria_app/blob/dev/app/static/assets/logos/cpnigeria-logo.png)
+![CP_Nigeria logo (10X1)](https://github.com/rl-institut/cp_nigeria_app/blob/dev/app/static/assets/logos/cpnigeria-logo.png)
 
 This graphical user interface allow its users to simulate a simple energy system by selecting components (components
 are diesel generator, solar pv panels and battery) and to generate an implementation plan that includes information
@@ -7,12 +7,12 @@ about the mini-grid system, as well as a preliminary financial analysis along th
 then be used to aid in approaching stakeholders and asking local energy agencies for funding for a mini-grid project.
 The demand of the community can be built manually by the user based on the typical demand profiles published in the scope of the [PeopleSun project](https://www.peoplesun.org/).
 
-It is currently hosted at https://community-minigrid.ng/en/
+It is currently hosted at https://community-minigrid.ng/en/.
 
 Learn more about the CP Nigeria project on its [project page](https://reiner-lemoine-institut.de/en/project-cp-nigeria/).
 
 ## Credits
-This code is directly forked from previous open-source work [open-plan-tool](https://github.com/open-plan-tool/gui)
+This code is directly forked from previous open-source work [open-plan-tool](https://github.com/open-plan-tool/gui).
 ## Basic structure
 
 This repository contains the code for the user interface. The simulations are performed by [multi-vector-simulator](https://github.com/rl-institut/multi-vector-simulator) on a dedicated server (see the [open-plan-tool/simulation-server](https://github.com/open-plan-tool/simulation-server) repository). Once a simulation is over the results are sent back to the user interface were one can analyse them.
