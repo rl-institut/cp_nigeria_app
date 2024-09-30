@@ -248,7 +248,7 @@
 										<thead><tr><th>Description</th><th>Value</th></tr></thead>
 										<tr>
 											<td>Tariff:</td>
-											<td>{{ tariff_NGN | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
+											<td>{{ tariff_currency | floatformat | intcomma}} {{ currency_symbol }} ({{ tariff_USD | floatformat:3 | intcomma}} USD) </td>
 										</tr>
 										{% for kpi, value in financial_kpis.items %}
 										<tr>
