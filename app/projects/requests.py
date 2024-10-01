@@ -24,11 +24,8 @@ def request_exchange_rate(currency):
         response.raise_for_status()
 
     except requests.HTTPError as http_err:
-        logger.warning(
-            f"An error occurred: {http_err}. Custom exchange rate could not "
-            f"be fetched, please enter it manually instead."
-        )
-        exchange_rate = 1
+        logger.info("Current exchange rate could not be fetched. Setting default value.")
+        exchange_rate = 774
     else:
         data = response.json()
         exchange_rate = round(data["conversion_rates"][currency], 2)

@@ -131,7 +131,7 @@ def save_table_for_report(scenario, attr_name, cols, rows, units_on=[]):
             print(f"Report object was not found, so {attr_name} could not be saved")
 
 
-def set_outputs_table_format(param, currency_symbol, from_dict=OUTPUT_PARAMS):
+def set_outputs_table_format(param, from_dict=OUTPUT_PARAMS):
     param_dict = {}
     try:
         for item in ["verbose", "description", "unit"]:
@@ -145,7 +145,7 @@ def set_outputs_table_format(param, currency_symbol, from_dict=OUTPUT_PARAMS):
 
             if "currency" in dict_value:
                 # TODO make this custom depending on project currency
-                dict_value = dict_value.replace("currency", currency_symbol)
+                dict_value = dict_value.replace("currency", CURRENCY_SYMBOLS["NGN"])
 
             param_dict[item] = dict_value
     except KeyError:
@@ -166,7 +166,7 @@ def get_project_summary(project):
         inverter_aggregated_flow = 0
 
     yearly_production = ft.yearly_production_electricity
-    total_investments = ft.total_capex
+    total_investments = ft.total_capex("NGN")
     fulfilled_demand, peak_demand, daily_demand = get_fulfilled_demand_indicators(project)
     renewable_share = get_renewable_share(project)
     project_lifetime = project.economic_data.duration
@@ -195,7 +195,7 @@ def get_project_summary(project):
         "tariff": f"{tariff:.2f} {currency_symbol}/kWh",
         "project_lifetime": f"{project_lifetime} years",
         "bm_name": f"{bm_name}",
-        "exchange_rate": f"{project.economic_data.exchange_rate} {ft.currency}/USD",
+        "exchange_rate": f"{project.economic_data.exchange_rate} {currency_symbol}/USD",
         "total_investments": f"{round(total_investments, -3):,.0f} {currency_symbol}",
     }
     return project_summary
@@ -606,7 +606,7 @@ class ReportHandler:
             community_longitude=self.project.longitude,
             project_name=self.project.name,
             project_lifetime=self.project.economic_data.duration,
-            total_investments=ft.total_capex,
+            total_investments=ft.total_capex("NGN"),
             disco="DiscoName",
             ent_demand_categories=cg_sentences["Enterprise"],
             pf_demand_categories=cg_sentences["Public facility"],
@@ -614,7 +614,6 @@ class ReportHandler:
             fulfilled_demand=fulfilled_demand,
             fulfilled_demand_share=fulfilled_demand / total_demand * 100,
             grant_deduction=(1 - ft.usable_grant) * 100,
-            currency=project.economic_data.currency,
         )
         if self.text_parameters["grid_option"] == "isolated":
             self.text_parameters["grid_option"] = "not connected to the national grid"
@@ -1109,7 +1108,7 @@ class ReportHandler:
         self.add_paragraph(
             "Based on the given asset sizes, the system is able to fulfill {fulfilled_demand_share:.2f}% of the total demand, "
             "providing {fulfilled_demand:,.0f} kWh of electricity during the simulated year. "
-            "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} {currency}/kWh, "
+            "The system presents a levelized cost of electricity (LCOE) of {lcoe:.2f} NGN/kWh, "
             "with {renewable_share:.1f}% of the generation coming from renewable sources."
         )
 
@@ -1121,8 +1120,8 @@ class ReportHandler:
         self.add_df_as_table(self.get_df_from_db("cost_table"), "Total system costs during first year")
 
         self.add_paragraph(
-            "In total, the investment costs for the assets relating to the power supply system total to {system_capex:,.0f} {currency}. The "
-            "operational expenditures for the simulated year amount to {opex_total:,.0f} {currency}. Additionally, {fuel_costs:,.0f} {currency} are "
+            "In total, the investment costs for the assets relating to the power supply system total to {system_capex:,.0f} NGN. The "
+            "operational expenditures for the simulated year amount to {opex_total:,.0f} NGN. Additionally, {fuel_costs:,.0f} NGN are "
             "spent on fuel costs, equaling {fuel_consumption_liter:,.1f} litres consumed. The "
             "following graph displays the power flow for the system during one week:"
         )
@@ -1299,8 +1298,6 @@ class FinancialTool:
         self.exchange_rate = project.economic_data.exchange_rate
         self.project_start = project.scenario.start_date.year
         self.project_duration = project.economic_data.duration
-        self.currency = project.economic_data.currency
-        self.currency_symbol = project.economic_data.currency_symbol
 
         self.financial_params = self.collect_financial_params()
         self.system_params = self.collect_system_params()
@@ -1529,14 +1526,14 @@ class FinancialTool:
             "Qty": 1,
             "Total costs [USD]": vat_costs * vat_percentage,
         }
-        capex_df[f"Total costs [{self.currency}]"] = capex_df["Total costs [USD]"] * self.exchange_rate
+        capex_df["Total costs [NGN]"] = capex_df["Total costs [USD]"] * self.exchange_rate
 
         # add fix project costs from economic data view to capex dataframe
         capex_df.loc[len(capex_df)] = {
             "Description": "Planning and development costs",
             "Category": "Fix project costs",
             "Qty": 1,
-            f"Total costs [{self.currency}]": self.financial_params["capex_fix"],
+            "Total costs [NGN]": self.financial_params["capex_fix"],
         }
 
         # Add the power supply system capex from the sim results (accounts for custom cost parameters instead of static)
@@ -1544,7 +1541,7 @@ class FinancialTool:
             {
                 "Description": row["supply_source"].replace("_", " ").title(),
                 "Category": "Power supply system",
-                f"Total costs [{self.currency}]": row["value"],
+                "Total costs [NGN]": row["value"],
             }
             for index, row in self.system_params[self.system_params["category"] == "capex_initial"].iterrows()
         ]
@@ -1553,11 +1550,12 @@ class FinancialTool:
 
         return capex_df  # capex_df['Total costs [USD]'].sum() returns gross CAPEX
 
-    @property
-    def total_capex(self):
+    def total_capex(self, currency="NGN"):
         """Sum of all capex costs"""
+        print("capex table\t", self.capex[f"Total costs [{currency}]"].sum())
         capex_df = self.system_params[self.system_params["category"].isin(["capex_initial", "capex_replacement"])]
-        return self.capex[f"Total costs [{self.currency}]"].sum()
+        print("system params\t", capex_df.value.sum())
+        return self.capex[f"Total costs [{currency}]"].sum()
 
     def total_opex(self):
         costs_om_df = self.system_params[self.system_params["category"] == "opex_total"]
@@ -1575,7 +1573,7 @@ class FinancialTool:
 
     @cached_property
     def equity_developer(self):
-        return self.total_capex * self.financial_params["equity_developer_share"]
+        return self.total_capex("NGN") * self.financial_params["equity_developer_share"]
 
     @property
     def revenue_over_lifetime(self):
@@ -1626,7 +1624,7 @@ class FinancialTool:
             columns={
                 "label": "Description",
                 "growth_rate": "Growth rate",
-                "value": f"Total costs [{self.currency}]",
+                "value": "Total costs [NGN]",
             },
             inplace=True,
         )
@@ -1642,15 +1640,10 @@ class FinancialTool:
             suffixes=("_costs", "_outputs"),
             how="left",
         )
-        costs_om_other[f"Total costs [{self.currency}]"] = (
-            costs_om_other["USD/Unit"] * costs_om_other["value"] * self.exchange_rate
-        )
+        costs_om_other["Total costs [NGN]"] = costs_om_other["USD/Unit"] * costs_om_other["value"] * self.exchange_rate
 
         costs_om_total = pd.concat(
-            [
-                costs_om_system,
-                costs_om_other[["Description", "Category", "Growth rate", f"Total costs [{self.currency}]"]],
-            ],
+            [costs_om_system, costs_om_other[["Description", "Category", "Growth rate", "Total costs [NGN]"]]],
             ignore_index=True,
         )
         # set the descriptions as the index
@@ -1666,7 +1659,7 @@ class FinancialTool:
         """
 
         costs_om_lifetime = self.growth_over_lifetime_table(
-            self.om_costs, f"Total costs [{self.currency}]", growth_col="Growth rate"
+            self.om_costs, "Total costs [NGN]", growth_col="Growth rate"
         )
 
         # TODO include these costs in extra information about solar home systems but not general mini-grid
@@ -1755,7 +1748,7 @@ class FinancialTool:
         """
         depreciation_yrs = self.project_duration
         capex_df = self.capex
-        system_capex = capex_df[capex_df["Category"] == "Power supply system"][f"Total costs [{self.currency}]"].sum()
+        system_capex = capex_df[capex_df["Category"] == "Power supply system"]["Total costs [NGN]"].sum()
         equity = self.financial_params["equity_community_amount"] + self.financial_params["equity_developer_amount"]
         losses = pd.DataFrame(columns=range(self.project_start, self.project_start + self.project_duration))
 
@@ -1764,7 +1757,7 @@ class FinancialTool:
             - self.om_costs_over_lifetime.loc["opex_total"]
         )
         losses.loc["Depreciation"] = 0.0
-        losses.loc["Depreciation", :depreciation_yrs] = system_capex / depreciation_yrs
+        losses.loc["Depreciation"][:depreciation_yrs] = system_capex / depreciation_yrs
         losses.loc["Equity interest"] = equity * self.financial_params["equity_interest_MG"]
         losses.loc["Debt interest"] = (
             self.initial_loan_table.loc["Interest"] + self.replacement_loan_table.loc["Interest"]
@@ -1818,7 +1811,7 @@ class FinancialTool:
         This method returns the internal return on investment % based on project CAPEX, grant share and cash flows
         after a given number of project years.
         """
-        gross_capex = self.total_capex
+        gross_capex = self.total_capex("NGN")
         grant = self.financial_params["grant_share"] * gross_capex
         cash_flow = self.cash_flow_over_lifetime
         cash_flow_irr = cash_flow.loc["Cash flow from operating activity"].tolist()
@@ -1835,14 +1828,14 @@ class FinancialTool:
 
     @property
     def financial_kpis(self):
-        gross_capex = self.capex[f"Total costs [{self.currency}]"].sum()
+        gross_capex = self.capex["Total costs [NGN]"].sum()
         total_equity = (
             self.financial_params["equity_community_amount"] + self.financial_params["equity_developer_amount"]
         )
         total_grant = self.financial_params["grant_share"] * gross_capex * self.usable_grant
         initial_amount = max(gross_capex - total_grant - total_equity, 0)
         replacement_amount = self.capex[self.capex["Description"].isin(["Battery", "Inverter", "Diesel Generator"])][
-            f"Total costs [{self.currency}]"
+            "Total costs [NGN]"
         ].sum()
 
         loan_fraction = initial_amount / gross_capex
@@ -1866,14 +1859,6 @@ class FinancialTool:
         }
 
         return financial_kpis
-
-    @cached_property
-    def rounding_magnitude(self):
-        if self.currency == "NGN":
-            rounding_magnitude = 3
-        else:
-            rounding_magnitude = 2
-        return rounding_magnitude
 
     def calculate_tariff(self):
         x = np.arange(0.1, 0.5, 0.1)

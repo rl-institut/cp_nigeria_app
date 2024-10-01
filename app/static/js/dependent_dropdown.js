@@ -43,22 +43,3 @@ source: https://simpleisbetterthancomplex.com/tutorial/2018/01/29/how-to-impleme
                 }
             });
         });
-
-
-    // dependent dropdown to adapt the exchange rate depending on chosen currency
-    $(document).on('change', '#id_currency', function() {
-            var currency = $(this).val();
-            debugger;
-            // Make an AJAX request to exchange rate based on chosen currency
-            $.ajax({
-                url: getExchangeRate,  // URL to fetch exchange rate
-                data: {
-                    currency: currency
-                },
-                success: function(data) {
-                    // Update the exchange rate field in the form
-                    $('#id_exchange_rate').val(data.exchange_rate);
-
-                }
-            });
-        });

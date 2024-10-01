@@ -31,7 +31,6 @@ urlpatterns = [
     path("ajax/shs-tiers", ajax_shs_tiers, name="ajax_shs_tiers"),
     path("ajax/bmodel/infos", ajax_bmodel_infos, name="ajax_bmodel_infos"),
     path("ajax/community/details", get_community_details, name="get_community_details"),
-    path("ajax/exchange-rate", get_exchange_rate, name="get_exchange_rate"),
     path("upload/timeseries", upload_demand_timeseries, name="upload_demand_timeseries"),
     path("ajax/<int:proj_id>/cpn_kpi_results", cpn_kpi_results, name="cpn_kpi_results"),
     path("simulation/cancel/<int:proj_id>", cpn_simulation_cancel, name="cpn_simulation_cancel"),

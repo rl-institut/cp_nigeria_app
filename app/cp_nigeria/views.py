@@ -1215,7 +1215,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
         replacement_loan_table = ft.replacement_loan_table
         om_costs_over_lifetime = ft.om_costs_over_lifetime
         exchange_rate = ft.exchange_rate
-        tariff_currency = tariff * exchange_rate
+        tariff_ngn = tariff * exchange_rate
         senior_debt = ft.initial_loan_table
         cash_flow = ft.cash_flow_over_lifetime
         cash_flow.loc["DSCR"] = cash_flow.loc["Cash flow from operating activity"] / (
@@ -1265,7 +1265,7 @@ def cpn_outputs(request, proj_id, step_id=STEP_MAPPING["outputs"], complex=False
                 "cash_flow": cash_flow,
                 "opex_costs": om_costs_over_lifetime,
                 "losses": losses,
-                "tariff_currency": tariff_currency,
+                "tariff_NGN": tariff_ngn,
                 "tariff_USD": tariff,
                 "financial_kpis": financial_kpis,
                 "comparison_kpi_df": comparison_kpi_df,
@@ -1352,19 +1352,6 @@ def get_community_details(request):
     else:
         community = Community.objects.get(pk=community_id)
         data = {"name": community.name, "latitude": community.lat, "longitude": community.lon}
-    return JsonResponse(data)
-
-
-@login_required
-@json_view
-@require_http_methods(["GET", "POST"])
-def get_exchange_rate(request):
-    currency = request.GET.get("currency")
-    if currency == "":
-        data = {"exchange_rate": ""}
-    else:
-        exchange_rate = request_exchange_rate(currency)
-        data = {"exchange_rate": exchange_rate}
     return JsonResponse(data)
 
 

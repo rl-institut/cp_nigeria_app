@@ -1157,7 +1157,7 @@ def scenario_visualize_revenue(request, scen_id):
     x = revenue.columns.tolist()
 
     for trace in graph_contents:
-        graph_contents[trace].update(set_outputs_table_format(trace, ft.currency_symbol))
+        graph_contents[trace].update(set_outputs_table_format(trace))
 
     title = "Operating revenues"
     return JsonResponse({"x": x, "graph_contents": graph_contents, "title": title})
@@ -1191,12 +1191,12 @@ def scenario_visualize_system_costs(request, scen_id):
     system_costs = system_costs.T.to_dict()
 
     for param in system_costs:
-        table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{round(value, -3):,.0f}" for value in system_costs[param].values()]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, ft.currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
         save_table_for_report(
@@ -1218,9 +1218,8 @@ def scenario_visualize_capex(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     save_to_db = True if request.GET.get("save_to_db") == "true" else False
     ft = FinancialTool(scenario.project)
-    currency = ft.currency
     capex_df = ft.capex
-    capex_by_category = capex_df.groupby("Category")[f"Total costs [{currency}]"].sum()
+    capex_by_category = capex_df.groupby("Category")["Total costs [NGN]"].sum()
     capex_by_category.loc["total"] = capex_by_category.sum()
 
     # create table from data
@@ -1230,13 +1229,13 @@ def scenario_visualize_capex(request, scen_id):
     headers = ["costs"]
     descriptions = []
     for param in capex_by_category:
-        table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
-        table_content[param]["value"] = f"{round(capex_by_category[param], -ft.rounding_magnitude):,.0f}"
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = f"{round(capex_by_category[param], -3):,.0f}"
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, ft.currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
         save_table_for_report(
@@ -1254,10 +1253,9 @@ def scenario_visualize_capex(request, scen_id):
 
 def scenario_visualize_opex(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-    currency = scenario.project.economic_data.currency
     save_to_db = True if request.GET.get("save_to_db") == "true" else False
     ft = FinancialTool(scenario.project)
-    opex_df = ft.om_costs[f"Total costs [{currency}]"]
+    opex_df = ft.om_costs["Total costs [NGN]"]
     opex_df.loc["total"] = opex_df.sum()
     # create table from data
     opex = opex_df.to_dict()
@@ -1268,14 +1266,14 @@ def scenario_visualize_opex(request, scen_id):
     categories = []
 
     for param in opex:
-        table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
-        table_content[param]["value"] = f"{round(opex[param], -ft.rounding_magnitude):,.0f}"
+        table_content[param] = set_outputs_table_format(param)
+        table_content[param]["value"] = f"{round(opex[param], -3):,.0f}"
         categories.append(table_content[param]["verbose"])
         descriptions.append(OUTPUT_PARAMS[param]["description"])
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, ft.currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
         save_table_for_report(
@@ -1296,16 +1294,15 @@ def scenario_visualize_opex(request, scen_id):
 def request_project_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
     project_summary = get_project_summary(scenario.project)
-    currency_symbol = scenario.project.economic_data.currency_symbol
     table_content = {}
     for param in project_summary:
-        table_content[param] = set_outputs_table_format(param, currency_symbol)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = project_summary[param]
 
     table_headers = {}
     headers = [""]
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     return JsonResponse(
         {"data": table_content, "headers": table_headers},
@@ -1318,7 +1315,6 @@ def request_project_summary_table(request, scen_id):
 @json_view
 def request_community_summary_table(request, scen_id):
     scenario = get_object_or_404(Scenario, pk=scen_id)
-    currency_symbol = scenario.project.economic_data.currency_symbol
     save_to_db = True if request.GET.get("save_to_db") == "true" else False
     # dict for community characteristics table
     graph_data = {"labels": [], "values": [], "descriptions": []}
@@ -1341,12 +1337,12 @@ def request_community_summary_table(request, scen_id):
     for param in aggregated_cgs:
         aggregated_cgs[param].pop("supply_source")
         headers = [key for key in aggregated_cgs[param].keys()]
-        table_content[param] = set_outputs_table_format(param, currency_symbol)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{value:,.0f}" for value in aggregated_cgs[param].values()]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
         save_table_for_report(
@@ -1380,13 +1376,13 @@ def request_system_size_table(request, scen_id):
 
     for param in opt_caps:
         headers = [key for key in opt_caps[param].keys()]
-        table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
+        table_content[param] = set_outputs_table_format(param)
         table_content[param]["value"] = [f"{value:,.2f}" for value in opt_caps[param].values()]
         table_content[param]["unit"] = custom_units[param]
 
     table_headers = {}
     for header in headers:
-        table_headers[header] = set_outputs_table_format(header, ft.currency_symbol)
+        table_headers[header] = set_outputs_table_format(header)
 
     if save_to_db:
         save_table_for_report(
@@ -1436,7 +1432,7 @@ def request_financial_kpi_table(request, scen_id):
         table_content = {}
         table_headers = {}
         for param, values in data.items():
-            table_content[param] = set_outputs_table_format(param, ft.currency_symbol)
+            table_content[param] = set_outputs_table_format(param)
             if OUTPUT_PARAMS[param]["unit"] == "%":
                 if isinstance(values, dict):
                     table_content[param]["value"] = [f"{value * 100:,.1f}" for value in values.values()]
@@ -1448,12 +1444,12 @@ def request_financial_kpi_table(request, scen_id):
                     table_content[param]["value"] = [f"{value:,.0f}" for value in values.values()]
                 else:
                     headers = [""]
-                    values = round(values, -ft.rounding_magnitude) if isinstance(values, float) else values
+                    values = round(values, -3) if isinstance(values, float) else values
                     table_content[param]["value"] = f"{values:,.0f}"
 
         tables[name]["data"] = table_content
         for header in headers:
-            table_headers[header] = set_outputs_table_format(header, ft.currency_symbol)
+            table_headers[header] = set_outputs_table_format(header)
         tables[name]["headers"] = table_headers
 
     if save_to_db:

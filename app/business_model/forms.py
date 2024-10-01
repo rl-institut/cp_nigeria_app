@@ -106,7 +106,6 @@ class BMQuestionForm(forms.Form):
 
 
 class EquityDataForm(forms.ModelForm):
-    # These values will be divided by 100 before being saved to the database
     percentage_fields = [
         "fuel_price_increase",
         "grant_share",
@@ -118,11 +117,7 @@ class EquityDataForm(forms.ModelForm):
         "equity_interest_SHS",
         "equity_developer_share",
     ]
-
-    # These values will be multiplied by 1.000.000 before being saved to the database
-    # TODO decide if we should remove this altogether or handle differently depending on chosen currency
-    #  (Millions doesn't always make sense)
-    million_fields = []
+    million_fields = ["equity_community_amount"]
 
     class Meta:
         model = EquityData
