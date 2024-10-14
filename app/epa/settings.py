@@ -145,7 +145,7 @@ LANGUAGE_CODE = "en"
 
 LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 
-LANGUAGES = [("de", "German"), ("en", "English")]
+LANGUAGES = [("en", "English")]
 
 TIME_ZONE = "Europe/Copenhagen"
 

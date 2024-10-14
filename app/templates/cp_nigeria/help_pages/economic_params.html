@@ -1,0 +1,47 @@
+<main>
+    <div>
+    <h4>Financing sources</h4>
+        <p>
+        There are multiple sources of financing for a potential mini-grid project: Equity from the project developer,
+        equity from the community and an acquired grant. A loan is assumed to cover the rest of the costs that can‘t be
+        covered though grants and equity. The total size of the loan will is not given as a user input, but instead
+            will be calculated from the remaining costs after subtracting <span class="helpvar">Grant share</span>,
+            <span class="helpvar">Mini-grid company equity</span> and <span class="helpvar">Community equity</span> from
+            the total investment costs.
+        </p>
+            <p>
+                <i>
+                    <b>Note:</b> Please consider that <span class="helpvar">Grant share</span> and <span class="helpvar">Mini-grid company equity</span>
+                    are input as percentages of the total investment costs, while <span class="helpvar">Community equity</span> is an absolute number.
+                    This is done to allow the user to input a realistic amount of money that could be raised within the community,
+                    regardless of the total project costs. Please also consider that percentages should be input as numbers ranging to 100
+                    (e.g. 5% instead of 0.05).
+                </i>
+            </p>
+        <p>
+        To
+        consider the loan repayments in the project cash flow, please input the expected <span class="helpvar">Interest rate for the loan</span>, as well as
+        the <span class="helpvar">repayment period</span>.
+        </p>
+
+    <h4>Additional parameters</h4>
+        <p>
+        <span class="helpvar">Interest rate for replacement loan:</span> After the given loan maturity years, the initial loan
+        would be fully repaid. However, there are some assets that may need replacement, as their lifetime is typically
+        shorter than the project lifetime (namely battery storage and diesel generators). To cover these costs,
+        the tool considers an additional loan after ten years
+        to cover replacement costs. Here, the user has the option to input the assumed interest rate for this additional loan.
+            </p>
+<!--        TODO why is the energy system exempt from VAT again?-->
+        <p><span class="helpvar">Tax factor:</span> The tax factor will be applied to logistics and labour costs. In Nigeria, the main VAT rate is
+        <a href="https://taxsummaries.pwc.com/nigeria/corporate/other-taxes">7,5%</a>, which is the default value set in the tool.
+        </p>
+        <p>
+        <span class="helpvar">Fix project costs:</span> The financial considerations in the tool already assume a number of additional costs
+        beyond the energy system investment costs, e.g. the tool makes assumptions for labour, security, and land lease costs.
+        These costs will be computed along with the energy system simulation and displayed in the results page. If the user
+        is aware of additional fix project costs that will occur (e.g. land purchase or some other fix payment), it can be
+        input into this field.
+        </p>
+</div>
+</main>
