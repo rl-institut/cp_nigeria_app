@@ -50,6 +50,7 @@ $xlarge-screen: 1500px;
 
 // Typography {
 $main-font-family: lato, Arial, Helvetica, sans-serif;
+$font-size-xlarge: 2.5rem; // 31.25px
 $font-size-large: 1.953rem; // 31.25px
 $font-size-medium-2: 1.563rem; // 25px
 $font-size-medium: 1.25rem; // 20px
@@ -78,7 +79,7 @@ $footer-height: $top-nav-height;
 $logo-height: 5rem;
 
 // Buttons
-$button-border-radius: 8px;
+$button-border-radius: 20px;
 
 // Borders
 $gray-border: 2px solid $primary-gray-color-1;
