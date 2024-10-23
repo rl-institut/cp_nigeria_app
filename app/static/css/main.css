@@ -636,7 +636,7 @@ footer button.btn {
   display: inline-block;
   background-color: #008753;
   color: #fff;
-  border-radius: 8px;
+  border-radius: 20px;
   letter-spacing: 0.03rem;
   font-weight: 400; }
   a.btn:focus,
@@ -681,7 +681,7 @@ footer button.btn {
   footer button.btn:hover,
   footer button.btn:focus,
   footer button.btn:active {
-    background-color: #00673D !important; }
+    background-color: #00673D; }
   a.btn--secondary:link, a.btn--secondary:hover, a.btn--secondary:focus, a.btn--secondary:visited, a.btn--secondary:active,
   button.btn--secondary:link,
   button.btn--secondary:hover,
@@ -733,6 +733,47 @@ footer button.btn {
   footer button.btn--small {
     padding: 0.4rem 0.75rem;
     font-size: 0.875rem; }
+  a.btn--hero,
+  button.btn--hero,
+  footer a.btn--hero,
+  footer button.btn--hero {
+    padding: 0.4rem 0.75rem;
+    background-color: #F2CD5D !important;
+    font-size: 1rem;
+    font-weight: bold; }
+    a.btn--hero:hover,
+    button.btn--hero:hover,
+    footer a.btn--hero:hover,
+    footer button.btn--hero:hover {
+      background-color: #EDB72F !important; }
+    a.btn--hero:link, a.btn--hero:hover, a.btn--hero:focus, a.btn--hero:visited, a.btn--hero:active,
+    a.btn--hero .icon:hover, a.btn--hero :focus, a.btn--hero :active,
+    button.btn--hero:link,
+    button.btn--hero:hover,
+    button.btn--hero:focus,
+    button.btn--hero:visited,
+    button.btn--hero:active,
+    button.btn--hero .icon:hover,
+    button.btn--hero :focus,
+    button.btn--hero :active,
+    footer a.btn--hero:link,
+    footer a.btn--hero:hover,
+    footer a.btn--hero:focus,
+    footer a.btn--hero:visited,
+    footer a.btn--hero:active,
+    footer a.btn--hero .icon:hover,
+    footer a.btn--hero :focus,
+    footer a.btn--hero :active,
+    footer button.btn--hero:link,
+    footer button.btn--hero:hover,
+    footer button.btn--hero:focus,
+    footer button.btn--hero:visited,
+    footer button.btn--hero:active,
+    footer button.btn--hero .icon:hover,
+    footer button.btn--hero :focus,
+    footer button.btn--hero :active {
+      color: #54504C !important;
+      background-color: #EDB72F; }
   a.btn--filled,
   button.btn--filled,
   footer a.btn--filled,
@@ -825,7 +866,7 @@ footer button.btn {
     footer button.btn--action:hover,
     footer button.btn--action:focus,
     footer button.btn--action:active {
-      background-color: #fff !important; }
+      background-color: #fff; }
     a.btn--hollow span.icon:hover, a.btn--hollow :focus, a.btn--hollow :active, a.btn--transparent span.icon:hover, a.btn--transparent :focus, a.btn--transparent :active, a.btn--action span.icon:hover, a.btn--action :focus, a.btn--action :active,
     button.btn--hollow span.icon:hover,
     button.btn--hollow :focus,
@@ -870,7 +911,7 @@ footer button.btn {
   footer a.btn--action,
   footer button.btn--action {
     background-color: transparent;
-    color: #54504C;
+    color: #F2CD5D;
     width: auto;
     padding: 0; }
     a.btn--action:link, a.btn--action:visited,
@@ -1417,7 +1458,7 @@ form .btn {
 
 table.table {
   box-shadow: 0px 0px 16px rgba(31, 86, 125, 0.08);
-  border-radius: 8px; }
+  border-radius: 20px; }
   table.table thead {
     background-color: #F9F8F7; }
     table.table thead tr {
@@ -1650,7 +1691,7 @@ nav.navbar {
   margin: 1rem;
   padding: 1rem;
   width: 6rem;
-  border-radius: 8px;
+  border-radius: 20px;
   border: 2px solid #F9F8F7;
   background-color: #F9F8F7; }
 
@@ -1890,7 +1931,7 @@ nav.navbar {
         box-shadow: 0px 4px 8px rgba(31, 86, 125, 0.16); }
   .dashboard .chart {
     background-color: #fff;
-    border-radius: 8px;
+    border-radius: 20px;
     box-shadow: 0px 0px 16px rgba(31, 86, 125, 0.08);
     margin-bottom: 1.5rem; }
     .dashboard .chart__header {
@@ -2271,6 +2312,8 @@ body {
       display: none; }
     .system-design .drawflow .drawflow-node.demand .output {
       display: none; }
+    .system-design .drawflow .drawflow-node.reducable_demand .output {
+      display: none; }
     .system-design .drawflow .drawflow-node.gas_demand .output {
       display: none; }
     .system-design .drawflow .drawflow-node.h2_demand .output {
@@ -2595,6 +2638,18 @@ body {
       background-size: contain;
       height: 3rem;
       width: 3rem; }
+    .system-design .drawflow .drawflow-node.reducable_demand {
+      border-bottom-color: #FFD6E0; }
+    .system-design .drawflow .drawflow-node.reducable_demand .img::before {
+      content: '';
+      position: absolute;
+      top: calc(4.5rem / 2);
+      right: calc((4.5rem - 3rem) / 2);
+      transform: translateY(-50%);
+      background-image: url("/static/assets/gui/reducable_demand.svg");
+      background-size: contain;
+      height: 3rem;
+      width: 3rem; }
     .system-design .drawflow .drawflow-node.gas_demand {
       border-bottom-color: #FFD6E0; }
     .system-design .drawflow .drawflow-node.gas_demand .img::before {
@@ -2664,11 +2719,11 @@ body {
       color: #fff !important;
       border-color: #008753; }
   .modal.modal--gui ul.nav.nav-pills li:first-of-type button {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px; }
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px; }
   .modal.modal--gui ul.nav.nav-pills li:last-of-type button {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px; }
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px; }
 
 /* hover container */
 .hover {
@@ -2778,18 +2833,39 @@ input:checked + .slider:before {
     .hero__text h1 {
       text-align: left;
       font-size: 2.5rem;
-      color: #54504C;
+      color: #fff;
       margin-bottom: 1rem; }
     .hero__text span {
       display: block;
       text-align: left;
-      font-size: 1rem;
+      font-size: 1.25rem;
       font-weight: 300;
-      margin-bottom: 2rem; }
+      color: #fff;
+      margin-bottom: 2rem;
+      max-width: calc(82rem / 2);
+      padding: 20px 20px 20px 20px;
+      background-color: rgba(243, 172, 72, 0.65);
+      border-radius: 20px; }
   .hero__image {
     padding-top: 4rem; }
     .hero__image img {
       max-width: calc(82rem / 2); }
+
+.background-overlay {
+  position: relative;
+  background-image: url("../assets/cp_nigeria/landing_page.jpg");
+  /* Path to your background image */
+  background-size: cover;
+  background-position: center; }
+
+.background-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(27, 187, 120, 0.3); }
 
 @use 'variables' as *;
 .project {
@@ -2834,7 +2910,7 @@ input:checked + .slider:before {
       font-size: 0.875rem;
       background-color: #F9F8F7;
       padding: 0 0.5rem;
-      border-radius: 8px; }
+      border-radius: 20px; }
     .project__top .location {
       font-size: 1rem; }
     .project__top .name::before {
@@ -2888,7 +2964,7 @@ input:checked + .slider:before {
         padding: 0.25rem 0.5rem;
         color: #008753; }
         .project__details .actions .btn--hollow:hover, .project__details .actions .btn--hollow:focus, .project__details .actions .btn--hollow:active {
-          color: #00673D !important; }
+          color: #00673D; }
       .project__details .actions a.btn--action {
         padding-top: 0.25rem;
         font-weight: 700 !important; }
@@ -2955,7 +3031,7 @@ input:checked + .slider:before {
     .project__scenarios .actions .btn--action.results {
       font-weight: 700;
       padding: 0.25rem 0.5rem;
-      color: #54504C;
+      color: #F2CD5D;
       background-color: #F9F8F7;
       border: none;
       margin-top: 0; }
@@ -3214,7 +3290,7 @@ input:checked + .slider:before {
     flex-direction: row;
     justify-content: center;
     padding: 0.75rem;
-    border-radius: 8px; }
+    border-radius: 20px; }
     .simulation--error .simulation__alert--warning {
       background-color: #FDF6E2;
       color: #825F08; }
