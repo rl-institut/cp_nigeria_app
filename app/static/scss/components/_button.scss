@@ -93,11 +93,11 @@ footer button.btn {
     padding: 0;
 
     #{$anchor-pseudo-classes-inactive-state} {
-      color: $primary-color-2 !important;
+      color: $primary-gray-color-4 !important;
     }
 
     #{$anchor-pseudo-classes-active-state} {
-      color: $primary-color-2-light !important;
+      color: $primary-gray-color-3 !important;
     }
 
     &:focus {
