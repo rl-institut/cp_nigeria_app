@@ -55,8 +55,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'license' %}">{% translate "License" %}</a>
                     </li>
-                {% endif %}
 
+                {% endif %}
+                <li class="nav-item">
+                        <a class="nav-link" href="{% url 'help_page' %}">{% translate "Help" %}</a>
+                </li>
                 <li class="nav-item dropdown locale" id="language-switcher">
                     <form action="{% url 'set_language' %}" method="post">
                         {% csrf_token %}
@@ -77,6 +80,7 @@
                         </select>
                     </form>
                 </li>
+
 
                 {% if user.is_authenticated %}
                     <!--<li class="nav-item">

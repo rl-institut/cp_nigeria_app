@@ -10,6 +10,12 @@ p {
   line-height: $line-height-normal;
 }
 
+p.example {
+    background-color: $primary-gray-color-1;
+    border: $primary-gray-color-1;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
 h1 {
   font-size: 40px;
   color: $primary-color-1;
@@ -32,4 +38,14 @@ h3 {
 h4 {
   font-size: 18px;
   text-transform: uppercase;
+  margin-top: .5rem !important;
+}
+
+
+span.helpvar {
+font-weight: bold;
+color: #2c3e50;
+background-color: #ecf0f1;
+padding: 0.2rem 0.2rem;
+border-radius: 0.2rem;
 }
