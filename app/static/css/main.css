@@ -2839,6 +2839,7 @@ input:checked + .slider:before {
       display: block;
       text-align: left;
       font-size: 1.25rem;
+      text-align: justify;
       font-weight: 300;
       color: #fff;
       margin-bottom: 2rem;
