@@ -1,8 +1,8 @@
 // Colors
 $primary-color-1: #008753;
 $primary-color-1-dark: #00673D;
-$primary-color-2: #54504C;
-$primary-color-2-light: #A69F99;
+$primary-color-2: #F2CD5D;
+$primary-color-2-dark: #EDB72F;
 
 $primary-gray-color-1: #F9F8F7;
 $primary-gray-color-2: #E3DFDB;
@@ -30,13 +30,13 @@ $dashboard-profitable-value: #20A10B;
 $dashboard-inadequate-value: #A10B0B;
 
 // Text
-$text-color-main: $primary-color-2;
+$text-color-main: $primary-gray-color-4;
 $text-color-secondary: $primary-gray-color-4;
 // Anchor/action text
 $text-color-a-main: $primary-color-1;
 $text-color-a-main-hover: $primary-color-1-dark;
-$text-color-a-sec: $primary-color-2;
-$text-color-a-sec-hover: $primary-color-2-light;
+$text-color-a-sec: $primary-gray-color-4;
+$text-color-a-sec-hover: $primary-gray-color-3;
 $text-color-invert: $white;
 
 $box-shadow-frame: 0px 0px 16px rgba(31, 86, 125, 0.08);
@@ -50,6 +50,7 @@ $xlarge-screen: 1500px;
 
 // Typography {
 $main-font-family: lato, Arial, Helvetica, sans-serif;
+$font-size-xlarge: 2.5rem; // 31.25px
 $font-size-large: 1.953rem; // 31.25px
 $font-size-medium-2: 1.563rem; // 25px
 $font-size-medium: 1.25rem; // 20px
@@ -78,7 +79,7 @@ $footer-height: $top-nav-height;
 $logo-height: 5rem;
 
 // Buttons
-$button-border-radius: 8px;
+$button-border-radius: 20px;
 
 // Borders
 $gray-border: 2px solid $primary-gray-color-1;

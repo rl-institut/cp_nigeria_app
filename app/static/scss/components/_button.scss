@@ -22,7 +22,7 @@ footer button.btn {
   }
 
   #{$anchor-pseudo-classes-active-state} {
-    background-color: $primary-color-1-dark !important;
+    background-color: $primary-color-1-dark;
   }
 
   &--secondary {
@@ -55,6 +55,23 @@ footer button.btn {
     font-size: $font-size-small;
   }
 
+  &--hero {
+    padding: 0.4rem 0.75rem;
+    background-color: $primary-color-2 !important;
+    font-size: $font-size-normal;
+    font-weight: bold;
+
+    &:hover {
+              background-color: $primary-color-2-dark !important;
+            }
+
+    #{$anchor-pseudo-classes},
+  .icon#{$anchor-pseudo-classes-active-states} {
+    color: $primary-gray-color-4 !important;
+    background-color: $primary-color-2-dark;
+  }
+  }
+
   &--filled {
     color: $white !important;
   }
@@ -70,7 +87,7 @@ footer button.btn {
     }
 
     #{$anchor-pseudo-classes-active-state} {
-      background-color: $white !important;
+      background-color: $white;
     }
 
     span.icon#{$anchor-pseudo-classes-active-states} {
@@ -93,11 +110,11 @@ footer button.btn {
     padding: 0;
 
     #{$anchor-pseudo-classes-inactive-state} {
-      color: $primary-color-2 !important;
+      color: $primary-gray-color-4 !important;
     }
 
     #{$anchor-pseudo-classes-active-state} {
-      color: $primary-color-2-light !important;
+      color: $primary-gray-color-3 !important;
     }
 
     &:focus {

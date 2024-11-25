@@ -16,17 +16,23 @@
 
     h1 {
       text-align: left;
-      font-size: 2.5rem;
-      color: $primary-color-2;
+      font-size: $font-size-xlarge;
+      color: $white;
       margin-bottom: 1rem;
     }
 
     span {
       display: block;
       text-align: left;
-      font-size: $font-size-normal;
+      font-size: $font-size-medium;
+      text-align: justify;
       font-weight: 300;
+      color: $white;
       margin-bottom: 2rem;
+      max-width: calc(#{$section-max-width} / 2);
+      padding: 20px 20px 20px 20px;
+      background-color: rgba(243, 172, 72, 0.65);
+      border-radius: $button-border-radius;
     }
   }
 
@@ -37,4 +43,21 @@
       max-width: calc(#{$section-max-width} / 2);
     }
   }
+}
+
+.background-overlay {
+    position: relative;
+    background-image: url('../assets/cp_nigeria/landing_page.jpg'); /* Path to your background image */
+    background-size: cover;
+    background-position: center;
+}
+
+.background-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(27, 187, 120, 0.3);
 }

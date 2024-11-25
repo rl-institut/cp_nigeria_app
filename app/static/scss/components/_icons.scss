@@ -15,11 +15,11 @@
 
 .actions .btn--action {
   .icon:not(.icon-results)::before {
-    color: $primary-color-2;
+    color: $primary-gray-color-4;
 }
 
   &:hover .icon:not(.icon-results)::before {
-    color: $primary-color-2-light;
+    color: $primary-gray-color-3;
   }
 }
 

@@ -3,18 +3,20 @@
 {% load i18n %}
 
 {% block index %}
-  <main>
+  <main class="background-overlay">
     <section class="hero section" id="hero" data-aos="fade-up">
       <div>
         <div class="hero__text">
           <h1>
-            {% translate "Model your local energy demand" %}
+            {% translate "Get started on your mini-grid project" %}
           </h1>
           <span>
-                    {% translate "Use this tool to model and optimize your local energy demand based on community characteristics and needs." %}
-                  </span>
-          <a href="{% url 'cpn_new_scenario' %}" class="btn btn--medium">
-            {% translate "Let's start" %}
+                    Use this tool to take the first steps toward electricity access for your community. Model your
+            electricity demand, size a suitable mini-grid, conduct financial analyses and more.
+            The tool will provide you with a comprehensive document to approach stakeholders.
+               </span>
+          <a href="{% url 'cpn_new_scenario' %}" class="btn btn--hero">
+            {% translate "Try it" %}
           </a>
         </div>
         <!--div class="hero__image">

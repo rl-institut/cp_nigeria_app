@@ -23,7 +23,7 @@ form {
 
   .form-group {
     margin-bottom: 1rem;
-    color: $primary-color-2;
+    color: $primary-gray-color-4;
 
     label{
         margin-bottom: 0.5rem;
@@ -46,7 +46,7 @@ form {
   }
 
   .form-control {
-    color: $primary-color-2;
+    color: $primary-gray-color-4;
 
     &.input-updated {
       position: relative;
@@ -98,7 +98,7 @@ form {
 
     .input-group-text {
       background-color: $primary-gray-color-2;
-      color: $primary-color-2;
+      color: $primary-gray-color-4;
       @include user-select-none;
     }
   }
