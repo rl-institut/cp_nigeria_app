@@ -1,4 +1,4 @@
 POSTGRES_HOST=postgres
-POSTGRES_DB=dummy_db
-POSTGRES_USER=dummy_user
-POSTGRES_PASSWORD=dummy_pw
+POSTGRES_DB=wefe_optimg
+POSTGRES_USER=wefe_user
+POSTGRES_PASSWORD=rlidgsifam2024
