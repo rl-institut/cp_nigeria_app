@@ -35,6 +35,7 @@ from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResul
 from dashboard.helpers import KPI_PARAMETERS
 from .models import SurveyAnswer
 from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +216,36 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
 
     scenario = project.scenario
 
+    response = None
+    if request.method == "POST":
+        action = request.POST.get("action")
+        url = ""
+        data = {}
+
+        if action == "process_survey":
+            url = "http://127.0.0.1:5000/preprocessing"
+            data = {
+                "script": "preprocessing_demo.py",
+                "args": {
+                    "id": 576013455,
+                },
+            }
+        #     http://wefe-demand:5000
+        elif action == "ramp_simulation":
+            url = "http://127.0.0.1:5000/ramp-simulation"
+            data = {
+                "script": "ramp_simulation_demo.py",
+                "args": {
+                    "id": 576013455,
+                },
+            }
+
+        try:
+            api_response = requests.post(url, json=data)
+            response = api_response.json()
+        except Exception as e:
+            response = {"error": str(e)}
+
     page_information = "About demand"
     context = {
         "proj_id": proj_id,
@@ -222,14 +253,28 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
         "step_id": step_id,
         "step_list": WEFE_STEP_VERBOSE,
         "page_information": page_information,
+        "response": response,
     }
 
-    if request.method == "GET":
-        return render(request, "wefe/steps/demand.html", context)
+    SURVEY_KEY = "ay5RwDzEgUQn73E9it3wCB"
+    output_path = f"wefe/demand_data/{SURVEY_KEY}"
+    if os.path.exists(output_path):
+        output_data = pd.read_csv(f"wefe/demand_data/{SURVEY_KEY}/.csv", index_col="datetime", decimal=",")
+        water_demand = output_data.loc[:, output_data.columns.str.contains("water")]
+        electricity_demand = output_data.loc[:, ~output_data.columns.str.contains("water")]
+        context.update(
+            {
+                "timestamps": scenario.get_timestamps(json_format=True),
+                "water_demand": water_demand.to_dict(orient="list"),
+                "electricity_demand": electricity_demand.to_dict(orient="list"),
+            }
+        )
 
-    if request.method == "POST":
-        # TODO
-        return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
+    return render(request, "wefe/steps/demand.html", context)
+
+    # if request.method == "POST":
+    #     # TODO
+    #     return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
 
 @login_required
