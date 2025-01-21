@@ -536,3 +536,21 @@ def wefe_project_duplicate(request, proj_id):
         options.project = Project.objects.get(pk=new_proj_id)
         options.save()
     return HttpResponseRedirect(reverse("projects_list_cpn", args=[new_proj_id]))
+
+
+@login_required
+def ajax_generate_survey_link(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        proj_id = int(request.GET.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        kobo = KoboHandler(project)
+        project_survey_id = kobo.clone_form(kobo.base_survey_id)
+        project_survey_url = kobo.deploy_form(project_survey_id)
+        kobo.assign_permissions("add_submissions", "AnonymousUser", survey_id=project_survey_id)
+        kobo.assign_permissions("view_asset", "AnonymousUser", survey_id=project_survey_id)
+        return JsonResponse({"url": project_survey_url})
+
+
+@login_required
+def ajax_process_survey(request):
+    pass

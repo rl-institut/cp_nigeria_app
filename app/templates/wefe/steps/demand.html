@@ -14,6 +14,8 @@
         integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==">
     </script>
 
+<script src="{% static 'js/wefedemand_requests.js' %}"></script>
+
 {% endblock start_body_scripts %}
 
 {% block progression_content %}
@@ -39,6 +41,18 @@
 	</section>
 </div>
 
+<div>
+	<section class="container-lg">
+		<h1>Test WEFE-Demand API</h1>
+		<button class="btn btn--medium"  onclick="javascript:generateSurveyLink({{ proj_id }})" style="margin-top:0.5rem">
+			Generate survey link
+		</button>
+		<div id="link_display">
+
+		</div>
+	</section>
+</div>
+
 {% endblock progression_content %}
 
 
@@ -48,4 +62,8 @@
 
 
 {% block end_body_scripts %}
+<script>
+	const urlGenerateSurveyLink = `{% url 'ajax_generate_survey_link' %}`;
+</script>
+
 {% endblock end_body_scripts%}
