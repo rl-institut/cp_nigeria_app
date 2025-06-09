@@ -513,6 +513,24 @@ def ajax_generate_survey_link(request):
         project.kobo_survey_url = project_survey_url
         project.save()
         return JsonResponse({"url": project_survey_url})
+    return ConnectionError("Invalid request")
+
+
+@login_required
+def ajax_delete_survey(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        proj_id = int(request.GET.get("proj_id"))
+        project = get_object_or_404(Project, id=proj_id)
+        kobo = KoboHandler(project)
+        try:
+            kobo.delete_form(kobo.project_survey_id)
+            project.kobo_survey_id = None
+            project.kobo_survey_url = None
+            project.save()
+            return JsonResponse({"msg": "Deleted form"}, status=200)
+        except:
+            return JsonResponse({"msg": "There was an error deleting the form"}, status=400)
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 @login_required

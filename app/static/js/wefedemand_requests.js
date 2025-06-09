@@ -1,20 +1,41 @@
 function generateSurveyLink(proj_id) {
     $("#survey_button").prop("disabled", true);
-    $("#loading_spinner").show();
+    $("#loading_spinner-create").show();
     $.ajax({
         url: urlGenerateSurveyLink,
         data: {proj_id: proj_id},
         success: function (response) {
-            $("#loading_spinner").hide();
+            $("#loading_spinner-create").hide();
             $("#link_display").html("The questionnaire has been successfully created. You can use the following link: <a href='" + response.url + "' target='_blank'>" + response.url + "</a> to fill out the necessary information");
         },
         error: function (error) {
-            $("#loading_spinner").hide();
+            $("#loading_spinner-create").hide();
             $("#link_display").html(error)
             console.error(error);
         }
     });
 }
+
+
+function deleteSurvey(proj_id) {
+    $("#delete").prop("disabled", true);
+    $("#loading_spinner-delete").show();
+    $.ajax({
+        url: urlDeleteSurvey,
+        data: {proj_id: proj_id},
+        success: function (response) {
+            $("#loading_spinner-delete").hide();
+            $("#link_display").html("The questionnaire has been deleted. Please refresh the page.");
+
+        },
+        error: function (error) {
+            $("#loading_spinner-delete").hide();
+            $("#link_display").html("There was an error deleting the questionnaire.");
+            console.error(error);
+        }
+    });
+}
+
 
 // TODO WIP
 function processSurvey(proj_id) {
