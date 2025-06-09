@@ -57,7 +57,7 @@ def get_renewables_output(proj_id, raw=True):
 
 
 class KoboHandler:
-    base_survey_id = "aUu2e9DtM6mQmiZJnqSHCv"
+    base_survey_id = "aUTPpjLwttttNPF2tJgLKM"
     request_headers = {"Accept": "application/json", "Authorization": "Token " + KOBO_API_TOKEN}
 
     def __init__(self, project):
@@ -66,9 +66,7 @@ class KoboHandler:
         deployed"""
         # TODO save these somewhere (maybe in Options) so that the survey stays assigned to the project
         # TODO only create a new survey if this project doesn't already have a survey assigned to it
-        # project = Project.objects.get(pk=project_id)
-        # if project.options.kobo_survey is None:
-        self.project_survey_id = None
+        self.project_survey_id = project.kobo_survey_id
         self.project = project
         # self.project_survey_id = self.clone_form()
         # self.assign_permissions("add_submissions", "AnonymousUser")
@@ -83,7 +81,7 @@ class KoboHandler:
         if survey_id is None:
             survey_id = self.project_survey_id
 
-        response = requests.get(f"{KOBO_API_URL}assets/{survey_id}/", headers=self.request_headers, timeout=60)
+        response = requests.get(f"{KOBO_API_URL}/assets/{survey_id}/", headers=self.request_headers, timeout=60)
 
         return response
 
@@ -91,7 +89,7 @@ class KoboHandler:
         try:
             logger.info(f"Sending request to KoboToolbox API {endpoint}")
             response = requests.post(
-                f"{KOBO_API_URL}{endpoint}", json=payload, headers=self.request_headers, timeout=60
+                f"{KOBO_API_URL}/{endpoint}", json=payload, headers=self.request_headers, timeout=60
             )
             response.raise_for_status()
             return response
@@ -170,8 +168,8 @@ class KoboHandler:
             return None
 
         payload = {
-            "permission": f"https://kf.kobotoolbox.org/api/v2/permissions/{permission_codename}/",
-            "user": f"https://kf.kobotoolbox.org/api/v2/users/{username}/",
+            "permission": f"{KOBO_API_URL}/permissions/{permission_codename}/",
+            "user": f"{KOBO_API_URL}/users/{username}/",
         }
 
         response = self.send_request(endpoint=f"assets/{survey_id}/permission-assignments/", payload=payload)
