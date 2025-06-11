@@ -259,36 +259,50 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
         return render(request, "wefe/steps/demand.html", context)
 
     if request.method == "POST":
-        # TODO this will likely be integrated into an AJAX call
-        #     action = request.POST.get("action")
-        #     url = ""
-        #     data = {}
-        #
-        #     if action == "process_survey":
-        #         url = "http://127.0.0.1:5000/preprocessing"
-        #         data = {
-        #             "script": "preprocessing_demo.py",
-        #             "args": {
-        #                 "id": 576013455,
-        #             },
-        #         }
-        #     #     http://wefe-demand:5000
-        #     elif action == "ramp_simulation":
-        #         url = "http://127.0.0.1:5000/ramp-simulation"
-        #         data = {
-        #             "script": "ramp_simulation_demo.py",
-        #             "args": {
-        #                 "id": 576013455,
-        #             },
-        #         }
-        #
-        #     try:
-        #         api_response = requests.post(url, json=data)
-        #         response = api_response.json()
-        #     except Exception as e:
-        #         response = {"error": str(e)}
-        #
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
+    return None
+
+
+WEFEDEMAND_API = "http://wefe-demand:5000"
+# WEFEDEMAND_API = "http://127.0.0.1:5000"
+
+
+def request_wefedemand_preprocessing(request):
+    proj_id = request.POST.get("proj_id")
+    args = {"id": [576013455, 576161268]}
+    project = get_object_or_404(Project, pk=proj_id)
+    # survey_id = project.kobo_survey_id
+    survey_id = "aUTPpjLwttttNPF2tJgLKM"
+    try:
+        response = requests.post(
+            f"{WEFEDEMAND_API}/preprocessing",
+            headers={"Content-Type": "application/json"},
+            json={"survey_id": survey_id, "args": args},
+        )
+        response.raise_for_status()
+
+    except Exception as e:
+        logger.warning(f"An error occurred: {e}.")
+    return JsonResponse({"msg": "Sent preprocessing request"})
+
+
+def request_wefedemand_simulation(request):
+    proj_id = request.POST.get("proj_id")
+    args = {}
+    project = get_object_or_404(Project, pk=proj_id)
+    # survey_id = project.kobo_survey_id
+    survey_id = "aUTPpjLwttttNPF2tJgLKM"
+    try:
+        response = requests.post(
+            f"{WEFEDEMAND_API}/ramp-simulation",
+            headers={"Content-Type": "application/json"},
+            json={"survey_id": survey_id, "args": args},
+        )
+        response.raise_for_status()
+
+    except Exception as e:
+        logger.warning(f"An error occurred: {e}.")
+    return JsonResponse({"msg": "Sent preprocessing request"})
 
 
 @login_required

@@ -38,13 +38,18 @@ function deleteSurvey(proj_id) {
 
 
 // TODO WIP
-function processSurvey(proj_id) {
+function wefeDemandRequest(proj_id, action) {
     var linkDisplay = document.getElementById("link_display");
+    if (action == "preprocess") {
+        fetchUrl = urlPreprocessSurvey
+    } else if (action == "ramp") {
+        fetchUrl = urlRampSimulation
+    }
     $.ajax({
         headers: {'X-CSRFToken': csrfToken},
         type: 'POST',
-        url: urlProcessSurvey,
-        data: {proj_id: proj_id},
+        url: fetchUrl,
+        data: {"proj_id": proj_id},
         success: function (response) {
             // TODO create two plots for demand? just one? function for plotting similar to openplan results
             plotDemand(response)

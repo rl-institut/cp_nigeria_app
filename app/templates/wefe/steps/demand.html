@@ -67,11 +67,12 @@
 <div>
 	<section class="container-lg">
 		<h1>Test WEFE-Demand API</h1>
-		<form method="POST">
-			{% csrf_token %}
-			<button type="submit" name="action" value="process_survey">Process Survey</button>
-			<button type="submit" name="action" value="ramp_simulation">Run Ramp Simulation</button>
-		</form>
+		<button id="preprocess" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }}, 'preprocess')" style="margin-top:0.5rem">
+			Process survey
+		</button>
+		<button id="ramp-sim" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }}, 'ramp')" style="margin-top:0.5rem">
+			Ramp simulation
+		</button>
 
 		{% if response %}
 		<div class="response">
@@ -100,6 +101,9 @@
 <script>
 	const urlGenerateSurveyLink = `{% url 'ajax_generate_survey_link' %}`;
 	const urlDeleteSurvey = `{% url 'ajax_delete_survey' %}`;
+	const urlPreprocessSurvey = `{% url 'request_wefedemand_preprocessing' %}`;
+	const urlRampSimulation = `{% url 'request_wefedemand_simulation' %}`;
+	const csrfToken = `{{ csrf_token }}`;
 </script>
 
 {% endblock end_body_scripts%}

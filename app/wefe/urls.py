@@ -15,4 +15,6 @@ urlpatterns = [
     path("<int:proj_id>/edit/submit", wefe_choose_location, name="wefe_scenario_submit"),
     path("ajax/generate-survey-link", ajax_generate_survey_link, name="ajax_generate_survey_link"),
     path("ajax/delete-survey", ajax_delete_survey, name="ajax_delete_survey"),
+    path("ajax/wefedemand-preprocessing", request_wefedemand_preprocessing, name="request_wefedemand_preprocessing"),
+    path("ajax/wefedemand-simulation", request_wefedemand_simulation, name="request_wefedemand_simulation"),
 ]
