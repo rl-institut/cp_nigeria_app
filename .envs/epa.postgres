@@ -1,6 +1,6 @@
 EPA_SECRET_KEY=v@p9^=@lc3#1u_xtx*^xhrv0f3fli1(+8ik^k@g-_bzmexb0$7n
 DEBUG=False
-TRUSTED_HOST=127.0.0.1:8080
+TRUSTED_HOST=localhost:8080
 EMAIL_HOST_IP=127.0.0.1
 USE_PROXY=False
 PROXY_ADDRESS=http://proxy_address:port
@@ -10,10 +10,11 @@ EXCHANGE_EMAIL=dummy_email
 RECIPIENTS=dummy_rec1,dummy_rec2
 RN_API_TOKEN="https://www.renewables.ninja/ api token"
 EXCHANGE_RATES_API_KEY="https://www.exchangerate-api.com/ api token"
+KOBO_API_TOKEN="https://eu.kobotoolbox.org/ api token"
 SQL_ENGINE=django.db.backends.postgresql
 SQL_DATABASE=dummy_db
 SQL_USER=dummy_user
 SQL_PASSWORD=dummy_pw
-SQL_HOST=db_pg
+SQL_HOST=db
 SQL_PORT=5432
 DATABASE=postgres
