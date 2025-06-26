@@ -24,5 +24,5 @@ class Command(BaseCommand):
         if qs.exists():
             qs.delete()
 
-        call_command("loaddata", "fixtures/cp_data/all_demand_profiles.json")
-        call_command("loaddata", "fixtures/cp_data/cp_setup.json")
+        call_command("loaddata", "src/fixtures/cp_data/all_demand_profiles.json")
+        call_command("loaddata", "src/fixtures/cp_data/cp_setup.json")
