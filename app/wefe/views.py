@@ -184,8 +184,6 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
         "page_information": page_information,
     }
 
-
-
     if request.method == "GET":
         timeseries = get_renewables_output(proj_id, raw=True)
         # TODO provide verbose names for the values
@@ -199,8 +197,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
             "u100": "100 metre U wind component (m s^(-1))",
             "v100": "100 metre V wind component (m s^(-1))",
             "fdir": "Total sky direct solar radiation at surface (J m^(-2))",
-            "fsr": "Forecast surface roughness (m)"
-
+            "fsr": "Forecast surface roughness (m)",
         }
         context.update(
             {
@@ -263,8 +260,9 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
     return None
 
 
-#WEFEDEMAND_API = "http://wefe-demand:5000"
+# WEFEDEMAND_API = "http://wefe-demand:5000"
 WEFEDEMAND_API = "http://127.0.0.1:5000"
+
 
 # TODO
 @login_required
@@ -308,6 +306,40 @@ def request_wefedemand_simulation(request, proj_id=None):
     except Exception as e:
         logger.warning(f"An error occurred: {e}.")
     return JsonResponse({"msg": "Sent preprocessing request"})
+
+
+def get_wefedemand_data(request, proj_id):
+    # Replace this with the actual path or a path provided in the query params
+    proj = get_object_or_404(Project, id=proj_id)
+    # survey_id = proj.kobo_survey_id
+    survey_id = "ay5RwDzEgUQn73E9it3wCB"
+    # TODO move this to STATICFILES folder instead
+    path = Path.cwd() / f"wefe/demand_data/{survey_id}/aggregated_demands_mean.csv"
+
+    if not path.exists():
+        return JsonResponse({"error": "CSV file not found."}, status=404)
+
+    try:
+        df = pd.read_csv(path, parse_dates=["datetime"])
+    except Exception as e:
+        return JsonResponse({"error": f"Error reading CSV: {e}"}, status=500)
+
+    # crop timeseries to first week
+    crop = 24 * 7
+    df = df[:crop]
+    # Prepare water and electricity series
+    data = {
+        "index": df["datetime"].astype(str).tolist(),
+        "water": {
+            "drinking_water": df["drinking_water"].tolist(),
+            "service_water": df["service_water"].tolist(),
+        },
+        "electricity": {
+            "cooking": df["cooking"].tolist(),
+            "electrical_appliances": df["electrical_appliances"].tolist(),
+        },
+    }
+    return JsonResponse(data)
 
 
 @login_required

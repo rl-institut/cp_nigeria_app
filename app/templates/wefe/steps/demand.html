@@ -14,7 +14,7 @@
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" crossorigin=""
 		integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==">
 </script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.20.0/plotly.min.js" integrity="sha512-tuzZby9zsxdCMgqKMHo+ObEWrfBTFlKZ7yIHSow5IYbr0JseLNTXm37NSn0rrWVbvKMfvGUCSm5L1sK9QGuLyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="{% static 'js/wefedemand_requests.js' %}"></script>
 
 {% endblock start_body_scripts %}
@@ -85,6 +85,10 @@
 			<button id="submitFormBtn" style="display: none;" class="btn btn--medium" type="submit" value="test">{% translate "Create Scenario" %}</button>
 		</form>
 	</section>
+	<section class="container-lg">
+		<div id="waterPlot"></div>
+		<div id="electricityPlot"></div>
+	</section>
 </div>
 
 
@@ -101,9 +105,11 @@
 <script>
 	const urlGenerateSurveyLink = `{% url 'ajax_generate_survey_link' %}`;
 	const urlDeleteSurvey = `{% url 'ajax_delete_survey' %}`;
-	const urlPreprocessSurvey = `{% url 'request_wefedemand_preprocessing' proj_id%}`;
-	const urlRampSimulation = `{% url 'request_wefedemand_simulation' proj_id %}`;
+	const urlPreprocessSurvey = `{% url 'request_wefedemand_preprocessing' %}`;
+	const urlRampSimulation = `{% url 'request_wefedemand_simulation' %}`;
+	const urlGetDemandData = `{% url 'get_wefedemand_data' proj_id %}`;
 	const csrfToken = `{{ csrf_token }}`;
+	const proj_id = `{{ proj_id }}`;
 </script>
 
 {% endblock end_body_scripts%}

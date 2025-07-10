@@ -1,3 +1,8 @@
+$(document).ready(function() {
+    plotDemand(proj_id);
+});
+
+
 function generateSurveyLink(proj_id) {
     $("#survey_button").prop("disabled", true);
     $("#loading_spinner-create").show();
@@ -83,4 +88,71 @@ function wefeDemandRequest(proj_id, action) {
       plotDemand(response);
     })
     .catch(console.error);
+}
+
+async function plotDemand(proj_id) {
+    try {
+        const response = await fetch(urlGetDemandData);
+        const data = await response.json();
+
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+
+        const datetime = data.datetime;
+        const waterPlotDiv = "waterPlot";
+        const electricityPlotDiv = "electricityPlot";
+
+        // Water plot (stacked)
+        const waterTrace1 = {
+            x: datetime,
+            y: data.water.drinking_water,
+            name: 'Drinking Water',
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one'
+        };
+        const waterTrace2 = {
+            x: datetime,
+            y: data.water.service_water,
+            name: 'Service Water',
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one'
+        };
+
+        Plotly.newPlot(waterPlotDiv, [waterTrace1, waterTrace2], {
+            title: 'Water Demand',
+            yaxis: { title: 'Liters' },
+            xaxis: { title: 'Time' }
+        });
+
+        // Electricity plot (stacked)
+        const elecTrace1 = {
+            x: datetime,
+            y: data.electricity.cooking,
+            name: 'Cooking',
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one'
+        };
+        const elecTrace2 = {
+            x: datetime,
+            y: data.electricity.electrical_appliances,
+            name: 'Appliances',
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one'
+        };
+
+        Plotly.newPlot(electricityPlotDiv, [elecTrace1, elecTrace2], {
+            title: 'Electricity Demand',
+            yaxis: { title: 'Wh' },
+            xaxis: { title: 'Time' }
+        });
+
+    } catch (err) {
+        console.error("Failed to load or parse timeseries data:", err);
+    }
 }
