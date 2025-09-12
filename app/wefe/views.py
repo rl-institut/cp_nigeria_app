@@ -184,13 +184,29 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
         "page_information": page_information,
     }
 
+
+
     if request.method == "GET":
-        pv_ts, wind_ts = get_renewables_output(proj_id, raw=True)
+        timeseries = get_renewables_output(proj_id, raw=True)
+        # TODO provide verbose names for the values
+        timeseries_labels = {
+            "sp": "sp",
+            "ssrd": "ssrd",
+            "t2m": "Temperature (K)",
+            "tp": "tp",
+            "u10": "u10",
+            "v10": "v10",
+            "u100": "u100",
+            "v100": "v100",
+            "fdir": "fdir",
+            "fsr": "fsr",
+
+        }
         context.update(
             {
                 "timestamps": scenario.get_timestamps(json_format=True),
-                "pv_ts": pv_ts,
-                "wind_ts": wind_ts,
+                "timeseries": json.dumps(timeseries),
+                "timeseries_keys": timeseries_labels,
                 "test": "test",
             }
         )

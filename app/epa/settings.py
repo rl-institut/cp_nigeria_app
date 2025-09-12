@@ -213,6 +213,9 @@ EXCHANGE_RATES_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_RATES_API_TO
 KOBO_API_URL = "https://eu.kobotoolbox.org/api/v2"
 KOBO_API_TOKEN = os.getenv("KOBO_API_TOKEN")
 
+# API to get weather data
+WEATHER_DATA_API_HOST = os.getenv("WEATHER_DATA_API_HOST")
+
 import sys
 
 LOGGING = {
