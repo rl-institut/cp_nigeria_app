@@ -101,8 +101,8 @@
 <script>
 	const urlGenerateSurveyLink = `{% url 'ajax_generate_survey_link' %}`;
 	const urlDeleteSurvey = `{% url 'ajax_delete_survey' %}`;
-	const urlPreprocessSurvey = `{% url 'request_wefedemand_preprocessing' %}`;
-	const urlRampSimulation = `{% url 'request_wefedemand_simulation' %}`;
+	const urlPreprocessSurvey = `{% url 'request_wefedemand_preprocessing' proj_id%}`;
+	const urlRampSimulation = `{% url 'request_wefedemand_simulation' proj_id %}`;
 	const csrfToken = `{{ csrf_token }}`;
 </script>
 

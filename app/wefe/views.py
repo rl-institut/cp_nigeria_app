@@ -267,8 +267,7 @@ WEFEDEMAND_API = "http://wefe-demand:5000"
 # WEFEDEMAND_API = "http://127.0.0.1:5000"
 
 
-def request_wefedemand_preprocessing(request):
-    proj_id = request.POST.get("proj_id")
+def request_wefedemand_preprocessing(request, proj_id=None):
     args = {"id": [576013455, 576161268]}
     project = get_object_or_404(Project, pk=proj_id)
     # survey_id = project.kobo_survey_id
@@ -286,7 +285,7 @@ def request_wefedemand_preprocessing(request):
     return JsonResponse({"msg": "Sent preprocessing request"})
 
 
-def request_wefedemand_simulation(request):
+def request_wefedemand_simulation(request, proj_id=None):
     proj_id = request.POST.get("proj_id")
     args = {}
     project = get_object_or_404(Project, pk=proj_id)

@@ -16,5 +16,7 @@ urlpatterns = [
     path("ajax/generate-survey-link", ajax_generate_survey_link, name="ajax_generate_survey_link"),
     path("ajax/delete-survey", ajax_delete_survey, name="ajax_delete_survey"),
     path("ajax/wefedemand-preprocessing", request_wefedemand_preprocessing, name="request_wefedemand_preprocessing"),
+    path("ajax/wefedemand-preprocessing/<int:proj_id>", request_wefedemand_preprocessing, name="request_wefedemand_preprocessing"),
     path("ajax/wefedemand-simulation", request_wefedemand_simulation, name="request_wefedemand_simulation"),
+    path("ajax/wefedemand-simulation/<int:proj_id>", request_wefedemand_simulation, name="request_wefedemand_simulation"),
 ]
