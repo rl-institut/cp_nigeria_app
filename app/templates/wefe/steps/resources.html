@@ -16,7 +16,6 @@
 <script src="{% static 'js/traceplot.js' %}"></script>
 <script>
 	const data = JSON.parse(`{{timeseries| escapejs }}`);
-	console.log(data);
 	var timestamps = {{ timestamps | safe }};
 	var test = {{ test }};
 </script>
@@ -51,7 +50,6 @@
 
 <script>
 	Object.entries(data).forEach(([key, value]) => {
-    console.log(`${key}: ${value}`);
     makePlotly(timestamps, value, plot_id=`${key}_ts`,userLayout={hovermode:'x unified'})
 	});
 	</script>

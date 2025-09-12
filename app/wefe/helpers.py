@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST
 from projects.models import Project, Timeseries
-from projects.services import RenewablesNinja
 
 
 def help_icon(help_text=""):
@@ -91,8 +90,6 @@ def get_renewables_output(proj_id, raw=True):
             )
             ts.save()
         qs_ts = Timeseries.objects.filter(scenario=project.scenario)
-    # else:
-    #     qs_ts.delete()
     collected_timeseries = {ts.name:ts.values for ts in qs_ts}
     return collected_timeseries
 
