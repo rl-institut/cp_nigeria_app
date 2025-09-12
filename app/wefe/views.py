@@ -263,13 +263,17 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
     return None
 
 
-WEFEDEMAND_API = "http://wefe-demand:5000"
-# WEFEDEMAND_API = "http://127.0.0.1:5000"
+#WEFEDEMAND_API = "http://wefe-demand:5000"
+WEFEDEMAND_API = "http://127.0.0.1:5000"
 
-
+# TODO
+@login_required
+@require_http_methods(["GET", "POST"])
 def request_wefedemand_preprocessing(request, proj_id=None):
+    # import pdb;pdb.set_trace()
+    # proj_id = request.POST.get("proj_id")
     args = {"id": [576013455, 576161268]}
-    project = get_object_or_404(Project, pk=proj_id)
+    # project = get_object_or_404(Project, pk=proj_id)
     # survey_id = project.kobo_survey_id
     survey_id = "aUTPpjLwttttNPF2tJgLKM"
     try:
@@ -280,6 +284,8 @@ def request_wefedemand_preprocessing(request, proj_id=None):
         )
         response.raise_for_status()
 
+        # TODO here the parameters might not be the right one?
+        print(response.text)
     except Exception as e:
         logger.warning(f"An error occurred: {e}.")
     return JsonResponse({"msg": "Sent preprocessing request"})

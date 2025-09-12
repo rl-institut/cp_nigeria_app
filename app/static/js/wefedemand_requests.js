@@ -65,6 +65,7 @@ function wefeDemandRequest(proj_id, action) {
         fetchUrl = urlRampSimulation
     }
 
+    console.log(fetchUrl);
     fetch(fetchUrl, {
       method: "POST",
       headers: {
@@ -78,6 +79,7 @@ function wefeDemandRequest(proj_id, action) {
       return res.json();
     })
     .then(response => {
+      console.log(response);
       plotDemand(response);
     })
     .catch(console.error);
