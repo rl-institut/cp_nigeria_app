@@ -3,18 +3,55 @@ import numpy as np
 import requests
 from django.templatetags.static import static
 import logging
+import pandas as pd
+import os
 
 logger = logging.getLogger(__name__)
 
-from epa.settings import KOBO_API_TOKEN, KOBO_API_URL
+from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST
 from projects.models import Project, Timeseries
-from projects.services import RenewablesNinja
 
 
 def help_icon(help_text=""):
     return "<a data-bs-toggle='tooltip' title='' data-bs-original-title='{}' data-bs-placement='right'><img style='height: 1.2rem;margin-left:.5rem' alt='info icon' src='{}'></a>".format(
         help_text, static("assets/icons/i_info.svg")
     )
+
+def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
+    logger = logging.getLogger(__name__)
+    session = requests.Session()
+
+    # TODO one shouldn't need a csrftoken for server to server
+    # fetch CSRF token
+    csrf_response = session.get(WEATHER_DATA_API_HOST + "get_csrf_token/")
+    csrftoken = csrf_response.json()["csrfToken"]
+
+    payload = {"latitude": latitude, "longitude": longitude}
+
+    # headers = {"content-type": "application/json"}
+    headers = {
+        "X-CSRFToken": csrftoken,
+        "Referer": WEATHER_DATA_API_HOST,
+    }
+
+    post_response = session.post(WEATHER_DATA_API_HOST, data=payload, headers=headers)
+    # TODO here would be best to return a token but this requires celery on the weather_data API side
+    # If we get a high request amount we might need to do so anyway
+    if post_response.status_code == 200:
+        response_data = post_response.json()
+        df = pd.DataFrame(response_data["variables"])
+        logger.info("The weather data API fetch worked successfully")
+
+        if timeinfo is True:
+
+            timeindex = response_data["time"]
+    else:
+        df = pd.DataFrame()
+        logger.error("The weather data API fetch did not work")
+    if timeinfo is False:
+        return df
+    else:
+        return df, timeindex
 
 
 def get_renewables_output(proj_id, raw=True):
@@ -25,35 +62,37 @@ def get_renewables_output(proj_id, raw=True):
     """
 
     suffixes = {
-        "pv": "irradiance_direct" if raw else "electricity",
-        "wind": "wind_speed" if raw else "electricity",
+        "sp": "sp" if raw else "electricity",
+        "ssrd": "ssrd" if raw else "electricity",
+        "t2m": "t2m" if raw else "electricity",
+        "tp": "tp" if raw else "electricity",
+        "u10": "wind_speed_u10" if raw else "electricity",
+        "v10": "wind_speed_v10" if raw else "electricity",
+        "u100": "wind_speed_u100" if raw else "electricity",
+        "v100": "wind_speed_v100" if raw else "electricity",
+        "fdir": "fdir" if raw else "electricity",
+        "fsr": "fsr" if raw else "electricity",
     }
 
     project = Project.objects.get(id=proj_id)
-    coordinates = {"lat": project.latitude, "lon": project.longitude}
-    pv_ts, created = Timeseries.objects.get_or_create(name=f"pv_ts_{suffixes['pv']}", scenario=project.scenario)
-    wind_ts, _ = Timeseries.objects.get_or_create(name=f"wind_ts_{suffixes['wind']}", scenario=project.scenario)
+    qs_ts = Timeseries.objects.filter(scenario=project.scenario)
+    if qs_ts.exists() is False:
+        df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
-    # only checking for one because if one exists, both should exist
-    if created is True:
-        location = RenewablesNinja()
-        location.get_pv_data(coordinates)
-        location.get_wind_data(coordinates)
-
-        for ts, name in zip([pv_ts, wind_ts], ["pv", "wind"]):
-            data = location.data[name]
-            try:
-                ts.values = np.squeeze(data[suffixes[name]]).tolist()
-            except KeyError:
-                # For the case that data fetching from renewables.ninja did not work
-                # TODO decide how to handle case and if to set default in RN.fetch_and_parse_data()
-                return None, None
-            ts.start_time = data.index[0]
-            ts.end_time = data.index[-1]
-            ts.time_step = 60
+        for suffix in suffixes:
+            ts = Timeseries.objects.create(
+                name=suffix,
+                scenario=project.scenario,
+                values = df[suffix].values.tolist(),
+                start_time = timeinfo["start"],
+                end_time = timeinfo["end"],
+                time_step = 8760,
+            )
             ts.save()
+        qs_ts = Timeseries.objects.filter(scenario=project.scenario)
+    collected_timeseries = {ts.name:ts.values for ts in qs_ts}
+    return collected_timeseries
 
-    return pv_ts.values, wind_ts.values
 
 
 class KoboHandler:
