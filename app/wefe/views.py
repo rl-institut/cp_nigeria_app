@@ -17,7 +17,9 @@ from business_model.models import *
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 
 from .models import SurveyAnswer
-from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES
+from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
+
+import logging
 
 from projects.models.base_models import Timeseries
 
@@ -314,70 +316,108 @@ def wefe_economic_parameters(request, proj_id, step_id=STEP_MAPPING["economic_pa
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
 
+def is_matrix_source(field):
+    field_classes = field.widget.attrs.get("class")
+    answer = False
+    if field_classes is not None:
+        if "matrix_source" in field_classes:
+            answer = True
+    return answer
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
     project = get_object_or_404(Project, id=proj_id)
     scen_id = project.scenario.id
     if request.method == "POST":
-        form = SurveyQuestionForm(request.POST, qs=SurveyAnswer.objects.filter(scenario_id=scen_id))
+        form = SurveyQuestionForm(
+            request.POST, qs=SurveyAnswer.objects.filter(scenario_id=scen_id)
+        )
 
         if form.is_valid():
             qs = SurveyAnswer.objects.filter(scenario_id=scen_id)
-
+            with open(f"scenario_{scen_id}_survey_answers.json", "w") as fp:
+                json.dump(form.cleaned_data, fp, indent=4)
             for criteria_num, value in form.cleaned_data.items():
                 crit = qs.get(question_id=criteria_num.replace("criteria_", ""))
-                crit.value = value
+                crit.value = json.dumps(value)
                 crit.save(update_fields=["value"])
 
             answer = HttpResponseRedirect(reverse("view_survey", args=[scen_id]))
         else:
             # TODO
-            import pdb
-
-            pdb.set_trace()
+            print("Form is not valid")
+            # import pdb;
+            # pdb.set_trace()
 
     else:
-        # TODO this is currently for testing
         if scen_id is None:
-            scenario_id = 1
+            last_scenario_id = SurveyAnswer.objects.all().values_list("scenario_id",
+                                                                      flat=True).distinct().order_by().last()
+            if last_scenario_id is None:
+                last_scenario_id = 0
+            scenario_id = last_scenario_id + 1
+            answer = HttpResponseRedirect(reverse("view_survey", args=[scenario_id]))
         else:
             scenario_id = scen_id
 
-        # Check if answers already exists, if not create them
-        qs = SurveyAnswer.objects.filter(scenario_id=scenario_id)
-        if qs.exists() is False:
-            questions = SurveyQuestion.objects.all()
-            for question in questions:
-                answer_param = {}
-                answer_param["scenario_id"] = scenario_id
-                answer_param["question"] = question
-                new_answer = SurveyAnswer(**answer_param)
-                new_answer.save()
+            # Check if answers already exists, if not create them
+            qs_answer = SurveyAnswer.objects.filter(scenario_id=scenario_id)
+            # import pdb;pdb.set_trace()
+            if qs_answer.exists() is False:
+                questions = SurveyQuestion.objects.all()
+                print(questions)
+                for question in questions:
+                    # print(question)
+                    answer_param = {}
+                    answer_param["scenario_id"] = scenario_id
+                    answer_param["question"] = question
+                    new_answer = SurveyAnswer(**answer_param)
+                    new_answer.save()
+                qs_answer = SurveyAnswer.objects.filter(scenario_id=scenario_id)
 
-        categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
+            categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
+            form = SurveyQuestionForm(qs=qs_answer)
 
-        form = SurveyQuestionForm(qs=SurveyAnswer.objects.filter(scenario_id=scenario_id))
+            categories_map = []
+            matrix_headers = {}
+            matrix_labels = {}
+            for field in form.fields:
+                question_id = field.split("criteria_")[1]
+                # TODO: could be done from models "category" attribute
+                cat = SURVEY_CATEGORIES.get(question_id)
+                # TODO: reassign cat after testing phase is over
+                categories_map.append(cat)
+                # TODO here one can know that the question
+                if is_matrix_source(form.fields[field]):
+                    subs = []
+                    labels = []
+                    question = get_survey_question_by_id(SURVEY_STRUCTURE, question_id)
+                    for answer, subquestions in question["subquestion"].items():
+                        labels.append(answer)
+                        for sq_id in subquestions:
+                            q_main_id = ".".join(sq_id.split(".")[:2])
+                            subquestion = get_survey_question_by_id(SURVEY_STRUCTURE, sq_id)
+                            # print(subquestion)
+                            if subquestion.get("display_type", "") == "matrix":
+                                if subquestion["question"] not in subs:
+                                    subs.append(subquestion["question"])
+                    matrix_headers[field] = subs
+                    matrix_labels[field] = labels
 
-        categories_map = []
-        for field in form.fields:
-            question_id = field.split("criteria_")[1]
-            # TODO: could be done from models "category" attribute
-            cat = SURVEY_CATEGORIES[question_id]
-            # TODO: reassign cat after testing phase is over
-            categories_map.append("components")
-
-        answer = render(
-            request,
-            "wefe/steps/survey_layout.html",
-            {
-                "form": form,
-                "scen_id": scenario_id,
-                "categories_map": categories_map,
-                "categories": categories,
-                "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
-            },
-        )
+            answer = render(
+                request,
+                "wefe/steps/survey_layout.html",
+                {
+                    "form": form,
+                    "scen_id": scenario_id,
+                    "categories_map": categories_map,
+                    "categories": categories,
+                    "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
+                    "matrix_headers": matrix_headers,
+                    "matrix_labels": matrix_labels,
+                },
+            )
 
     return answer
 
