@@ -529,7 +529,7 @@ def wefe_project_duplicate(request, proj_id):
 
 @login_required
 def ajax_generate_survey_link(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if request.headers.get("Content-Type") == "application/json":
         proj_id = int(request.GET.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         kobo = KoboHandler(project)
@@ -548,7 +548,7 @@ def ajax_generate_survey_link(request):
 
 @login_required
 def ajax_delete_survey(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if request.headers.get("Content-Type") == "application/json":
         proj_id = int(request.GET.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         kobo = KoboHandler(project)

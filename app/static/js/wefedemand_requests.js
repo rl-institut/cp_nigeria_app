@@ -1,18 +1,28 @@
 function generateSurveyLink(proj_id) {
     $("#survey_button").prop("disabled", true);
     $("#loading_spinner-create").show();
-    $.ajax({
-        url: urlGenerateSurveyLink,
-        data: {proj_id: proj_id},
-        success: function (response) {
-            $("#loading_spinner-create").hide();
-            $("#link_display").html("The questionnaire has been successfully created. You can use the following link: <a href='" + response.url + "' target='_blank'>" + response.url + "</a> to fill out the necessary information");
-        },
-        error: function (error) {
-            $("#loading_spinner-create").hide();
-            $("#link_display").html(error)
-            console.error(error);
+    fetch(urlGenerateSurveyLink + "?proj_id=" + encodeURIComponent(proj_id), {
+        headers: {
+            "Content-Type": "application/json",
         }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return response.json(); // assuming your Django view returns JSON
+    })
+    .then(data => {
+        document.getElementById("loading_spinner-create").style.display = "none";
+        document.getElementById("link_display").innerHTML =
+            "The questionnaire has been successfully created. " +
+            "You can use the following link: <a href='" + data.url + "' target='_blank'>" +
+            data.url + "</a> to fill out the necessary information";
+    })
+    .catch(error => {
+        document.getElementById("loading_spinner-create").style.display = "none";
+        document.getElementById("link_display").innerHTML = error;
+        console.error(error);
     });
 }
 
@@ -20,19 +30,28 @@ function generateSurveyLink(proj_id) {
 function deleteSurvey(proj_id) {
     $("#delete").prop("disabled", true);
     $("#loading_spinner-delete").show();
-    $.ajax({
-        url: urlDeleteSurvey,
-        data: {proj_id: proj_id},
-        success: function (response) {
-            $("#loading_spinner-delete").hide();
-            $("#link_display").html("The questionnaire has been deleted. Please refresh the page.");
-
+    fetch(urlDeleteSurvey + "?proj_id=" + encodeURIComponent(proj_id), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
         },
-        error: function (error) {
-            $("#loading_spinner-delete").hide();
-            $("#link_display").html("There was an error deleting the questionnaire.");
-            console.error(error);
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
         }
+        return response.json(); // or response.text() depending on what Django returns
+    })
+    .then(data => {
+        document.getElementById("loading_spinner-delete").style.display = "none";
+        document.getElementById("link_display").innerHTML =
+            "The questionnaire has been deleted. Please refresh the page.";
+    })
+    .catch(error => {
+        document.getElementById("loading_spinner-delete").style.display = "none";
+        document.getElementById("link_display").innerHTML =
+            "There was an error deleting the questionnaire.";
+        console.error(error);
     });
 }
 
@@ -45,17 +64,21 @@ function wefeDemandRequest(proj_id, action) {
     } else if (action == "ramp") {
         fetchUrl = urlRampSimulation
     }
-    $.ajax({
-        headers: {'X-CSRFToken': csrfToken},
-        type: 'POST',
-        url: fetchUrl,
-        data: {"proj_id": proj_id},
-        success: function (response) {
-            // TODO create two plots for demand? just one? function for plotting similar to openplan results
-            plotDemand(response)
-        },
-        error: function (error) {
-            console.error(error);
-        }
-    });
+
+    fetch(fetchUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({ proj_id })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    })
+    .then(response => {
+      plotDemand(response);
+    })
+    .catch(console.error);
 }
