@@ -275,7 +275,7 @@ def request_wefedemand_preprocessing(request, proj_id=None):
     args = {"id": [576013455, 576161268]}
     # project = get_object_or_404(Project, pk=proj_id)
     # survey_id = project.kobo_survey_id
-    survey_id = "aUTPpjLwttttNPF2tJgLKM"
+    survey_id = "ay5RwDzEgUQn73E9it3wCB"
     try:
         response = requests.post(
             f"{WEFEDEMAND_API}/preprocessing",
@@ -296,7 +296,7 @@ def request_wefedemand_simulation(request, proj_id=None):
     args = {}
     project = get_object_or_404(Project, pk=proj_id)
     # survey_id = project.kobo_survey_id
-    survey_id = "aUTPpjLwttttNPF2tJgLKM"
+    survey_id = "ay5RwDzEgUQn73E9it3wCB"
     try:
         response = requests.post(
             f"{WEFEDEMAND_API}/ramp-simulation",
