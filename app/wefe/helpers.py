@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import requests
+from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
 import logging
 import pandas as pd
@@ -16,6 +17,7 @@ def help_icon(help_text=""):
     return "<a data-bs-toggle='tooltip' title='' data-bs-original-title='{}' data-bs-placement='right'><img style='height: 1.2rem;margin-left:.5rem' alt='info icon' src='{}'></a>".format(
         help_text, static("assets/icons/i_info.svg")
     )
+
 
 def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
     logger = logging.getLogger(__name__)
@@ -83,16 +85,15 @@ def get_renewables_output(proj_id, raw=True):
             ts = Timeseries.objects.create(
                 name=suffix,
                 scenario=project.scenario,
-                values = df[suffix].values.tolist(),
-                start_time = timeinfo["start"],
-                end_time = timeinfo["end"],
-                time_step = 8760,
+                values=df[suffix].values.tolist(),
+                start_time=timeinfo["start"],
+                end_time=timeinfo["end"],
+                time_step=8760,
             )
             ts.save()
         qs_ts = Timeseries.objects.filter(scenario=project.scenario)
-    collected_timeseries = {ts.name:ts.values for ts in qs_ts}
+    collected_timeseries = {ts.name: ts.values for ts in qs_ts}
     return collected_timeseries
-
 
 
 class KoboHandler:
@@ -234,3 +235,20 @@ class KoboHandler:
         else:
             logger.info(f"Successfully deleted survey {survey_id}.")
             return
+
+
+def process_ramp_timeseries(proj_id, wefedemand_response):
+    df = pd.DataFrame.from_dict(wefedemand_response["data"])
+    project = get_object_or_404(Project, pk=proj_id)
+    for col in df:
+        # TODO here it would probably be better to overwrite if the survey has more responses and gets resimulated
+        ts, _ = Timeseries.objects.get_or_create(
+            name=f"{col}_ramp_demand",
+            scenario=project.scenario,
+            values=df[col].values.tolist(),
+            # start_time=timeinfo["start"],
+            # end_time=timeinfo["end"],
+            time_step=8760,
+        )
+        ts.save()
+    return

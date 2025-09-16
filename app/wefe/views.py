@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 import json
@@ -34,6 +35,8 @@ from business_model.helpers import B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS
 import requests
+
+from projects.models.base_models import Timeseries
 
 logger = logging.getLogger(__name__)
 
@@ -184,8 +187,6 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
         "page_information": page_information,
     }
 
-
-
     if request.method == "GET":
         timeseries = get_renewables_output(proj_id, raw=True)
         # TODO provide verbose names for the values
@@ -199,8 +200,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
             "u100": "100 metre U wind component (m s^(-1))",
             "v100": "100 metre V wind component (m s^(-1))",
             "fdir": "Total sky direct solar radiation at surface (J m^(-2))",
-            "fsr": "Forecast surface roughness (m)"
-
+            "fsr": "Forecast surface roughness (m)",
         }
         context.update(
             {
@@ -259,36 +259,47 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
         return render(request, "wefe/steps/demand.html", context)
 
     if request.method == "POST":
-        # TODO this will likely be integrated into an AJAX call
-        #     action = request.POST.get("action")
-        #     url = ""
-        #     data = {}
-        #
-        #     if action == "process_survey":
-        #         url = "http://127.0.0.1:5000/preprocessing"
-        #         data = {
-        #             "script": "preprocessing_demo.py",
-        #             "args": {
-        #                 "id": 576013455,
-        #             },
-        #         }
-        #     #     http://wefe-demand:5000
-        #     elif action == "ramp_simulation":
-        #         url = "http://127.0.0.1:5000/ramp-simulation"
-        #         data = {
-        #             "script": "ramp_simulation_demo.py",
-        #             "args": {
-        #                 "id": 576013455,
-        #             },
-        #         }
-        #
-        #     try:
-        #         api_response = requests.post(url, json=data)
-        #         response = api_response.json()
-        #     except Exception as e:
-        #         response = {"error": str(e)}
-        #
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
+    return None
+
+
+# WEFEDEMAND_API = "http://wefe-demand:5000"
+WEFEDEMAND_API = "http://127.0.0.1:5000"
+
+
+def request_wefedemand_simulation(request, proj_id=None):
+    # TODO this is currently using the dummy kobo survey that works and not the one associated with the project
+    args = {"id": [576013455, 576161268]}
+    project = get_object_or_404(Project, pk=proj_id)
+    # survey_id = project.kobo_survey_id
+    survey_id = "ay5RwDzEgUQn73E9it3wCB"
+    try:
+        response = requests.post(
+            f"{WEFEDEMAND_API}/ramp-simulation",
+            headers={"Content-Type": "application/json"},
+            json={"survey_id": survey_id, "args": args},
+        )
+        response.raise_for_status()
+        process_ramp_timeseries(proj_id, response.json())
+    except Exception as e:
+        logger.warning(f"An error occurred: {e}.")
+    return JsonResponse({"msg": "Sent simulation request"})
+
+
+def get_wefedemand_data(request, proj_id):
+    proj = get_object_or_404(Project, id=proj_id)
+    ts_qs = Timeseries.objects.filter(scenario=proj.scenario, name__contains="ramp_demand")
+    index = pd.date_range(start="2025-01-01 00:00:00", end="2025-12-31 23:00:00", freq="H")
+    index = index.strftime("%Y-%m-%dT%H:%M:%S").tolist()
+
+    data = {}
+    data["index"] = json.dumps(index)
+
+    if ts_qs.exists():
+        for ts in ts_qs:
+            data[ts.name.replace("_ramp_demand", "")] = ts.values
+
+    return JsonResponse(data)
 
 
 @login_required
@@ -515,7 +526,7 @@ def wefe_project_duplicate(request, proj_id):
 
 @login_required
 def ajax_generate_survey_link(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if request.headers.get("Content-Type") == "application/json":
         proj_id = int(request.GET.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         kobo = KoboHandler(project)
@@ -534,7 +545,7 @@ def ajax_generate_survey_link(request):
 
 @login_required
 def ajax_delete_survey(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if request.headers.get("Content-Type") == "application/json":
         proj_id = int(request.GET.get("proj_id"))
         project = get_object_or_404(Project, id=proj_id)
         kobo = KoboHandler(project)
