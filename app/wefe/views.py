@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 import json
@@ -34,6 +35,8 @@ from business_model.helpers import B_MODELS
 from dashboard.models import KPIScalarResults, KPICostsMatrixResults, FancyResults
 from dashboard.helpers import KPI_PARAMETERS
 import requests
+
+from projects.models.base_models import Timeseries
 
 logger = logging.getLogger(__name__)
 
@@ -264,34 +267,9 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
 WEFEDEMAND_API = "http://127.0.0.1:5000"
 
 
-# TODO
-@login_required
-@require_http_methods(["GET", "POST"])
-def request_wefedemand_preprocessing(request, proj_id=None):
-    # import pdb;pdb.set_trace()
-    # proj_id = request.POST.get("proj_id")
-    args = {"id": [576013455, 576161268]}
-    # project = get_object_or_404(Project, pk=proj_id)
-    # survey_id = project.kobo_survey_id
-    survey_id = "ay5RwDzEgUQn73E9it3wCB"
-    try:
-        response = requests.post(
-            f"{WEFEDEMAND_API}/preprocessing",
-            headers={"Content-Type": "application/json"},
-            json={"survey_id": survey_id, "args": args},
-        )
-        response.raise_for_status()
-
-        # TODO here the parameters might not be the right one?
-        print(response.text)
-    except Exception as e:
-        logger.warning(f"An error occurred: {e}.")
-    return JsonResponse({"msg": "Sent preprocessing request"})
-
-
 def request_wefedemand_simulation(request, proj_id=None):
-    proj_id = request.POST.get("proj_id")
-    args = {}
+    # TODO this is currently using the dummy kobo survey that works and not the one associated with the project
+    args = {"id": [576013455, 576161268]}
     project = get_object_or_404(Project, pk=proj_id)
     # survey_id = project.kobo_survey_id
     survey_id = "ay5RwDzEgUQn73E9it3wCB"
@@ -302,43 +280,25 @@ def request_wefedemand_simulation(request, proj_id=None):
             json={"survey_id": survey_id, "args": args},
         )
         response.raise_for_status()
-
+        process_ramp_timeseries(proj_id, response.json())
     except Exception as e:
         logger.warning(f"An error occurred: {e}.")
-    return JsonResponse({"msg": "Sent preprocessing request"})
+    return JsonResponse({"msg": "Sent simulation request"})
 
 
 def get_wefedemand_data(request, proj_id):
-    # Replace this with the actual path or a path provided in the query params
     proj = get_object_or_404(Project, id=proj_id)
-    # survey_id = proj.kobo_survey_id
-    survey_id = "ay5RwDzEgUQn73E9it3wCB"
-    # TODO move this to STATICFILES folder instead
-    path = Path.cwd() / f"wefe/demand_data/{survey_id}/aggregated_demands_mean.csv"
+    ts_qs = Timeseries.objects.filter(scenario=proj.scenario, name__contains="ramp_demand")
+    index = pd.date_range(start="2025-01-01 00:00:00", end="2025-12-31 23:00:00", freq="H")
+    index = index.strftime("%Y-%m-%dT%H:%M:%S").tolist()
 
-    if not path.exists():
-        return JsonResponse({"error": "CSV file not found."}, status=404)
+    data = {}
+    data["index"] = json.dumps(index)
 
-    try:
-        df = pd.read_csv(path, parse_dates=["datetime"])
-    except Exception as e:
-        return JsonResponse({"error": f"Error reading CSV: {e}"}, status=500)
+    if ts_qs.exists():
+        for ts in ts_qs:
+            data[ts.name.replace("_ramp_demand", "")] = ts.values
 
-    # crop timeseries to first week
-    crop = 24 * 7
-    df = df[:crop]
-    # Prepare water and electricity series
-    data = {
-        "index": df["datetime"].astype(str).tolist(),
-        "water": {
-            "drinking_water": df["drinking_water"].tolist(),
-            "service_water": df["service_water"].tolist(),
-        },
-        "electricity": {
-            "cooking": df["cooking"].tolist(),
-            "electrical_appliances": df["electrical_appliances"].tolist(),
-        },
-    }
     return JsonResponse(data)
 
 
