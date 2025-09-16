@@ -155,7 +155,7 @@ function triggerMatrixSubQuestion(new_value, subQuestionMapping) {
 
 var surveyFormDOM = document.getElementById("surveyQuestions");
 
-const allElements = document.querySelectorAll('*');
+const allElements = surveyFormDOM.querySelectorAll('*');
 const elementsWithOnchange = Array.from(allElements).filter(el => el.hasAttribute('onchange'));
 
 console.log(elementsWithOnchange);

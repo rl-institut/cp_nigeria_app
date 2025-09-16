@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'wefe/steps/step_progression.html' %}
 {% load i18n %}
 {% load crispy_forms_tags %}
 {% load static %}
@@ -6,11 +6,12 @@
 
 
 {% block head_block %}
+<link rel="stylesheet" href="{% static 'css/survey_style.css' %}" type="text/css">
+
 {% endblock head_block %}
 
 <!-- WRITE HTML CODE WITHIN THESE block content TAGS -->
-{% block content %}
-
+{% block progression_content %}
 
 
 <section class="container-lg">
@@ -41,6 +42,7 @@
 											{% if field.label|is_water_header %}
 												<h4>{{ field.label|is_water_header }}</h4>
 											{% endif %}
+												{{ field|is_subsubquestion}}
 											{{ field |as_crispy_field}}
 											</div>
 											{% if field|is_matrix_source %}
@@ -74,7 +76,7 @@
 					</div>
 					{% endfor %}
 
-					<input id="surveySubmitBtn" type="submit">
+					<input id="surveySubmitBtn" type="submit" hidden="">
 
 				</div>
 			</form>
@@ -83,9 +85,13 @@
 	</div>
 </section>
 
-{% endblock content %}
+{% endblock progression_content %}
 
 
+
+{% block next_btn %}
+<button id="next-button" class="btn btn--medium" onclick="javascript:surveySubmitBtn.click();">{% translate "Next" %}</button>
+{% endblock next_btn %}
 
 
 
