@@ -64,11 +64,7 @@ function deleteSurvey(proj_id) {
 // TODO WIP
 function wefeDemandRequest(proj_id, action) {
     var linkDisplay = document.getElementById("link_display");
-    if (action == "preprocess") {
-        fetchUrl = urlPreprocessSurvey
-    } else if (action == "ramp") {
-        fetchUrl = urlRampSimulation
-    }
+    fetchUrl = urlRampSimulation
 
     console.log(fetchUrl);
     fetch(fetchUrl, {
@@ -107,7 +103,7 @@ async function plotDemand(proj_id) {
         // Water plot (stacked)
         const waterTrace1 = {
             x: datetime,
-            y: data.water.drinking_water,
+            y: data.drinking_water,
             name: 'Drinking Water',
             type: 'scatter',
             mode: 'lines',
@@ -115,7 +111,7 @@ async function plotDemand(proj_id) {
         };
         const waterTrace2 = {
             x: datetime,
-            y: data.water.service_water,
+            y: data.service_water,
             name: 'Service Water',
             type: 'scatter',
             mode: 'lines',
@@ -131,7 +127,7 @@ async function plotDemand(proj_id) {
         // Electricity plot (stacked)
         const elecTrace1 = {
             x: datetime,
-            y: data.electricity.cooking,
+            y: data.cooking,
             name: 'Cooking',
             type: 'scatter',
             mode: 'lines',
@@ -139,7 +135,7 @@ async function plotDemand(proj_id) {
         };
         const elecTrace2 = {
             x: datetime,
-            y: data.electricity.electrical_appliances,
+            y: data.electrical_appliances,
             name: 'Appliances',
             type: 'scatter',
             mode: 'lines',
