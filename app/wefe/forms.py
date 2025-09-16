@@ -137,7 +137,7 @@ class SurveyQuestionForm(forms.Form):
             answer = self.qs_answers.get(question__question_id=q["question_id"])
             alv = answer.question.possible_answers
             opts = {
-                "label": f"{answer.question.question_id}: {answer.question.question}"
+                "label": f"{answer.question.question}"
             }
 
             # by default the subquestion are not required
