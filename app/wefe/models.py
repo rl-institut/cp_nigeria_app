@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase, Simulation
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 from wefe.survey import SURVEY_QUESTIONS_CATEGORIES
+import json
 
 
 # class Options(models.Model):

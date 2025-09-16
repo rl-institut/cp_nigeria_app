@@ -309,7 +309,7 @@ def wefe_economic_parameters(request, proj_id, step_id=STEP_MAPPING["economic_pa
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/demand.html", context)
+        return render(request, "wefe/steps/step_progression.html", context)
 
     if request.method == "POST":
         # TODO
@@ -343,7 +343,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                 crit.value = json.dumps(value)
                 crit.save(update_fields=["value"])
 
-            answer = HttpResponseRedirect(reverse("view_survey", args=[scen_id]))
+            answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
         else:
             # TODO
             print("Form is not valid")
@@ -404,6 +404,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                                     subs.append(subquestion["question"])
                     matrix_headers[field] = subs
                     matrix_labels[field] = labels
+            page_information = "This survey will allow the user to build and simulate an energy system"
 
             answer = render(
                 request,
@@ -416,6 +417,11 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                     "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
                     "matrix_headers": matrix_headers,
                     "matrix_labels": matrix_labels,
+                    "proj_id": proj_id,
+                    "proj_name": project.name,
+                    "step_id": step_id,
+                    "step_list": WEFE_STEP_VERBOSE,
+                    "page_information": page_information,
                 },
             )
 
@@ -444,7 +450,7 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/demand.html", context)
+        return render(request, "wefe/steps/step_progression.html", context)
 
     if request.method == "POST":
         # TODO
@@ -473,7 +479,7 @@ def wefe_simulation(request, proj_id, step_id=STEP_MAPPING["simulation"]):
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/demand.html", context)
+        return render(request, "wefe/steps/step_progression.html", context)
 
     if request.method == "POST":
         # TODO
@@ -502,7 +508,7 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/demand.html", context)
+        return render(request, "wefe/steps/step_progression.html", context)
 
     if request.method == "POST":
         # TODO
