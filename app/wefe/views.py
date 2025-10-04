@@ -174,18 +174,15 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
 
     if request.method == "GET":
         timeseries = get_renewables_output(proj_id, raw=True)
-        # TODO provide verbose names for the values
+
         timeseries_labels = {
-            "sp": "Surface pressure (Pa)",
-            "ssrd": "Surface solar radiation downwards (J m^(-2))",
-            "t2m": "2 metre temperature (K)",
-            "tp": "Total precipitation (m)",
-            "u10": "10 metre U wind component (m s^(-1))",
-            "v10": "10 metre V wind component (m s^(-1))",
-            "u100": "100 metre U wind component (m s^(-1))",
-            "v100": "100 metre V wind component (m s^(-1))",
-            "fdir": "Total sky direct solar radiation at surface (J m^(-2))",
-            "fsr": "Forecast surface roughness (m)",
+            "ghi": "Global Horizontal irradiance [W/m²]",
+            "t_air": "Temperature [°C]",
+            "t_dew": "Dewpoint Temperature[°C]",
+            "windspeed": "Windspeed at 100 meters [m/s]",
+            "fsr": "Forecast Surface Roughness (m)",
+            "tp": "Precipitation [mm]",
+            "e": "Evapotranspiration [mm]",
         }
         context.update(
             {

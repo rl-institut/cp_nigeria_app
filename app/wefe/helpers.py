@@ -33,10 +33,10 @@ def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
     # headers = {"content-type": "application/json"}
     headers = {
         "X-CSRFToken": csrftoken,
-        "Referer": WEATHER_DATA_API_HOST,
+        "Referer": WEATHER_DATA_API_HOST + "wefe/",
     }
 
-    post_response = session.post(WEATHER_DATA_API_HOST, data=payload, headers=headers)
+    post_response = session.post(WEATHER_DATA_API_HOST + "wefe/", data=payload, headers=headers)
     # TODO here would be best to return a token but this requires celery on the weather_data API side
     # If we get a high request amount we might need to do so anyway
     if post_response.status_code == 200:
@@ -45,7 +45,6 @@ def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
         logger.info("The weather data API fetch worked successfully")
 
         if timeinfo is True:
-
             timeindex = response_data["time"]
     else:
         df = pd.DataFrame()
@@ -63,29 +62,17 @@ def get_renewables_output(proj_id, raw=True):
     :param raw: when True, returns raw weather data (direct irradiance/wind speed), False returns normalized electricity output
     """
 
-    suffixes = {
-        "sp": "sp" if raw else "electricity",
-        "ssrd": "ssrd" if raw else "electricity",
-        "t2m": "t2m" if raw else "electricity",
-        "tp": "tp" if raw else "electricity",
-        "u10": "wind_speed_u10" if raw else "electricity",
-        "v10": "wind_speed_v10" if raw else "electricity",
-        "u100": "wind_speed_u100" if raw else "electricity",
-        "v100": "wind_speed_v100" if raw else "electricity",
-        "fdir": "fdir" if raw else "electricity",
-        "fsr": "fsr" if raw else "electricity",
-    }
-
     project = Project.objects.get(id=proj_id)
     qs_ts = Timeseries.objects.filter(scenario=project.scenario)
     if qs_ts.exists() is False:
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
-        for suffix in suffixes:
+
+        for col in df.columns:
             ts = Timeseries.objects.create(
-                name=suffix,
+                name=col,
                 scenario=project.scenario,
-                values=df[suffix].values.tolist(),
+                values=df[col].values.tolist(),
                 start_time=timeinfo["start"],
                 end_time=timeinfo["end"],
                 time_step=8760,
