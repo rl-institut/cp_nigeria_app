@@ -10,3 +10,5 @@
 **/cdn_static_root/
 .envs/*
 **/venv/
+**/migrations/*.py
+app/.env

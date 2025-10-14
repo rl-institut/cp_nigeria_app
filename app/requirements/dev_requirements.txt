@@ -2,3 +2,4 @@ black==24.8.0
 click==8.0.3
 django-sass-processor
 pre-commit
+libsass

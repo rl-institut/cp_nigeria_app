@@ -4,6 +4,7 @@ Django==5.1.3
 crispy-bootstrap5
 django-jsonview
 django-q2
+django-environ
 geopy
 gunicorn
 openpyxl
