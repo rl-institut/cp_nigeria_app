@@ -67,7 +67,6 @@ def get_renewables_output(proj_id, raw=True):
     if qs_ts.exists() is False:
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
-
         for col in df.columns:
             ts = Timeseries.objects.create(
                 name=col,
@@ -85,7 +84,7 @@ def get_renewables_output(proj_id, raw=True):
 
 class KoboHandler:
     base_survey_id = "aUTPpjLwttttNPF2tJgLKM"
-    request_headers = {"Accept": "application/json", "Authorization": "Token " + KOBO_API_TOKEN}
+    request_headers = {"Accept": "application/json", "Authorization": "Token " + str(KOBO_API_TOKEN)}
 
     def __init__(self, project):
         """When the class is initialized, a survey is cloned from the base survey, deployed and the permissions
