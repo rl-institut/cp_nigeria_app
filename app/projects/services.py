@@ -40,6 +40,8 @@ from epa.settings import (
     EMAIL_SUBJECT_PREFIX,
     TIME_ZONE,
     USE_EXCHANGE_EMAIL_BACKEND,
+    RN_TOKEN,
+    RN_API_BASE,
 )
 from plotly.offline import plot
 from plotly.graph_objs import Scatter
@@ -50,14 +52,6 @@ from projects.requests import fetch_mvs_simulation_results
 
 logger = logging.getLogger(__name__)
 
-
-# email account which will send the feedback emails
-EXCHANGE_ACCOUNT = os.getenv("EXCHANGE_ACCOUNT", "dummy@dummy.com")
-EXCHANGE_PW = os.getenv("EXCHANGE_PW", "dummypw")
-EXCHANGE_EMAIL = os.getenv("EXCHANGE_EMAIL", "dummy@dummy.com")
-EXCHANGE_SERVER = os.getenv("EXCHANGE_SERVER", "dummy.com")
-# email addresses to which the feedback emails will be sent
-RECIPIENTS = os.getenv("RECIPIENTS", "dummy@dummy.com,dummy2@dummy.com").split(",")
 
 r"""Functions meant to be powered by Django-Q.
 
@@ -269,13 +263,10 @@ def get_selected_scenarios_in_cache(request, proj_id):
 
 
 class RenewablesNinja:
-    token = os.environ["RN_API_TOKEN"]
-    api_base = "https://www.renewables.ninja/api/"
-
     def __init__(self):
         self.s = requests.session()
         # Send token header with each request
-        self.s.headers = {"Authorization": "Token " + self.token}
+        self.s.headers = {"Authorization": "Token " + RN_TOKEN}
         self.data = dict.fromkeys(["pv", "wind"])
 
     def get_pv_data(self, coordinates):
@@ -283,7 +274,7 @@ class RenewablesNinja:
         # Get PV data
         ##
 
-        url = self.api_base + "data/pv"
+        url = RN_API_BASE + "data/pv"
 
         # Panels are assumed to be latitude tilted
         args = {
@@ -312,7 +303,7 @@ class RenewablesNinja:
         # Get Wind data
         ##
 
-        url = self.api_base + "data/wind"
+        url = RN_API_BASE + "data/wind"
 
         args = {
             "lat": coordinates["lat"],

@@ -69,7 +69,14 @@
                         <li><a class="dropdown-item" href="{% url 'license' %}">{% translate "License" %}</a></li>
                         <li><a class="dropdown-item" href="{% url 'about' %}">{% translate "Contact" %}</a></li> <!-- about.html -->
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'logout' %}">{% translate "Log out" %}</a></li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item">
+                                    {% translate "Log out" %}
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </li>
 

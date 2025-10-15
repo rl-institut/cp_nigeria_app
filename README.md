@@ -22,7 +22,7 @@ Prior to be able to develop locally, you might need to install postgres and crea
 3. Move to the `app` folder with `cd app`
 4. Install the dependencies with `pip install -r requirements/postgres.txt`
 5. Install extra local development dependencies with `pip install -r dev_requirements.txt`
-6. Create environment variables for communication with the database (only replace content surrounded by `<>`)
+6. Create environment variables or a new file in the app directory called `.env` for communication with the database (only replace content surrounded by `<>`)
 ```
 SQL_ENGINE=django.db.backends.postgresql
 SQL_DATABASE=<your db name>
