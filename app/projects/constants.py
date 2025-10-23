@@ -255,7 +255,9 @@ CURRENCY_SYMBOLS = {
     "NOK": "\u006b\u0072",
     "INR": "\u20b9",
     "GBP": "\u00a3",
+    "MAD": "DH",
     "NGN": "\u20A6",
+    "ZAR": "R",
 }
 # TODO use https://gist.github.com/lokeb/785b3a1ad9c90e984ea4ddb61ced3066 and allow user input currencies
 
