@@ -52,6 +52,7 @@ class EconomicData(models.Model):
     currency = models.CharField(max_length=3, choices=CURRENCY)
     discount = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0)
     tax = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0)
+    population = models.IntegerField(default=None, null=True, blank=True)
     # TODO make the initial exchange rate dynamic based on https://www.cbn.gov.ng/rates/exchratebycurrency.asp
     exchange_rate = models.FloatField(
         validators=[MinValueValidator(0.0)],
@@ -80,6 +81,7 @@ class Project(models.Model):
     country = models.CharField(max_length=50, choices=COUNTRY)
     latitude = models.FloatField()
     longitude = models.FloatField()
+    altitude = models.FloatField(default=None, null=True, blank=True)
     economic_data = models.OneToOneField(EconomicData, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     viewers = models.ManyToManyField(Viewer, related_name="viewer_projects")

@@ -34,9 +34,9 @@ DEBUG = env.bool("DEBUG", default=False)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
-STATICFILES_DIRS = (str(BASE_DIR / "static"),)
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_URL = "/static/"
-STATIC_ROOT = str(BASE_DIR / "cdn_static_root")
+STATIC_ROOT = BASE_DIR / "cdn_static_root"
 STATICFILES_FINDERS = ["django.contrib.staticfiles.finders.FileSystemFinder"]
 
 if DEBUG is True:
@@ -223,6 +223,10 @@ WEATHER_DATA_API_HOST = env("WEATHER_DATA_API_HOST", default=None)
 # RenewablesNinja API
 RN_TOKEN = env("RN_API_TOKEN", default=None)
 RN_API_BASE = "https://www.renewables.ninja/api/"
+
+# altitude API
+OPEN_METEO_URL = "https://api.open-meteo.com/v1/"
+OPEN_TOPO_URL = "https://api.opentopodata.org/v1/"
 
 LOGGING = {
     "version": 1,
