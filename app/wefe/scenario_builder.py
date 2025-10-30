@@ -8,11 +8,15 @@ import logging
 import json
 import shutil
 
-from utils import AVAILABLE_COMPONENTS, AVAILABLE_SEQUENCES, COMPONENT_TEMPLATES_PATH
-from analyse_survey import create_components_list
-from water_treatment_dict import water_treatment_train
-
-import weather_data
+from wefe.helpers import (
+    AVAILABLE_COMPONENTS,
+    AVAILABLE_SEQUENCES,
+    COMPONENT_TEMPLATES_PATH,
+    create_components_list,
+    WATER_TREATMENT_TRAIN,
+    SURVEY_ANSWER_COMPONENT_MAPPING,
+    SUB_QUESTION_MAPPING,
+)
 
 # TODO this needs to work standalone as well as a service
 
@@ -40,14 +44,6 @@ type_check = {
     TYPE_INT: int,
     TYPE_STRING: str,
 }
-
-# Later direct imports without .json
-# TODO update this mapping with the latest produced survey_answer_component_mapping.json
-with open(os.path.join(project_dir, "app", "survey_answer_component_mapping_in_use.json"), "r") as fp:
-    SURVEY_ANSWER_COMPONENT_MAPPING = json.load(fp)
-
-with open(os.path.join(project_dir, "app", "sub_question_mapping.json"), "r") as fp:
-    SUB_QUESTION_MAPPING = json.load(fp)
 
 
 class ScenarioBuilder:
