@@ -229,6 +229,8 @@ WEFEDEMAND_API_HOST = env("WEFEDEMAND_API", default=None)
 WEFEDEMAND_POST_URL = f"{WEFEDEMAND_API_HOST}/sendjson"
 WEFEDEMAND_GET_URL = f"{WEFEDEMAND_API_HOST}/check/"
 
+# WEFEConfigurator settings
+COMPONENT_TEMPLATES_PATH = str(BASE_DIR / "static" / "wefe_configurator/component_library/WIP_components")
 
 LOGGING = {
     "version": 1,
