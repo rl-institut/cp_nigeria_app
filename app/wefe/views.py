@@ -22,9 +22,10 @@ from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 
-from .models import SurveyAnswer, WEFESimulation
-from .requests import fetch_wefedemand_simulation_results, wefe_simulation_request
-from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
+from wefe.models import SurveyAnswer, WEFESimulation
+from wefe.requests import fetch_wefedemand_simulation_results, wefe_simulation_request
+from wefe.scenario_builder import ScenarioBuilder
+from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
 
@@ -479,6 +480,19 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
         raise PermissionDenied
 
     scenario = project.scenario
+
+    qs = SurveyAnswer.objects.filter(scenario_id=scenario.id)
+    survey_answers = {}
+    for ans in qs:
+        survey_answers.update(ans.export(ignore_empty=True))
+
+    wefe_conf = ScenarioBuilder(name=f"scenario_{scenario.id}", overwrite=False)
+
+    wefe_conf.process_survey(survey_answers)
+    wefe_conf.process_demand()
+    wefe_conf.add_components()
+    wefe_conf.add_buses()
+    wefe_conf.add_sequences()
 
     page_information = "About defining the weighting for the multi-objective optimization"
     context = {
