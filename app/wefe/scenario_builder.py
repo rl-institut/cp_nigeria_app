@@ -64,6 +64,7 @@ class WEFEConfigurator:
 
     def create_scenario_folder(self, destination_path=scenario_dir):
         """Create a folder with the datapackage structure, the components and timeseries will be filled later on"""
+        # TODO this should be a temp folder that is removed after getting the datapackage
         scenario_folder = os.path.join(destination_path, f"wefeconf_{self.scen_id}")
         create_folder = True
         if os.path.exists(scenario_folder):
@@ -491,6 +492,7 @@ class WEFEConfigurator:
 
     @property
     def reference_datapackage(self):
+        # TODO maybe it would be good to save the datapackage json in the db for the scenario (maybe in a WEFESimulation object?)
         dp_json = os.path.join(COMPONENT_TEMPLATES_PATH, "datapackage.json")
         return dp.Package(dp_json)
 
