@@ -8,6 +8,7 @@ import logging
 import json
 import shutil
 
+from projects.models import Timeseries, Scenario
 from wefe.helpers import (
     AVAILABLE_COMPONENTS,
     AVAILABLE_SEQUENCES,
@@ -16,6 +17,7 @@ from wefe.helpers import (
     WATER_TREATMENT_TRAIN,
     SURVEY_ANSWER_COMPONENT_MAPPING,
     SUB_QUESTION_MAPPING,
+    get_renewables_output,
 )
 
 # TODO this needs to work standalone as well as a service
@@ -46,9 +48,11 @@ type_check = {
 }
 
 
-class ScenarioBuilder:
-    def __init__(self, name="test_scenario", overwrite=False):
-        self.name = name  # should be updated based on scenario
+class WEFEConfigurator:
+    def __init__(self, scen_id, overwrite=False):
+        self.scen_id = scen_id
+        scenario = Scenario.objects.get(id=self.scen_id)
+        self.proj_id = scenario.id
         self.overwrite = overwrite
         self.mapping = SURVEY_ANSWER_COMPONENT_MAPPING
         self.subq_mapping = SUB_QUESTION_MAPPING
@@ -56,13 +60,11 @@ class ScenarioBuilder:
         self.components = {}
         self.wished_components = {}
         self.additional_busses = []
-        self.weather_data_path = "weather_data.csv"
-        self.demand_data_path = "demand_data.csv"
         self.scenario_folder = self.create_scenario_folder()
 
     def create_scenario_folder(self, destination_path=scenario_dir):
         """Create a folder with the datapackage structure, the components and timeseries will be filled later on"""
-        scenario_folder = os.path.join(destination_path, self.name)
+        scenario_folder = os.path.join(destination_path, f"wefeconf_{self.scen_id}")
         create_folder = True
         if os.path.exists(scenario_folder):
             if self.overwrite is False:
@@ -82,7 +84,7 @@ class ScenarioBuilder:
         # --- SAFETY CLEANUP STEP ---
         # Remove any existing water-treatment components that process_survey might have added
         water_main_list = []
-        for comp in water_treatment_train["main_list"]:
+        for comp in WATER_TREATMENT_TRAIN["main_list"]:
             if isinstance(comp, list):
                 water_main_list.extend(comp)
             else:
@@ -110,7 +112,7 @@ class ScenarioBuilder:
             # --- SAFETY CLEANUP STEP ---
             # Remove any existing water-treatment components that process_survey might have added
             water_main_list = []
-            for comp in water_treatment_train["main_list"]:
+            for comp in WATER_TREATMENT_TRAIN["main_list"]:
                 if isinstance(comp, list):
                     water_main_list.extend(comp)
                 else:
@@ -197,7 +199,7 @@ class ScenarioBuilder:
             service_water_component_list = list(dict.fromkeys(service_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                water_treatment_train["main_list"], drinking_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
                 drinking_water_component_list, entry_bus="water-in-bus", water_type="drinking"
@@ -212,7 +214,7 @@ class ScenarioBuilder:
             print(drinking_water_treatment_dict)
             print("SW treatment dictionary")
             service_water_component_list = arrange_components(
-                water_treatment_train["main_list"], service_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], service_water_component_list
             )
             service_water_treatment_dict = create_component_dict(
                 service_water_component_list, entry_bus="water-in-bus", water_type="service"
@@ -233,7 +235,7 @@ class ScenarioBuilder:
             drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                water_treatment_train["main_list"], drinking_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
                 drinking_water_component_list, entry_bus="water-in-bus", water_type="drinking"
@@ -247,7 +249,7 @@ class ScenarioBuilder:
                         self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
             print(drinking_water_treatment_dict)
 
-        # final_water_treatment_train
+        # final_WATER_TREATMENT_TRAIN
         # self.add_single_component()
         # self.add_single_bus()
 
@@ -513,23 +515,20 @@ class ScenarioBuilder:
 
     @property
     def demand_data(self):
-        if not os.path.exists(self.demand_data_path):
-            self.download_demand_data()
+        timeseries_suffix = "_ramp_demand_agg_mean"
+        qs_ts = Timeseries.objects.filter(scenario__id=self.scen_id, name__contains=timeseries_suffix)
+        timeseries = {ts.name.replace(timeseries_suffix, ""): ts.values for ts in qs_ts}
 
-        # TODO: test this function to see handling of different csv formats
-        return pd.read_csv(self.demand_data_path, delimiter=",", quotechar='"', decimal=",")
-
-    def download_weather_data(self):
-        if not os.path.exists(self.weather_data_path):
-            df = weather_data.get_data()
-            df.to_csv(self.weather_data_path, index=False)
+        return pd.DataFrame(timeseries)
 
     @property
     def weather_data(self):
-        if not os.path.exists(self.weather_data_path):
-            self.download_weather_data()
-
-        return pd.read_csv(self.weather_data_path)
+        timeseries = get_renewables_output(self.proj_id)
+        timeseries_df = pd.DataFrame(timeseries)
+        timeseries_prefix = "weather_data_"
+        param_cols = [col.replace(timeseries_prefix) for col in timeseries_df.columns]
+        timeseries_df.columns = param_cols
+        return get_renewables_output(self.proj_id)
 
     # TODO: put together demand_data, weather_data and others to profiles_data or sequences_data
     #  and process all together as one df
@@ -1143,7 +1142,7 @@ if __name__ == "__main__":
     with open(os.path.join(project_dir, "app", f"scenario_{scen_id}_survey_answers.json"), "r") as fp:
         survey_answers = json.load(fp)
 
-    scenario = ScenarioBuilder(name=f"scenario_{scen_id}", overwrite=False)
+    scenario = WEFEConfigurator(scen_id=scen_id, overwrite=False)
 
     # Parse the survey to add components to a list
     scenario.process_survey(survey_answers)

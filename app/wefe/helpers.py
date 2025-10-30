@@ -72,13 +72,13 @@ def get_renewables_output(proj_id, raw=True):
     """
 
     project = Project.objects.get(id=proj_id)
-    qs_ts = Timeseries.objects.filter(scenario=project.scenario)
-    if qs_ts.exists() is False:
+    qs_ts = Timeseries.objects.filter(scenario=project.scenario, name__startswith="weather_data")
+    if not qs_ts.exists():
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
         for col in df.columns:
             ts = Timeseries.objects.create(
-                name=col,
+                name=f"weather_data_{col}",
                 scenario=project.scenario,
                 values=df[col].values.tolist(),
                 start_time=timeinfo["start"],

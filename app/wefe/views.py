@@ -24,7 +24,7 @@ from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, 
 
 from wefe.models import SurveyAnswer, WEFESimulation
 from wefe.requests import fetch_wefedemand_simulation_results, wefe_simulation_request
-from wefe.scenario_builder import ScenarioBuilder
+from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
@@ -486,7 +486,7 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
     for ans in qs:
         survey_answers.update(ans.export(ignore_empty=True))
 
-    wefe_conf = ScenarioBuilder(name=f"scenario_{scenario.id}", overwrite=False)
+    wefe_conf = WEFEConfigurator(scen_id=scenario.id, overwrite=False)
 
     wefe_conf.process_survey(survey_answers)
     wefe_conf.process_demand()
