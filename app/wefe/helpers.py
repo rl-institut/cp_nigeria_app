@@ -67,6 +67,21 @@ def get_renewables_output(proj_id, raw=True):
     if qs_ts.exists() is False:
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
+        if not raw:
+            # Convert Timeseries columns and drop unused columns
+            conversion_j_to_wh = 1 / 3600
+            offset_K_Celsius = 273.15
+
+            df["ghi"] = df["ssrd"] * conversion_j_to_wh
+            df["t_air"] = df["t2m"] - offset_K_Celsius
+            df["t_dew"] = df["d2m"] - offset_K_Celsius
+            df["windspeed"] = df.apply(
+                lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1
+            )
+
+            used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e"]
+            df = df[used_cols]
+
         for col in df.columns:
             ts = Timeseries.objects.create(
                 name=col,

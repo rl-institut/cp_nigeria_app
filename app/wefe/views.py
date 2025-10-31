@@ -173,7 +173,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
     }
 
     if request.method == "GET":
-        timeseries = get_renewables_output(proj_id, raw=True)
+        timeseries = get_renewables_output(proj_id, raw=False)
 
         timeseries_labels = {
             "ghi": "Global Horizontal irradiance [W/m²]",
