@@ -1,4 +1,5 @@
 import os
+import tempfile
 from copy import deepcopy
 import datapackage as dp
 import tableschema
@@ -49,7 +50,11 @@ type_check = {
 
 
 class WEFEConfigurator:
-    def __init__(self, scen_id, overwrite=False):
+    def __init__(
+        self,
+        scen_id,
+        overwrite=False,
+    ):
         self.scen_id = scen_id
         scenario = Scenario.objects.get(id=self.scen_id)
         self.proj_id = scenario.id
@@ -62,24 +67,19 @@ class WEFEConfigurator:
         self.additional_busses = []
         self.scenario_folder = self.create_scenario_folder()
 
-    def create_scenario_folder(self, destination_path=scenario_dir):
-        """Create a folder with the datapackage structure, the components and timeseries will be filled later on"""
-        # TODO this should be a temp folder that is removed after getting the datapackage
-        scenario_folder = os.path.join(destination_path, f"wefeconf_{self.scen_id}")
-        create_folder = True
-        if os.path.exists(scenario_folder):
-            if self.overwrite is False:
-                create_folder = False
-            else:
-                shutil.rmtree(scenario_folder)
+    def create_scenario_folder(self):
+        self._temp_dir = tempfile.TemporaryDirectory(prefix=f"wefeconf_{self.scen_id}_")
+        scenario_folder = self._temp_dir.name
 
-        if create_folder is True:
-            os.makedirs(scenario_folder)
-            os.makedirs(os.path.join(scenario_folder, "scripts"))
-            os.makedirs(os.path.join(scenario_folder, "data", "elements"))
-            os.makedirs(os.path.join(scenario_folder, "data", "sequences"))
+        os.makedirs(os.path.join(scenario_folder, "scripts"), exist_ok=True)
+        os.makedirs(os.path.join(scenario_folder, "data", "elements"), exist_ok=True)
+        os.makedirs(os.path.join(scenario_folder, "data", "sequences"), exist_ok=True)
 
         return scenario_folder
+
+    def cleanup(self):
+        if self._temp_dir:
+            self._temp_dir.cleanup()
 
     def safety_check_1(self):
         # --- SAFETY CLEANUP STEP ---
@@ -517,6 +517,7 @@ class WEFEConfigurator:
 
     @property
     def demand_data(self):
+        # This data is now taken from the database instead of CSV
         timeseries_suffix = "_ramp_demand_agg_mean"
         qs_ts = Timeseries.objects.filter(scenario__id=self.scen_id, name__contains=timeseries_suffix)
         timeseries = {ts.name.replace(timeseries_suffix, ""): ts.values for ts in qs_ts}
@@ -525,6 +526,7 @@ class WEFEConfigurator:
 
     @property
     def weather_data(self):
+        # This data is now taken from the database instead of CSV
         timeseries = get_renewables_output(self.proj_id)
         timeseries_df = pd.DataFrame(timeseries)
         timeseries_prefix = "weather_data_"
