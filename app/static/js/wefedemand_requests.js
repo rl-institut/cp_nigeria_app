@@ -1,7 +1,3 @@
-$(document).ready(function() {
-    plotDemand(proj_id);
-});
-
 
 function generateSurveyLink(proj_id) {
     $("#survey_button").prop("disabled", true);
@@ -61,28 +57,20 @@ function deleteSurvey(proj_id) {
 }
 
 
-// TODO WIP
-function wefeDemandRequest(proj_id, action) {
+function wefeDemandRequest(proj_id, default_survey=false) {
     var linkDisplay = document.getElementById("link_display");
-    fetchUrl = urlRampSimulation
-
-    console.log(fetchUrl);
-    fetch(fetchUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      body: JSON.stringify({ proj_id })
-    })
+    const url = new URL(urlRampSimulation, window.location.origin);
+    url.searchParams.append("default_survey", default_survey);
+    console.log(url.toString());
+    fetch(url)
     .then(res => {
       if (!res.ok) throw new Error("Network response was not ok");
-      return res.json();
+      location.reload();
     })
-    .then(response => {
-      console.log(response);
-      plotDemand(response);
-    })
+//    .then(response => {
+//      console.log(response);
+//      plotDemand(response);
+//    })
     .catch(console.error);
 }
 
@@ -103,7 +91,7 @@ async function plotDemand(proj_id) {
         // Water plot (stacked)
         const waterTrace1 = {
             x: datetime,
-            y: data.drinking_water,
+            y: data.drinking_water_agg_mean,
             name: 'Drinking Water',
             type: 'scatter',
             mode: 'lines',
@@ -111,7 +99,7 @@ async function plotDemand(proj_id) {
         };
         const waterTrace2 = {
             x: datetime,
-            y: data.service_water,
+            y: data.service_water_agg_mean,
             name: 'Service Water',
             type: 'scatter',
             mode: 'lines',
@@ -127,7 +115,7 @@ async function plotDemand(proj_id) {
         // Electricity plot (stacked)
         const elecTrace1 = {
             x: datetime,
-            y: data.cooking,
+            y: data.cooking_agg_mean,
             name: 'Cooking',
             type: 'scatter',
             mode: 'lines',
@@ -135,7 +123,7 @@ async function plotDemand(proj_id) {
         };
         const elecTrace2 = {
             x: datetime,
-            y: data.electrical_appliances,
+            y: data.electrical_appliances_agg_mean,
             name: 'Appliances',
             type: 'scatter',
             mode: 'lines',

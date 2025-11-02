@@ -24,4 +24,9 @@ urlpatterns = [
     path("<int:proj_id>/survey", wefe_system_layout, name="view_survey_questions"),
     path("<int:proj_id>/submit/survey", wefe_system_layout, name="submit_survey"),
     path("<int:proj_id>/view/survey", wefe_system_layout, name="view_survey"),
+    path(
+        "wefe-simulation/fetch-results/<int:sim_id>",
+        fetch_wefe_simulation_results,
+        name="fetch_wefe_simulation_results",
+    ),
 ]

@@ -238,18 +238,20 @@ class KoboHandler:
             return
 
 
-def process_ramp_timeseries(proj_id, wefedemand_response):
-    df = pd.DataFrame.from_dict(wefedemand_response["data"])
-    project = get_object_or_404(Project, pk=proj_id)
-    for col in df:
-        # TODO here it would probably be better to overwrite if the survey has more responses and gets resimulated
-        ts, _ = Timeseries.objects.get_or_create(
-            name=f"{col}_ramp_demand",
-            scenario=project.scenario,
-            values=df[col].values.tolist(),
-            # start_time=timeinfo["start"],
-            # end_time=timeinfo["end"],
-            time_step=8760,
-        )
-        ts.save()
+def process_wefedemand_response(simulation, wefedemand_response):
+    for res in ["agg_mean", "agg_max"]:
+        demand_dict = wefedemand_response[res]
+        df = pd.DataFrame.from_dict(demand_dict)
+        project = simulation.scenario.project
+        for col in df:
+            # TODO here it would probably be better to overwrite if the survey has more responses and gets resimulated
+            ts, _ = Timeseries.objects.get_or_create(
+                name=f"{col}_ramp_demand_{res}",
+                scenario=project.scenario,
+                values=df[col].values.tolist(),
+                # start_time=timeinfo["start"],
+                # end_time=timeinfo["end"],
+                time_step=8760,
+            )
+            ts.save()
     return

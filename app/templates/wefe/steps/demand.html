@@ -6,7 +6,6 @@
 {% block head_block %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" crossorigin=""
 	  integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" />
-<link rel="stylesheet" href="{% static 'css/map.css' %}" type="text/css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 {% endblock head_block %}
 
@@ -67,8 +66,11 @@
 <div>
 	<section class="container-lg">
 		<h1>Test WEFE-Demand API</h1>
-		<button id="ramp-sim" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }}, 'ramp')" style="margin-top:0.5rem">
+		<button id="ramp-sim" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }},default_survey=false)" style="margin-top:0.5rem">
 			Ramp simulation
+		</button>
+		<button id="ramp-sim-default" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }},default_survey=true)" style="margin-top:0.5rem">
+			dev: default Ramp simulation
 		</button>
 
 		{% if response %}
@@ -100,6 +102,7 @@
 
 {% block end_body_scripts %}
 <script>
+	const checkSimulationUrl = `{% url 'fetch_wefe_simulation_results' sim_id %}`;
 	const urlGenerateSurveyLink = `{% url 'ajax_generate_survey_link' %}`;
 	const urlDeleteSurvey = `{% url 'ajax_delete_survey' %}`;
 	const urlRampSimulation = `{% url 'request_wefedemand_simulation' proj_id %}`;
@@ -107,5 +110,9 @@
 	const csrfToken = `{{ csrf_token }}`;
 	const proj_id = `{{ proj_id }}`;
 </script>
-
+{% if simulation_status == "PENDING" %}
+<script src="{% static 'js/simulation_requests.js' %}"></script>
+{% elif simulation_status == "DONE" %}
+<script>plotDemand();</script>
+{% endif %}
 {% endblock end_body_scripts%}
