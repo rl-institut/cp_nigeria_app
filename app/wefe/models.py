@@ -5,9 +5,17 @@ from projects.scenario_topology_helpers import assign_assets, assign_busses
 from wefe.survey import SURVEY_QUESTIONS_CATEGORIES
 import json
 
-
+WEFEAPP_CHOICES = (
+    ("weather_data", "Weather Data API"),
+    ("wefedemand", "WEFEDemand API"),
+    ("sim_server", "WEFE Simulation Server"),
+)
 # class Options(models.Model):
 #     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+
+
+class WEFESimulation(Simulation):
+    app = models.CharField(max_length=30, null=False, choices=WEFEAPP_CHOICES)
 
 
 class SurveyQuestion(models.Model):
@@ -16,9 +24,7 @@ class SurveyQuestion(models.Model):
     subquestion_to = models.ForeignKey("self", null=True, on_delete=models.CASCADE)
     subquestion = models.TextField(null=True)
     possible_answers = models.TextField(null=True)
-    multiple_answers = models.BooleanField(
-        default=False
-    )  # this is a parameter for checkbox questions
+    multiple_answers = models.BooleanField(default=False)  # this is a parameter for checkbox questions
     matrix_answers = models.BooleanField(default=False)
     answer_type = models.CharField(null=False, max_length=8)
     description = models.TextField(null=False, default="")
@@ -43,9 +49,7 @@ class SurveyQuestion(models.Model):
 
 
 class SurveyAnswer(models.Model):
-    question = models.ForeignKey(
-        SurveyQuestion, on_delete=models.CASCADE, null=True, blank=False
-    )
+    question = models.ForeignKey(SurveyQuestion, on_delete=models.CASCADE, null=True, blank=False)
     value = models.TextField(null=True)
     # TODO make this a ForeignKey
     scenario_id = models.IntegerField(null=False)

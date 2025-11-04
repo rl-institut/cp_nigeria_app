@@ -1,6 +1,9 @@
 import io
+from datetime import datetime
+from jsonview.decorators import json_view
 from pathlib import Path
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Q, F, Avg, Max
@@ -12,6 +15,7 @@ from django.views.decorators.http import require_http_methods
 
 from business_model.forms import *
 from business_model.models import *
+from projects.constants import DONE, ERROR
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.models import *
 from projects.models.base_models import Timeseries
@@ -19,10 +23,12 @@ from projects.views import project_duplicate, project_delete
 
 from .forms import *
 from .helpers import *
-from .models import SurveyAnswer, MOOWeights
+from .models import MOOWeights, SurveyAnswer, WEFESimulation
+from .requests import fetch_wefedemand_simulation_results, wefe_simulation_request
 from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -173,7 +179,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
     }
 
     if request.method == "GET":
-        timeseries = get_renewables_output(proj_id, raw=True)
+        timeseries = get_renewables_output(proj_id, raw=False)
 
         timeseries_labels = {
             "ghi": "Global Horizontal irradiance [W/m²]",
@@ -211,6 +217,8 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
         raise PermissionDenied
 
     scenario = project.scenario
+    # We use the existing infrastructure from MVS Simulation, adding app, which should be one of WEFEAPP_CHOICES
+    simulation, _ = WEFESimulation.objects.get_or_create(scenario_id=scenario.id, app="wefedemand")
 
     page_information = "About demand"
 
@@ -219,6 +227,8 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
             "proj_id": proj_id,
             "proj_name": project.name,
             "step_id": step_id,
+            "sim_id": simulation.id,
+            "simulation_status": simulation.status,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
         }
@@ -245,27 +255,59 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
     return None
 
 
-# WEFEDEMAND_API = "http://wefe-demand:5000"
-WEFEDEMAND_API = "http://127.0.0.1:5000"
-
-
 def request_wefedemand_simulation(request, proj_id=None):
-    # TODO this is currently using the dummy kobo survey that works and not the one associated with the project
-    args = {"id": [576013455, 576161268]}
-    project = get_object_or_404(Project, pk=proj_id)
-    # survey_id = project.kobo_survey_id
-    survey_id = "ay5RwDzEgUQn73E9it3wCB"
-    try:
-        response = requests.post(
-            f"{WEFEDEMAND_API}/ramp-simulation",
-            headers={"Content-Type": "application/json"},
-            json={"survey_id": survey_id, "args": args},
+    if not proj_id:
+        answer = JsonResponse(
+            {"status": "error", "error": "No project id provided"},
+            status=500,
+            content_type="application/json",
         )
-        response.raise_for_status()
-        process_ramp_timeseries(proj_id, response.json())
-    except Exception as e:
-        logger.warning(f"An error occurred: {e}.")
-    return JsonResponse({"msg": "Sent simulation request"})
+
+    project = get_object_or_404(Project, pk=proj_id)
+    scen_id = project.scenario.id
+    default_survey = request.GET.get("default_survey", "false")
+    default_survey = True if default_survey == "true" else False
+    args = {}
+    if default_survey:
+        survey_id = "ay5RwDzEgUQn73E9it3wCB"
+        args["id"] = [576013455, 576161268]
+    else:
+        survey_id = project.kobo_survey_id
+
+    data = {"survey_id": survey_id, "args": args}
+    results = wefe_simulation_request(data)
+    if results is None:
+        error_msg = "Could not communicate with the server."
+        logger.error(error_msg)
+        messages.error(request, error_msg)
+        # TODO redirect to prefilled feedback form / bug form
+        answer = JsonResponse(
+            {"status": "error", "error": error_msg},
+            status=407,
+            content_type="application/json",
+        )
+    else:
+        # delete existing simulation
+        WEFESimulation.objects.filter(scenario_id=scen_id, app="wefedemand").delete()
+
+        # Create empty Simulation model object
+        simulation = WEFESimulation(start_date=datetime.now(), scenario_id=scen_id, app="wefedemand")
+
+        simulation.mvs_token = results["id"] if results["id"] else None
+
+        if "status" in results.keys() and (results["status"] == DONE or results["status"] == ERROR):
+            simulation.status = results["status"]
+            simulation.results = results["results"]
+            simulation.end_date = datetime.now()
+        else:  # PENDING
+            simulation.status = results["status"]
+
+        simulation.elapsed_seconds = (datetime.now() - simulation.start_date).seconds
+        simulation.save()
+
+        answer = JsonResponse({"msg": "Sent simulation request"})
+
+    return answer
 
 
 def get_wefedemand_data(request, proj_id):
@@ -321,15 +363,14 @@ def is_matrix_source(field):
             answer = True
     return answer
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
     project = get_object_or_404(Project, id=proj_id)
     scen_id = project.scenario.id
     if request.method == "POST":
-        form = SurveyQuestionForm(
-            request.POST, qs=SurveyAnswer.objects.filter(scenario_id=scen_id)
-        )
+        form = SurveyQuestionForm(request.POST, qs=SurveyAnswer.objects.filter(scenario_id=scen_id))
 
         if form.is_valid():
             qs = SurveyAnswer.objects.filter(scenario_id=scen_id)
@@ -349,8 +390,9 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
 
     else:
         if scen_id is None:
-            last_scenario_id = SurveyAnswer.objects.all().values_list("scenario_id",
-                                                                      flat=True).distinct().order_by().last()
+            last_scenario_id = (
+                SurveyAnswer.objects.all().values_list("scenario_id", flat=True).distinct().order_by().last()
+            )
             if last_scenario_id is None:
                 last_scenario_id = 0
             scenario_id = last_scenario_id + 1
@@ -471,7 +513,7 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
                 "co2_emissions": form.cleaned_data["co2_emissions"],
                 "land_requirements": form.cleaned_data["land_requirements"],
                 "water_footprint": form.cleaned_data["water_footprint"],
-            }
+            },
         )
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
@@ -650,3 +692,18 @@ def ajax_delete_survey(request):
 @login_required
 def ajax_process_survey(request):
     pass
+
+
+@json_view
+@login_required
+@require_http_methods(["GET"])
+def fetch_wefe_simulation_results(request, sim_id):
+    print(f"Fetching results for sim {sim_id}")
+    simulation = get_object_or_404(WEFESimulation, id=sim_id)
+    are_result_ready = fetch_wefedemand_simulation_results(simulation)
+    print(are_result_ready)
+    return JsonResponse(
+        dict(areResultReady=are_result_ready),
+        status=200,
+        content_type="application/json",
+    )

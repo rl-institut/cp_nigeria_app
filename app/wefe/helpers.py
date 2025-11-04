@@ -67,6 +67,21 @@ def get_renewables_output(proj_id, raw=True):
     if qs_ts.exists() is False:
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
+        if not raw:
+            # Convert Timeseries columns and drop unused columns
+            conversion_j_to_wh = 1 / 3600
+            offset_K_Celsius = 273.15
+
+            df["ghi"] = df["ssrd"] * conversion_j_to_wh
+            df["t_air"] = df["t2m"] - offset_K_Celsius
+            df["t_dew"] = df["d2m"] - offset_K_Celsius
+            df["windspeed"] = df.apply(
+                lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1
+            )
+
+            used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e"]
+            df = df[used_cols]
+
         for col in df.columns:
             ts = Timeseries.objects.create(
                 name=col,
@@ -223,18 +238,20 @@ class KoboHandler:
             return
 
 
-def process_ramp_timeseries(proj_id, wefedemand_response):
-    df = pd.DataFrame.from_dict(wefedemand_response["data"])
-    project = get_object_or_404(Project, pk=proj_id)
-    for col in df:
-        # TODO here it would probably be better to overwrite if the survey has more responses and gets resimulated
-        ts, _ = Timeseries.objects.get_or_create(
-            name=f"{col}_ramp_demand",
-            scenario=project.scenario,
-            values=df[col].values.tolist(),
-            # start_time=timeinfo["start"],
-            # end_time=timeinfo["end"],
-            time_step=8760,
-        )
-        ts.save()
+def process_wefedemand_response(simulation, wefedemand_response):
+    for res in ["agg_mean", "agg_max"]:
+        demand_dict = wefedemand_response[res]
+        df = pd.DataFrame.from_dict(demand_dict)
+        project = simulation.scenario.project
+        for col in df:
+            # TODO here it would probably be better to overwrite if the survey has more responses and gets resimulated
+            ts, _ = Timeseries.objects.get_or_create(
+                name=f"{col}_ramp_demand_{res}",
+                scenario=project.scenario,
+                values=df[col].values.tolist(),
+                # start_time=timeinfo["start"],
+                # end_time=timeinfo["end"],
+                time_step=8760,
+            )
+            ts.save()
     return

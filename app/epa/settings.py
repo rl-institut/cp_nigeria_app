@@ -224,6 +224,12 @@ WEATHER_DATA_API_HOST = env("WEATHER_DATA_API_HOST", default=None)
 RN_TOKEN = env("RN_API_TOKEN", default=None)
 RN_API_BASE = "https://www.renewables.ninja/api/"
 
+# WEFEDemand API
+WEFEDEMAND_API_HOST = env("WEFEDEMAND_API", default=None)
+WEFEDEMAND_POST_URL = f"{WEFEDEMAND_API_HOST}/sendjson"
+WEFEDEMAND_GET_URL = f"{WEFEDEMAND_API_HOST}/check/"
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
