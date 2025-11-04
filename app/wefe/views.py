@@ -8,9 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
-from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
 from jsonview.decorators import json_view
 
@@ -35,7 +35,6 @@ from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 

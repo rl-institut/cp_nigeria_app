@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("projects", "0025_project_kobo_survey_id_project_kobo_survey_url"),
+        ("projects", "0027_alter_economicdata_currency"),
         ("wefe", "0003_wefesimulation"),
     ]
 
