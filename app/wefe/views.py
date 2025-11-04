@@ -3,11 +3,11 @@ from datetime import datetime
 from jsonview.decorators import json_view
 from pathlib import Path
 
-from django.db.models import Q, F, Avg, Max
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
 from django.shortcuts import *
 from django.urls import reverse
@@ -19,6 +19,7 @@ from business_model.models import *
 from projects.constants import DONE, ERROR
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.models import *
+from projects.models.base_models import Timeseries
 from projects.views import project_duplicate, project_delete
 
 from .forms import *
@@ -29,7 +30,6 @@ from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_q
 
 import logging
 
-from projects.models.base_models import Timeseries
 
 logger = logging.getLogger(__name__)
 
