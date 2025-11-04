@@ -1,28 +1,28 @@
 import io
 from pathlib import Path
+
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
-from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q, F, Avg, Max
-from .forms import *
-from .helpers import *
+
 from business_model.forms import *
-from projects.models import *
-from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
+from projects.models import *
+from projects.models.base_models import Timeseries
+from projects.views import project_duplicate, project_delete
 
-from .models import SurveyAnswer
+from .forms import *
+from .helpers import *
+from .models import SurveyAnswer, MOOWeights
 from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
-
-from projects.models.base_models import Timeseries
-
 logger = logging.getLogger(__name__)
 
 
@@ -271,7 +271,7 @@ def request_wefedemand_simulation(request, proj_id=None):
 def get_wefedemand_data(request, proj_id):
     proj = get_object_or_404(Project, id=proj_id)
     ts_qs = Timeseries.objects.filter(scenario=proj.scenario, name__contains="ramp_demand")
-    index = pd.date_range(start="2025-01-01 00:00:00", end="2025-12-31 23:00:00", freq="H")
+    index = pd.date_range(start="2025-01-01 00:00:00", end="2025-12-31 23:00:00", freq="h")
     index = index.strftime("%Y-%m-%dT%H:%M:%S").tolist()
 
     data = {}
@@ -447,10 +447,32 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
+        try:
+            # weights already defined: get values
+            weights = scenario.mooweights
+            context["form"] = MOOForm(initial=vars(weights))
+            context["custom_weights"] = weights.total_cost != 1
+        except ObjectDoesNotExist:
+            # no weights yet: use defaults
+            context["form"] = MOOForm()
+        return render(request, "wefe/steps/moo_setup.html", context)
 
     if request.method == "POST":
-        # TODO
+        form = MOOForm(request.POST)
+        if not form.is_valid():
+            context["form"] = form
+            return render(request, "wefe/steps/moo_setup.html", context)
+
+        # save form data (1 to 1 relation between scenario and weights)
+        MOOWeights.objects.update_or_create(
+            scenario=scenario,
+            defaults={
+                "total_cost": form.cleaned_data["total_cost"],
+                "co2_emissions": form.cleaned_data["co2_emissions"],
+                "land_requirements": form.cleaned_data["land_requirements"],
+                "water_footprint": form.cleaned_data["water_footprint"],
+            }
+        )
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
 

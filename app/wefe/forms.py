@@ -368,3 +368,33 @@ class SurveyQuestionForm(forms.Form):
             raise ValidationError("This form cannot be blank")
         return cleaned_data
 
+
+class MOOForm(forms.Form):
+    # multi-objective optimization setup
+    total_cost = forms.FloatField(
+        min_value=0, max_value=1, initial=1,
+        widget=forms.NumberInput(attrs={'step': 0.1, 'default': 1})
+    )
+    co2_emissions = forms.FloatField(
+        min_value=0, max_value=1, initial=0,
+        widget=forms.NumberInput(attrs={'step': 0.1, 'default': 0})
+    )
+    land_requirements = forms.FloatField(
+        min_value=0, max_value=1, initial=0,
+        widget=forms.NumberInput(attrs={'step': 0.1, 'default': 0})
+    )
+    water_footprint = forms.FloatField(
+        min_value=0, max_value=1, initial=0,
+        widget=forms.NumberInput(attrs={'step': 0.1, 'default': 0})
+    )
+
+    def clean(self):
+        # check that weights add up to 1
+        cleaned_data = super().clean()
+        cost = cleaned_data.get("total_cost")
+        co2 = cleaned_data.get("co2_emissions")
+        land = cleaned_data.get("land_requirements")
+        water = cleaned_data.get("water_footprint")
+        if cost is not None and co2 is not None and land is not None and water is not None:
+            if cost + co2 + land + water != 1:
+                raise ValidationError("Weights must add up to 1")
