@@ -1,5 +1,5 @@
 
-const myInterval = setInterval(check_if_simulation_is_done, 3000);
+const myInterval = setInterval(check_if_simulation_is_done, 5000);
 
 function check_if_simulation_is_done(url=checkSimulationUrl){
 

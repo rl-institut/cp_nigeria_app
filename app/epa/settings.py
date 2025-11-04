@@ -228,6 +228,11 @@ RN_API_BASE = "https://www.renewables.ninja/api/"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/"
 OPEN_TOPO_URL = "https://api.opentopodata.org/v1/"
 
+# WEFEDemand API
+WEFEDEMAND_API_HOST = env("WEFEDEMAND_API", default=None)
+WEFEDEMAND_POST_URL = f"{WEFEDEMAND_API_HOST}/sendjson"
+WEFEDEMAND_GET_URL = f"{WEFEDEMAND_API_HOST}/check/"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
