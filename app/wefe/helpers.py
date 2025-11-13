@@ -76,6 +76,19 @@ def get_renewables_output(proj_id, raw=True):
     if not qs_ts.exists():
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
+        if not raw:
+            # Convert Timeseries columns and drop unused columns
+            conversion_j_to_wh = 1 / 3600
+            offset_K_Celsius = 273.15
+
+            df["ghi"] = df["ssrd"] * conversion_j_to_wh
+            df["t_air"] = df["t2m"] - offset_K_Celsius
+            df["t_dew"] = df["d2m"] - offset_K_Celsius
+            df["windspeed"] = df.apply(lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1)
+
+            used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e", "cf_aware"]
+            df = df[used_cols]
+
         for col in df.columns:
             ts = Timeseries.objects.create(
                 name=f"weather_data_{col}",
@@ -121,6 +134,12 @@ class KoboHandler:
         return response
 
     def send_request(self, endpoint, payload):
+        if KOBO_API_URL is None:
+            logger.error("KOBO_API_URL not set")
+            return None
+        if KOBO_API_TOKEN is None:
+            logger.error("KOBO_API_TOKEN not set")
+            return None
         try:
             logger.info(f"Sending request to KoboToolbox API {endpoint}")
             response = requests.post(

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 
-from projects.forms import OpenPlanForm, OpenPlanModelForm, ProjectCreateForm
+from projects.forms import OpenPlanForm, OpenPlanModelForm
 from projects.models import Project, EconomicData, Scenario
 from projects.requests import request_exchange_rate
 from wefe.models import SurveyQuestion
@@ -71,7 +71,7 @@ class ProjectForm(OpenPlanModelForm):
 class EconomicProjectForm(OpenPlanModelForm):
     class Meta:
         model = EconomicData
-        fields = ["duration", "currency", "exchange_rate"]
+        fields = ["population", "duration", "currency", "exchange_rate"]
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get("instance", None)
@@ -367,4 +367,3 @@ class SurveyQuestionForm(forms.Form):
         else:
             raise ValidationError("This form cannot be blank")
         return cleaned_data
-

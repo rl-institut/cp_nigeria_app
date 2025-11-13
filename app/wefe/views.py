@@ -2,6 +2,7 @@ import io
 from datetime import datetime
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -19,6 +20,7 @@ from .forms import *
 from .helpers import *
 from business_model.forms import *
 from projects.models import *
+from projects.models.base_models import Timeseries
 from projects.views import project_duplicate, project_delete
 from business_model.models import *
 from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
@@ -35,7 +37,6 @@ from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_surv
 
 import logging
 
-from projects.models.base_models import Timeseries
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,8 @@ def wefe_choose_location(request, proj_id=None, step_id=STEP_MAPPING["choose_loc
             "step_id": step_id,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
+            "OPEN_METEO_URL": settings.OPEN_METEO_URL,
+            "OPEN_TOPO_URL": settings.OPEN_TOPO_URL,
         },
     )
 
@@ -187,7 +190,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
     }
 
     if request.method == "GET":
-        timeseries = get_renewables_output(proj_id, raw=True)
+        timeseries = get_renewables_output(proj_id, raw=False)
 
         timeseries_labels = {
             "ghi": "Global Horizontal irradiance [W/m²]",
@@ -197,6 +200,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
             "fsr": "Forecast Surface Roughness (m)",
             "tp": "Precipitation [mm]",
             "e": "Evapotranspiration [mm]",
+            "cf_aware": "Water Scarcity Footprint Factor [dimensionless]",
         }
         context.update(
             {
