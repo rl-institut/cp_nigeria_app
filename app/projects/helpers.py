@@ -1,21 +1,25 @@
-import json
-import os
-import io
 import csv
+import io
+import json
 from openpyxl import load_workbook
+import os
+import requests
+
 from django import forms
-from django.contrib.staticfiles.storage import staticfiles_storage
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
 from django.utils.html import html_safe
+from django.utils.translation import gettext_lazy as _
+
+from dashboard.helpers import KPIFinder
+from projects.constants import MAP_MVS_EPA
 from projects.dtos import convert_to_dto
 from projects.models import Timeseries, AssetType
-from projects.constants import MAP_MVS_EPA
-from dashboard.helpers import KPIFinder
 
 PARAMETERS = {}
-if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:
-    with open(staticfiles_storage.path("MVS_parameters_list.csv"), encoding="utf-8") as csvfile:
+list_path = settings.STATIC_ROOT / "MVS_parameters_list.csv"
+if list_path.exists():
+    with list_path.open(encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:
@@ -541,3 +545,25 @@ def parse_input_timeseries(timeseries_file):
                 params={"fname": timeseries_file.name},
             )
     return timeseries_values
+
+
+def get_altitude(lat, lng):
+    # get elevation by calling API
+    # default: Open-Meteo
+    meteo_url = settings.OPEN_METEO_URL + f"elevation?latitude={lat}&longitude={lng}"
+    try:
+        resp = requests.get(meteo_url, timeout=5)
+        if resp.ok:
+            return resp.json()["elevation"][0]
+    except:
+        pass
+    # fallback: Open Topo Data
+    topo_url = settings.OPEN_TOPO_URL + f"srtm90m?locations={lat},{lng}"
+    try:
+        resp = requests.get(topo_url, timeout=5)
+        if resp.ok:
+            return resp.json()["results"][0]["elevation"]
+    except:
+        pass
+    # both failed
+    return None

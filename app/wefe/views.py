@@ -1,34 +1,35 @@
 import io
 from datetime import datetime
+from jsonview.decorators import json_view
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
-from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q, F, Avg, Max
-from jsonview.decorators import json_view
 
+from business_model.forms import *
+from business_model.models import *
 from projects.constants import DONE, ERROR
+from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
+from projects.models import *
+from projects.models.base_models import Timeseries
+from projects.views import project_duplicate, project_delete
+
 from .forms import *
 from .helpers import *
-from business_model.forms import *
-from projects.models import *
-from projects.views import project_duplicate, project_delete
-from business_model.models import *
-from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
-
 from .models import SurveyAnswer, WEFESimulation
 from .requests import fetch_wefedemand_simulation_results, wefe_simulation_request
 from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
 
-from projects.models.base_models import Timeseries
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +156,8 @@ def wefe_choose_location(request, proj_id=None, step_id=STEP_MAPPING["choose_loc
             "step_id": step_id,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
+            "OPEN_METEO_URL": settings.OPEN_METEO_URL,
+            "OPEN_TOPO_URL": settings.OPEN_TOPO_URL,
         },
     )
 

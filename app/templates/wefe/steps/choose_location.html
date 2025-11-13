@@ -54,8 +54,11 @@
 
         <script>
             /* Map Show and Latitude-Longitude data autofill */
-            var mymap = L.map('mapid').setView([49.45, 13.89], 4);
-						var marker;
+            const mymap = L.map('mapid').setView([49.45, 13.89], 4);
+            const lat_inp = document.getElementById('id_latitude');
+            const lng_inp = document.getElementById('id_longitude');
+            const alt_inp = document.getElementById('id_altitude');
+            var marker;
             L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
                 attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
                 maxZoom: 18,
@@ -65,21 +68,22 @@
                 accessToken: 'pk.eyJ1IjoidmFsa2FsYWlzIiwiYSI6ImNrZGhpZ29peTFnMjIycG5ybWR3aG4yeHIifQ.L4y4PQjkIdO1c7pvzOr2kw'
             }).addTo(mymap);
 
-						if($('#id_latitude').val() || $('#id_longitude').val()){
-								marker = new L.Marker([$('#id_latitude').val(), $('#id_longitude').val()]);
-								marker.addTo(mymap);
-						}
+            if(lat_inp.value && lng_inp.value){
+                marker = new L.Marker([lat_inp.value, lng_inp.value]);
+                marker.addTo(mymap);
+            }
 
             // var popup = L.popup();
 
             function onMapClick(e) {
-										if(marker){mymap.removeLayer(marker);}
+                if(marker){mymap.removeLayer(marker);}
                     marker = new L.Marker([e.latlng.lat, e.latlng.lng]);
                     marker.addTo(mymap);
                 // popup.setLatLng(e.latlng)
                 //     .setContent(`Location Coordinates: <br> (${e.latlng.lat.toFixed(4)}. ${e.latlng.lng.toFixed(4)})`).openOn(mymap);
-                $('#id_latitude').val(e.latlng.lat.toFixed(6));
-                $('#id_longitude').val(e.latlng.lng.toFixed(6));
+                lat_inp.value = e.latlng.lat.toFixed(6);
+                lng_inp.value = e.latlng.lng.toFixed(6);
+                updateAltitudeInput();
                 /*
                 $.ajax({
                     headers: {'X-CSRFToken': '{{ csrf_token }}'},
@@ -103,6 +107,42 @@
             }
 
             mymap.on('click', onMapClick);
+
+            // update altitude if lat/long changes
+            function updateAltitudeInput() {
+                if (!alt_inp)
+                    return;  // altitude input not found
+                if (alt_inp.getAttribute('locked'))
+                    return;  // altitude input already manually changed
+                let lat = lat_inp.value;
+                let lng = lng_inp.value;
+                if (!lat || !lng)
+                    return;  // lat/lng not set
+                let meteo_url = '{{ OPEN_METEO_URL }}elevation?latitude=' + lat + '&longitude=' + lng;
+                fetch(meteo_url).then(resp => {
+                    if (!resp.status == 200)
+                        throw Exception(resp.content)
+                    resp.json().then(data => alt_inp.value = data.elevation[0]);
+                }).catch(error => {
+                    console.error('meteo failed', error);
+                    // fallback: open topo data
+                    let topo_url = '{{ OPEN_TOPO_URL }}srtm90m?locations=' + lat + ',' + lng;
+                    fetch(topo_url).then(resp => {
+                        if (!resp.status == 200)
+                            throw Exception(resp.content)
+                        resp.json().then(data => alt_inp.value = data.results[0].elevation);
+                    }).catch(error => {
+                        console.error('topo failed as well', error);
+                    });
+                });
+            }
+            lat_inp.onchange = _ => updateAltitudeInput();
+            lng_inp.onchange = updateAltitudeInput();
+            alt_inp.onchange = _ => {
+                // set altitude manually: don't update altitude when changing lat/lng
+                // (this is not triggered when changing value from code)
+                alt_inp.setAttribute('locked', true);
+            }
         </script>
 
     </div>
