@@ -193,6 +193,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
             "fsr": "Forecast Surface Roughness (m)",
             "tp": "Precipitation [mm]",
             "e": "Evapotranspiration [mm]",
+            "cf_aware": "Water Scarcity Footprint Factor [dimensionless]",
         }
         context.update(
             {

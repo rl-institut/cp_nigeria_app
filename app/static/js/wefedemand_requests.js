@@ -1,3 +1,4 @@
+/* jshint esversion: 8 */
 
 function generateSurveyLink(proj_id) {
     $("#survey_button").prop("disabled", true);
@@ -14,6 +15,8 @@ function generateSurveyLink(proj_id) {
         return response.json(); // assuming your Django view returns JSON
     })
     .then(data => {
+        if (!data.url)
+            throw new Error("URL could not be created.");
         document.getElementById("loading_spinner-create").style.display = "none";
         document.getElementById("link_display").innerHTML =
             "The questionnaire has been successfully created. " +
