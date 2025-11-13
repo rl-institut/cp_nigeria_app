@@ -75,11 +75,9 @@ def get_renewables_output(proj_id, raw=True):
             df["ghi"] = df["ssrd"] * conversion_j_to_wh
             df["t_air"] = df["t2m"] - offset_K_Celsius
             df["t_dew"] = df["d2m"] - offset_K_Celsius
-            df["windspeed"] = df.apply(
-                lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1
-            )
+            df["windspeed"] = df.apply(lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1)
 
-            used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e"]
+            used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e", "cf_aware"]
             df = df[used_cols]
 
         for col in df.columns:
@@ -127,6 +125,12 @@ class KoboHandler:
         return response
 
     def send_request(self, endpoint, payload):
+        if KOBO_API_URL is None:
+            logger.error("KOBO_API_URL not set")
+            return None
+        if KOBO_API_TOKEN is None:
+            logger.error("KOBO_API_TOKEN not set")
+            return None
         try:
             logger.info(f"Sending request to KoboToolbox API {endpoint}")
             response = requests.post(

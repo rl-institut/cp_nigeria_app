@@ -3,6 +3,7 @@ from datetime import datetime
 from jsonview.decorators import json_view
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
@@ -154,6 +155,8 @@ def wefe_choose_location(request, proj_id=None, step_id=STEP_MAPPING["choose_loc
             "step_id": step_id,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
+            "OPEN_METEO_URL": settings.OPEN_METEO_URL,
+            "OPEN_TOPO_URL": settings.OPEN_TOPO_URL,
         },
     )
 
@@ -189,6 +192,7 @@ def wefe_resources(request, proj_id, step_id=STEP_MAPPING["resources"]):
             "fsr": "Forecast Surface Roughness (m)",
             "tp": "Precipitation [mm]",
             "e": "Evapotranspiration [mm]",
+            "cf_aware": "Water Scarcity Footprint Factor [dimensionless]",
         }
         context.update(
             {
