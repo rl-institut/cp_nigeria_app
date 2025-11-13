@@ -125,6 +125,12 @@ class KoboHandler:
         return response
 
     def send_request(self, endpoint, payload):
+        if KOBO_API_URL is None:
+            logger.error("KOBO_API_URL not set")
+            return None
+        if KOBO_API_TOKEN is None:
+            logger.error("KOBO_API_TOKEN not set")
+            return None
         try:
             logger.info(f"Sending request to KoboToolbox API {endpoint}")
             response = requests.post(
