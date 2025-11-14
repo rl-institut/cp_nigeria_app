@@ -26,7 +26,7 @@ urlpatterns = [
     path(
         "ajax/wefedemand-simulation/<int:proj_id>", request_wefedemand_simulation, name="request_wefedemand_simulation"
     ),
-    path("ajax/get-wefedemand-data/<int:proj_id>", get_wefesim_data, name="get_wefesim_data"),
+    path("ajax/get-wefedemand-data/<int:proj_id>", get_wefedemand_data, name="get_wefedemand_data"),
     path("ajax/wefesim-simulation", request_wefesim_simulation, name="request_wefesim_simulation"),
     path("ajax/wefesim-simulation/<int:proj_id>", request_wefesim_simulation, name="request_wefesim_simulation"),
     path("ajax/get-wefesim-data/<int:proj_id>", get_wefesim_data, name="get_wefesim_data"),
