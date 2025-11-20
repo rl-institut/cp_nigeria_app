@@ -32,36 +32,27 @@ def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
     logger = logging.getLogger(__name__)
     session = requests.Session()
 
-    # TODO one shouldn't need a csrftoken for server to server
-    # fetch CSRF token
-    csrf_response = session.get(WEATHER_DATA_API_HOST + "get_csrf_token/")
-    csrftoken = csrf_response.json()["csrfToken"]
-
+    headers = {"Referer": WEATHER_DATA_API_HOST + "wefe/"}
+    # alternative to avoid payload:
+    # url = WEATHER_DATA_API_HOST + f"wefe/?lat={latitude}&lng={longitude}"
     payload = {"latitude": latitude, "longitude": longitude}
-
-    # headers = {"content-type": "application/json"}
-    headers = {
-        "X-CSRFToken": csrftoken,
-        "Referer": WEATHER_DATA_API_HOST + "wefe/",
-    }
-
-    post_response = session.post(WEATHER_DATA_API_HOST + "wefe/", data=payload, headers=headers)
-    # TODO here would be best to return a token but this requires celery on the weather_data API side
-    # If we get a high request amount we might need to do so anyway
-    if post_response.status_code == 200:
-        response_data = post_response.json()
-        df = pd.DataFrame(response_data["variables"])
+    response = session.get(WEATHER_DATA_API_HOST + "wefe/", data=payload, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        df = pd.DataFrame(data["variables"])
         logger.info("The weather data API fetch worked successfully")
 
-        if timeinfo is True:
-            timeindex = response_data["time"]
+        if timeinfo:
+            timeindex = data["time"]
     else:
         df = pd.DataFrame()
-        logger.error("The weather data API fetch did not work")
-    if timeinfo is False:
-        return df
-    else:
+        logger.error(f"The weather data API fetch did not work: {response.reason} ({response.status_code})")
+        timeindex = None
+
+    if timeinfo:
         return df, timeindex
+    else:
+        return df
 
 
 def get_renewables_output(proj_id, raw=True):
