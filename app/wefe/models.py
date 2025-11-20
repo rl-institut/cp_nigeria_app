@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase, Simulation
+from projects.models import Timeseries, Project, Scenario, Asset, Bus, UseCase, Simulation, AbstractSimulation
 from projects.scenario_topology_helpers import assign_assets, assign_busses
 from wefe.survey import SURVEY_QUESTIONS_CATEGORIES
 import json
@@ -14,7 +14,8 @@ WEFEAPP_CHOICES = (
 #     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
 
 
-class WEFESimulation(Simulation):
+class WEFESimulation(AbstractSimulation):
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=False)
     app = models.CharField(max_length=30, null=False, choices=WEFEAPP_CHOICES)
 
 
@@ -55,11 +56,11 @@ class SurveyAnswer(models.Model):
     scenario_id = models.IntegerField(null=False)
 
     def export(self, ignore_empty=False):
-
-        value = json.loads(self.value)
-        answer = {self.question.question_id: value}
-        if ignore_empty is True and value is None:
+        if ignore_empty is True and self.value is None:
             answer = {}
+        else:
+            value = json.loads(self.value) if self.value is not None else None
+            answer = {self.question.question_id: value}
         return answer
 
 
