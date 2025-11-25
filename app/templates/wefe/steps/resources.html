@@ -34,7 +34,7 @@
 		</form>
 		{% for ts_id, verbose in timeseries_keys.items %}
 			<span> {{verbose}} </span>
-			<div id="{{ ts_id }}_ts">
+			<div id="weather_data_{{ ts_id }}_ts">
 			</div>
 		{% endfor %}
 	</section>
