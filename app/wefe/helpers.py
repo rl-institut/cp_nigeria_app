@@ -36,7 +36,7 @@ def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
     # alternative to avoid payload:
     # url = WEATHER_DATA_API_HOST + f"wefe/?lat={latitude}&lng={longitude}"
     payload = {"latitude": latitude, "longitude": longitude}
-    response = session.get(WEATHER_DATA_API_HOST + "wefe/", data=payload, headers=headers)
+    response = session.get(WEATHER_DATA_API_HOST + "wefe/", params=payload, headers=headers)
     if response.status_code == 200:
         data = response.json()
         df = pd.DataFrame(data["variables"])
