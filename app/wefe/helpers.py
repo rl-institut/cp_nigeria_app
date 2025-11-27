@@ -8,10 +8,6 @@ import logging
 import pandas as pd
 import os
 
-# TODO here the facades should only be imported from otp, to make sure they have
-# validate_datapackage and processing_raw_inputs methods
-from oemof_industry.mimo_converter import MIMO
-from oemof_tabular_plugins.wefe.facades import PVPanel  # , MimoCrop
 import datapackage as dp
 import tableschema
 
@@ -252,12 +248,6 @@ def process_wefedemand_response(simulation, wefedemand_response):
     return
 
 
-COMPONENTS_TYPEMAP = {
-    "apv-system": MIMO,
-    "pv_panel": PVPanel,
-    # "mimo-crop": MimoCrop
-}
-
 # Later direct imports without .json
 # TODO update this mapping with the latest produced survey_answer_component_mapping.json
 with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json") as fp:
@@ -266,18 +256,6 @@ with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_co
 with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
     SUB_QUESTION_MAPPING = json.load(fp)
 
-
-def update_typemap(typemap, component_name):
-    """Add the type of the component if existing in the list of components"""
-
-    if component_name in COMPONENTS_TYPEMAP:
-        typemap[COMPONENTS_TYPEMAP[component_name]]
-    else:
-        # TODO check for oemof tabular builtin types
-        logging.warning(
-            f"The component {component_name} is not in the available component list {','.join([comp for comp in COMPONENTS_TYPEMAP])}"
-        )
-    return typemap
 
 
 def list_available_components():

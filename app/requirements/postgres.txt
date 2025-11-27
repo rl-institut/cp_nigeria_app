@@ -17,7 +17,3 @@ plotly
 python-docx
 requests
 XlsxWriter
-oemof_tabular_plugins==0.0.2rc4
-numpy==1.26.0
-git+https://github.com/oemof/oemof-tabular.git@dev
-git+https://github.com/sedos-project/oemof.industry.git@saltwater
