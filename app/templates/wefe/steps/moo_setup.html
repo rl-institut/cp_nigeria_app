@@ -1,4 +1,5 @@
 {% extends 'wefe/steps/step_progression.html' %}
+{% load crispy_forms_tags %}
 {% load i18n %}
 
 {% block progression_content %}
@@ -10,13 +11,7 @@
     <form id="form" method="post">
       {% csrf_token %}
       <div>
-        {{ form.total_cost.label }}{{ form.total_cost }}
-        {{ form.co2_emissions.label }}{{ form.co2_emissions }}
-        {{ form.land_requirements.label }}{{ form.land_requirements }}
-        {{ form.water_footprint.label }}{{ form.water_footprint }}
-      </div>
-      <div class="no-bullet error">
-        {{ form.non_field_errors }}
+        {{ form | crispy }}
       </div>
     </form>
   </div>
