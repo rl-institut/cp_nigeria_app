@@ -510,14 +510,10 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
             return render(request, "wefe/steps/moo_setup.html", context)
 
         # save form data (1 to 1 relation between scenario and weights)
+        # weights might already exist -> maybe just update -> saving ModelForm does not work
         MOOWeights.objects.update_or_create(
             scenario=scenario,
-            defaults={
-                "total_cost": form.cleaned_data["total_cost"],
-                "co2_emissions": form.cleaned_data["co2_emissions"],
-                "land_requirements": form.cleaned_data["land_requirements"],
-                "water_footprint": form.cleaned_data["water_footprint"],
-            },
+            defaults=form.cleaned_data,
         )
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 

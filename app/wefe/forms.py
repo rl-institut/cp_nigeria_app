@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from projects.forms import OpenPlanForm, OpenPlanModelForm
 from projects.models import Project, EconomicData, Scenario
 from projects.requests import request_exchange_rate
-from wefe.models import SurveyQuestion
+from wefe.models import MOOWeights, SurveyQuestion
 
 from wefe.survey import SURVEY_STRUCTURE, SURVEY_CATEGORIES, TYPE_STRING
 
@@ -369,8 +369,12 @@ class SurveyQuestionForm(forms.Form):
         return cleaned_data
 
 
-class MOOForm(forms.Form):
+class MOOForm(forms.ModelForm):
     # multi-objective optimization setup
+    class Meta:
+        model = MOOWeights
+        exclude = ["scenario"]
+
     total_cost = forms.FloatField(
         min_value=0, max_value=1, initial=1,
         widget=forms.NumberInput(attrs={'step': 0.1, 'default': 1})
@@ -396,5 +400,5 @@ class MOOForm(forms.Form):
         land = cleaned_data.get("land_requirements")
         water = cleaned_data.get("water_footprint")
         if cost is not None and co2 is not None and land is not None and water is not None:
-            if cost + co2 + land + water != 1:
+            if round(cost + co2 + land + water, 4) != 1:
                 raise ValidationError("Weights must add up to 1")
