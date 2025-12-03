@@ -1,15 +1,20 @@
 import json
 import numpy as np
 import requests
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
 import logging
 import pandas as pd
 import os
 
+import datapackage as dp
+import tableschema
+
+
 logger = logging.getLogger(__name__)
 
-from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST
+from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST, COMPONENT_TEMPLATES_PATH
 from projects.models import Project, Timeseries
 
 
@@ -23,36 +28,27 @@ def get_data(latitude=52.5200, longitude=13.4050, timeinfo=False):
     logger = logging.getLogger(__name__)
     session = requests.Session()
 
-    # TODO one shouldn't need a csrftoken for server to server
-    # fetch CSRF token
-    csrf_response = session.get(WEATHER_DATA_API_HOST + "get_csrf_token/")
-    csrftoken = csrf_response.json()["csrfToken"]
-
+    headers = {"Referer": WEATHER_DATA_API_HOST + "wefe/"}
+    # alternative to avoid payload:
+    # url = WEATHER_DATA_API_HOST + f"wefe/?lat={latitude}&lng={longitude}"
     payload = {"latitude": latitude, "longitude": longitude}
-
-    # headers = {"content-type": "application/json"}
-    headers = {
-        "X-CSRFToken": csrftoken,
-        "Referer": WEATHER_DATA_API_HOST + "wefe/",
-    }
-
-    post_response = session.post(WEATHER_DATA_API_HOST + "wefe/", data=payload, headers=headers)
-    # TODO here would be best to return a token but this requires celery on the weather_data API side
-    # If we get a high request amount we might need to do so anyway
-    if post_response.status_code == 200:
-        response_data = post_response.json()
-        df = pd.DataFrame(response_data["variables"])
+    response = session.get(WEATHER_DATA_API_HOST + "wefe/", params=payload, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        df = pd.DataFrame(data["variables"])
         logger.info("The weather data API fetch worked successfully")
 
-        if timeinfo is True:
-            timeindex = response_data["time"]
+        if timeinfo:
+            timeindex = data["time"]
     else:
         df = pd.DataFrame()
-        logger.error("The weather data API fetch did not work")
-    if timeinfo is False:
-        return df
-    else:
+        logger.error(f"The weather data API fetch did not work: {response.reason} ({response.status_code})")
+        timeindex = None
+
+    if timeinfo:
         return df, timeindex
+    else:
+        return df
 
 
 def get_renewables_output(proj_id, raw=True):
@@ -63,26 +59,17 @@ def get_renewables_output(proj_id, raw=True):
     """
 
     project = Project.objects.get(id=proj_id)
-    qs_ts = Timeseries.objects.filter(scenario=project.scenario)
-    if qs_ts.exists() is False:
+    qs_ts = Timeseries.objects.filter(scenario=project.scenario, name__startswith="weather_data")
+    if not qs_ts.exists():
         df, timeinfo = get_data(latitude=project.latitude, longitude=project.longitude, timeinfo=True)
 
         if not raw:
-            # Convert Timeseries columns and drop unused columns
-            conversion_j_to_wh = 1 / 3600
-            offset_K_Celsius = 273.15
-
-            df["ghi"] = df["ssrd"] * conversion_j_to_wh
-            df["t_air"] = df["t2m"] - offset_K_Celsius
-            df["t_dew"] = df["d2m"] - offset_K_Celsius
-            df["windspeed"] = df.apply(lambda row: np.sqrt(row["u100"] ** 2 + row["v100"] ** 2), axis=1)
-
             used_cols = ["ghi", "t_air", "t_dew", "windspeed", "fsr", "tp", "e", "cf_aware"]
             df = df[used_cols]
 
         for col in df.columns:
             ts = Timeseries.objects.create(
-                name=col,
+                name=f"weather_data_{col}",
                 scenario=project.scenario,
                 values=df[col].values.tolist(),
                 start_time=timeinfo["start"],
@@ -259,3 +246,736 @@ def process_wefedemand_response(simulation, wefedemand_response):
             )
             ts.save()
     return
+
+
+# Later direct imports without .json
+# TODO update this mapping with the latest produced survey_answer_component_mapping.json
+with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json") as fp:
+    SURVEY_ANSWER_COMPONENT_MAPPING = json.load(fp)
+
+with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
+    SUB_QUESTION_MAPPING = json.load(fp)
+
+
+
+def list_available_components():
+    """browse all components in all csv files and link component name to csv file name"""
+
+    path = COMPONENT_TEMPLATES_PATH
+    dp_json = os.path.join(path, "datapackage.json")
+    if os.path.exists(dp_json) is False:
+        raise FileNotFoundError(
+            "The component library datapackage is not there, please generate it using 'python validate_component_lib.py' "
+        )
+    else:
+        p0 = dp.Package(dp_json)
+
+    component_to_csv_name_mappping = {}
+    for r in p0.resources:
+        logging.info(r.name)
+        if "/elements/" in r.descriptor["path"]:
+            category = r.name
+            try:
+                resource_data = pd.DataFrame.from_records(r.read(keyed=True))
+            except tableschema.exceptions.CastError as err:
+                if err.errors:
+                    logging.error(
+                        f"The resource {category} has the following casting errors: {','.join([str(e) for e in err.errors])}"
+                    )
+                else:
+                    logging.error(f"The resource {category} has the following casting error: {err}")
+                resource_data = pd.DataFrame()
+
+            if resource_data.empty is False:
+                if len(resource_data.columns) == 1:
+                    logging.warning(
+                        f"The resource {category} has only one field detected, this is usually the case when there is a mismatch of number of values between the headers row and the data rows, please check your file."
+                    )
+
+                if category == "profiles":
+                    import pdb
+
+                    pdb.set_trace()
+
+                for component_name in resource_data.name.values:
+                    if component_name not in component_to_csv_name_mappping:
+                        component_to_csv_name_mappping[component_name] = category
+                    else:
+                        raise ValueError(
+                            f"The component {component_name} is listed under several categories: {component_to_csv_name_mappping[component_name]} and {category}"
+                        )
+            else:
+                logging.warning(f"The resource {category} is empty")
+    return component_to_csv_name_mappping
+
+
+AVAILABLE_COMPONENTS = list_available_components()
+
+
+def list_available_timeseries():
+    """browse all components in all csv files and link component name to csv file name"""
+
+    path = COMPONENT_TEMPLATES_PATH
+    dp_json = os.path.join(path, "datapackage.json")
+    if os.path.exists(dp_json) is False:
+        raise FileNotFoundError(
+            "The component library datapackage is not there, please generate it using 'python validate_component_lib.py' "
+        )
+    else:
+        p0 = dp.Package(dp_json)
+
+    sequence_to_csv_name_mappping = {}
+    for r in p0.resources:
+        logging.info(r.name)
+        if "/sequences/" in r.descriptor["path"]:
+            category = r.name
+            try:
+                resource_data = pd.DataFrame.from_records(r.read(keyed=True))
+            except tableschema.exceptions.CastError as err:
+                if err.errors:
+                    logging.error(
+                        f"The resource {category} has the following casting errors: {','.join([str(e) for e in err.errors])}"
+                    )
+                else:
+                    logging.error(f"The resource {category} has the following casting error: {err}")
+                resource_data = pd.DataFrame()
+
+            if resource_data.empty is False:
+                if len(resource_data.columns) == 1:
+                    logging.warning(
+                        f"The resource {category} has only one field detected, this is usually the case when there is a mismatch of number of values between the headers row and the data rows, please check your file."
+                    )
+
+                for component_name in resource_data.columns[1:]:
+                    if component_name not in sequence_to_csv_name_mappping:
+                        sequence_to_csv_name_mappping[component_name] = category
+                    else:
+                        raise ValueError(
+                            f"The component {component_name} is listed under several categories: {sequence_to_csv_name_mappping[component_name]} and {category}"
+                        )
+            else:
+                logging.warning(f"The resource {category} is empty")
+    return sequence_to_csv_name_mappping
+
+
+AVAILABLE_SEQUENCES = list_available_timeseries()
+
+
+def create_components_list(survey_data):
+    """Extrapolate the component of the energy system from the survey answers
+
+    :param survey_data: dict with survey question code as key and the answer to the question as value
+    :return:
+    """
+    component_list = []
+    for question, survey_answer in survey_data.items():
+        if question in SURVEY_ANSWER_COMPONENT_MAPPING:
+            possible_answers = SURVEY_ANSWER_COMPONENT_MAPPING[question]
+            if survey_answer in possible_answers:
+                # TODO check that component is available in our database
+                component_list.append(possible_answers[survey_answer])
+        else:
+            logging.info(f"Survey question '{question}' is not in the component mapping to build an energy system")
+    return component_list
+
+
+WATER_TREATMENT_TRAIN = {
+    "main_list": [
+        "intake_structure",
+        "coarse_bar_screen",
+        "fine_screen",
+        "grit_chamber",
+        "cartridge_filter",
+        "simple_oxidation",
+        "coagulation_flocculation",
+        ["slow_sand_filter", "ceramic_filter", "biofiltration"],  # both series/parallel possible # membrane protection
+        "microfiltration",
+        "ultrafiltration",
+        ["activated_carbon_filter", "adsorption"],  # both series/parallel possible # membrane protection
+        "ion_exchange",
+        "nanofiltration",
+        ["electrodialysis", "reverse_osmosis"],  # both series/parallel possible
+        "membrane_distillation",
+        ["distillation", "boiling"],
+        ["photocatalysis", "ozonation"],
+        "biological_denitrification",
+        ["slow_sand_filter", "ceramic_filter", "biofiltration"],  # both series/parallel possible # polishing
+        ["uv_disinfection", "chlorination"],  # both series/parallel possible
+        "activated_carbon_filter",  # polishing
+    ],
+    "pollutant_trains": {
+        "drinking_water": {
+            "decentralized": {
+                "salinity": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "arsenic": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "lead": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "mercury": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "cadmium": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "iron": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "activated_carbon_filter",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pesticides": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],
+                    "biofiltration",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pharmaceuticals": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "biofiltration",
+                    "activated_carbon_filter",
+                    "membrane_distillation",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "fertilizers": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "biological_denitrification",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "adsorption",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+            },
+            "centralized": {
+                "salinity": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "arsenic": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "lead": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "mercury": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    ["simple_oxidation", "ozonation"],  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "cadmium": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "iron": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pesticides": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "biofiltration",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",
+                    "membrane_distillation",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pharmaceuticals": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "biofiltration",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "activated_carbon_filter",
+                    "membrane_distillation",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "fertilizers": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "biological_denitrification",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "ion_exchange",
+                    "nanofiltration",
+                    ["electrodialysis", "reverse_osmosis"],
+                    "adsorption",
+                    "membrane_distillation",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+            },
+        },
+        "service_water": {
+            "decentralized": {
+                "salinity": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["nanofiltration", "electrodialysis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "arsenic": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "adsorption",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "lead": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    "ion_exchange",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "mercury": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "cadmium": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    "ion_exchange",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "iron": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["cartridge_filter", "ceramic_filter"],
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "activated_carbon_filter",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pesticides": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "activated_carbon_filter",
+                    "biofiltration",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pharmaceuticals": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "activated_carbon_filter",
+                    "biofiltration",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "fertilizers": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    "biological_denitrification",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "ion_exchange",
+                    "adsorption",  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+            },
+            "centralized": {
+                "salinity": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["nanofiltration", "electrodialysis"],
+                    "reverse_osmosis",
+                    "membrane_distillation",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "arsenic": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "adsorption",
+                    ["nanofiltration", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "lead": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "simple_oxidation",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    ["nanofiltration", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "mercury": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    ["simple_oxidation", "ozonation"],  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    ["reverse_osmosis", "membrane_distillation"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "cadmium": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "ceramic_filter"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "adsorption",
+                    "ion_exchange",
+                    ["nanofiltration", "reverse_osmosis"],
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "iron": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "simple_oxidation",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "activated_carbon_filter",
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pesticides": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],
+                    "biofiltration",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "pharmaceuticals": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    "microfiltration",
+                    "ultrafiltration",
+                    ["photocatalysis", "ozonation"],
+                    "biofiltration",
+                    "activated_carbon_filter",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    ["uv_disinfection", "chlorination"],
+                ],
+                "fertilizers": [
+                    "intake_structure",
+                    "coarse_bar_screen",
+                    "fine_screen",
+                    "grit_chamber",
+                    "cartridge_filter",
+                    "coagulation_flocculation",
+                    ["slow_sand_filter", "biofiltration"],
+                    "microfiltration",
+                    "ultrafiltration",
+                    "biological_denitrification",  # functional tradeoff,
+                    # sequence deviates from master/main train to account for realistic engineering design
+                    "ion_exchange",
+                    ["nanofiltration", "adsorption"],  # deviation till here
+                    ["uv_disinfection", "chlorination"],
+                ],
+            },
+        },
+    },
+}

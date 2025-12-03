@@ -17,3 +17,5 @@ plotly
 python-docx
 requests
 XlsxWriter
+datapackage
+whitenoise==6.9.0

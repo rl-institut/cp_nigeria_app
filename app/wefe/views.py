@@ -1,6 +1,5 @@
 import io
 from datetime import datetime
-from jsonview.decorators import json_view
 from pathlib import Path
 
 from django.conf import settings
@@ -9,10 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
+from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
+from jsonview.decorators import json_view
 
 from business_model.forms import *
 from business_model.models import *
@@ -22,11 +22,17 @@ from projects.models import *
 from projects.models.base_models import Timeseries
 from projects.views import project_duplicate, project_delete
 
-from .forms import *
-from .helpers import *
-from .models import MOOWeights, SurveyAnswer, WEFESimulation
-from .requests import fetch_wefedemand_simulation_results, wefe_simulation_request
-from .survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
+from wefe.forms import *
+from wefe.helpers import *
+from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation
+from wefe.requests import (
+    fetch_wefedemand_simulation_results,
+    wefedemand_simulation_request,
+    wefesim_simulation_request,
+    fetch_wefesim_simulation_results,
+)
+from wefe.scenario_builder import WEFEConfigurator
+from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
 
@@ -279,7 +285,7 @@ def request_wefedemand_simulation(request, proj_id=None):
         survey_id = project.kobo_survey_id
 
     data = {"survey_id": survey_id, "args": args}
-    results = wefe_simulation_request(data)
+    results = wefedemand_simulation_request(data)
     if results is None:
         error_msg = "Could not communicate with the server."
         logger.error(error_msg)
@@ -328,6 +334,101 @@ def get_wefedemand_data(request, proj_id):
             data[ts.name.replace("_ramp_demand", "")] = ts.values
 
     return JsonResponse(data)
+
+
+def request_wefesim_simulation(request, proj_id=None, default_datapackage="false"):
+    if not proj_id:
+        answer = JsonResponse(
+            {"status": "error", "error": "No project id provided"},
+            status=500,
+            content_type="application/json",
+        )
+
+    project = get_object_or_404(Project, pk=proj_id)
+    scen_id = project.scenario.id
+    default_datapackage = True if default_datapackage == "true" else False
+
+    if default_datapackage:
+        with open(staticfiles_storage.path("wefe_configurator/default_dp.json")) as json_data:
+            sim_data = json.load(json_data)
+    else:
+        qs = SurveyAnswer.objects.filter(scenario_id=scen_id)
+        survey_answers = {}
+        for ans in qs:
+            survey_answers.update(ans.export(ignore_empty=True))
+
+        wefe_conf = WEFEConfigurator(scen_id=scen_id, overwrite=False)
+
+        wefe_conf.process_survey(survey_answers)
+        wefe_conf.process_demand()
+        wefe_conf.add_components()
+        wefe_conf.add_buses()
+        wefe_conf.add_sequences()
+
+        # pass the sim data json and remove the temporary directory again
+        with open(os.path.join(wefe_conf.scenario_folder, "datapackage.json")) as dp:
+            sim_data = json.load(dp)
+
+        # get rid of temp folder
+        wefe_conf.cleanup()
+
+    # Make simulation request
+    results = wefesim_simulation_request(sim_data)
+    if results is None:
+        error_msg = "Could not communicate with the server."
+        logger.error(error_msg)
+        messages.error(request, error_msg)
+        # TODO redirect to prefilled feedback form / bug form
+        answer = JsonResponse(
+            {"status": "error", "error": error_msg},
+            status=407,
+            content_type="application/json",
+        )
+    else:
+        # delete existing simulation
+        WEFESimulation.objects.filter(scenario_id=scen_id, app="wefesim").delete()
+
+        # Create empty Simulation model object
+        simulation = WEFESimulation(start_date=datetime.now(), scenario_id=scen_id, app="wefesim")
+
+        simulation.mvs_token = results["id"] if results["id"] else None
+
+        if "status" in results.keys() and (results["status"] == DONE or results["status"] == ERROR):
+            simulation.status = results["status"]
+            simulation.results = results["results"]
+            simulation.end_date = datetime.now()
+        else:  # PENDING
+            simulation.status = results["status"]
+
+        simulation.elapsed_seconds = (datetime.now() - simulation.start_date).seconds
+        simulation.save()
+
+        answer = HttpResponseRedirect(reverse("wefe_simulation", args=[proj_id]))
+
+    return answer
+
+
+def get_wefesim_data(request, proj_id):
+    # TODO handle wefesim data
+    pass
+
+
+@login_required
+@require_http_methods(["GET"])
+def wefe_simulation_cancel(request, proj_id):
+    project = get_object_or_404(Project, id=proj_id)
+    scen_id = project.scenario.id
+    if project.user == request.user:
+        qs = WEFESimulation.objects.filter(scenario=scen_id, app="wefesim")
+        if qs.exists():
+            qs.delete()
+    else:
+        messages.error(
+            request,
+            _("You do not have the permission to reset a simulation on a project shared with you"),
+        )
+
+    return HttpResponseRedirect(reverse("wefe_simulation", args=[scen_id]))
 
 
 @login_required
@@ -482,6 +583,7 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
         raise PermissionDenied
 
     scenario = project.scenario
+    # TODO add a form for the MOO weighting here
 
     page_information = "About defining the weighting for the multi-objective optimization"
     context = {
@@ -531,20 +633,47 @@ def wefe_simulation(request, proj_id, step_id=STEP_MAPPING["simulation"]):
     scenario = project.scenario
 
     page_information = "Here the simulation will be started"
-    context = {
-        "proj_id": proj_id,
-        "proj_name": project.name,
-        "step_id": step_id,
-        "step_list": WEFE_STEP_VERBOSE,
-        "page_information": page_information,
-    }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
+        html_template = "wefe/steps/simulation/no-status.html"
+        context = {
+            "proj_id": proj_id,
+            "proj_name": project.name,
+            "step_id": step_id,
+            "step_list": WEFE_STEP_VERBOSE,
+            "page_information": page_information,
+            "WEFESIM_GET_URL": settings.WEFESIM_GET_URL,
+        }
 
-    if request.method == "POST":
-        # TODO
-        return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
+        qs = WEFESimulation.objects.filter(scenario=project.scenario, app="wefesim")
+
+        if qs.exists():
+            simulation = qs.first()
+
+            if simulation.status == PENDING:
+                fetch_wefesim_simulation_results(simulation)
+
+            context.update(
+                {
+                    "sim_id": simulation.id,
+                    "simulation_status": simulation.status,
+                    "secondsElapsed": simulation.elapsed_seconds,
+                    "mvs_token": simulation.mvs_token,
+                }
+            )
+
+            if simulation.status == ERROR:
+                context.update({"simulation_error_msg": simulation.errors})
+                html_template = "wefe/steps/simulation/error.html"
+            elif simulation.status == PENDING:
+                html_template = "wefe/steps/simulation/pending.html"
+            elif simulation.status == DONE:
+                html_template = "wefe/steps/simulation/success.html"
+
+        else:
+            print("no simulation existing")
+        return render(request, html_template, context)
+    return None
 
 
 @login_required

@@ -84,6 +84,7 @@ if DEBUG is True:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -235,6 +236,14 @@ OPEN_TOPO_URL = "https://api.opentopodata.org/v1/"
 WEFEDEMAND_API_HOST = env("WEFEDEMAND_API", default=None)
 WEFEDEMAND_POST_URL = f"{WEFEDEMAND_API_HOST}/sendjson"
 WEFEDEMAND_GET_URL = f"{WEFEDEMAND_API_HOST}/check/"
+
+# WEFESIM API
+WEFESIM_API_HOST = env("WEFESIM_API", default=None)
+WEFESIM_POST_URL = f"{WEFESIM_API_HOST}/sendjson/prod"
+WEFESIM_GET_URL = f"{WEFESIM_API_HOST}/check/"
+
+# WEFEConfigurator settings
+COMPONENT_TEMPLATES_PATH = str(BASE_DIR / "static" / "wefe_configurator/component_library/WIP_components")
 
 LOGGING = {
     "version": 1,
