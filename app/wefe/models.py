@@ -80,3 +80,12 @@ def copy_energy_system_from_usecase(usecase_name, scenario):
     # assign the assets and busses to the given scenario
     assign_assets(scenario, assets)
     assign_busses(scenario, busses)
+
+
+class MOOWeights(models.Model):
+    # multi-objective optimization weights
+    scenario = models.OneToOneField(Scenario, on_delete=models.CASCADE)
+    total_cost = models.FloatField(default=1)
+    co2_emissions = models.FloatField(default=0)
+    land_requirements = models.FloatField(default=0)
+    water_footprint = models.FloatField(default=0)

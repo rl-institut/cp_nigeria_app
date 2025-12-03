@@ -5,27 +5,26 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.db.models import Q, F, Avg, Max
 from django.http import JsonResponse
-from django.utils.translation import gettext_lazy as _
 from django.shortcuts import *
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q, F, Avg, Max
 from jsonview.decorators import json_view
 
-from epa.settings import WEFESIM_GET_URL
-from projects.constants import DONE, ERROR
-from .forms import *
-from .helpers import *
 from business_model.forms import *
+from business_model.models import *
+from projects.constants import DONE, ERROR
+from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 from projects.models import *
 from projects.models.base_models import Timeseries
 from projects.views import project_duplicate, project_delete
-from business_model.models import *
-from projects.forms import UploadFileForm, ProjectShareForm, ProjectRevokeForm, UseCaseForm
 
-from wefe.models import SurveyAnswer, WEFESimulation
+from wefe.forms import *
+from wefe.helpers import *
+from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation
 from wefe.requests import (
     fetch_wefedemand_simulation_results,
     wefedemand_simulation_request,
@@ -36,8 +35,6 @@ from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -597,10 +594,28 @@ def wefe_optimization_weighting(request, proj_id, step_id=STEP_MAPPING["optimiza
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
+        try:
+            # weights already defined: get values
+            weights = scenario.mooweights
+            context["form"] = MOOForm(initial=vars(weights))
+            context["custom_weights"] = weights.total_cost != 1
+        except ObjectDoesNotExist:
+            # no weights yet: use defaults
+            context["form"] = MOOForm()
+        return render(request, "wefe/steps/moo_setup.html", context)
 
     if request.method == "POST":
-        # TODO
+        form = MOOForm(request.POST)
+        if not form.is_valid():
+            context["form"] = form
+            return render(request, "wefe/steps/moo_setup.html", context)
+
+        # save form data (1 to 1 relation between scenario and weights)
+        # weights might already exist -> maybe just update -> saving ModelForm does not work
+        MOOWeights.objects.update_or_create(
+            scenario=scenario,
+            defaults=form.cleaned_data,
+        )
         return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
 
@@ -626,7 +641,7 @@ def wefe_simulation(request, proj_id, step_id=STEP_MAPPING["simulation"]):
             "step_id": step_id,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
-            "WEFESIM_GET_URL": WEFESIM_GET_URL,
+            "WEFESIM_GET_URL": settings.WEFESIM_GET_URL,
         }
 
         qs = WEFESimulation.objects.filter(scenario=project.scenario, app="wefesim")

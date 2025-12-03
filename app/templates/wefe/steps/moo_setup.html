@@ -1,0 +1,51 @@
+{% extends 'wefe/steps/step_progression.html' %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block progression_content %}
+  <div class="padding-1">
+    <div class="center-text">
+      <input id="inp-moo" type="checkbox" class="inp-default" onchange="update_weights()" {% if custom_weights or form.errors %}checked{% endif %}>
+      <label for="inp-moo">{% translate 'Use Multi-Objective Optimization' %}</label>
+    </div>
+    <form id="form" method="post">
+      {% csrf_token %}
+      <div>
+        {{ form | crispy }}
+      </div>
+    </form>
+  </div>
+{% endblock progression_content %}
+
+{% block next_btn %}
+<button class="btn btn--medium" onclick="document.getElementById('form').submit()">{% translate "Next" %}</button>
+{% endblock next_btn %}
+
+{% block end_body_scripts %}
+<script>
+  // init weights
+  var weights = {};
+  for (let inp of $(':input[type="number"]'))
+      weights[inp.id] = inp.value;
+
+  function update_weights() {
+    let form = document.getElementById('form');
+    let check = document.getElementById('inp-moo');
+    let inputs = $(':input[type="number"]');
+    form.style.display = check.checked ? '' : 'none';
+    for (let inp of inputs) {
+      if (check.checked) {
+        // multi-objective: restore weight
+        inp.value = weights[inp.id];
+      } else {
+        // single objective: reset weight
+        weights[inp.id] = inp.value;
+        inp.value = inp.getAttribute('default');
+      }
+    }
+  }
+  // initialize state
+  update_weights();
+
+</script>
+{% endblock end_body_scripts %}
