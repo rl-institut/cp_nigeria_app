@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Q, F, Avg, Max
+from django.forms import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import *
 from django.urls import reverse
@@ -33,8 +34,10 @@ from wefe.requests import (
 )
 from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
+from oemof_tabular_plugins.datapackage import export_single_json
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -364,12 +367,30 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
         wefe_conf.add_buses()
         wefe_conf.add_sequences()
 
+        # Turn datapackage data and metadata into single json
+        scenario_dir = Path(wefe_conf.scenario_folder)
+        dp_export = export_single_json(scenario_dir, scenario_dir)
+
         # pass the sim data json and remove the temporary directory again
-        with open(os.path.join(wefe_conf.scenario_folder, "datapackage.json")) as dp:
+        with open(dp_export, "r", encoding="utf-8") as dp:
             sim_data = json.load(dp)
 
         # get rid of temp folder
         wefe_conf.cleanup()
+
+        # Integrate moo weighting factors into simulation data parameters
+        if hasattr(project.scenario, "mooweights"):
+            weights = project.scenario.mooweights
+            sim_data["parameters"]["moo_wf"] = {
+                "wf_cost": weights.total_cost,
+                "wf_ghg": weights.co2_emissions,
+                "wf_lr": weights.land_requirements,
+                "wf_wf": weights.water_footprint,
+            }
+        else:
+            sim_data["parameters"]["moo_wf"] = None
+
+        # TODO: Use 'sim_data["parameters"]' for 'project.economic_data' like wacc
 
     # Make simulation request
     results = wefesim_simulation_request(sim_data)
