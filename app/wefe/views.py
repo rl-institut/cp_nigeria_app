@@ -390,7 +390,11 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
         else:
             sim_data["parameters"]["moo_wf"] = None
 
-        # TODO: Use 'sim_data["parameters"]' for 'project.economic_data' like wacc
+        # Integrate economic parameters
+        if hasattr(project.economic_data, "discount"):
+            sim_data["parameters"]["wacc"] = project.economic_data.discount
+        else:
+            sim_data["parameters"]["wacc"] = None
 
     # Make simulation request
     results = wefesim_simulation_request(sim_data)
