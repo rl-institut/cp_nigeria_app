@@ -673,6 +673,10 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
 
     scenario = project.scenario
 
+    # TODO these should come from simulation.results instead of default once the simulation runs through
+
+    cost_table = extract_table_from_results(calculator.df_results, RESULT_TABLE_COLUMNS["costs"])
+
     page_information = "Results page with report option"
     context = {
         "proj_id": proj_id,
@@ -683,7 +687,7 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
+        return render(request, "wefe/steps/results.html", context)
 
     if request.method == "POST":
         # TODO
@@ -820,3 +824,14 @@ def fetch_wefe_simulation_results(request, sim_id):
         status=200,
         content_type="application/json",
     )
+
+
+def dash_app(request, sim_id):
+    demo_app = prepare_app(
+        es,
+        dp_path=dp_path,
+        tables=result_tables,
+        services=service_tables,
+        units=parameters_units,
+    )
+    demo_app.run(debug=False, port=8060)

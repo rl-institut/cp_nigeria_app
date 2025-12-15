@@ -20,8 +20,6 @@ def wefedemand_simulation_request(data: dict):
             WEFEDEMAND_POST_URL,
             json=data,
             headers=headers,
-            proxies=PROXY_CONFIG,
-            verify=False,
         )
 
         # If the response was successful, no Exception will be raised
@@ -84,8 +82,6 @@ def wefesim_simulation_request(data: dict):
             WEFESIM_POST_URL,
             json=data,
             headers=headers,
-            proxies=PROXY_CONFIG,
-            verify=False,
         )
 
         # If the response was successful, no Exception will be raised
