@@ -35,6 +35,7 @@ from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,18 +43,16 @@ STEP_MAPPING = {
     "choose_location": 1,
     "resources": 2,
     "demand": 3,
-    "economic_parameters": 4,
-    "system_layout": 5,
-    "optimization_weighting": 6,
-    "simulation": 7,
-    "results": 8,
+    "system_layout": 4,
+    "optimization_weighting": 5,
+    "simulation": 6,
+    "results": 7,
 }
 
 WEFE_STEP_VERBOSE = {
     "choose_location": _("Choose location"),
     "resources": _("Resources_mapping"),
     "demand": _("Demand assessment"),
-    "economic_parameters": _("Economic parameters"),
     "system_layout": _("System layout"),
     "optimization_weighting": _("Multi-objective optimization"),
     "simulation": _("Simulation"),
@@ -119,7 +118,6 @@ def wefe_choose_location(request, proj_id=None, step_id=STEP_MAPPING["choose_loc
 
             economic_data = economic_data.save(commit=False)
             # set the initial values for discount and tax
-            economic_data.discount = 0.12
             economic_data.tax = 0.075
             economic_data.save()
 
@@ -430,35 +428,6 @@ def wefe_simulation_cancel(request, proj_id):
     return HttpResponseRedirect(reverse("wefe_simulation", args=[scen_id]))
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
-def wefe_economic_parameters(request, proj_id, step_id=STEP_MAPPING["economic_parameters"]):
-    project = get_object_or_404(Project, id=proj_id)
-
-    if (project.user != request.user) and (
-        project.viewers.filter(user__email=request.user.email, share_rights="edit").exists() is False
-    ):
-        raise PermissionDenied
-
-    scenario = project.scenario
-
-    page_information = "About economic parameters"
-    context = {
-        "proj_id": proj_id,
-        "proj_name": project.name,
-        "step_id": step_id,
-        "step_list": WEFE_STEP_VERBOSE,
-        "page_information": page_information,
-    }
-
-    if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
-
-    if request.method == "POST":
-        # TODO
-        return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
-
-
 def is_matrix_source(field):
     field_classes = field.widget.attrs.get("class")
     answer = False
@@ -708,7 +677,6 @@ WEFE_STEPS = {
     "choose_location": wefe_choose_location,
     "resources": wefe_resources,
     "demand": wefe_demand,
-    "economic_parameters": wefe_economic_parameters,
     "system_layout": wefe_system_layout,
     "optimization_weighting": wefe_optimization_weighting,
     "simulation": wefe_simulation,

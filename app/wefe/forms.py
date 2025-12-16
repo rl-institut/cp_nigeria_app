@@ -71,7 +71,14 @@ class ProjectForm(OpenPlanModelForm):
 class EconomicProjectForm(OpenPlanModelForm):
     class Meta:
         model = EconomicData
-        fields = ["population", "duration", "currency", "exchange_rate"]
+        fields = ["population", "duration", "currency", "exchange_rate", "discount"]
+
+    discount = forms.FloatField(
+        min_value=0,
+        max_value=1,
+        initial=0.05,
+        widget=forms.NumberInput(attrs={'step': 0.01}),
+    )
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get("instance", None)
