@@ -378,6 +378,9 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
         # get rid of temp folder
         wefe_conf.cleanup()
 
+        # Initialize parameters dict
+        sim_data["parameters"] = {"moo_wf": None, "wacc": None}
+
         # Integrate moo weighting factors into simulation data parameters
         if hasattr(project.scenario, "mooweights"):
             weights = project.scenario.mooweights
@@ -387,14 +390,10 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
                 "wf_lr": weights.land_requirements,
                 "wf_wf": weights.water_footprint,
             }
-        else:
-            sim_data["parameters"]["moo_wf"] = None
 
         # Integrate economic parameters
         if hasattr(project.economic_data, "discount"):
             sim_data["parameters"]["wacc"] = project.economic_data.discount
-        else:
-            sim_data["parameters"]["wacc"] = None
 
     # Make simulation request
     results = wefesim_simulation_request(sim_data)
