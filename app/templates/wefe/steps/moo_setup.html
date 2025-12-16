@@ -1,6 +1,9 @@
 {% extends 'wefe/steps/step_progression.html' %}
-{% load crispy_forms_tags %}
-{% load i18n %}
+{% load crispy_forms_tags i18n static %}
+
+{% block head_block %}
+  <script src="{% static 'node_modules/chartjs/chart.min.js' %}"></script>
+{% endblock head_block %}
 
 {% block progression_content %}
   <div class="padding-1">
@@ -8,31 +11,41 @@
       <input id="inp-moo" type="checkbox" class="inp-default" onchange="update_weights()" {% if custom_weights or form.errors %}checked{% endif %}>
       <label for="inp-moo">{% translate 'Use Multi-Objective Optimization' %}</label>
     </div>
-    <form id="form" method="post">
-      {% csrf_token %}
-      <div>
-        {{ form | crispy }}
-      </div>
-    </form>
+    <div id="div-moo">
+      <form id="form-moo" method="post">
+        {% csrf_token %}
+        <div>
+          {{ form | crispy }}
+        </div>
+      </form>
+      <span
+        id="warn-moo"
+        style="color:red; width:100%; text-align:center; font-weight: bold;"
+      >{% translate 'Weights should add up to 1.0' %}</span>
+      <canvas id="chart-moo"></canvas>
+    </div>
   </div>
 {% endblock progression_content %}
 
 {% block next_btn %}
-<button class="btn btn--medium" onclick="document.getElementById('form').submit()">{% translate "Next" %}</button>
+<button class="btn btn--medium" onclick="document.getElementById('form-moo').submit()">{% translate "Next" %}</button>
 {% endblock next_btn %}
 
 {% block end_body_scripts %}
 <script>
+  var inputs = $(':input[type="number"]');
   // init weights
   var weights = {};
-  for (let inp of $(':input[type="number"]'))
-      weights[inp.id] = inp.value;
+  for (let inp of inputs) {
+    weights[inp.id] = inp.value;
+    inp.onchange = update_chart;
+  }
 
   function update_weights() {
-    let form = document.getElementById('form');
+    // change weight values when toggling MOO checkbox
+    let div = document.getElementById('div-moo');
     let check = document.getElementById('inp-moo');
-    let inputs = $(':input[type="number"]');
-    form.style.display = check.checked ? '' : 'none';
+    div.style.display = check.checked ? '' : 'none';
     for (let inp of inputs) {
       if (check.checked) {
         // multi-objective: restore weight
@@ -44,8 +57,45 @@
       }
     }
   }
+
+  var chart = null;
+  function update_chart() {
+    // re-draw chart when changing weights
+    if (chart)
+      chart.destroy();
+    let data = [];
+    for (let inp of inputs) {
+      let label = $('label[for="' + inp.id + '"]')[0].innerText;
+      data.push([label, +inp.value]);  // save as tuple: label, number from string
+    }
+    // check if weights add up to 1, show warning if not
+    let sumWeights = data.reduce((a, d) => a + d[1], 0);
+    let warnDiv = document.getElementById('warn-moo');
+    warnDiv.style.display = sumWeights == 1 ? 'none' : 'block';
+
+    // pie chart
+    chart = new Chart('chart-moo', {
+      type: 'pie',
+      data: {
+        labels: data.map(d => d[0]),
+        datasets: [{
+          backgroundColor: [
+            'green',   // total cost
+            'gray',    // CO2
+            'orange',  // land
+            'skyblue', // water
+          ],
+          data: data.map(d => d[1]),
+        }]
+      },
+      options: {
+        animation: {duration: 0},
+      }
+    });
+  }
+
   // initialize state
   update_weights();
-
+  update_chart();
 </script>
 {% endblock end_body_scripts %}
