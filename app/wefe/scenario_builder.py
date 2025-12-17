@@ -21,6 +21,9 @@ from wefe.helpers import (
     get_renewables_output,
 )
 
+# TODO: additional imports/static files - > static/wefe_configurator/survey_helpers
+water_treatment_train = {}
+
 # TODO this needs to work standalone as well as a service
 
 # -------------RELEVANT PATHS------------
@@ -81,39 +84,13 @@ class WEFEConfigurator:
         if self._temp_dir:
             self._temp_dir.cleanup()
 
-    def safety_check_1(self):
-        # --- SAFETY CLEANUP STEP ---
-        # Remove any existing water-treatment components that process_survey might have added
-        water_main_list = []
-        for comp in WATER_TREATMENT_TRAIN["main_list"]:
-            if isinstance(comp, list):
-                water_main_list.extend(comp)
-            else:
-                water_main_list.append(comp)
-        for comp in water_main_list:
-            self.components.pop((comp, comp), None)
-        # --- END CLEANUP ---
-
-    def safety_check_2(self):
-        # --- SAFETY CLEANUP STEP ---
-        # Remove any existing wastewater-treatment components that process_survey might have added
-        for comp in [
-            "septic_system",
-            "constructed_wetland",
-            "centralized_waste_water_treatment_plant",
-            "decentralized_waste_water_treatment_plant",
-            "water_reuse_system",
-        ]:
-            self.components.pop((comp, comp), None)
-        # --- END CLEANUP ---
-
     def water_systems_postprocessing(self, survey):
 
         def safety_check():
             # --- SAFETY CLEANUP STEP ---
             # Remove any existing water-treatment components that process_survey might have added
             water_main_list = []
-            for comp in WATER_TREATMENT_TRAIN["main_list"]:
+            for comp in water_treatment_train["main_list"]:
                 if isinstance(comp, list):
                     water_main_list.extend(comp)
                 else:
@@ -172,7 +149,7 @@ class WEFEConfigurator:
             previous_out_bus = entry_bus  # entry bus to the treatment train
             for index, component in enumerate(component_list):
                 if isinstance(component, list):  # handling parallel components
-                    parallel_out_bus = f"{prefix}parallel_{index+1}_out_bus"
+                    parallel_out_bus = f"{prefix}parallel_{index + 1}_out_bus"
                     for parallel in component:
                         counter[parallel] = counter.get(parallel, 0) + 1
                         key = (f"{parallel}", f"{prefix}{parallel}_{counter[parallel]}")
@@ -187,6 +164,82 @@ class WEFEConfigurator:
 
             return components_dict
 
+        def update_component_parameters(suffixes, WT):
+            capacity_sums = {}
+            efficiency_values = {}
+            specific_energy_consumption_values = {}
+            mapping_dict = {
+                "reverse osmosis": "reverse_osmosis",
+                "membrane distillation": "membrane_distillation",
+                "ultrafiltration": "ultrafiltration",
+                "boiling": "boiling",
+                "distillation": "distillation",
+                "activated carbon filter": "activated_carbon_filter",
+                "UV-disinfection": "uv_disinfection",
+                "cartridge filter": "cartridge_filter",
+                "microfiltration": "microfiltration",
+                "ceramic filter": "ceramic_filter",
+                "nanofiltration": "nanofiltration",
+                "electrodialyis": "electrodialysis",
+                "slow sand filter": "slow_sand_filter",
+                "water softener": "ion_exchange",
+                "chlorination": "chlorination",
+            }
+            for sfx in suffixes:
+                if survey[f"criteria_5{sfx}"] != ["no"]:
+                    idx = 0
+                    for answer, facade in mapping_dict.items():
+                        if answer in survey[f"criteria_5{sfx}"]:
+                            comp_key = (facade, f"{WT}_{facade}_1")
+                            if survey[f"criteria_5{sfx}.2.{idx}"] not in (None, "", " "):
+                                capacity_sums[comp_key] = (
+                                    capacity_sums.get(comp_key, 0.0) + survey[f"criteria_5{sfx}.2.{idx}"]
+                                )
+                            if survey[f"criteria_5{sfx}.3.{idx}"] not in (None, "", " "):
+                                # Keep highest specific energy consumption
+                                if specific_energy_consumption_values.get(comp_key) is None or survey[
+                                    f"criteria_5{sfx}.3.{idx}"
+                                ] > specific_energy_consumption_values.get(comp_key):
+                                    specific_energy_consumption_values[comp_key] = survey[f"criteria_5{sfx}.3.{idx}"]
+                            try:
+                                if survey[f"criteria_5{sfx}.1.{idx}"] not in (None, "", " "):
+                                    # Keep lowest efficiency value
+                                    if efficiency_values.get(comp_key) is None or survey[
+                                        f"criteria_5{sfx}.1.{idx}"
+                                    ] < efficiency_values.get(comp_key):
+                                        efficiency_values[comp_key] = survey[f"criteria_5{sfx}.1.{idx}"]
+                            except KeyError:
+                                pass
+                        idx += 1
+
+            # After all suffixes processed, update component attributes once with aggregated values
+            for comp_key in capacity_sums:
+                self.components[comp_key].update({"capacity": capacity_sums[comp_key]})
+                if comp_key in specific_energy_consumption_values:
+                    self.components[comp_key].update(
+                        {"specific_energy_consumption": specific_energy_consumption_values[comp_key]}
+                    )
+                if comp_key in efficiency_values:
+                    self.components[comp_key].update({"efficiency": efficiency_values[comp_key]})
+
+        def add_excess():
+            for component_key in list(self.components.keys()):
+                component_type, component_name = component_key
+                if component_type == "biological_denitrification":
+                    self.add_single_component(component_type="excess-N2")
+                if component_type == "biofiltration":
+                    self.add_single_component(component_type="excess-biomass")
+                if component_type in {
+                    "microfiltration",
+                    "ultrafiltration",
+                    "nanofiltration",
+                    "electrodialysis",
+                    "distillation",
+                    "membrane_distillation",
+                    "reverse_osmosis",
+                }:
+                    self.add_single_component(component_type="brine-excess")
+
         safety_check()
         if self.criterias["2"] == "Yes":  # set Yes currently
             suffixes_a = ["_GWa", "_DSa", "_RCa", "_La"]  # drinking water
@@ -200,7 +253,7 @@ class WEFEConfigurator:
             service_water_component_list = list(dict.fromkeys(service_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
+                water_treatment_train["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
                 drinking_water_component_list, entry_bus="water-in-bus", water_type="drinking"
@@ -212,10 +265,11 @@ class WEFEConfigurator:
                 for bus_type in ["water_in_bus", "water_out_bus"]:
                     if component_attrs.get(bus_type):  # only add if defined
                         self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            print(drinking_water_treatment_dict)
+            update_component_parameters(suffixes_b, "DW")
+            # print(drinking_water_treatment_dict)
             print("SW treatment dictionary")
             service_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], service_water_component_list
+                water_treatment_train["main_list"], service_water_component_list
             )
             service_water_treatment_dict = create_component_dict(
                 service_water_component_list, entry_bus="water-in-bus", water_type="service"
@@ -227,7 +281,8 @@ class WEFEConfigurator:
                 for bus_type in ["water_in_bus", "water_out_bus"]:
                     if component_attrs.get(bus_type):  # only add if defined
                         self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            print(service_water_treatment_dict)
+            update_component_parameters(suffixes_b, "SW")
+            # print(service_water_treatment_dict)
         else:
             suffixes = ["_GW", "_DS", "_RC", "_L"]  # all water assumed drinking water
             drinking_water_component_list = []
@@ -236,10 +291,10 @@ class WEFEConfigurator:
             drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
+                water_treatment_train["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
-                drinking_water_component_list, entry_bus="water-in-bus", water_type="drinking"
+                drinking_water_component_list, entry_bus="groundwater-bus", water_type="drinking"
             )
             for (component_type, component_name), component_attrs in drinking_water_treatment_dict.items():
                 # Add the component from the train
@@ -248,137 +303,119 @@ class WEFEConfigurator:
                 for bus_type in ["water_in_bus", "water_out_bus"]:
                     if component_attrs.get(bus_type):  # only add if defined
                         self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            print(drinking_water_treatment_dict)
+            update_component_parameters(suffixes, "DW")
+            # print(drinking_water_treatment_dict)
 
-        # final_WATER_TREATMENT_TRAIN
-        # self.add_single_component()
-        # self.add_single_bus()
+        add_excess()
 
     def waste_water_systems_postprocessing(self, survey):
-        """Go through the survey and implement specific logic regarding the water questions"""
-        # water_distinction_question_id = "7"
-        # waste_systems = survey["criteria_7"]
-        # if "septic system" in waste_systems:
-        # Add this to the list pass
-        # Need to be the same name as in WIP components in the csv
-        # self.components.update({"septic_system": {"name":"grey_water_se"}})
-        # self.components.update({"septic_system": {"name":"black_water_se"}})
-        # exemple if you need to change an attribute of a resource/component
-        # self.components["septic_system"].update({"capacity": 100})
 
-        #### Vivek's attempt at hardcode logic
+        def safety_check():
+            # --- SAFETY CLEANUP STEP ---
+            # Remove any existing wastewater-treatment components that process_survey might have added
+            for comp in [
+                "septic_system",
+                "constructed_wetland",
+                "centralized_WWTP",
+                "decentralized_WWTP",
+                "water_reuse_system",
+            ]:
+                self.components.pop((comp, comp), None)
+            # --- END CLEANUP ---
 
-        # Survey responses assumed or taken from survey
+        safety_check()
+
         wastewater_systems = survey["criteria_7"]
-        population = 1000  #  # survey needs to ask population, makes most of the logic implementation easier
+        population = 1000  # # survey needs to ask population, makes most of the logic implementation easier
         toilet_types = survey["criteria_7.3"]
+        print(toilet_types)
 
-        # black water treatment
-        if "flush toilet" in toilet_types:
-            if "septic system" in wastewater_systems:
-                self.components.update({("septic_system", "black_water_septic"): {"water_in_bus": "black-water-bus"}})
-                # to update attributes if survey provides it
-                # self.components[("septic_system","black_water_septic")].update({"capacity": 100})
-            elif "constructed wetland" in wastewater_systems:
-                self.components.update(
-                    {
-                        ("constructed_wetland", "black_water_cw"): {
-                            "water_in_bus": "black-water-bus",
-                            "water_out_bus": "wwtp-ip-water-bus",
-                        }
-                    }
+        if survey["criteria_7"] != [
+            "disposal to environment without treatment"
+        ]:  # set direct disposal for not inclusion of any wastewater component
+
+            # black water treatment
+            if "flush toilet" in toilet_types:
+                if "constructed wetland" in wastewater_systems:
+                    component_key = self.add_single_component(
+                        component_type="constructed_wetland",
+                        component_name="black_water_cw",
+                        component_attrs={"water_in_bus": "black-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
+                    )
+                    capacity = survey["criteria_7.1.1"]
+                    if capacity not in (None, "", " "):
+                        self.components[component_key].update({"capacity": capacity})
+                else:
+                    # default addition of septic system
+                    component_key = self.add_single_component(
+                        component_type="septic_system",
+                        component_name="black_water_septic",
+                        component_attrs={"water_in_bus": "black-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
+                    )
+                    # self.add_single_component(component_type="excess-biomass")
+                    capacity = survey["criteria_7.1.0"]
+                    if capacity not in (None, "", " "):
+                        self.components[component_key].update({"capacity": capacity})
+
+            # grey water treatment
+
+            if "constructed wetland" in wastewater_systems:
+                component_key = self.add_single_component(
+                    component_type="constructed_wetland",
+                    component_name="grey_water_cw",
+                    component_attrs={"water_in_bus": "grey-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
                 )
-                # to update attributes if survey provides it
-                # self.components[("constructed_wetland", "black_water_cw")].update({"capacity": 100})
+                capacity = survey["criteria_7.1.1"]
+                if capacity not in (None, "", " "):
+                    self.components[component_key].update({"capacity": capacity})
+
             else:
                 # default addition of septic system
-                self.components.update(
-                    {
-                        ("septic_system", "black_water_septic"): {
-                            "water_in_bus": "black-water-bus",
-                            "water_out_bus": "wwtp-ip-water-bus",
-                        }
-                    }
+                component_key = self.add_single_component(
+                    component_type="septic_system",
+                    component_name="grey_water_septic",
+                    component_attrs={"water_in_bus": "grey-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
                 )
+                # self.add_single_component(component_type="excess-biomass")
+                capacity = survey["criteria_7.1.0"]
+                if capacity not in (None, "", " "):
+                    self.components[component_key].update({"capacity": capacity})
 
-        # grey water treatment
+            # waste water treatment plant based on population
+            if population >= 10000:
+                # centralized waste water treatment plant
+                component_key = self.add_single_component(
+                    component_type="centralized_WWTP",
+                    component_attrs={"water_in_bus": "wwtp-ip-water-bus", "water_out_bus": "wwtp-op-water-bus"},
+                )
+                # self.add_single_component(component_type="excess-biomass")
+                capacity = survey["criteria_7.1.2"]
+                if capacity not in (None, "", " "):
+                    self.components[component_key].update({"capacity": capacity})
+            else:
+                # decentralized waste water treatment plant
+                # default addition of this component
+                component_key = self.add_single_component(
+                    component_type="decentralized_WWTP",
+                    component_attrs={"water_in_bus": "wwtp-ip-water-bus", "water_out_bus": "wwtp-op-water-bus"},
+                )
+                # self.add_single_component(component_type="excess-biomass")
+                capacity = survey["criteria_7.1.3"]
+                if capacity not in (None, "", " "):
+                    self.components[component_key].update({"capacity": capacity})
 
-        if "septic system" in wastewater_systems:
-            component_key = self.add_single_component(
-                component_type="septic_system",
-                component_name="grey_water_septic",
-                component_attrs={"water_in_bus": "grey-water-bus"},
-            )
-            capacity = survey["criteria_7.1.0"]
-            if capacity is not None:
-                # to update attributes if survey provides it
-                self.components[component_key].update({"capacity": capacity})
-        elif "constructed wetland" in wastewater_systems:
-            self.components.update(
-                {
-                    ("constructed_wetland", "grey_water_cw"): {
-                        "water_in_bus": "grey-water-bus",
-                        "water_out_bus": "wwtp-ip-water-bus",
-                    }
-                }
-            )
-            # to update attributes if survey provides it
-            # self.components[("constructed_wetland", "grey_water_cw")].update({"capacity": 100})
-        else:
-            # default addition of septic system
-            self.components.update(
-                {
-                    ("septic_system", "grey_water_septic"): {
-                        "water_in_bus": "grey-water-bus",
-                        "water_out_bus": "wwtp-ip-water-bus",
-                    }
-                }
-            )
-
-        # waste water treatment plant based on population
-        if population >= 10000:
-            # centralized waste water treatment plant
-            self.components.update(
-                {
-                    "centralized_waste_water_treatment_plant": {
-                        "water_in_bus": "wwtp-ip-water-bus",
-                        "water_out_bus": "wwtp-op-water-bus",
-                    }
-                }
-            )
-            if "centralized waste water treatment plant" in wastewater_systems:
-                # to update attributes if survey provides it
-                # self.components["centralized_waste_water_treatment_plant"].update({"capacity": 100})
-                pass
-        else:
-            # decentralized waste water treatment plant
+            # water recycling and reuse system
             # default addition of this component
-
-            self.components.update(
-                {
-                    ("decentralized_waste_water_treatment_plant", "decentralized_waste_water_treatment_plant"): {
-                        "water_in_bus": "wwtp-ip-water-bus",
-                        "water_out_bus": "wwtp-op-water-bus",
-                    }
-                }
+            component_key = self.add_single_component(
+                component_type="water_reuse_system",
+                component_attrs={"water_in_bus": "wwtp-op-water-bus", "water_out_bus": "service-water-bus"},
             )
-            if "decentralized waste water treatment plant" in wastewater_systems:
-                # to update attributes if survey provides it
-                # self.components["decentralized_waste_water_treatment_plant"].update({"capacity": 100})
-                pass
-
-        # water recycling and reuse system
-        # default addition of this component
-        self.add_single_component(
-            component_type="water_reuse_system",
-            component_attrs={"water_in_bus": "wwtp-op-water-bus", "water_out_bus": "service-water-bus"},
-        )
-        if "water recycling and reuse system" in wastewater_systems:
-            # to update attributes if survey provides it
-            # self.components["water_reuse_system"].update({"capacity": 100})
-            pass
-
-        print(self.components)
+            self.add_single_component(component_type="hh_gw_waste")
+            capacity = survey["criteria_7.1.4"]
+            if capacity not in (None, "", " "):
+                self.components[component_key].update({"capacity": capacity})
+        else:
+            print("direct disposal")
 
     def get_single_component_from_datapackage(self, dp, resource_name, component_name):
         """
@@ -392,103 +429,6 @@ class WEFEConfigurator:
         #  (if necessary...check if there are already other checks for uniqueness of names in the reference datapackage)
 
         return component
-
-    def crop_systems_postprocessing(self):
-        """
-        ***** WIP *****
-        # TODO: Deploy improved 'crop' facade in OTP first
-
-        AFTER survey_processing to fetch crop components
-        BEFORE add_components to be able to add extra components based on crop components
-        """
-        dp_ref = self.reference_datapackage
-
-        # Get additional components as reference
-        # TODO: assign these components directly when adding single comp, use busses of "crop" from below
-        sun = self.get_single_component_from_datapackage(
-            dp=dp_ref, resource_name="energy_sources", component_name="solar-radiation"
-        )
-        rain = self.get_single_component_from_datapackage(
-            dp=dp_ref, resource_name="water_sources", component_name="precipitation"
-        )
-        generic_excess = self.get_single_component_from_datapackage(
-            dp=dp_ref, resource_name="excess", component_name="generic-excess"
-        )
-
-        # loop through components
-        components_so_far = self.components.copy()
-        for (component_type, component_name), component_attributes in components_so_far.items():
-            crop = self.get_single_component_from_datapackage(
-                dp=dp_ref, resource_name="mimo_crops", component_name=component_type
-            )
-            if crop.empty:
-                continue
-
-            # add sources: sun, rain
-            sun_bus = f"{component_name}_{sun['bus'].iloc[0]}"
-            self.add_single_component(
-                component_type=sun["name"].iloc[0],
-                component_name=f"{component_name}_{sun['name'].iloc[0]}",
-                component_attrs={"capacity": component_attributes["capacity"], "bus": sun_bus, "expandable": False},
-            )
-            self.add_single_bus(name=sun_bus, balanced=True, carrier=sun["carrier"].iloc[0])
-
-            rain_bus = f"{component_name}_{rain['bus'].iloc[0]}"
-            self.add_single_component(
-                component_type=rain["name"].iloc[0],
-                component_name=f"{component_name}_{rain['name'].iloc[0]}",
-                component_attrs={"capacity": component_attributes["capacity"], "bus": rain_bus, "expandable": False},
-            )
-            self.add_single_bus(name=rain_bus, balanced=True, carrier=rain["carrier"].iloc[0])
-
-            # add excess: crops, biomass
-            crop_bus = crop["crop_bus"].iloc[0]
-            self.add_single_component(
-                component_type="generic-excess",
-                component_name=f"{component_name}_crop-excess",
-                component_attrs={
-                    "bus": crop_bus,
-                },
-            )
-            self.add_single_bus(name=crop_bus, balanced=True, carrier=rain["carrier"].iloc[0])
-
-            biomass_bus = crop["biomass_bus"].iloc[0]
-            self.add_single_component(
-                component_type="generic-excess",
-                component_name=f"{component_name}_biomass-excess",
-                component_attrs={"bus": biomass_bus},
-            )
-            self.add_single_bus(name=biomass_bus, balanced=True, carrier=rain["carrier"].iloc[0])
-
-            # add irrigation as converter
-            # TODO: irrigation-tech-mapping
-            irrigation_map = {
-                "surface irrigation": "surface-irrigation",
-                "smart irrigation system": "smart-irrigation",
-            }
-
-            irrigation = self.get_single_component_from_datapackage(
-                dp=dp_ref,
-                resource_name="irrigation",
-                component_name=irrigation_map[component_attributes["irrigation_tech"]],
-            )
-            try:
-                irrigation_bus = f"{component_name}_{irrigation['to_bus'].iloc[0]}"
-            except Exception:
-                import pdb
-
-                pdb.set_trace()
-
-            self.add_single_component(
-                component_type=irrigation["name"].iloc[0],
-                component_name=f"{component_name}_{irrigation['name'].iloc[0]}",
-                component_attrs={
-                    "capacity": component_attributes["capacity"],
-                    "bus": irrigation_bus,
-                    "expandable": False,
-                },
-            )
-            self.add_single_bus(name=irrigation_bus, balanced=True, carrier=irrigation["carrier"].iloc[0])
 
     @property
     def reference_datapackage(self):
@@ -508,12 +448,6 @@ class WEFEConfigurator:
     @property
     def scenario_component_folder(self):
         return os.path.join(self.scenario_folder, "data", "elements")
-
-    def download_demand_data(self):
-        if not os.path.exists(self.demand_data_path):
-            # TODO: empty df for now, add real data download later
-            df = pd.DataFrame(columns=["dummy"])
-            df.to_csv(self.demand_data_path, index=False)
 
     @property
     def demand_data(self):
