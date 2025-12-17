@@ -36,7 +36,7 @@ urlpatterns = [
     path("<int:proj_id>/view/survey", wefe_system_layout, name="view_survey"),
     path(
         "wefe-simulation/fetch-results/<int:sim_id>",
-        fetch_wefe_simulation_results,
+        fetch_simulation_results,
         name="fetch_wefe_simulation_results",
     ),
 ]

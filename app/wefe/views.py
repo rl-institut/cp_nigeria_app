@@ -27,10 +27,9 @@ from wefe.forms import *
 from wefe.helpers import *
 from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation
 from wefe.requests import (
-    fetch_wefedemand_simulation_results,
+    fetch_wefe_simulation_results,
     wefedemand_simulation_request,
     wefesim_simulation_request,
-    fetch_wefesim_simulation_results,
 )
 from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
@@ -636,7 +635,7 @@ def wefe_simulation(request, proj_id, step_id=STEP_MAPPING["simulation"]):
             simulation = qs.first()
 
             if simulation.status == PENDING:
-                fetch_wefesim_simulation_results(simulation)
+                fetch_wefe_simulation_results(simulation)
 
             context.update(
                 {
@@ -814,10 +813,10 @@ def ajax_process_survey(request):
 @json_view
 @login_required
 @require_http_methods(["GET"])
-def fetch_wefe_simulation_results(request, sim_id):
+def fetch_simulation_results(request, sim_id):
     print(f"Fetching results for sim {sim_id}")
     simulation = get_object_or_404(WEFESimulation, id=sim_id)
-    are_result_ready = fetch_wefedemand_simulation_results(simulation)
+    are_result_ready = fetch_wefe_simulation_results(simulation)
     print(are_result_ready)
     return JsonResponse(
         dict(areResultReady=are_result_ready),
