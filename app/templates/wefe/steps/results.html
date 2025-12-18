@@ -1,0 +1,20 @@
+{% extends 'wefe/steps/step_progression.html' %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+{% load plotly_dash %}
+
+
+{% block title %} Dash Example  {% endblock title %}
+
+{% block progression_content %}
+
+    <h2>Django + Dash Example</h2>
+    {% plotly_app name="TestDash" ratio=0.5 %}
+
+{% endblock progression_content %}
+{% block next_btn %}
+<button class="btn btn--medium" onclick="document.getElementById('form').submit()">{% translate "Next" %}</button>
+{% endblock next_btn %}
+
+{% block end_body_scripts %}
+{% endblock end_body_scripts %}
