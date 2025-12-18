@@ -243,7 +243,8 @@ WEFESIM_POST_URL = f"{WEFESIM_API_HOST}/sendjson/prod"
 WEFESIM_GET_URL = f"{WEFESIM_API_HOST}/check/"
 
 # WEFEConfigurator settings
-COMPONENT_TEMPLATES_PATH = str(BASE_DIR / "static" / "wefe_configurator/component_library/WIP_components")
+COMPONENT_TEMPLATES_PATH = str(BASE_DIR / "static" / "wefe_configurator" / "component_library" / "components")
+COMPONENT_HELPERS_PATH = str(BASE_DIR / "static" / "wefe_configurator" / "component_library" / "helpers")
 
 LOGGING = {
     "version": 1,

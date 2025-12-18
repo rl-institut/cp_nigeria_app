@@ -14,6 +14,7 @@ from wefe.helpers import (
     AVAILABLE_COMPONENTS,
     AVAILABLE_SEQUENCES,
     COMPONENT_TEMPLATES_PATH,
+    COMPONENT_HELPERS_PATH,
     create_components_list,
     WATER_TREATMENT_TRAIN,
     SURVEY_ANSWER_COMPONENT_MAPPING,
@@ -21,8 +22,8 @@ from wefe.helpers import (
     get_renewables_output,
 )
 
-# TODO: additional imports/static files - > static/wefe_configurator/survey_helpers
-water_treatment_train = {}
+# TODO: additional imports/static files - > static/wefe_configurator/
+
 
 # TODO this needs to work standalone as well as a service
 
@@ -90,7 +91,7 @@ class WEFEConfigurator:
             # --- SAFETY CLEANUP STEP ---
             # Remove any existing water-treatment components that process_survey might have added
             water_main_list = []
-            for comp in water_treatment_train["main_list"]:
+            for comp in WATER_TREATMENT_TRAIN["main_list"]:
                 if isinstance(comp, list):
                     water_main_list.extend(comp)
                 else:
@@ -253,7 +254,7 @@ class WEFEConfigurator:
             service_water_component_list = list(dict.fromkeys(service_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                water_treatment_train["main_list"], drinking_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
                 drinking_water_component_list, entry_bus="water-in-bus", water_type="drinking"
@@ -269,7 +270,7 @@ class WEFEConfigurator:
             # print(drinking_water_treatment_dict)
             print("SW treatment dictionary")
             service_water_component_list = arrange_components(
-                water_treatment_train["main_list"], service_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], service_water_component_list
             )
             service_water_treatment_dict = create_component_dict(
                 service_water_component_list, entry_bus="water-in-bus", water_type="service"
@@ -291,7 +292,7 @@ class WEFEConfigurator:
             drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
             print("DW treatment dictionary")
             drinking_water_component_list = arrange_components(
-                water_treatment_train["main_list"], drinking_water_component_list
+                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
             )
             drinking_water_treatment_dict = create_component_dict(
                 drinking_water_component_list, entry_bus="groundwater-bus", water_type="drinking"
@@ -468,13 +469,16 @@ class WEFEConfigurator:
         timeseries_df.columns = param_cols
         return get_renewables_output(self.proj_id)
 
-    # TODO: put together demand_data, weather_data and others to profiles_data or sequences_data
-    #  and process all together as one df
+    @property
+    def waste_data(self):
+        # Waste data stored in static files
+        waste_data_path = str(COMPONENT_HELPERS_PATH / "waste_data.csv")
+        return pd.read_csv(waste_data_path, delimiter=",", quotechar='"', decimal=",")
+
     @property
     def process_weather_data(self):
         """
         Function to calculate and add new columns to the weather_data DataFrame
-        TODO: add more cols for river_flow, groundwater_recharge, etc (check WIP_components\...\profiles.csv)
         """
 
         df = self.weather_data.copy()
@@ -824,95 +828,84 @@ class WEFEConfigurator:
                                 logging.error(
                                     f"Column '{col_name}' missing from resource '{res.name}' although it is listed as foreignKey"
                                 )
-            # WIP, here need to take an external file as argument and only select 'profiles_to_add' columns
 
             if len(profiles_to_add) == 0:
                 print(
                     f"No profiles listed within the component for the '{self.scenario_folder.split(os.sep)[-1]}' datapage. If you think it is an error, double check the foreign keys"
                 )
-            else:
-                # TODO: process all profiles data into one df that shall be imported here
-                # Get processed weather data
-                weather_df = self.process_weather_data
 
-                # Get demand data
-                demand_df = self.demand_data
+            # Add cf-aware-profile which should always be present
+            profiles_to_add.append("cf-aware-profile")
 
-                # Check data profiles length
-                # TODO: Check possible issues with demand data and weather data,
-                #  I assumed weather data to always be of correct length while demand data may be flexible in length
-                if len(weather_df) != len(demand_df):
-                    logging.warning(f"Length mismatch between {self.demand_data_path} and {self.weather_data_path}.")
+            # Get processed weather data, demand data and waste data
+            weather_df = self.process_weather_data
+            demand_df = self.demand_data
+            waste_df = self.waste_data
 
-                if demand_df.dropna(how="all").empty:
-                    profiles_len = len(weather_df)
-                    logging.warning(f"{self.demand_data_path} seems to be effectively empty")
-                    logging.info(f"{self.weather_data_path} will be used to set the time index of the model.")
-                else:
-                    profiles_len = len(demand_df)
-                    logging.info(f"{self.demand_data_path} will be used to set the time index of the model.")
+            # Use waste data (static helper file) as measurement for profiles' length
+            profiles_len = len(waste_df)
+            if len(weather_df) != profiles_len:
+                logging.warning(f"Length issue with weather data.")
+            if len(demand_df) != profiles_len:
+                logging.warning(f"Length issue with demand data.")
 
-                # Get blueprint profile names from component library for mapping
-                lib_profiles_path = os.path.join(lib_dir, "WIP_components", "data", "sequences", "profiles.csv")
-                lib_profiles_df = pd.read_csv(lib_profiles_path, sep=";")
+            # Create DF for the scenario profiles and match index with profiles length
+            scen_profiles_df = pd.DataFrame(columns=profiles_to_add, index=range(profiles_len))
 
-                # Create DF for the scenario profiles and match index with profiles length
-                scen_profiles_df = pd.DataFrame(columns=profiles_to_add, index=range(profiles_len))
+            # Add timeindex column in right format and length
+            # TODO: This is still a bit dirty, timeinfo could be retrieved from Timeseries.objects
+            #  but it gets lost during get_renewables_output
+            # database weather data is for 2022
+            scen_profiles_year = 2022
+            timeindex = pd.date_range(start=f"{scen_profiles_year}-01-01", periods=profiles_len, freq="h", tz="UTC")
+            scen_profiles_df["timeindex"] = timeindex.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-                # If timeindex col exists: extract year (of first entry), else: set year to 2022 (according to weather data)
-                if "timeindex" in scen_profiles_df.columns:
-                    scen_profiles_df["timeindex"] = pd.to_datetime(scen_profiles_df["timeindex"])
-                    scen_profiles_year = int(scen_profiles_df["timeindex"].dt.year.iloc[0])
-                else:
-                    scen_profiles_year = int(2022)
+            # Get blueprint profile names from component library resource for mapping, copy descriptor to adapt metadata later
+            profile_map = dp_ref.get_resource("profiles")
+            descriptor = deepcopy(profile_map.descriptor)
+            profile_map_df = pd.DataFrame.from_records(profile_map.read(keyed=True))
 
-                # Add timeindex column in right format and length
-                timeindex = pd.date_range(start=f"{scen_profiles_year}-01-01", periods=profiles_len, freq="h", tz="UTC")
-                scen_profiles_df["timeindex"] = timeindex.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-                # Compare with profiles from library profiles csv and in case of a match, populate with data from weather df
-                for profile in profiles_to_add:
-                    if profile in lib_profiles_df.columns:
-                        matching_col = str(lib_profiles_df[profile].iloc[0])
-                        if matching_col in weather_df.columns:
-                            scen_profiles_df[profile] = weather_df[matching_col].reindex(range(profiles_len)).values
-                        elif matching_col in demand_df.columns:
-                            scen_profiles_df[profile] = demand_df[matching_col].reindex(range(profiles_len)).values
-                        else:
-                            logging.warning(
-                                f"Profile '{profile}' is not in the available data. A dummy profile (series of 1) will be used."
-                            )
-                            scen_profiles_df[profile] = pd.Series([1] * profiles_len)
+            # Compare with profiles from library profiles csv and in case of a match, populate with data from weather df
+            for profile in profiles_to_add:
+                if profile in profile_map_df.columns:
+                    matching_col = str(profile_map_df[profile].iloc[0])
+                    if matching_col in weather_df.columns:
+                        scen_profiles_df[profile] = weather_df[matching_col].reindex(range(profiles_len)).values
+                    elif matching_col in demand_df.columns:
+                        scen_profiles_df[profile] = demand_df[matching_col].reindex(range(profiles_len)).values
+                    elif matching_col in waste_df.columns:
+                        scen_profiles_df[profile] = waste_df[matching_col].reindex(range(profiles_len)).values
                     else:
                         logging.warning(
-                            f"Profile '{profile}' is not in the profile library. A dummy profile (series of 1) will be used."
+                            f"Profile '{profile}' is not in the available data. A dummy profile (series of 1) will be used."
                         )
                         scen_profiles_df[profile] = pd.Series([1] * profiles_len)
+                else:
+                    logging.warning(
+                        f"Profile '{profile}' is not in the profile library. A dummy profile (series of 1) will be used."
+                    )
+                    scen_profiles_df[profile] = pd.Series([1] * profiles_len)
 
-                # Add profiles.csv to datapackage
-                ofname = os.path.join(self.scenario_folder, "data/sequences", "profiles.csv")
-                scen_profiles_df.to_csv(ofname, index=False, sep=";")
+            # Add profiles.csv to datapackage
+            ofname = os.path.join(self.scenario_folder, "data", "sequences", "profiles.csv")
+            scen_profiles_df.to_csv(ofname, index=False, sep=";")
 
-                # Update dp.json
-                resource = dp_ref.get_resource("profiles")
-                descriptor = deepcopy(resource.descriptor)
+            # The order of fields in datapackage.json has to match order of column names in profiles.csv
+            selected_fields = []
+            for profile in scen_profiles_df.columns:
+                for f in descriptor["schema"]["fields"]:
+                    if profile == f["name"]:
+                        f["type"] = "number"
+                        selected_fields.append(f)
+                # TODO: in the future, timeindex should be part of profiles in dp_ref...nevertheless,
+                #    as long as it is called "timeindex", this code will work as intended
+                if profile == "timeindex":
+                    selected_fields.append({"name": "timeindex", "type": "datetime", "format": "default"})
+            descriptor["schema"]["fields"] = selected_fields
+            dp.add_resource(descriptor)
+            dp.commit()
 
-                # The order of fields in datapackage.json has to match order of column names in profiles.csv
-                selected_fields = []
-                for profile in scen_profiles_df.columns:
-                    for f in descriptor["schema"]["fields"]:
-                        if profile == f["name"]:
-                            f["type"] = "number"
-                            selected_fields.append(f)
-                    # TODO: in the future, timeindex should be part of profiles in dp_ref...nevertheless,
-                    #    as long as it is called "timeindex", this code will work as intended
-                    if profile == "timeindex":
-                        selected_fields.append({"name": "timeindex", "type": "datetime", "format": "default"})
-                descriptor["schema"]["fields"] = selected_fields
-                dp.add_resource(descriptor)
-                dp.commit()
-
-                dp.save(os.path.join(self.scenario_folder, "datapackage.json"))
+            dp.save(os.path.join(self.scenario_folder, "datapackage.json"))
 
         # TODO check the foreign keys between timeseries and component attributes are valid
         # i.e. that each of the component attribute value correspond to a timeseries header
@@ -997,15 +990,6 @@ class WEFEConfigurator:
                                     f"Add buses: column '{col_name}' missing from resource '{res.name}' although it is listed as foreignKey"
                                 )
 
-            # for filename in os.listdir(scenario_component_folder):
-            #     file = os.path.join(scenario_component_folder, filename)
-            #     components = pd.read_csv(file)
-            #     # Look for columns pertaining to bus connections
-            #     # TODO use the datapakage to get the busses connection
-            #     bus_cols = components.filter(regex="^(bus|from_bus_.*|to_bus_.*)$").columns
-            #     for col in bus_cols:
-            #         buses_to_add.extend(components[col].tolist())
-
             # Convert to set to keep only unique values (add each bus once)
             buses_to_add = list(set(buses_to_add))
 
@@ -1024,8 +1008,6 @@ class WEFEConfigurator:
             ofname = os.path.join(scenario_component_folder, "bus.csv")
 
             # Write or modify the bus in the new datapackage
-            # why are you replacing the bus in the else block?
-
             if os.path.exists(ofname):
                 busses_df = pd.read_csv(ofname, sep=";")
                 existing_records = busses_df.name.tolist()
@@ -1035,13 +1017,6 @@ class WEFEConfigurator:
                     ]
                     if new_buses:
                         busses_df = pd.concat([busses_df] + new_buses, ignore_index=True)
-            # if df_buses:
-            # If the bus doesn't exist, add a row for it
-            #   busses_df = pd.concat([busses_df] + df_buses)
-            # else:
-            # If the bus already exists, replace it
-            #    busses_df.set_index("name", drop=False, inplace=True)
-            #   busses_df.loc[name] = bus
             else:
                 if df_buses:
                     busses_df = pd.concat(df_buses, ignore_index=True)
@@ -1056,19 +1031,6 @@ class WEFEConfigurator:
 
                 dp.commit()
                 dp.save(os.path.join(self.scenario_folder, "datapackage.json"))
-
-            # TODO add the source component which are connected to the busses using foreign keys, check beforehand the logic
-
-    def fetch_component_timeseries(self, component):
-        """
-        Fetch the corresponding sequence for the component, e.g. potential output for volatile resources.
-        :param component: Component for which to fetch the timeseries from the database
-        :type component: str
-        :return timeseries: List with timeseries values corresponding to the component
-        """
-        # TODO connect to the database to get existing profiles gathered from renewables.ninja, CDS or inputs
-        dummy_timeseries = np.random.rand(8760)
-        return dummy_timeseries
 
 
 if __name__ == "__main__":

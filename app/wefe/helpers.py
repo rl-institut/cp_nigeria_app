@@ -14,7 +14,13 @@ import tableschema
 
 logger = logging.getLogger(__name__)
 
-from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST, COMPONENT_TEMPLATES_PATH
+from epa.settings import (
+    KOBO_API_TOKEN,
+    KOBO_API_URL,
+    WEATHER_DATA_API_HOST,
+    COMPONENT_TEMPLATES_PATH,
+    COMPONENT_HELPERS_PATH,
+)
 from projects.models import Project, Timeseries
 
 
@@ -255,7 +261,6 @@ with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_co
 
 with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
     SUB_QUESTION_MAPPING = json.load(fp)
-
 
 
 def list_available_components():
