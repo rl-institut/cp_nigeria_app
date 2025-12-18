@@ -672,9 +672,19 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
 
     scenario = project.scenario
 
-    # TODO these should come from simulation.results instead of default once the simulation runs through
+    # # TODO replace with actual scenario data instead of default
+    # es = EnergySystem.from_datapackage(
+    #     staticfiles_storage.path("wefe_configurator/default_dp.json"),
+    #     attributemap={},
+    #     typemap=TYPEMAP,
+    # )
+    # calculator = post_processing(params=parameter_as_dict(es),es=es,
+    #                              results_path=BASE_DIR, dp_path=staticfiles_storage.path("wefe_configurator/default_dp.json"))
+    #
+    #
+    # dash_app = prepare_app(energy_system=es, dp_path=staticfiles_storage.path("wefe_configurator/default_dp.json"), tables=, services=, units=None)
+    # cost_table = extract_table_from_results(calculator.df_results, RESULT_TABLE_COLUMNS["costs"])
 
-    cost_table = extract_table_from_results(calculator.df_results, RESULT_TABLE_COLUMNS["costs"])
 
     page_information = "Results page with report option"
     context = {
@@ -825,12 +835,12 @@ def fetch_simulation_results(request, sim_id):
     )
 
 
-def dash_app(request, sim_id):
-    demo_app = prepare_app(
-        es,
-        dp_path=dp_path,
-        tables=result_tables,
-        services=service_tables,
-        units=parameters_units,
-    )
-    demo_app.run(debug=False, port=8060)
+# def dash_app(request, sim_id):
+#     demo_app = prepare_app(
+#         es,
+#         dp_path=dp_path,
+#         tables=result_tables,
+#         services=service_tables,
+#         units=parameters_units,
+#     )
+#     demo_app.run(debug=False, port=8060)

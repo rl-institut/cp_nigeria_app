@@ -263,6 +263,15 @@ def process_wefedemand_response(simulation, wefedemand_response):
             ts.save()
     return
 
+def process_wefesim_response(simulation, wefesim_response):
+    import pdb; pdb.set_trace()
+    kpis = wefesim_response.get("kpis", None)
+    flows = wefesim_response.get("flows", None)
+    flows_df = pd.read_json(flows, orient="split")
+    kpis_df = pd.read_json(kpis, orient="split")
+
+    return
+
 
 # Later direct imports without .json
 # TODO update this mapping with the latest produced survey_answer_component_mapping.json
