@@ -1,7 +1,8 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from .views import *
 
 urlpatterns = [
+    path("django_plotly_dash/", include("django_plotly_dash.urls")),
     path("", wefe_home, name="wefe_home"),
     # steps
     path("<int:proj_id>/edit/step/<int:step_id>", wefe_steps, name="wefe_steps"),

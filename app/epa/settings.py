@@ -40,6 +40,9 @@ STATIC_ROOT = BASE_DIR / "cdn_static_root"
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+    "django_plotly_dash.finders.DashAssetFinder",
+    "django_plotly_dash.finders.DashComponentFinder",
+    "django_plotly_dash.finders.DashAppDirectoryFinder",
 ]
 
 if DEBUG is True:
@@ -77,6 +80,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "django_q",
+    "django_plotly_dash.apps.DjangoPlotlyDashConfig",
 ]
 
 if DEBUG is True:
@@ -86,6 +90,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django_plotly_dash.middleware.BaseMiddleware",
+    "django_plotly_dash.middleware.ExternalRedirectionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -239,7 +245,7 @@ WEFEDEMAND_GET_URL = f"{WEFEDEMAND_API_HOST}/check/"
 
 # WEFESIM API
 WEFESIM_API_HOST = env("WEFESIM_API", default=None)
-WEFESIM_POST_URL = f"{WEFESIM_API_HOST}/sendjson/prod"
+WEFESIM_POST_URL = f"{WEFESIM_API_HOST}/sendjson/"
 WEFESIM_GET_URL = f"{WEFESIM_API_HOST}/check/"
 
 # WEFEConfigurator settings
@@ -294,3 +300,14 @@ Q_CLUSTER = {
     "queue_limit": 50,
     "orm": "default",
 }
+
+# django-plotly-dash settings
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
+PLOTLY_COMPONENTS = [
+    # Common components (ie within dash itself) are automatically added
+    # django-plotly-dash components
+    "dpd_components",
+    # Other components, as needed
+    "dash_bootstrap_components",
+]
