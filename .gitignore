@@ -6,7 +6,6 @@
 **/src/
 !app/cdn_static_root/
 **/*.log
-**/node_modules/
 **/cdn_static_root/
 .envs/*
 **/venv/
