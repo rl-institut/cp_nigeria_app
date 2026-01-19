@@ -474,15 +474,10 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                 json.dump(form.cleaned_data, fp, indent=4)
             for criteria_num, value in form.cleaned_data.items():
                 crit = qs.get(question_id=criteria_num.replace("criteria_", ""))
-                crit.value = json.dumps(value)
+                crit.value = json.dumps(value) if not isinstance(value, str) else value
                 crit.save(update_fields=["value"])
 
-            answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
-        else:
-            # TODO
-            print("Form is not valid")
-            # import pdb;
-            # pdb.set_trace()
+        answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
     else:
         if scen_id is None:
@@ -513,7 +508,6 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
 
             categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
             form = SurveyQuestionForm(qs=qs_answer)
-
             categories_map = []
             matrix_headers = {}
             matrix_labels = {}
