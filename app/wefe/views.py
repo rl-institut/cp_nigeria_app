@@ -477,12 +477,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                 crit.value = json.dumps(value) if not isinstance(value, str) else value
                 crit.save(update_fields=["value"])
 
-            answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
-        else:
-            # TODO
-            print("Form is not valid")
-            # import pdb;
-            # pdb.set_trace()
+        answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
     else:
         if scen_id is None:
