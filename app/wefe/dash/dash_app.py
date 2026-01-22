@@ -2,20 +2,15 @@ from dash import dcc, html, Input, Output
 from django_plotly_dash import DjangoDash
 import plotly.graph_objects as go
 
-app = DjangoDash("TestDash")
+app = DjangoDash("WefeResultsDash", serve_locally=True)
 
 
 app.layout = html.Div(
     [
-        html.H4("Interactive color selection with simple Dash example"),
-        html.P("Select color:"),
-        dcc.Dropdown(
-            id="dropdown",
-            options=["Gold", "MediumTurquoise", "LightGreen"],
-            value="Gold",
-            clearable=False,
-        ),
-        dcc.Graph(id="graph"),
+        dcc.Store(id="simulation-data"),  # JSON payload
+        html.H3("WEFE Simulation Results"),
+        dcc.Graph(id="sankey"),
+        html.Div(id="bus-plots"),
     ]
 )
 

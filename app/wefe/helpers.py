@@ -263,12 +263,12 @@ def process_wefedemand_response(simulation, wefedemand_response):
             ts.save()
     return
 
+
 def process_wefesim_response(simulation, wefesim_response):
-    import pdb; pdb.set_trace()
-    kpis = wefesim_response.get("kpis", None)
-    flows = wefesim_response.get("flows", None)
-    flows_df = pd.read_json(flows, orient="split")
-    kpis_df = pd.read_json(kpis, orient="split")
+
+    simulation.results = json.dumps(
+        {"df_results": wefesim_response["df_results"], "dash_tables": wefesim_response["dash_tables"]}
+    )
 
     return
 

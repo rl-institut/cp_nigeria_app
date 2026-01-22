@@ -77,7 +77,6 @@ def fetch_wefe_simulation_results(simulation):
                     msg = "Results processing is not set up for this app."
                     ValueError(msg)
 
-                simulation.results = response["results"]
                 print(f"The simulation {simulation.id} is finished")
         except Exception as e:
             logger.warning(f"An error occurred: {e}")
