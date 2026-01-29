@@ -409,6 +409,9 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
 
         # Create empty Simulation model object
         simulation = WEFESimulation(start_date=datetime.now(), scenario_id=scen_id, app="wefesim")
+        simulation.datapackage = (
+            sim_data  # store datapackage for dash app...but this is jsonified and holds more data than needed
+        )
 
         simulation.mvs_token = results["id"] if results["id"] else None
 
@@ -684,7 +687,6 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
     #
     # dash_app = prepare_app(energy_system=es, dp_path=staticfiles_storage.path("wefe_configurator/default_dp.json"), tables=, services=, units=None)
     # cost_table = extract_table_from_results(calculator.df_results, RESULT_TABLE_COLUMNS["costs"])
-
 
     page_information = "Results page with report option"
     context = {
