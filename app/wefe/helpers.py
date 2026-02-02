@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+
 import numpy as np
 import requests
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -22,6 +24,14 @@ from epa.settings import (
     COMPONENT_HELPERS_PATH,
 )
 from projects.models import Project, Timeseries
+
+
+def convert_csvs_to_parquet(path=COMPONENT_HELPERS_PATH):
+    for csv_path in Path(path).glob("*.csv"):
+        parquet_path = csv_path.with_suffix(".parquet")
+        df = pd.read_csv(csv_path)
+        df.to_parquet(parquet_path, compression="snappy")
+        print(f"Converted {csv_path} to {parquet_path}")
 
 
 def help_icon(help_text=""):
