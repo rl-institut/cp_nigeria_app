@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+
 import numpy as np
 import requests
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -14,8 +16,22 @@ import tableschema
 
 logger = logging.getLogger(__name__)
 
-from epa.settings import KOBO_API_TOKEN, KOBO_API_URL, WEATHER_DATA_API_HOST, COMPONENT_TEMPLATES_PATH
+from epa.settings import (
+    KOBO_API_TOKEN,
+    KOBO_API_URL,
+    WEATHER_DATA_API_HOST,
+    COMPONENT_TEMPLATES_PATH,
+    COMPONENT_HELPERS_PATH,
+)
 from projects.models import Project, Timeseries
+
+
+def convert_csvs_to_parquet(path=COMPONENT_HELPERS_PATH):
+    for csv_path in Path(path).glob("*.csv"):
+        parquet_path = csv_path.with_suffix(".parquet")
+        df = pd.read_csv(csv_path)
+        df.to_parquet(parquet_path, compression="snappy")
+        print(f"Converted {csv_path} to {parquet_path}")
 
 
 def help_icon(help_text=""):
@@ -255,7 +271,6 @@ with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_co
 
 with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
     SUB_QUESTION_MAPPING = json.load(fp)
-
 
 
 def list_available_components():

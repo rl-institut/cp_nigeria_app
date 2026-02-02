@@ -13,6 +13,7 @@ httpx
 jsonschema
 numpy_financial
 pandas
+pyarrow
 plotly
 python-docx
 requests
