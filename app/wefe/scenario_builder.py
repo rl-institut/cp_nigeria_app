@@ -341,21 +341,21 @@ class WEFEConfigurator:
 
         safety_check()
 
-        def default_toilet_handling(toilet_types):
+        def default_toilet_handling(toilet_types, population, cattle):
             if "dry toilet" not in toilet_types:
                 self.add_single_component(component_type="dry_toilet")
-                self.add_single_component(component_type="hu_waste")
-                self.add_single_component(component_type="hf_waste")
+                self.add_single_component(component_type="hu_waste", component_attrs={"capacity": population})
+                self.add_single_component(component_type="hf_waste", component_attrs={"capacity": population})
                 self.add_single_component(component_type="excess-dry-feces")
                 self.add_single_component(component_type="excess-human-feces")
                 self.add_single_component(component_type="excess-human-urine")
 
             if "open field" not in toilet_types:
                 self.add_single_component(component_type="open_field")
-                self.add_single_component(component_type="hu_waste")
-                self.add_single_component(component_type="hf_waste")
-                self.add_single_component(component_type="au_waste")
-                self.add_single_component(component_type="af_waste")
+                self.add_single_component(component_type="hu_waste", component_attrs={"capacity": population})
+                self.add_single_component(component_type="hf_waste", component_attrs={"capacity": population})
+                self.add_single_component(component_type="au_waste", component_attrs={"capacity": cattle})
+                self.add_single_component(component_type="af_waste", component_attrs={"capacity": cattle})
                 self.add_single_component(component_type="excess-biomass")
                 self.add_single_component(component_type="excess-human-feces")
                 self.add_single_component(component_type="excess-human-urine")
@@ -363,11 +363,14 @@ class WEFEConfigurator:
                 self.add_single_component(component_type="excess-animal-urine")
 
         wastewater_systems = survey["criteria_7"]
-        population = scenario.project.economic_data.population
+        population = scenario.project.economic_data.population  # population is WEFEgui input
+        cattle = (
+            population / 10
+        )  # TODO: ask about cattle or model animal farming, current assumption: 1 cow for 10 people
         toilet_types = survey["criteria_7.3"]
         # print(toilet_types)
 
-        default_toilet_handling(toilet_types)
+        default_toilet_handling(toilet_types, population, cattle)
 
         # black water treatment
         if "flush toilet" in toilet_types:
