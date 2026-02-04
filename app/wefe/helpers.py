@@ -348,11 +348,15 @@ def process_wefesim_response(simulation, wefesim_response):
 
 # Later direct imports without .json
 # TODO update this mapping with the latest produced survey_answer_component_mapping.json
-with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json") as fp:
-    SURVEY_ANSWER_COMPONENT_MAPPING = json.load(fp)
+if os.path.exists(
+    staticfiles_storage.path("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json")
+):
+    with staticfiles_storage.open("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json") as fp:
+        SURVEY_ANSWER_COMPONENT_MAPPING = json.load(fp)
 
-with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
-    SUB_QUESTION_MAPPING = json.load(fp)
+if os.path.exists(staticfiles_storage.path("wefe_configurator/survey_helpers/sub_question_mapping.json")):
+    with staticfiles_storage.open("wefe_configurator/survey_helpers/sub_question_mapping.json") as fp:
+        SUB_QUESTION_MAPPING = json.load(fp)
 
 
 def list_available_components():
