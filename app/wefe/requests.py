@@ -93,12 +93,7 @@ def fetch_wefe_simulation_results(simulation):
 def wefesim_simulation_request(data: dict):
     headers = {"content-type": "application/json"}
     try:
-        response = requests.post(
-            WEFESIM_POST_URL,
-            json=data,
-            headers=headers,
-            proxies=PROXY_CONFIG,
-        )
+        response = requests.post(WEFESIM_POST_URL, json=data, headers=headers, proxies=PROXY_CONFIG, timeout=10)
 
         # If the response was successful, no Exception will be raised
         response.raise_for_status()
