@@ -497,8 +497,18 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
 
             # Check if answers already exists, if not create them
             qs_answer = SurveyAnswer.objects.filter(scenario_id=scenario_id)
-            # import pdb;pdb.set_trace()
-            if qs_answer.exists() is False:
+            create_new_form = False
+            if qs_answer.exists():
+                try:
+                    form = SurveyQuestionForm(qs=qs_answer)
+                # Could be caused by outdated survey answers
+                except ObjectDoesNotExist:
+                    create_new_form = True
+                    pass
+            else:
+                create_new_form = True
+
+            if create_new_form:
                 questions = SurveyQuestion.objects.all()
                 print(questions)
                 for question in questions:
@@ -510,8 +520,9 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                     new_answer.save()
                 qs_answer = SurveyAnswer.objects.filter(scenario_id=scenario_id)
 
+                form = SurveyQuestionForm(qs=qs_answer)
+
             categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
-            form = SurveyQuestionForm(qs=qs_answer)
             categories_map = []
             matrix_headers = {}
             matrix_labels = {}
