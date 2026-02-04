@@ -690,14 +690,29 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
         results["df_results"], index_names=["bus", "direction", "asset", "carrier", "facade_type"]
     )
 
+    qs = SurveyAnswer.objects.filter(scenario_id=scenario.id)
+    survey_answers = {}
+    for ans in qs:
+        survey_answers.update(ans.export(ignore_empty=True))
+
+    wefe_conf = WEFEConfigurator(scen_id=scenario.id, overwrite=False)
+
+    wefe_conf.process_survey(survey_answers)
+    wefe_conf.process_demand()
+    wefe_conf.add_components()
+    wefe_conf.add_buses()
+    wefe_conf.add_sequences()
+
     prepare_app(
         app=app,
-        dp_path=staticfiles_storage.path("wefe_configurator/default_dp_scenario/datapackage.json"),
+        dp_path=os.path.join(wefe_conf.scenario_folder, "datapackage.json"),
         results=df_results,
         tables=tables,
         services=services,
         units=units,
     )
+
+    wefe_conf.cleanup()
 
     page_information = "Results page with report option"
     context = {
