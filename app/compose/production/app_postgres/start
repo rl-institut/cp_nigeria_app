@@ -1,6 +1,8 @@
 #!/bin/bash
 echo COLLECTSTATIC
 python /src/manage.py collectstatic --noinput
+echo UPDATESURVEY
+python /src/manage.py update_survey_questions --update
 echo MIGRATE
 python /src/manage.py showmigrations
 python /src/manage.py migrate
