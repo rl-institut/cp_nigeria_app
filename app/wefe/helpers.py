@@ -264,13 +264,58 @@ def process_wefedemand_response(simulation, wefedemand_response):
     return
 
 
+def records_to_df(records):
+    """
+    Convert a list-of-records back to a DataFrame.
+    Restores index if it was serialized via reset_index().
+    """
+    if not records:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(records)
+
+    # restore common index patterns
+    if "index" in df.columns:
+        df = df.set_index("index")
+
+    # restore named index
+    if "kpi" in df.columns and df.columns.tolist() == ["kpi", "value"]:
+        df = df.set_index("kpi")
+
+    return df
+
+
+def restore_dash_tables(json_data):
+    """
+    Reconstruct calculator.dash_tables from JSON object.
+    """
+    restored = {}
+
+    for section, content in json_data.items():
+
+        # e.g. result_tables, service_tables
+        if isinstance(content, dict):
+            restored[section] = {}
+
+            for name, value in content.items():
+                if isinstance(value, list):
+                    restored[section][name] = records_to_df(value)
+                else:
+                    # parameters_units or other plain dicts
+                    restored[section][name] = value
+        else:
+            restored[section] = content
+
+    return restored
+
+
 def process_wefesim_response(simulation, wefesim_response):
+    results = json.loads(wefesim_response)["results"]
+    simulation.results = wefesim_response
+    simulation.save()
+    data = {"df_results": results["df_results"], "dash_tables": restore_dash_tables(results["dash_tables"])}
 
-    simulation.results = json.dumps(
-        {"df_results": wefesim_response["df_results"], "dash_tables": wefesim_response["dash_tables"]}
-    )
-
-    return
+    return data
 
 
 # Later direct imports without .json
