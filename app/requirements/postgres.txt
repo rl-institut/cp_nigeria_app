@@ -10,7 +10,7 @@ geopy
 gunicorn
 openpyxl
 psycopg
-httpx
+httpx<0.28
 jsonschema
 numpy_financial
 pandas
