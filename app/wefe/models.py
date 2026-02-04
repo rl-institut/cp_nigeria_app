@@ -65,7 +65,14 @@ class SurveyAnswer(models.Model):
         if ignore_empty is True and self.value is None:
             answer = {}
         else:
-            value = json.loads(self.value) if self.value is not None else None
+            if self.value:
+                try:
+                    value = json.loads(self.value)
+                except json.JSONDecodeError:
+                    # value is already a regular string
+                    value = self.value
+            else:
+                value = None
             answer = {self.question.question_id: value}
         return answer
 
