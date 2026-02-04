@@ -9,4 +9,4 @@ python /src/manage.py migrate
 python /src/manage.py compilemessages
 #python /src/manage.py loaddata 'src/fixtures/fixture.json'
 echo $(ls -L 1 --dirsfirst)
-gunicorn epa.wsgi:application --bind 0.0.0.0:8000 --workers=4 --timeout=120
+gunicorn epa.wsgi:application --bind 0.0.0.0:8000 --workers=1 --timeout=120
