@@ -348,6 +348,9 @@ def process_wefesim_response(simulation, wefesim_response):
 
 # Later direct imports without .json
 # TODO update this mapping with the latest produced survey_answer_component_mapping.json
+SURVEY_ANSWER_COMPONENT_MAPPING = {}
+SUB_QUESTION_MAPPING = {}
+
 if os.path.exists(
     staticfiles_storage.path("wefe_configurator/survey_helpers/survey_answer_component_mapping_in_use.json")
 ):
