@@ -22,7 +22,6 @@ WEFEAPP_CHOICES = (
 class WEFESimulation(AbstractSimulation):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, null=False)
     app = models.CharField(max_length=30, null=False, choices=WEFEAPP_CHOICES)
-    datapackage = models.TextField(null=True, max_length=30e6)
 
 
 class SurveyQuestion(models.Model):
