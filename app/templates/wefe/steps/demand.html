@@ -72,6 +72,9 @@
 		<button id="ramp-sim-default" class="btn btn--medium" onclick="javascript:wefeDemandRequest({{ proj_id }},default_survey=true)" style="margin-top:0.5rem">
 			dev: default Ramp simulation
 		</button>
+		{% if simulation_status == "PENDING" %}
+		<p style="color:red">Loading demand data, do not click away...</p>
+		{% endif %}
 
 		{% if response %}
 		<div class="response">

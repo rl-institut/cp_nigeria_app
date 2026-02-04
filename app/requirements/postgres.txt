@@ -5,6 +5,7 @@ crispy-bootstrap5
 django-jsonview
 django-q2
 django-environ
+django-plotly-dash
 geopy
 gunicorn
 openpyxl

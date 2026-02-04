@@ -13,7 +13,9 @@ from django.shortcuts import *
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
+from django_plotly_dash import DjangoDash
 from jsonview.decorators import json_view
+from oemof_tabular_plugins.general import prepare_app
 
 from business_model.forms import *
 from business_model.models import *
@@ -25,12 +27,11 @@ from projects.views import project_duplicate, project_delete
 
 from wefe.forms import *
 from wefe.helpers import *
-from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation
+from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation, WEFE_SIM_APP
 from wefe.requests import (
-    fetch_wefedemand_simulation_results,
+    fetch_wefe_simulation_results,
     wefedemand_simulation_request,
     wefesim_simulation_request,
-    fetch_wefesim_simulation_results,
 )
 from wefe.scenario_builder import WEFEConfigurator
 from wefe.survey import SURVEY_CATEGORIES, SURVEY_QUESTIONS_CATEGORIES, get_survey_question_by_id
@@ -410,6 +411,9 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
 
         # Create empty Simulation model object
         simulation = WEFESimulation(start_date=datetime.now(), scenario_id=scen_id, app="wefesim")
+        # simulation.datapackage = (
+        #     sim_data  # store datapackage for dash app...but this is jsonified and holds more data than needed
+        # )
 
         simulation.mvs_token = results["id"] if results["id"] else None
 
@@ -636,7 +640,7 @@ def wefe_simulation(request, proj_id, step_id=STEP_MAPPING["simulation"]):
             simulation = qs.first()
 
             if simulation.status == PENDING:
-                fetch_wefesim_simulation_results(simulation)
+                fetch_wefe_simulation_results(simulation)
 
             context.update(
                 {
@@ -672,6 +676,43 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
         raise PermissionDenied
 
     scenario = project.scenario
+    simulation = WEFESimulation.objects.get(scenario=scenario, app=WEFE_SIM_APP)
+    results = json.loads(simulation.results)["results"]
+    dash_tables = restore_dash_tables(results["dash_tables"])
+
+    tables = dash_tables["result_tables"]
+    services = dash_tables["service_tables"]
+    units = dash_tables["parameters_units"]
+    dash_app_name = f"results_dash_{proj_id}"
+    app = DjangoDash(dash_app_name)
+
+    df_results = df_from_split_multiindex(
+        results["df_results"], index_names=["bus", "direction", "asset", "carrier", "facade_type"]
+    )
+
+    qs = SurveyAnswer.objects.filter(scenario_id=scenario.id)
+    survey_answers = {}
+    for ans in qs:
+        survey_answers.update(ans.export(ignore_empty=True))
+
+    wefe_conf = WEFEConfigurator(scen_id=scenario.id, overwrite=False)
+
+    wefe_conf.process_survey(survey_answers)
+    wefe_conf.process_demand()
+    wefe_conf.add_components()
+    wefe_conf.add_buses()
+    wefe_conf.add_sequences()
+
+    prepare_app(
+        app=app,
+        dp_path=os.path.join(wefe_conf.scenario_folder, "datapackage.json"),
+        results=df_results,
+        tables=tables,
+        services=services,
+        units=units,
+    )
+
+    wefe_conf.cleanup()
 
     page_information = "Results page with report option"
     context = {
@@ -680,10 +721,11 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
         "step_id": step_id,
         "step_list": WEFE_STEP_VERBOSE,
         "page_information": page_information,
+        "dash_app": dash_app_name,
     }
 
     if request.method == "GET":
-        return render(request, "wefe/steps/step_progression.html", context)
+        return render(request, "wefe/steps/results.html", context)
 
     if request.method == "POST":
         # TODO
@@ -810,10 +852,10 @@ def ajax_process_survey(request):
 @json_view
 @login_required
 @require_http_methods(["GET"])
-def fetch_wefe_simulation_results(request, sim_id):
+def fetch_simulation_results(request, sim_id):
     print(f"Fetching results for sim {sim_id}")
     simulation = get_object_or_404(WEFESimulation, id=sim_id)
-    are_result_ready = fetch_wefedemand_simulation_results(simulation)
+    are_result_ready = fetch_wefe_simulation_results(simulation)
     print(are_result_ready)
     return JsonResponse(
         dict(areResultReady=are_result_ready),

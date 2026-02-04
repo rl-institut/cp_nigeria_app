@@ -1,6 +1,8 @@
 import os
 import tempfile
 from copy import deepcopy
+from pathlib import Path
+
 import datapackage as dp
 import tableschema
 import numpy as np
@@ -504,14 +506,14 @@ class WEFEConfigurator:
         timeseries = get_renewables_output(self.proj_id)
         timeseries_df = pd.DataFrame(timeseries)
         timeseries_prefix = "weather_data_"
-        param_cols = [col.replace(timeseries_prefix) for col in timeseries_df.columns]
+        param_cols = [col.replace(timeseries_prefix, "") for col in timeseries_df.columns]
         timeseries_df.columns = param_cols
-        return get_renewables_output(self.proj_id)
+        return timeseries_df
 
     @property
     def waste_data(self):
         # Waste data stored in static files
-        waste_data_path = COMPONENT_HELPERS_PATH / "waste_data.parquet"
+        waste_data_path = Path(COMPONENT_HELPERS_PATH) / "waste_data.parquet"
         return pd.read_parquet(waste_data_path)
 
     @property
