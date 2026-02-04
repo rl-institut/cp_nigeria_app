@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -285,6 +286,32 @@ def records_to_df(records):
     return df
 
 
+def df_from_split_multiindex(payload, index_names=None):
+    obj = json.loads(payload) if isinstance(payload, str) else payload
+
+    # index
+    idx = obj["index"]
+    index = pd.MultiIndex.from_tuples([tuple(r) for r in idx], names=index_names)
+
+    # columns
+    cols = obj["columns"]
+
+    # convert only datetime-like string columns to Timestamp labels
+    cols = pd.Index(cols)
+    datetimes = pd.to_datetime(cols, errors="coerce")  # parses ISO strings, leaves others as NaT
+    time_cols = datetimes.notna()
+
+    # keep original non-time labels; replace only time labels with Timestamps
+    fixed_cols = pd.Index([dt if is_time else col for col, dt, is_time in zip(cols, datetimes, time_cols)])
+
+    results_df = pd.DataFrame(obj["data"], index=index, columns=fixed_cols)
+
+    # TODO figure out why this timestep is included instead
+    results_df = results_df.drop(columns=[datetime(2023, 1, 1)])
+
+    return results_df
+
+
 def restore_dash_tables(json_data):
     """
     Reconstruct calculator.dash_tables from JSON object.
@@ -313,9 +340,10 @@ def process_wefesim_response(simulation, wefesim_response):
     results = json.loads(wefesim_response)["results"]
     simulation.results = wefesim_response
     simulation.save()
-    data = {"df_results": results["df_results"], "dash_tables": restore_dash_tables(results["dash_tables"])}
-
-    return data
+    # do not unpack tables here, as it is later done in the results view instead
+    # data = {"df_results": results["df_results"], "dash_tables": restore_dash_tables(results["dash_tables"])}
+    logger.info("The simulation results have been saved to the database")
+    return
 
 
 # Later direct imports without .json

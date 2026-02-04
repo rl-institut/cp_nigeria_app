@@ -13,7 +13,9 @@ from django.shortcuts import *
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
+from django_plotly_dash import DjangoDash
 from jsonview.decorators import json_view
+from oemof_tabular_plugins.general import prepare_app
 
 from business_model.forms import *
 from business_model.models import *
@@ -25,7 +27,7 @@ from projects.views import project_duplicate, project_delete
 
 from wefe.forms import *
 from wefe.helpers import *
-from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation
+from wefe.models import MOOWeights, SurveyAnswer, WEFESimulation, WEFE_SIM_APP
 from wefe.requests import (
     fetch_wefe_simulation_results,
     wefedemand_simulation_request,
@@ -409,9 +411,9 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
 
         # Create empty Simulation model object
         simulation = WEFESimulation(start_date=datetime.now(), scenario_id=scen_id, app="wefesim")
-        simulation.datapackage = (
-            sim_data  # store datapackage for dash app...but this is jsonified and holds more data than needed
-        )
+        # simulation.datapackage = (
+        #     sim_data  # store datapackage for dash app...but this is jsonified and holds more data than needed
+        # )
 
         simulation.mvs_token = results["id"] if results["id"] else None
 
@@ -674,19 +676,28 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
         raise PermissionDenied
 
     scenario = project.scenario
+    simulation = WEFESimulation.objects.get(scenario=scenario, app=WEFE_SIM_APP)
+    results = json.loads(simulation.results)["results"]
+    dash_tables = restore_dash_tables(results["dash_tables"])
 
-    # # TODO replace with actual scenario data instead of default
-    # es = EnergySystem.from_datapackage(
-    #     staticfiles_storage.path("wefe_configurator/default_dp.json"),
-    #     attributemap={},
-    #     typemap=TYPEMAP,
-    # )
-    # calculator = post_processing(params=parameter_as_dict(es),es=es,
-    #                              results_path=BASE_DIR, dp_path=staticfiles_storage.path("wefe_configurator/default_dp.json"))
-    #
-    #
-    # dash_app = prepare_app(energy_system=es, dp_path=staticfiles_storage.path("wefe_configurator/default_dp.json"), tables=, services=, units=None)
-    # cost_table = extract_table_from_results(calculator.df_results, RESULT_TABLE_COLUMNS["costs"])
+    tables = dash_tables["result_tables"]
+    services = dash_tables["service_tables"]
+    units = dash_tables["parameters_units"]
+    dash_app_name = f"results_dash_{proj_id}"
+    app = DjangoDash(dash_app_name)
+
+    df_results = df_from_split_multiindex(
+        results["df_results"], index_names=["bus", "direction", "asset", "carrier", "facade_type"]
+    )
+
+    prepare_app(
+        app=app,
+        dp_path=staticfiles_storage.path("wefe_configurator/default_dp_scenario/datapackage.json"),
+        results=df_results,
+        tables=tables,
+        services=services,
+        units=units,
+    )
 
     page_information = "Results page with report option"
     context = {
@@ -695,6 +706,7 @@ def wefe_results(request, proj_id, step_id=STEP_MAPPING["results"]):
         "step_id": step_id,
         "step_list": WEFE_STEP_VERBOSE,
         "page_information": page_information,
+        "dash_app": dash_app_name,
     }
 
     if request.method == "GET":
@@ -835,14 +847,3 @@ def fetch_simulation_results(request, sim_id):
         status=200,
         content_type="application/json",
     )
-
-
-# def dash_app(request, sim_id):
-#     demo_app = prepare_app(
-#         es,
-#         dp_path=dp_path,
-#         tables=result_tables,
-#         services=service_tables,
-#         units=parameters_units,
-#     )
-#     demo_app.run(debug=False, port=8060)
