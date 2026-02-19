@@ -239,6 +239,7 @@ def wefe_demand(request, proj_id, step_id=STEP_MAPPING["demand"]):
             "step_id": step_id,
             "sim_id": simulation.id,
             "simulation_status": simulation.status,
+            "simulation_errors": simulation.errors,
             "step_list": WEFE_STEP_VERBOSE,
             "page_information": page_information,
         }
@@ -282,7 +283,8 @@ def request_wefedemand_simulation(request, proj_id=None):
         survey_id = "ay5RwDzEgUQn73E9it3wCB"
         args["id"] = [576013455, 576161268]
     else:
-        survey_id = project.kobo_survey_id
+        # survey_id = project.kobo_survey_id
+        survey_id = "aeFzKvsvfpZXABJPpKc8Mc"
 
     data = {"survey_id": survey_id, "args": args}
     results = wefedemand_simulation_request(data)
@@ -867,9 +869,9 @@ def fetch_simulation_results(request, sim_id):
     print(f"Fetching results for sim {sim_id}")
     simulation = get_object_or_404(WEFESimulation, id=sim_id)
     are_result_ready = fetch_wefe_simulation_results(simulation)
-    print(are_result_ready)
+    errors = simulation.errors
     return JsonResponse(
-        dict(areResultReady=are_result_ready),
+        dict(areResultReady=are_result_ready, errors=errors),
         status=200,
         content_type="application/json",
     )
