@@ -67,7 +67,9 @@ def fetch_wefe_simulation_results(simulation):
         response = wefe_simulation_check_status(url=url, token=simulation.mvs_token)
         try:
             simulation.status = response["status"]
-            simulation.errors = json.dumps(response["results"][ERROR]) if simulation.status == ERROR else None
+            simulation.errors = (
+                json.dumps(json.loads(response["results"])[ERROR]) if simulation.status == ERROR else None
+            )
             if simulation.status == DONE:
                 if simulation.app == WEFE_DEMAND_APP:
                     process_wefedemand_response(simulation, response["results"])
