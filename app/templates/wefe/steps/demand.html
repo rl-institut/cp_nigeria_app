@@ -74,6 +74,8 @@
 		</button>
 		{% if simulation_status == "PENDING" %}
 		<p style="color:red">Loading demand data, do not click away...</p>
+		{% elif simulation_status == "ERROR" %}
+		<p style="color:red">{{ simulation_errors }}</p>
 		{% endif %}
 
 		{% if response %}
