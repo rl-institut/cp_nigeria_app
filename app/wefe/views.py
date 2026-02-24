@@ -363,6 +363,8 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
 
         wefe_conf.process_survey(survey_answers)
         wefe_conf.process_demand()
+        wefe_conf.water_systems_postprocessing(survey_answers)
+        wefe_conf.waste_water_systems_postprocessing(survey_answers)
         wefe_conf.add_components()
         wefe_conf.add_buses()
         wefe_conf.add_sequences()
