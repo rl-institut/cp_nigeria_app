@@ -89,6 +89,9 @@ class WEFEConfigurator:
 
     def water_systems_postprocessing(self, survey):
 
+        # Strip 'criteria_' from keys locally
+        survey = {k[len("criteria_") :] if k.startswith("criteria_") else k: v for k, v in survey.items()}
+
         def safety_check():
             # --- SAFETY CLEANUP STEP ---
             # Remove any existing water-treatment components that process_survey might have added
@@ -105,22 +108,22 @@ class WEFEConfigurator:
         def fill_component_list(suffix):
             unique_slim_component_list = []
             combined_component_list = []
-            if survey[f"criteria_4{suffix}.1"] is not None:
-                salinity_value = survey[f"criteria_4{suffix}.1"]
+            if survey[f"4{suffix}.1"] is not None:
+                salinity_value = survey[f"4{suffix}.1"]
                 # print(salinity_value)  # float
                 combined_component_list.extend(self.mapping[f"4{suffix}.1"]["map_answer"]["salinity_selected"])
-            if survey[f"criteria_4{suffix}.2"] is not None:
-                metals_selected = survey[f"criteria_4{suffix}.2"]
+            if survey[f"4{suffix}.2"] is not None:
+                metals_selected = survey[f"4{suffix}.2"]
                 for metal in metals_selected:
                     # print(metal)
                     combined_component_list.extend(self.mapping[f"4{suffix}.2"]["map_answer"][metal])
-            if survey[f"criteria_4{suffix}.3"] is not None:
-                chemicals_selected = survey[f"criteria_4{suffix}.3"]
+            if survey[f"4{suffix}.3"] is not None:
+                chemicals_selected = survey[f"4{suffix}.3"]
                 for chemical in chemicals_selected:
                     # print(chemical)
                     combined_component_list.extend(self.mapping[f"4{suffix}.3"]["map_answer"][chemical])
-            if survey[f"criteria_5{suffix}"] and survey[f"criteria_5{suffix}"] not in (["no"], "no"):
-                odd_tech = [tech.replace(" ", "_").replace("-", "_") for tech in survey[f"criteria_5{suffix}"]]
+            if survey[f"5{suffix}"] and survey[f"5{suffix}"] not in (["no"], "no"):
+                odd_tech = [tech.replace(" ", "_").replace("-", "_") for tech in survey[f"5{suffix}"]]
                 combined_component_list.append(odd_tech)
 
             for item in combined_component_list:
@@ -196,29 +199,27 @@ class WEFEConfigurator:
                 "chlorination": "chlorination",
             }
             for sfx in suffixes:
-                if not survey[f"criteria_5{sfx}"] or survey[f"criteria_5{sfx}"] == ["no"]:
+                if not survey[f"5{sfx}"] or survey[f"5{sfx}"] == ["no"]:
                     continue
                 idx = 0
                 for answer, facade in mapping_dict.items():
-                    if answer in survey[f"criteria_5{sfx}"]:
+                    if answer in survey[f"5{sfx}"]:
                         comp_key = (facade, f"{WT}_{facade}_1")
-                        if survey[f"criteria_5{sfx}.2.{idx}"] not in (None, "", " "):
-                            capacity_sums[comp_key] = (
-                                capacity_sums.get(comp_key, 0.0) + survey[f"criteria_5{sfx}.2.{idx}"]
-                            )
-                        if survey[f"criteria_5{sfx}.3.{idx}"] not in (None, "", " "):
+                        if survey[f"5{sfx}.2.{idx}"] not in (None, "", " "):
+                            capacity_sums[comp_key] = capacity_sums.get(comp_key, 0.0) + survey[f"5{sfx}.2.{idx}"]
+                        if survey[f"5{sfx}.3.{idx}"] not in (None, "", " "):
                             # Keep highest specific energy consumption
                             if specific_energy_consumption_values.get(comp_key) is None or survey[
-                                f"criteria_5{sfx}.3.{idx}"
+                                f"5{sfx}.3.{idx}"
                             ] > specific_energy_consumption_values.get(comp_key):
-                                specific_energy_consumption_values[comp_key] = survey[f"criteria_5{sfx}.3.{idx}"]
+                                specific_energy_consumption_values[comp_key] = survey[f"5{sfx}.3.{idx}"]
                         try:
-                            if survey[f"criteria_5{sfx}.1.{idx}"] not in (None, "", " "):
+                            if survey[f"5{sfx}.1.{idx}"] not in (None, "", " "):
                                 # Keep lowest efficiency value
                                 if efficiency_values.get(comp_key) is None or survey[
-                                    f"criteria_5{sfx}.1.{idx}"
+                                    f"5{sfx}.1.{idx}"
                                 ] < efficiency_values.get(comp_key):
-                                    efficiency_values[comp_key] = survey[f"criteria_5{sfx}.1.{idx}"]
+                                    efficiency_values[comp_key] = survey[f"5{sfx}.1.{idx}"]
                         except KeyError:
                             pass
                     idx += 1
@@ -328,6 +329,9 @@ class WEFEConfigurator:
 
     def waste_water_systems_postprocessing(self, survey):
 
+        # Strip 'criteria_' from keys locally
+        survey = {k[len("criteria_") :] if k.startswith("criteria_") else k: v for k, v in survey.items()}
+
         def safety_check():
             # --- SAFETY CLEANUP STEP ---
             # Remove any existing wastewater-treatment components that process_survey might have added
@@ -364,12 +368,12 @@ class WEFEConfigurator:
                 self.add_single_component(component_type="excess-animal-feces")
                 self.add_single_component(component_type="excess-animal-urine")
 
-        wastewater_systems = survey["criteria_7"]
+        wastewater_systems = survey["7"]
         population = scenario.project.economic_data.population  # population is WEFEgui input
         cattle = (
             population / 10
         )  # TODO: ask about cattle or model animal farming, current assumption: 1 cow for 10 people
-        toilet_types = survey["criteria_7.3"]
+        toilet_types = survey["7.3"]
         # print(toilet_types)
 
         default_toilet_handling(toilet_types, population, cattle)
@@ -382,7 +386,7 @@ class WEFEConfigurator:
                     component_name="black_water_cw",
                     component_attrs={"water_in_bus": "black-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
                 )
-                capacity = survey["criteria_7.1.1"]
+                capacity = survey["7.1.1"]
                 if capacity not in (None, "", " "):
                     self.components[component_key].update({"capacity": capacity})
             else:
@@ -392,7 +396,7 @@ class WEFEConfigurator:
                     component_name="black_water_septic",
                     component_attrs={"water_in_bus": "black-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
                 )
-                capacity = survey["criteria_7.1.0"]
+                capacity = survey["7.1.0"]
                 if capacity not in (None, "", " "):
                     self.components[component_key].update({"capacity": capacity})
 
@@ -404,7 +408,7 @@ class WEFEConfigurator:
                 component_name="grey_water_cw",
                 component_attrs={"water_in_bus": "grey-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
             )
-            capacity = survey["criteria_7.1.1"]
+            capacity = survey["7.1.1"]
             if capacity not in (None, "", " "):
                 self.components[component_key].update({"capacity": capacity})
 
@@ -416,7 +420,7 @@ class WEFEConfigurator:
                 component_attrs={"water_in_bus": "grey-water-bus", "water_out_bus": "wwtp-ip-water-bus"},
             )
             self.add_single_component(component_type="hh_gw_waste")
-            capacity = survey["criteria_7.1.0"]
+            capacity = survey["7.1.0"]
             if capacity not in (None, "", " "):
                 self.components[component_key].update({"capacity": capacity})
 
@@ -427,7 +431,7 @@ class WEFEConfigurator:
                 component_type="centralized_WWTP",
                 component_attrs={"water_in_bus": "wwtp-ip-water-bus", "water_out_bus": "wwtp-op-water-bus"},
             )
-            capacity = survey["criteria_7.1.2"]
+            capacity = survey["7.1.2"]
             if capacity not in (None, "", " "):
                 self.components[component_key].update({"capacity": capacity})
         else:
@@ -437,7 +441,7 @@ class WEFEConfigurator:
                 component_type="decentralized_WWTP",
                 component_attrs={"water_in_bus": "wwtp-ip-water-bus", "water_out_bus": "wwtp-op-water-bus"},
             )
-            capacity = survey["criteria_7.1.3"]
+            capacity = survey["7.1.3"]
             if capacity not in (None, "", " "):
                 self.components[component_key].update({"capacity": capacity})
 
@@ -447,7 +451,7 @@ class WEFEConfigurator:
             component_type="water_reuse_system",
             component_attrs={"water_in_bus": "wwtp-op-water-bus", "water_out_bus": "service-water-bus"},
         )
-        capacity = survey["criteria_7.1.4"]
+        capacity = survey["7.1.4"]
         if capacity not in (None, "", " "):
             self.components[component_key].update({"capacity": capacity})
         # add excess for service water
