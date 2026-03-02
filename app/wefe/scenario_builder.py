@@ -797,6 +797,8 @@ class WEFEConfigurator:
         return component_params
 
     def add_single_component(self, component_type, component_name=None, component_attrs=None):
+        if component_attrs is None:
+            component_attrs = {}
 
         if not isinstance(component_attrs, dict):
             logging.warning(
