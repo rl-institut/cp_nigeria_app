@@ -364,7 +364,7 @@ class WEFEConfigurator:
                 self.add_single_component(component_type="excess-animal-feces")
                 self.add_single_component(component_type="excess-animal-urine")
 
-        wastewater_systems = survey["criteria_7"]
+        wastewater_systems = survey["7"]
         population = self.scenario.project.economic_data.population  # population is WEFEgui input
         cattle = (
             population / 10
