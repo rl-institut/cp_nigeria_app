@@ -62,8 +62,8 @@ class WEFEConfigurator:
         overwrite=False,
     ):
         self.scen_id = scen_id
-        scenario = Scenario.objects.get(id=self.scen_id)
-        self.proj_id = scenario.id
+        self.scenario = Scenario.objects.get(id=self.scen_id)
+        self.proj_id = self.scenario.id
         self.overwrite = overwrite
         self.mapping = SURVEY_ANSWER_COMPONENT_MAPPING
         self.subq_mapping = SUB_QUESTION_MAPPING
@@ -365,7 +365,7 @@ class WEFEConfigurator:
                 self.add_single_component(component_type="excess-animal-urine")
 
         wastewater_systems = survey["criteria_7"]
-        population = scenario.project.economic_data.population  # population is WEFEgui input
+        population = self.scenario.project.economic_data.population  # population is WEFEgui input
         cattle = (
             population / 10
         )  # TODO: ask about cattle or model animal farming, current assumption: 1 cow for 10 people
