@@ -254,76 +254,115 @@ class WEFEConfigurator:
 
         safety_check()
 
-        if self.criterias["2"] == "Yes":  # set Yes currently
-            suffixes_a = ["_GWa", "_DSa", "_RCa", "_La"]  # drinking water
-            suffixes_b = ["_GWb", "_DSb", "_RCb", "_Lb"]  # service water
-            drinking_water_component_list = []
-            service_water_component_list = []
-            for a_suffix, b_suffix in zip(suffixes_a, suffixes_b):
-                drinking_water_component_list.extend(fill_component_list(a_suffix))
-                service_water_component_list.extend(fill_component_list(b_suffix))
-            drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
-            service_water_component_list = list(dict.fromkeys(service_water_component_list))
-            # print("DW treatment dictionary")
-            drinking_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
-            )
-            drinking_water_treatment_dict = create_component_dict(
-                drinking_water_component_list, entry_bus="untreated-water-bus", water_type="drinking"
-            )
-            for (component_type, component_name), component_attrs in drinking_water_treatment_dict.items():
-                # Add the component from the train
-                self.add_single_component(component_type, component_name, component_attrs)
-                # Add the water in and water out buses for each component
-                for bus_type in ["water_in_bus", "water_out_bus"]:
-                    if component_attrs.get(bus_type):  # only add if defined
-                        self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            update_component_parameters(suffixes_a, "DW")
-            # add excess for drinking water
-            self.add_single_component(component_type="excess-drinking-water")
-            # print(drinking_water_treatment_dict)
-            # print("SW treatment dictionary")
-            service_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], service_water_component_list
-            )
-            service_water_treatment_dict = create_component_dict(
-                service_water_component_list, entry_bus="untreated-water-bus", water_type="service"
-            )
-            for (component_type, component_name), component_attrs in service_water_treatment_dict.items():
-                # Add the component from the train
-                self.add_single_component(component_type, component_name, component_attrs)
-                # Add the water in and water out buses for each component
-                for bus_type in ["water_in_bus", "water_out_bus"]:
-                    if component_attrs.get(bus_type):  # only add if defined
-                        self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            update_component_parameters(suffixes_b, "SW")
-            # add excess for service water
-            self.add_single_component(component_type="excess-service-water")
-            # print(service_water_treatment_dict)
+        water_sources = [
+            "groundwater well",
+            "desalinated seawater",
+            "river/creek",
+            "lake",
+            "public tap water",
+            "water truck",
+            "rainwater harvesting",
+            "bottled water",
+        ]
+
+        natural_group = water_sources[:4]
+        artificial_group = water_sources[4:]
+
+        if survey["2"] == "Yes":  # set Yes currently
+            crit3a = survey["3a"]
+            has_natural_group_a = any(src in crit3a for src in natural_group)
+            has_artificial_group_a = any(src in crit3a for src in artificial_group)
+            if has_natural_group_a:
+                suffixes_a = ["_GWa", "_DSa", "_RCa", "_La"]  # drinking water
+                drinking_water_component_list = []
+                for a_suffix in suffixes_a:
+                    drinking_water_component_list.extend(fill_component_list(a_suffix))
+                drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
+                # print("DW treatment dictionary")
+                drinking_water_component_list = arrange_components(
+                    WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
+                )
+                drinking_water_treatment_dict = create_component_dict(
+                    drinking_water_component_list, entry_bus="untreated-water-bus", water_type="drinking"
+                )
+                for (component_type, component_name), component_attrs in drinking_water_treatment_dict.items():
+                    # Add the component from the train
+                    self.add_single_component(component_type, component_name, component_attrs)
+                    # Add the water in and water out buses for each component
+                    for bus_type in ["water_in_bus", "water_out_bus"]:
+                        if component_attrs.get(bus_type):  # only add if defined
+                            self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
+                update_component_parameters(suffixes_a, "DW")
+                # add excess for drinking water
+                self.add_single_component(component_type="excess-drinking-water")
+                # print(drinking_water_treatment_dict)
+            if has_artificial_group_a:
+                pass  # survey answer component mapping takes care of it automatically
+            if not (has_natural_group_a or has_artificial_group_a):
+                raise ValueError("Criteria 3a has no valid programmed water source selected")
+            crit3b = survey["3b"]
+            has_natural_group_b = any(src in crit3b for src in natural_group)
+            has_artificial_group_b = any(src in crit3b for src in artificial_group)
+            if has_natural_group_b:
+                suffixes_b = ["_GWb", "_DSb", "_RCb", "_Lb"]  # service water
+                service_water_component_list = []
+                for b_suffix in suffixes_b:
+                    service_water_component_list.extend(fill_component_list(b_suffix))
+                service_water_component_list = list(dict.fromkeys(service_water_component_list))
+                # print("SW treatment dictionary")
+                service_water_component_list = arrange_components(
+                    WATER_TREATMENT_TRAIN["main_list"], service_water_component_list
+                )
+                service_water_treatment_dict = create_component_dict(
+                    service_water_component_list, entry_bus="untreated-water-bus", water_type="service"
+                )
+                for (component_type, component_name), component_attrs in service_water_treatment_dict.items():
+                    # Add the component from the train
+                    self.add_single_component(component_type, component_name, component_attrs)
+                    # Add the water in and water out buses for each component
+                    for bus_type in ["water_in_bus", "water_out_bus"]:
+                        if component_attrs.get(bus_type):  # only add if defined
+                            self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
+                update_component_parameters(suffixes_b, "SW")
+                # add excess for service water
+                self.add_single_component(component_type="excess-service-water")
+                # print(service_water_treatment_dict)
+            if has_artificial_group_b:
+                pass  # survey answer component mapping takes care of it automatically
+            if not (has_natural_group_b or has_artificial_group_b):
+                raise ValueError("Criteria 3b has no valid programmed water source selected")
         else:
-            suffixes = ["_GW", "_DS", "_RC", "_L"]  # all water assumed drinking water
-            drinking_water_component_list = []
-            for suffix in suffixes:
-                drinking_water_component_list.extend(fill_component_list(suffix))
-            drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
-            # print("DW treatment dictionary")
-            drinking_water_component_list = arrange_components(
-                WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
-            )
-            drinking_water_treatment_dict = create_component_dict(
-                drinking_water_component_list, entry_bus="untreated-water-bus", water_type="drinking"
-            )
-            for (component_type, component_name), component_attrs in drinking_water_treatment_dict.items():
-                # Add the component from the train
-                self.add_single_component(component_type, component_name, component_attrs)
-                # Add the water in and water out buses for each component
-                for bus_type in ["water_in_bus", "water_out_bus"]:
-                    if component_attrs.get(bus_type):  # only add if defined
-                        self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
-            update_component_parameters(suffixes, "DW")
-            # add excess for drinking water
-            self.add_single_component(component_type="excess-drinking-water")
-            # print(drinking_water_treatment_dict)
+            crit3 = survey["3"]
+            has_natural_group = any(src in crit3 for src in natural_group)
+            has_artificial_group = any(src in crit3 for src in artificial_group)
+            if has_natural_group:
+                suffixes = ["_GW", "_DS", "_RC", "_L"]  # all water assumed drinking water
+                drinking_water_component_list = []
+                for suffix in suffixes:
+                    drinking_water_component_list.extend(fill_component_list(suffix))
+                drinking_water_component_list = list(dict.fromkeys(drinking_water_component_list))
+                # print("DW treatment dictionary")
+                drinking_water_component_list = arrange_components(
+                    WATER_TREATMENT_TRAIN["main_list"], drinking_water_component_list
+                )
+                drinking_water_treatment_dict = create_component_dict(
+                    drinking_water_component_list, entry_bus="untreated-water-bus", water_type="drinking"
+                )
+                for (component_type, component_name), component_attrs in drinking_water_treatment_dict.items():
+                    # Add the component from the train
+                    self.add_single_component(component_type, component_name, component_attrs)
+                    # Add the water in and water out buses for each component
+                    for bus_type in ["water_in_bus", "water_out_bus"]:
+                        if component_attrs.get(bus_type):  # only add if defined
+                            self.add_single_bus(name=component_attrs.get(bus_type), balanced=True, carrier="water")
+                update_component_parameters(suffixes, "DW")
+                # add excess for drinking water
+                self.add_single_component(component_type="excess-drinking-water")
+                # print(drinking_water_treatment_dict)
+            if has_artificial_group:
+                pass  # survey answer component mapping takes care of it automatically
+            if not (has_natural_group or has_artificial_group):
+                raise ValueError("Criteria 3 has no valid programmed water source selected")
 
         add_excess()
 
@@ -461,7 +500,8 @@ class WEFEConfigurator:
             "disposal to environment without treatment" in wastewater_systems
         ):  # set direct disposal for grey water and black water
             self.add_single_component(component_type="greywater_disposal")
-            self.add_single_component(component_type="blackwater_disposal")
+            if "flush toilet" in toilet_types:
+                self.add_single_component(component_type="blackwater_disposal")
 
     def get_single_component_from_datapackage(self, dp, resource_name, component_name):
         """

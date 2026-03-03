@@ -2326,25 +2326,28 @@
                 "groundwater"
             ],
             "public tap water": [
-                "tap-water"
+                "tap-water", "tap-water-pipe_DW"
             ],
             "desalinated seawater": [
                 "seawater"
             ],
             "river/creek": [
-                "surface-water"
+                "river-water"
             ],
             "lake": [
-                "surface-water"
+                "lake-water"
             ],
             "water truck": [
-                "truck-water"
+                "truck-water", "truck-water-pipe_DW"
             ],
             "rainwater harvesting": [
-                ""
+                "rainwater-harvesting", "rain-water-pipe_DW"
             ],
             "bottled water": [
-                "bottled-water"
+                "bottled-water", "bottled-water-pipe_DW"
+            ],
+            "other": [
+                ""
             ]
         }
     },
@@ -4437,7 +4440,7 @@
                 "groundwater"
             ],
             "public tap water": [
-                "tap-water"
+                "tap-water", "tap-water-pipe_DW"
             ],
             "desalinated seawater": [
                 "seawater"
@@ -4449,13 +4452,13 @@
                 "lake-water"
             ],
             "water truck": [
-                "truck-water"
+                "truck-water", "truck-water-pipe_DW"
             ],
             "rainwater harvesting": [
-                "rainwater-harvesting"
+                "rainwater-harvesting", "rain-water-pipe_DW"
             ],
             "bottled water": [
-                "bottled-water"
+                "bottled-water", "bottled-water-pipe_DW"
             ],
             "other": [
                 ""
@@ -6625,25 +6628,25 @@
                 "groundwater"
             ],
             "public tap water": [
-                "tap_water"
+                "tap-water", "tap-water-pipe_SW"
             ],
             "desalinated seawater": [
                 "seawater"
             ],
             "river/creek": [
-                ""
+                "river-water"
             ],
             "lake": [
-                ""
+                "lake-water"
             ],
             "water truck": [
-                "truck_water"
+                "truck-water", "truck-water-pipe_SW"
             ],
             "rainwater harvesting": [
-                ""
+                "rainwater-harvesting", "rain-water-pipe_SW"
             ],
             "bottled water": [
-                "bottled_water"
+                "bottled-water", "bottled-water-pipe_SW"
             ],
             "other": [
                 ""
