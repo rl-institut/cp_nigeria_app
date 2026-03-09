@@ -593,6 +593,9 @@ class WEFEConfigurator:
         for name in unique_names:
             self.add_single_component(name)
 
+    def ensure_component(self, component):
+        return self.components.setdefault((component, component), {})
+
     def process_survey(self, survey):
         """
         Process the survey responses to build a nested structure. Some answers add components, while some change
@@ -662,10 +665,10 @@ class WEFEConfigurator:
                             if isinstance(component, list):
                                 # parallel components: add each one
                                 for subcomponent in component:
-                                    self.components[(subcomponent, subcomponent)] = {}
+                                    self.ensure_component(subcomponent)
                             else:
                                 # single sequential component
-                                self.components[(component, component)] = {}
+                                self.ensure_component(component)
 
                         # self.components.update({(component,component): {} for component in components_to_add})
                         self.wished_components[question_id] = other_answers
@@ -689,9 +692,8 @@ class WEFEConfigurator:
                                 target_components = self.mapping[parent_qid]["map_answer"][parent_answer]
 
                                 for target_component in target_components:
-                                    self.components[(target_component, target_component)].update(
-                                        {attribute_name: attribute_val}
-                                    )
+                                    comp = self.ensure_component(target_component)
+                                    comp[attribute_name] = attribute_val
                                     # some debugging for key error
                             except:
                                 print(f"There is a problem with question {question_id}")
