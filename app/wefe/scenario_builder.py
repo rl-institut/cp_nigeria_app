@@ -594,6 +594,9 @@ class WEFEConfigurator:
             self.add_single_component(name)
 
     def ensure_component(self, component):
+        if not component or not str(component).strip():
+            logging.warning("Attempted to add empty component")
+            return None
         return self.components.setdefault((component, component), {})
 
     def process_survey(self, survey):
@@ -606,6 +609,8 @@ class WEFEConfigurator:
             "wind-turbine": {"capacity": 10, "some_parameter": 5},
             "diesel-generator": {"fuel_efficiency": 0.8}
         }
+        If numeric attributes are assigned multiple times, the values will not be added up but the maximum value of all
+        the assignments will be chosen instead.
 
         Additionally, certain answers defined in the 'criterias_list' are stored as class attributes 'self.criterias'
         to make them easily accessible.
@@ -693,8 +698,17 @@ class WEFEConfigurator:
 
                                 for target_component in target_components:
                                     comp = self.ensure_component(target_component)
-                                    comp[attribute_name] = attribute_val
-                                    # some debugging for key error
+                                    if comp is None:
+                                        continue
+
+                                    # If an already existing attribute of numeric type shall be assigned again, take the maximum value
+                                    if attribute_name in comp:
+                                        if isinstance(attribute_val, (int, float)):
+                                            comp[attribute_name] = max(comp[attribute_name], attribute_val)
+                                        else:
+                                            comp[attribute_name] = attribute_val
+                                    else:
+                                        comp[attribute_name] = attribute_val
                             except:
                                 print(f"There is a problem with question {question_id}")
                                 # import pdb;pdb.set_trace()
