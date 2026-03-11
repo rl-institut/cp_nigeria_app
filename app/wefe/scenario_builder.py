@@ -90,7 +90,7 @@ class WEFEConfigurator:
     def water_systems_postprocessing(self, survey):
 
         # Strip 'criteria_' from keys locally
-        survey = {k[len("criteria_") :] if k.startswith("criteria_") else k: v for k, v in survey.items()}
+        survey = {k.replace("criteria_", ""): v for k, v in survey.items()}
 
         def safety_check():
             # --- SAFETY CLEANUP STEP ---
@@ -369,7 +369,7 @@ class WEFEConfigurator:
     def waste_water_systems_postprocessing(self, survey):
 
         # Strip 'criteria_' from keys locally
-        survey = {k[len("criteria_") :] if k.startswith("criteria_") else k: v for k, v in survey.items()}
+        survey = {k.replace("criteria_", ""): v for k, v in survey.items()}
 
         def safety_check():
             # --- SAFETY CLEANUP STEP ---
