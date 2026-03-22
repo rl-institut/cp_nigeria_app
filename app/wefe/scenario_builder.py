@@ -377,15 +377,15 @@ class WEFEConfigurator:
             merged_df = merged_df[ordered_cols]
 
             pre_treatment_df = merged_df[
-                (merged_df["type"].isin(water_treatment_train["pre_treatment"]))
+                (merged_df["type"].isin(WATER_TREATMENT_TRAIN["pre_treatment"]))
                 & (merged_df["name"].str.endswith("_1"))
             ]
             core_treatment_df = merged_df[
-                (merged_df["type"].isin(water_treatment_train["core_treatment"]))
+                (merged_df["type"].isin(WATER_TREATMENT_TRAIN["core_treatment"]))
                 & (merged_df["name"].str.endswith("_1"))
             ]
             post_treatment_df = merged_df[
-                (merged_df["type"].isin(water_treatment_train["post_treatment"]))
+                (merged_df["type"].isin(WATER_TREATMENT_TRAIN["post_treatment"]))
                 | (merged_df["name"].str.endswith("_2"))
             ]
             pre_treatment_df.to_csv(os.path.join(elements_dir, "water_pre_treatment.csv"), sep=";", index=False)
@@ -465,7 +465,7 @@ class WEFEConfigurator:
             resources = [r for r in resources if r["name"] not in old_water_treatment_csvs]
 
             for new_name, new_path in new_csv:
-                new_resource = copy.deepcopy(template)
+                new_resource = deepcopy(template)
                 new_resource["name"] = new_name
                 new_resource["path"] = f"data/elements/{new_path}"
 
