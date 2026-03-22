@@ -351,6 +351,56 @@ class WEFEConfigurator:
             df_bus = df_bus.drop_duplicates(subset=["name"], keep="last")
             df_bus.to_csv(bus_path, sep=";", index=False)
 
+        def modify_water_treatment(water_treatment_csvs, extra_cols):
+
+            dfs = []
+            for csv_name in water_treatment_csvs:
+                path = os.path.join(elements_dir, csv_name)
+                if os.path.exists(path):
+                    df = pd.read_csv(path, sep=";")
+                    dfs.append(df)
+                    try:
+                        os.remove(path)
+                        print(f"Deleted {csv_name}")
+                    except OSError as e:
+                        print(f"Could not delete {csv_name}: {e}")
+
+            if not dfs:
+                print("No water treatment CSVs found.")
+                return None
+
+            merged_df = pd.concat(dfs, ignore_index=True, sort=False)
+
+            common_cols = [col for col in merged_df.columns if col not in extra_cols]
+            ordered_cols = common_cols + [col for col in extra_cols if col in merged_df.columns]
+
+            merged_df = merged_df[ordered_cols]
+
+            pre_treatment_df = merged_df[
+                (merged_df["type"].isin(water_treatment_train["pre_treatment"]))
+                & (merged_df["name"].str.endswith("_1"))
+            ]
+            core_treatment_df = merged_df[
+                (merged_df["type"].isin(water_treatment_train["core_treatment"]))
+                & (merged_df["name"].str.endswith("_1"))
+            ]
+            post_treatment_df = merged_df[
+                (merged_df["type"].isin(water_treatment_train["post_treatment"]))
+                | (merged_df["name"].str.endswith("_2"))
+            ]
+            pre_treatment_df.to_csv(os.path.join(elements_dir, "water_pre_treatment.csv"), sep=";", index=False)
+            core_treatment_df.to_csv(os.path.join(elements_dir, "water_core_treatment.csv"), sep=";", index=False)
+            post_treatment_df.to_csv(os.path.join(elements_dir, "water_post_treatment.csv"), sep=";", index=False)
+
+            return merged_df
+
+        merged_df = modify_water_treatment(original_water_treatment_csvs, extra_bus_columns)
+
+        # Exit simplification if no water treatment csvs are detected
+        # Modification of bus csv and datapackage json is avoided
+        if merged_df is None:
+            return
+
         modify_bus_csv()
 
     def waste_water_systems_postprocessing(self, survey):
