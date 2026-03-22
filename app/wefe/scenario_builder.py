@@ -314,6 +314,45 @@ class WEFEConfigurator:
         add_excess()
         # ---------------------------------
 
+    def water_systems_simplification(self):
+
+        elements_dir = self.scenario_component_folder
+        dp_json_path = os.path.join(self.scenario_folder, "datapackage.json")
+        bus_path = os.path.join(elements_dir, "bus.csv")
+
+        original_water_treatment_csvs = [
+            "water_treatment_without.csv",
+            "water_treatment_with_brine.csv",
+            "water_treatment_with_biomass.csv",
+            "water_treatment_with_N2.csv",
+        ]
+
+        extra_bus_columns = ["brine_out_bus", "waste_biomass_out_bus", "N2_gas_bus"]
+
+        def modify_bus_csv():
+            df_bus = pd.read_csv(bus_path, sep=";")
+            df_bus = df_bus[~df_bus["name"].str.startswith(("DW_", "SW_"))]
+
+            bus_names = ["DW_pre_treatment_out_bus", "DW_core_treatment_out_bus"]
+
+            has_sw = False
+
+            if os.path.exists(os.path.join(elements_dir, "water_treatment_without.csv")):
+                df_water_without = pd.read_csv(os.path.join(elements_dir, "water_treatment_without.csv"), sep=";")
+                if "name" in df_water_without.columns:
+                    has_sw = df_water_without["name"].str.startswith("SW_").any()
+
+            if has_sw:
+                bus_names.extend(["SW_pre_treatment_out_bus", "SW_core_treatment_out_bus"])
+
+            simplified_buses = pd.DataFrame({"name": bus_names, "type": "bus", "balanced": True, "carrier": "water"})
+
+            df_bus = pd.concat([df_bus, simplified_buses], ignore_index=True)
+            df_bus = df_bus.drop_duplicates(subset=["name"], keep="last")
+            df_bus.to_csv(bus_path, sep=";", index=False)
+
+        modify_bus_csv()
+
     def waste_water_systems_postprocessing(self, survey):
 
         # Strip 'criteria_' from keys locally
@@ -1095,6 +1134,11 @@ if __name__ == "__main__":
 
     scenario = WEFEConfigurator(scen_id=scen_id, overwrite=False)
 
+    # Controls whether the water treatment system is simplified.
+    # True  -> run the simplification function and use the simplified setup.
+    # False -> skip simplification and keep the full treatment trains.
+    run_water_simplification = True  # default
+
     # Parse the survey to add components to a list
     scenario.process_survey(survey_answers)
 
@@ -1111,3 +1155,7 @@ if __name__ == "__main__":
     scenario.add_components()
     scenario.add_buses()
     scenario.add_sequences()
+
+    # Apply simplification only when the flag is enabled.
+    if run_water_simplification:
+        scenario.water_systems_simplification()
