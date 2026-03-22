@@ -394,6 +394,8 @@ class WEFEConfigurator:
 
             return merged_df
 
+        # TODO: Improve the aggregation/compression logic in the following function for each of the three water treatment sections.
+
         def aggregate_component_block(df, prefix, block_name, water_in_bus, water_out_bus):
             sub = df[df["name"].str.startswith(prefix)].copy()
 
