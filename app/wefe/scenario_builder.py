@@ -394,6 +394,59 @@ class WEFEConfigurator:
 
             return merged_df
 
+        def aggregate_component_block(df, prefix, block_name, water_in_bus, water_out_bus):
+            sub = df[df["name"].str.startswith(prefix)].copy()
+
+            if sub.empty:
+                return None
+
+            row = {}
+
+            row["name"] = f"{prefix}{block_name}"
+            row["type"] = f"water_{block_name}"
+            row["water_in_bus"] = water_in_bus
+            row["water_out_bus"] = water_out_bus
+
+            numeric_sum_cols = [
+                "capex",
+                "opex_fix",
+                "capacity_cost",
+                "specific_energy_consumption",
+                "land_requirement_factor",
+                "ghg_emission_factor",
+                "water_consumption_factor",
+            ]
+
+            for col in numeric_sum_cols:
+                if col in sub.columns:
+                    row[col] = sub[col].fillna(0).sum()
+
+            if "efficiency" in sub.columns:
+                eff = sub["efficiency"].dropna()
+                row["efficiency"] = eff.prod() if not eff.empty else None
+
+            if "lifetime" in sub.columns:
+                life = sub["lifetime"].dropna()
+                if not life.empty:
+                    if "capex" in sub.columns and sub["capex"].notna().any():
+                        weights = sub.loc[life.index, "capex"].fillna(0)
+                        if weights.sum() > 0:
+                            row["lifetime"] = (life * weights).sum() / weights.sum()
+                        else:
+                            row["lifetime"] = life.mean()
+                    else:
+                        row["lifetime"] = life.mean()
+
+            for col in sub.columns:
+                if col not in row:
+                    non_null = sub[col].dropna()
+                    row[col] = non_null.iloc[0] if not non_null.empty else None
+
+            row_df = pd.DataFrame([row])
+            row_df = row_df[[c for c in df.columns if c in row_df.columns]]  # reorder columns
+            row_df = row_df.dropna(axis=1, how="all")  # drop empty columns
+            return row_df
+
         def modify_data_package(water_treatment_csvs, extra_bus_columns):
 
             new_csv = [
@@ -442,6 +495,54 @@ class WEFEConfigurator:
             return
 
         modify_bus_csv()
+
+        water_csv_configs = [
+            {
+                "df": pd.read_csv(os.path.join(elements_dir, "water_pre_treatment.csv"), sep=";"),
+                "block_name": "pre_treatment",
+                "csv_name": "water_pre_treatment.csv",
+                "buses": {
+                    "DW_": ("untreated-water-bus", "DW_pre_treatment_out_bus"),
+                    "SW_": ("untreated-water-bus", "SW_pre_treatment_out_bus"),
+                },
+            },
+            {
+                "df": pd.read_csv(os.path.join(elements_dir, "water_core_treatment.csv"), sep=";"),
+                "block_name": "core_treatment",
+                "csv_name": "water_core_treatment.csv",
+                "buses": {
+                    "DW_": ("DW_pre_treatment_out_bus", "DW_core_treatment_out_bus"),
+                    "SW_": ("SW_pre_treatment_out_bus", "SW_core_treatment_out_bus"),
+                },
+            },
+            {
+                "df": pd.read_csv(os.path.join(elements_dir, "water_post_treatment.csv"), sep=";"),
+                "block_name": "post_treatment",
+                "csv_name": "water_post_treatment.csv",
+                "buses": {
+                    "DW_": ("DW_core_treatment_out_bus", "drinking-water-bus"),
+                    "SW_": ("SW_core_treatment_out_bus", "service-water-bus"),
+                },
+            },
+        ]
+
+        for config in water_csv_configs:
+            reduced_parts = []
+
+            for prefix, (water_in_bus, water_out_bus) in config["buses"].items():
+                reduced_df = aggregate_component_block(
+                    config["df"],
+                    prefix=prefix,
+                    block_name=config["block_name"],
+                    water_in_bus=water_in_bus,
+                    water_out_bus=water_out_bus,
+                )
+                if reduced_df is not None:
+                    reduced_parts.append(reduced_df)
+
+            if reduced_parts:
+                reduced_block_df = pd.concat(reduced_parts, ignore_index=True)
+                reduced_block_df.to_csv(os.path.join(elements_dir, config["csv_name"]), sep=";", index=False)
 
         modify_data_package(original_water_treatment_csvs, extra_bus_columns)
         # ---------------------------------
