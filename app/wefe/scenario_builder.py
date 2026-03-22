@@ -394,6 +394,46 @@ class WEFEConfigurator:
 
             return merged_df
 
+        def modify_data_package(water_treatment_csvs, extra_bus_columns):
+
+            new_csv = [
+                ("water_pre_treatment", "water_pre_treatment.csv"),
+                ("water_core_treatment", "water_core_treatment.csv"),
+                ("water_post_treatment", "water_post_treatment.csv"),
+            ]
+
+            old_water_treatment_csvs = [f.removesuffix(".csv") for f in water_treatment_csvs]
+
+            with open(dp_json_path, "r", encoding="utf-8") as f:
+                datapackage = json.load(f)
+
+            resources = datapackage["resources"]
+            template = next(r for r in resources if r["name"] == "water_treatment_without")
+            resources = [r for r in resources if r["name"] not in old_water_treatment_csvs]
+
+            for new_name, new_path in new_csv:
+                new_resource = copy.deepcopy(template)
+                new_resource["name"] = new_name
+                new_resource["path"] = f"data/elements/{new_path}"
+
+                csv_cols = pd.read_csv(os.path.join(elements_dir, new_path), sep=";", nrows=0).columns.tolist()
+
+                for col in extra_bus_columns:
+                    if col in csv_cols:
+                        new_resource["schema"]["fields"].append({"name": col, "type": "string", "format": "default"})
+                        new_resource["schema"]["foreignKeys"].append(
+                            {"fields": col, "reference": {"resource": "bus", "fields": "name"}}
+                        )
+
+                resources.append(new_resource)
+
+            datapackage["resources"] = resources
+
+            with open(dp_json_path, "w", encoding="utf-8") as f:
+                json.dump(datapackage, f, indent=4, ensure_ascii=False)
+
+        # ---Main Logic & Function Calling---
+
         merged_df = modify_water_treatment(original_water_treatment_csvs, extra_bus_columns)
 
         # Exit simplification if no water treatment csvs are detected
@@ -402,6 +442,9 @@ class WEFEConfigurator:
             return
 
         modify_bus_csv()
+
+        modify_data_package(original_water_treatment_csvs, extra_bus_columns)
+        # ---------------------------------
 
     def waste_water_systems_postprocessing(self, survey):
 
