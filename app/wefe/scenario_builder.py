@@ -329,18 +329,11 @@ class WEFEConfigurator:
 
         extra_bus_columns = ["brine_out_bus", "waste_biomass_out_bus", "N2_gas_bus"]
 
-        def modify_bus_csv():
+        def modify_bus_csv(has_sw):
             df_bus = pd.read_csv(bus_path, sep=";")
             df_bus = df_bus[~df_bus["name"].str.startswith(("DW_", "SW_"))]
 
             bus_names = ["DW_pre_treatment_out_bus", "DW_core_treatment_out_bus"]
-
-            has_sw = False
-
-            if os.path.exists(os.path.join(elements_dir, "water_treatment_without.csv")):
-                df_water_without = pd.read_csv(os.path.join(elements_dir, "water_treatment_without.csv"), sep=";")
-                if "name" in df_water_without.columns:
-                    has_sw = df_water_without["name"].str.startswith("SW_").any()
 
             if has_sw:
                 bus_names.extend(["SW_pre_treatment_out_bus", "SW_core_treatment_out_bus"])
@@ -352,6 +345,11 @@ class WEFEConfigurator:
             df_bus.to_csv(bus_path, sep=";", index=False)
 
         def modify_water_treatment(water_treatment_csvs, extra_cols):
+            has_sw_detected = False
+            if os.path.exists(os.path.join(elements_dir, "water_treatment_without.csv")):
+                df_water_without = pd.read_csv(os.path.join(elements_dir, "water_treatment_without.csv"), sep=";")
+                if "name" in df_water_without.columns:
+                    has_sw_detected = df_water_without["name"].str.startswith("SW_").any()
 
             dfs = []
             for csv_name in water_treatment_csvs:
@@ -367,7 +365,7 @@ class WEFEConfigurator:
 
             if not dfs:
                 print("No water treatment CSVs found.")
-                return None
+                return None, False
 
             merged_df = pd.concat(dfs, ignore_index=True, sort=False)
 
@@ -392,7 +390,7 @@ class WEFEConfigurator:
             core_treatment_df.to_csv(os.path.join(elements_dir, "water_core_treatment.csv"), sep=";", index=False)
             post_treatment_df.to_csv(os.path.join(elements_dir, "water_post_treatment.csv"), sep=";", index=False)
 
-            return merged_df
+            return merged_df, has_sw_detected
 
         # TODO: Improve the aggregation/compression logic in the following function for each of the three water treatment sections.
 
@@ -489,14 +487,14 @@ class WEFEConfigurator:
 
         # ---Main Logic & Function Calling---
 
-        merged_df = modify_water_treatment(original_water_treatment_csvs, extra_bus_columns)
+        merged_df, has_sw = modify_water_treatment(original_water_treatment_csvs, extra_bus_columns)
 
         # Exit simplification if no water treatment csvs are detected
         # Modification of bus csv and datapackage json is avoided
         if merged_df is None:
             return
 
-        modify_bus_csv()
+        modify_bus_csv(has_sw)
 
         water_csv_configs = [
             {
