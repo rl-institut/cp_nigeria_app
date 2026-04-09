@@ -410,7 +410,7 @@ class WEFEConfigurator:
             numeric_sum_cols = [
                 "capex",
                 "opex_fix",
-                "capacity_cost",
+                "annuity",
                 "specific_energy_consumption",
                 "land_requirement_factor",
                 "ghg_emission_factor",
