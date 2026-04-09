@@ -283,8 +283,7 @@ def request_wefedemand_simulation(request, proj_id=None):
         survey_id = "ay5RwDzEgUQn73E9it3wCB"
         args["id"] = [576013455, 576161268]
     else:
-        # survey_id = project.kobo_survey_id
-        survey_id = "aeFzKvsvfpZXABJPpKc8Mc"
+        survey_id = project.kobo_survey_id
 
     data = {"survey_id": survey_id, "args": args}
     results = wefedemand_simulation_request(data)
