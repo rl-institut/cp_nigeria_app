@@ -37,6 +37,11 @@
 										{% if field|is_matrix %}
 											{% comment %} here are the subquestion in matrix form {% endcomment %}
 											{{ field }}
+											{% for error in field.errors %}
+											<div class="row">
+												<p style="color:red"><b>{{ error }}</b></p>
+											</div>
+											{% endfor %}
 										{% else %}
 											<div class="form-group{% if field.errors %} invalid{% endif %}{% if field|is_subsubquestion %} subsubquestion{% endif %}{% if field|is_subquestion %} subquestion{% if field.initial %}{% else %} disabled {% endif %}{% endif %}">
 											{% if field.label|is_water_header %}
