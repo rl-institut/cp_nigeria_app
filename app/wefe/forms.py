@@ -274,6 +274,7 @@ class SurveyQuestionForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        errors = {}
         if cleaned_data:
             subquestion_to_erase = []
             for record in cleaned_data:
@@ -341,6 +342,25 @@ class SurveyQuestionForm(forms.Form):
                     else:
                         if sq not in selected_subquestions:
                             subquestion_to_erase.append(sq)
+
+                # Perform field validation (check invalid input)
+                if question_id == "2":
+                    # subquestions to validate taken from WATER_SUPPLY_SURVEY_STRUCTURE
+                    if cleaned_data[record] == "No":
+                        sub_q_to_validate = ["3"]
+                    else:
+                        sub_q_to_validate = ["3a", "3b"]
+
+                    for q in sub_q_to_validate:
+                        subq_record = f"criteria_{q}"
+                        ans = cleaned_data[subq_record]
+                        if not ans or ans == ["other"]:
+                            errors[subq_record] = (
+                                'At least one of the provided sources must be selected, excluding "other".'
+                            )
+
+            for record, msg in errors.items():
+                self.add_error(record, msg)
 
         else:
             raise ValidationError("This form cannot be blank")
