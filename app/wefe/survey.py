@@ -237,7 +237,7 @@ COMPONENT_SURVEY_STRUCTURE = [
         "answer_map_to": TYPE_COMPONENT_ATTRIBUTE,
     },
     {
-        "question": "What ist the capacity [kW] of the installed wind power systems?",
+        "question": "What is the capacity [kW] of the installed wind power systems?",
         "question_id": "1.4",
         "variable_name": "capacity",
         "possible_answers": TYPE_FLOAT,
@@ -252,7 +252,7 @@ COMPONENT_SURVEY_STRUCTURE = [
         INFOBOX: "Hydropower is non-expandable and will not be optimized. Only existing capacity will be considered.",
     },
     {
-        "question": "What ist the capacity [kW] of the installed biogas plant?",
+        "question": "What is the capacity [kW] of the installed biogas plant?",
         "question_id": "1.6",
         "variable_name": "capacity",
         "possible_answers": TYPE_FLOAT,
