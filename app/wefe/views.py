@@ -369,6 +369,12 @@ def request_wefesim_simulation(request, proj_id=None, default_datapackage="false
         wefe_conf.add_buses()
         wefe_conf.add_sequences()
 
+        run_water_simplification = True  # default
+
+        # Apply simplification only when the flag is enabled.
+        if run_water_simplification:
+            wefe_conf.water_systems_simplification()
+
         # Turn datapackage data and metadata into single json
         scenario_dir = Path(wefe_conf.scenario_folder)
         dp_export = export_single_json(scenario_dir, scenario_dir)
