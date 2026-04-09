@@ -556,6 +556,11 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
 
     page_information = "This survey will allow the user to build and simulate an energy system"
 
+    # Check which categories have field errors, so we can display them as open in the accordeon and the user can see the issue
+    faulty_fields = [k.replace("criteria_", "") for k in form.errors.keys()]
+    faulty_fields_cat = [SURVEY_CATEGORIES.get(q) for q in faulty_fields]
+    faulty_fields_cat = set(faulty_fields_cat)
+
     answer = render(
         request,
         "wefe/steps/survey_layout.html",
@@ -565,6 +570,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
             "categories_map": categories_map,
             "categories": categories,
             "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
+            "faulty_fields_cat": faulty_fields_cat,
             "matrix_headers": matrix_headers,
             "matrix_labels": matrix_labels,
             "proj_id": proj_id,

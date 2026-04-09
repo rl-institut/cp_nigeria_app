@@ -29,7 +29,7 @@
 							</button>
 						</h3>
 
-						<div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionQuestions">
+						<div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %} {% if cat in faulty_fields_cat %} show {% endif %}" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionQuestions">
 							<div class="accordion-body cpn-business__questionnaire">
 								{% setvar False as matrix_current %}
 								{% for field in form %}
