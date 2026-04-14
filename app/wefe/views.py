@@ -490,7 +490,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
                 crit.value = json.dumps(value) if not isinstance(value, str) else value
                 crit.save(update_fields=["value"])
 
-        answer = HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
+            return HttpResponseRedirect(reverse("wefe_steps", args=[proj_id, step_id + 1]))
 
     else:
         if scen_id is None:
@@ -500,7 +500,7 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
             if last_scenario_id is None:
                 last_scenario_id = 0
             scenario_id = last_scenario_id + 1
-            answer = HttpResponseRedirect(reverse("view_survey", args=[scenario_id]))
+            return HttpResponseRedirect(reverse("view_survey", args=[scenario_id]))
         else:
             scenario_id = scen_id
 
@@ -531,52 +531,60 @@ def wefe_system_layout(request, proj_id, step_id=STEP_MAPPING["system_layout"]):
 
                 form = SurveyQuestionForm(qs=qs_answer)
 
-            categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
-            categories_map = []
-            matrix_headers = {}
-            matrix_labels = {}
-            for field in form.fields:
-                question_id = field.split("criteria_")[1]
-                # TODO: could be done from models "category" attribute
-                cat = SURVEY_CATEGORIES.get(question_id)
-                # TODO: reassign cat after testing phase is over
-                categories_map.append(cat)
-                # TODO here one can know that the question
-                if is_matrix_source(form.fields[field]):
-                    subs = []
-                    labels = []
-                    question = get_survey_question_by_id(SURVEY_STRUCTURE, question_id)
-                    for answer, subquestions in question["subquestion"].items():
-                        labels.append(answer)
-                        for sq_id in subquestions:
-                            q_main_id = ".".join(sq_id.split(".")[:2])
-                            subquestion = get_survey_question_by_id(SURVEY_STRUCTURE, sq_id)
-                            # print(subquestion)
-                            if subquestion.get("display_type", "") == "matrix":
-                                if subquestion["question"] not in subs:
-                                    subs.append(subquestion["question"])
-                    matrix_headers[field] = subs
-                    matrix_labels[field] = labels
-            page_information = "This survey will allow the user to build and simulate an energy system"
+    categories = [cat for cat in SURVEY_QUESTIONS_CATEGORIES.keys()]
+    categories_map = []
+    matrix_headers = {}
+    matrix_labels = {}
 
-            answer = render(
-                request,
-                "wefe/steps/survey_layout.html",
-                {
-                    "form": form,
-                    "scen_id": scenario_id,
-                    "categories_map": categories_map,
-                    "categories": categories,
-                    "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
-                    "matrix_headers": matrix_headers,
-                    "matrix_labels": matrix_labels,
-                    "proj_id": proj_id,
-                    "proj_name": project.name,
-                    "step_id": step_id,
-                    "step_list": WEFE_STEP_VERBOSE,
-                    "page_information": page_information,
-                },
-            )
+    for field in form.fields:
+        question_id = field.split("criteria_")[1]
+        # TODO: could be done from models "category" attribute
+        cat = SURVEY_CATEGORIES.get(question_id)
+        # TODO: reassign cat after testing phase is over
+        categories_map.append(cat)
+        # TODO here one can know that the question
+        if is_matrix_source(form.fields[field]):
+            subs = []
+            labels = []
+            question = get_survey_question_by_id(SURVEY_STRUCTURE, question_id)
+            for answer, subquestions in question["subquestion"].items():
+                labels.append(answer)
+                for sq_id in subquestions:
+                    q_main_id = ".".join(sq_id.split(".")[:2])
+                    subquestion = get_survey_question_by_id(SURVEY_STRUCTURE, sq_id)
+                    # print(subquestion)
+                    if subquestion.get("display_type", "") == "matrix":
+                        if subquestion["question"] not in subs:
+                            subs.append(subquestion["question"])
+            matrix_headers[field] = subs
+            matrix_labels[field] = labels
+
+    page_information = "This survey will allow the user to build and simulate an energy system"
+
+    # Check which categories have field errors, so we can display them as open in the accordeon and the user can see the issue
+    faulty_fields = [k.replace("criteria_", "") for k in form.errors.keys()]
+    faulty_fields_cat = [SURVEY_CATEGORIES.get(q) for q in faulty_fields]
+    faulty_fields_cat = set(faulty_fields_cat)
+
+    answer = render(
+        request,
+        "wefe/steps/survey_layout.html",
+        {
+            "form": form,
+            "scen_id": scen_id,
+            "categories_map": categories_map,
+            "categories": categories,
+            "categories_verbose": SURVEY_QUESTIONS_CATEGORIES,
+            "faulty_fields_cat": faulty_fields_cat,
+            "matrix_headers": matrix_headers,
+            "matrix_labels": matrix_labels,
+            "proj_id": proj_id,
+            "proj_name": project.name,
+            "step_id": step_id,
+            "step_list": WEFE_STEP_VERBOSE,
+            "page_information": page_information,
+        },
+    )
 
     return answer
 

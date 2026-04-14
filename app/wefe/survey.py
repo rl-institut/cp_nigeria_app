@@ -237,21 +237,22 @@ COMPONENT_SURVEY_STRUCTURE = [
         "answer_map_to": TYPE_COMPONENT_ATTRIBUTE,
     },
     {
-        "question": "What ist the capacity [kW] of the installed wind power systems?",
+        "question": "What is the capacity [kW] of the installed wind power systems?",
         "question_id": "1.4",
         "variable_name": "capacity",
         "possible_answers": TYPE_FLOAT,
         "answer_map_to": TYPE_COMPONENT_ATTRIBUTE,
     },
     {
-        "question": "What ist the capacity [kW] of the installed hydropower systems?",
+        "question": "What is the capacity [kW] of the installed hydropower systems?",
         "question_id": "1.5",
         "variable_name": "capacity",
         "possible_answers": TYPE_FLOAT,
         "answer_map_to": TYPE_COMPONENT_ATTRIBUTE,
+        INFOBOX: "Hydropower is non-expandable and will not be optimized. Only existing capacity will be considered.",
     },
     {
-        "question": "What ist the capacity [kW] of the installed biogas plant??",
+        "question": "What is the capacity [kW] of the installed biogas plant?",
         "question_id": "1.6",
         "variable_name": "capacity",
         "possible_answers": TYPE_FLOAT,
@@ -373,6 +374,7 @@ WATER_SUPPLY_SURVEY_STRUCTURE = (
                     "variable_name": "capacity",
                     "possible_answers": TYPE_FLOAT,
                     "answer_map_to": TYPE_COMPONENT_ATTRIBUTE,
+                    INFOBOX: "Will only be used to calculate the throughput. If the throughput is given, this parameter will be ignored.",
                 },
                 {
                     "question": "What is the maximum throughput [m³/h] of the water pump",
@@ -519,6 +521,7 @@ WATER_SUPPLY_SURVEY_STRUCTURE = (
                 "question_id": "6",
                 "possible_answers": ["Yes", "No"],
                 "answer_map_to": TYPE_COMPONENT,
+                INFOBOX: "Currently not implemented in the simulation.",
             },
         ],
     )
@@ -589,6 +592,7 @@ CROPS_SURVEY_STRUCTURE = (
             "question_id": "8",
             "possible_answers": ["Yes", "No"],
             "subquestion": {"Yes": ["11", "9", "10"]},
+            INFOBOX: "Currently not implemented in the simulation.",
         }
     ]
     + generate_matrix_questions(
