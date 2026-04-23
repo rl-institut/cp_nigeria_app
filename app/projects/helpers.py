@@ -2,20 +2,23 @@ import json
 import os
 import io
 import csv
+from pathlib import Path
+
 from openpyxl import load_workbook
 from django import forms
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import html_safe
+
+from epa.settings import RESOURCES_DIR
 from projects.dtos import convert_to_dto
 from projects.models import Timeseries, AssetType
 from projects.constants import MAP_MVS_EPA
 from dashboard.helpers import KPIFinder
 
 PARAMETERS = {}
-if os.path.exists(staticfiles_storage.path("MVS_parameters_list.csv")) is True:
-    with open(staticfiles_storage.path("MVS_parameters_list.csv"), encoding="utf-8") as csvfile:
+if Path(RESOURCES_DIR / "MVS_parameters_list.csv").exists():
+    with Path.open(RESOURCES_DIR / "MVS_parameters_list.csv", encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:

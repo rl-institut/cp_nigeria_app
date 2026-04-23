@@ -1,9 +1,12 @@
 import os
 import csv
 import json
+from pathlib import Path
+
 from django.core.exceptions import ValidationError
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.translation import gettext_lazy as _
+
+from epa.settings import RESOURCES_DIR
 
 BM_QUESTIONS_CATEGORIES = {
     "dialogue": _("Engagement, dialogue, and co-determination"),
@@ -64,8 +67,8 @@ BM_DEFAULT_ECONOMIC_VALUES = {
 
 B_MODELS = {}
 
-if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
-    with open(staticfiles_storage.path("business_model_list.csv"), encoding="utf-8") as csvfile:
+if Path(RESOURCES_DIR / "business_model_list.csv").exists():
+    with open(RESOURCES_DIR / "business_model_list.csv", encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
         for i, row in enumerate(csvreader):
             if i == 0:
@@ -87,7 +90,12 @@ if os.path.exists(staticfiles_storage.path("business_model_list.csv")) is True:
                     if k not in ("Advantages", "Disadvantages"):
                         B_MODELS[label][k] = v
                     else:
-                        B_MODELS[label][k] = json.loads(v)
+                        try:
+                            B_MODELS[label][k] = json.loads(v)
+                        except:
+                            import pdb
+
+                            pdb.set_trace()
 
 
 def available_models(score, grid_condition):
