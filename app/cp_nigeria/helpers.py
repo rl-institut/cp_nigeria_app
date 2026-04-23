@@ -72,8 +72,8 @@ def csv_to_dict(filepath, label_col="label"):
     return dict
 
 
-FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
-OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
+FINANCIAL_PARAMS = csv_to_dict(RESOURCES_DIR / "financial_tool" / "financial_parameters_list.csv")
+OUTPUT_PARAMS = csv_to_dict(RESOURCES_DIR / "cpn_output_params.csv")
 
 
 def calculate_co2_mitigation(project):
@@ -912,7 +912,7 @@ class ReportHandler:
 
     @staticmethod
     def create_community_criteria_list(bmanswer_qs):
-        BM_CRITERIA = csv_to_dict("business_model_report_criteria.csv", label_col="Criteria")
+        BM_CRITERIA = csv_to_dict(RESOURCES_DIR / "business_model_report_criteria.csv", label_col="Criteria")
         criteria_list = []
         for criteria, values in BM_CRITERIA.items():
             total_score_qs = bmanswer_qs.filter(question_id__in=json.loads(values["Questions"])).aggregate(
