@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 import pandas as pd
 import numpy as np
 from business_model.models import *
+from epa.settings import RESOURCES_DIR
 
 
 class Command(BaseCommand):
@@ -13,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         update_assets = options["update"]
 
-        df = pd.read_csv("static/business_model_questions.csv")
+        df = pd.read_csv(RESOURCES_DIR / "business_model_questions.csv")
         assets = df.to_dict(orient="records")
         for asset_params in assets:
             question_id = asset_params.pop("question_index")
