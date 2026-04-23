@@ -12,7 +12,7 @@ python /src/manage.py update_bmquestions
 echo COMPILE MESSAGES
 python /src/manage.py compilemessages
 echo LOAD FIXTURES
-python /src/manage.py loaddata 'src/fixtures/multivector_fixture.json' && \
+#python /src/manage.py loaddata 'src/fixtures/multivector_fixture.json' && \
 python /src/manage.py cp_setup && \
 
 echo $(ls -L 1 --dirsfirst)
