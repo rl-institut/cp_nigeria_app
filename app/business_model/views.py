@@ -22,7 +22,6 @@ import logging
 import traceback
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
-from django.contrib.staticfiles.storage import staticfiles_storage
 from business_model.helpers import BM_QUESTIONS_CATEGORIES
 
 logger = logging.getLogger(__name__)

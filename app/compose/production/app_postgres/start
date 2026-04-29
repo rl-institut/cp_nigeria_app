@@ -1,0 +1,18 @@
+#!/bin/bash
+echo COLLECTSTATIC
+python /src/manage.py collectstatic --noinput
+echo MIGRATE
+python /src/manage.py makemigrations users projects dashboard
+python /src/manage.py showmigrations
+python /src/manage.py migrate
+echo UPDATE TABLES
+python /src/manage.py update_assettype
+python /src/manage.py update_valuetype
+python /src/manage.py update_bmquestions
+echo COMPILE MESSAGES
+python /src/manage.py compilemessages
+echo LOAD FIXTURES
+#python /src/manage.py loaddata 'src/fixtures/multivector_fixture.json' && \
+#python /src/manage.py cp_setup && \
+
+gunicorn epa.wsgi:application --bind 0.0.0.0:8000 --workers=4 --timeout=120

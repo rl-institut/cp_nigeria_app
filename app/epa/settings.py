@@ -11,14 +11,16 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 import ast
 import os
+from pathlib import Path
 
 from django.contrib.messages import constants as messages
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = ast.literal_eval(os.getenv("DEBUG", "False"))
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
@@ -70,6 +72,7 @@ if DEBUG is True:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -202,6 +205,9 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 # API token to fetch exchange rates
 EXCHANGE_RATES_API_TOKEN = os.getenv("EXCHANGE_RATES_API_TOKEN")
 EXCHANGE_RATES_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_RATES_API_TOKEN}/latest/USD"
+
+# Resources dir (containing helper csv files)
+RESOURCES_DIR = BASE_DIR / "resources"
 
 import sys
 

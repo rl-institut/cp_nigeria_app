@@ -1,4 +1,6 @@
 from datetime import date
+from pathlib import Path
+
 from docx import Document
 from docx.table import Table
 from docx.shape import InlineShape
@@ -17,6 +19,7 @@ import base64
 import io
 import logging
 from cp_nigeria.models import ConsumerGroup, DemandTimeseries, Options, ImplementationPlanContent
+from epa.settings import RESOURCES_DIR
 from projects.models import Asset, Simulation
 from projects.constants import ENERGY_DENSITY_DIESEL, CURRENCY_SYMBOLS
 from business_model.models import EquityData, BusinessModel, BMAnswer
@@ -25,7 +28,6 @@ from dashboard.models import FancyResults, KPIScalarResults
 from projects.models import EconomicData
 from django.shortcuts import get_object_or_404
 from django.db.models import Func, Sum, Avg, Max
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from dashboard.models import get_costs
 from django.db.models import Case
@@ -54,8 +56,8 @@ def csv_to_dict(filepath, label_col="label"):
     # the csv must contain a column named "label" containing the variable name, which will be used to construct the
     # nested dictionaries
     dict = {}
-    if os.path.exists(staticfiles_storage.path(filepath)) is True:
-        with open(staticfiles_storage.path(filepath), encoding="utf-8") as csvfile:
+    if Path(filepath).exists():
+        with Path.open(filepath, encoding="utf-8") as csvfile:
             csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
             for i, row in enumerate(csvreader):
                 if i == 0:
@@ -70,8 +72,8 @@ def csv_to_dict(filepath, label_col="label"):
     return dict
 
 
-FINANCIAL_PARAMS = csv_to_dict("financial_tool/financial_parameters_list.csv")
-OUTPUT_PARAMS = csv_to_dict("cpn_output_params.csv")
+FINANCIAL_PARAMS = csv_to_dict(RESOURCES_DIR / "financial_tool" / "financial_parameters_list.csv")
+OUTPUT_PARAMS = csv_to_dict(RESOURCES_DIR / "cpn_output_params.csv")
 
 
 def calculate_co2_mitigation(project):
@@ -910,7 +912,7 @@ class ReportHandler:
 
     @staticmethod
     def create_community_criteria_list(bmanswer_qs):
-        BM_CRITERIA = csv_to_dict("business_model_report_criteria.csv", label_col="Criteria")
+        BM_CRITERIA = csv_to_dict(RESOURCES_DIR / "business_model_report_criteria.csv", label_col="Criteria")
         criteria_list = []
         for criteria, values in BM_CRITERIA.items():
             total_score_qs = bmanswer_qs.filter(question_id__in=json.loads(values["Questions"])).aggregate(
@@ -1283,7 +1285,7 @@ class ReportHandler:
 
 
 class FinancialTool:
-    cost_assumptions = pd.read_csv(staticfiles_storage.path("financial_tool/cost_assumptions.csv"), sep=";")
+    cost_assumptions = pd.read_csv(RESOURCES_DIR / "financial_tool" / "cost_assumptions.csv", sep=";")
     loan_assumptions = {"Tenor": 10, "Grace period": 1, "Cum. replacement years": 10}
 
     def __init__(self, project):
