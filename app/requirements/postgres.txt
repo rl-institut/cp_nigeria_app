@@ -19,4 +19,5 @@ oemof-thermal==0.0.5
 oemof-solph==0.4.4
 django-sass-processor==1.2.2
 libsass
+whitenoise==6.11.0
 python-docx
